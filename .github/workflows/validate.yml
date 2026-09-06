@@ -1,0 +1,38 @@
+name: Validate and build Windows
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache pinned Godot tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            .tools/godot
+            .tools/templates
+          key: godot-windows-4.7.2-v1
+      - name: Set up Godot
+        shell: pwsh
+        run: ./tools/dev.ps1 setup
+      - name: Import and test the encounter
+        shell: pwsh
+        run: ./tools/dev.ps1 check
+      - name: Export Windows build
+        shell: pwsh
+        run: ./tools/dev.ps1 build
+      - name: Upload playable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dorbit-Windows
+          path: build/windows/
+          if-no-files-found: error
