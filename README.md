@@ -2,7 +2,7 @@
 
 A space game inspired by DarkOrbit, built for Windows with Godot. The first milestone is a playable solo encounter with full 3D flight, target-lock combat, alien hunting, rewards, and station repairs.
 
-Multiplayer for approximately 10 players comes next. Progress currently lasts for the running session only. Ships, scenery, and effects use procedural placeholder art.
+Milestone 2 starts with shared flight for up to 10 players. Shared combat is the next step; the complete solo encounter remains available. Progress currently lasts for the running session only. Ships, scenery, and effects use procedural placeholder art.
 
 - [Game requirements and development plan](GAME_PLAN.md)
 - [Development workflow](AGENTS.md)
@@ -23,6 +23,18 @@ Esc pauses and releases the mouse. F11 toggles fullscreen, F3 shows performance,
 While paused, F5/F6 cycle window resolutions from 960 x 600 up to 3840 x 2160, offering only sizes that fit the current screen with room for borders and the taskbar. Selecting a resolution switches to windowed mode; F11 uses the desktop resolution for fullscreen. You can also resize the window manually. The pause menu shows the current pixel dimensions. Display settings are session-only. Mouse steering uses unscaled screen motion so viewport scaling does not change sensitivity.
 
 These values are initial tuning settings, not a finished economy or combat balance.
+
+## Shared flight (Milestone 2, first step)
+
+Press **F7** to open the session menu. On one computer, choose **Host flight session**. On the other, enter the host's LAN or VPN IP address and choose **Join host**. Use the same build on both PCs. For two game instances on one PC, enter `127.0.0.1` in the joining instance.
+
+The host listens on **UDP port 24567**. If Windows Firewall prompts, allow the game on the network you are using. LAN and VPN connections (for example, Tailscale) need a reachable host address; direct internet connections require UDP port forwarding to the host. There is no automatic NAT traversal or server browser.
+
+Players fly around the same outpost with host-controlled movement and boost. Other pilots have cyan markers. This is a combat-free flight test: shared aliens, combat, rewards, and persistence are not implemented yet. Entering or leaving shared flight resets the ship at the station; existing solo credits remain local.
+
+Esc or F7 releases your controls while the shared world keeps running. Choose **Leave session / return to solo** to disconnect. If the host leaves, clients return to solo with a status message. Hosting ends when the host closes the game; there is no host migration. Only one host can use a given UDP port on a PC.
+
+Local automated checks cover real ENet peers, late joining, movement authority, input validation/timeouts, and disconnection/reconnection. Cross-PC internet play, latency tuning, and full-group performance still need testing.
 
 ## Develop on Windows
 
@@ -51,7 +63,7 @@ The project uses Godot Compatibility rendering with 4x MSAA by default. The firs
 
 ## Validation
 
-`check` imports the project and runs headless integration tests against the actual scene and physics world, followed by a complete hunt-and-repair replay. It covers input actions, shield and hull damage, cooldowns, range, firing arcs, obstacles, rewards, repairs, rescue, movement, mouse steering, and pause.
+`check` imports the project and runs headless integration tests against the actual scene and physics world, network checks with separate ENet peers, and a complete hunt-and-repair replay. It covers input actions, shield and hull damage, cooldowns, range, firing arcs, obstacles, rewards, repairs, rescue, movement, mouse steering, pause, joining, replication, and disconnects.
 
 For a rendered hunt-and-return replay:
 
@@ -69,7 +81,8 @@ GitHub Actions runs the headless checks, exports Windows, and uploads the playab
 - `scripts/pilot.gd`: flight input and chase camera.
 - `scripts/alien.gd`: alien movement and engagement.
 - `scripts/sector.gd`: encounter lifecycle, targeting, rewards, repairs, and rescue.
+- `scripts/flight_session.gd`: session menu, ENet connection lifecycle, host flight simulation, and client prediction/interpolation.
 - `scripts/visuals.gd` and `shaders/space.gdshader`: procedural placeholder art and effects.
 - `scripts/hud.gd`: flight instruments, targets, objectives, and pause display.
 
-Combat emits visual signals; visual effects do not award rewards or apply damage. This keeps the later multiplayer work independent of the placeholder art. The current encounter still runs locally and is not a multiplayer implementation.
+Combat emits visual signals; visual effects do not award rewards or apply damage. The combat encounter still runs locally. Shared flight sends player commands to the host at 20 Hz and receives authoritative snapshots at 20 Hz, with local flight prediction and smoothing of other players. Shared combat will build on this transport.

@@ -46,12 +46,20 @@ func release_mouse() -> void:
 
 
 func fly(delta: float) -> void:
-	var movement := Vector3(
+	fly_command(delta, read_movement(), Input.is_action_pressed("boost"))
+
+
+func read_movement() -> Vector3:
+	return Vector3(
 		Input.get_axis("strafe_left", "strafe_right"),
 		Input.get_axis("move_down", "move_up"),
 		Input.get_axis("forward", "backward")
 	).limit_length()
-	boosting = Input.is_action_pressed("boost") and movement.length() > 0.1 and energy > 1.0
+
+
+func fly_command(delta: float, movement: Vector3, boost: bool) -> void:
+	movement = movement.limit_length()
+	boosting = boost and movement.length() > 0.1 and energy > 1.0
 	if boosting:
 		energy = maxf(0.0, energy - 28.0 * delta)
 	else:
