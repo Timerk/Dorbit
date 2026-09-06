@@ -47,6 +47,7 @@ func snapshot(label: String) -> void:
 
 func run() -> void:
 	if rendered:
+		root.content_scale_size = Vector2i(2560, 1440)
 		root.size = Vector2i(2560, 1440)
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	sector = preload("res://scenes/sector.tscn").instantiate()
