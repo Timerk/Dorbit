@@ -1,6 +1,6 @@
 # Dorbit game requirements and development plan
 
-Status: Agreed planning baseline. Game implementation has not started.
+Status: Milestone 1 implemented as a solo Windows prototype. Controls and balance need player feedback. Multiplayer starts in Milestone 2.
 
 This document records the planning discussion. Proposed values and open questions are marked separately so they can be adjusted through playtesting.
 
@@ -202,4 +202,4 @@ The following do not prevent beginning the first prototype:
 
 Before the relevant later milestones, choose the internet connection approach, player identity and save ownership rules, and independent hosting setup.
 
-The next implementation step is Milestone 1. Further content and balancing decisions should be informed by the playable prototype.
+The next implementation step is Milestone 2 after feedback on the first encounter. Further content and balancing decisions should be informed by the playable prototype.
