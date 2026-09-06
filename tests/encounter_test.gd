@@ -163,9 +163,16 @@ func run() -> void:
 	player.handle_mouse(mouse_button)
 	var mouse_motion := InputEventMouseMotion.new()
 	mouse_motion.relative = Vector2(100, -50)
+	mouse_motion.screen_relative = Vector2(100, -50)
 	player.handle_mouse(mouse_motion)
 	check(player.rotation.y < 0.0 and player.rotation.x > 0.0, "Right-mouse steering changes yaw and pitch")
+	var first_rotation := player.rotation
+	player.rotation = Vector3.ZERO
+	mouse_motion.relative = Vector2(50, -25)
+	player.handle_mouse(mouse_motion)
+	check(player.rotation.is_equal_approx(first_rotation), "Viewport scaling does not change mouse steering sensitivity")
 	mouse_motion.relative = Vector2(0, -10000)
+	mouse_motion.screen_relative = Vector2(0, -10000)
 	player.handle_mouse(mouse_motion)
 	check(player.rotation.x <= 1.481, "Camera pitch stays within comfortable limits")
 	sector.set_paused(true)

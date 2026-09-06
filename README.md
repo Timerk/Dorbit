@@ -20,6 +20,8 @@ Shields regenerate after six seconds without damage. Destruction returns the shi
 
 Esc pauses and releases the mouse. F11 toggles fullscreen, F3 shows performance, and F4 switches antialiasing between high and low. F10 quits from the pause screen. Losing focus pauses the local encounter.
 
+While paused, F5/F6 cycle window resolutions from 960 x 600 up to 3840 x 2160, offering only sizes that fit the current screen with room for borders and the taskbar. Selecting a resolution switches to windowed mode; F11 uses the desktop resolution for fullscreen. You can also resize the window manually. The pause menu shows the current pixel dimensions. Display settings are session-only. Mouse steering uses unscaled screen motion so viewport scaling does not change sensitivity.
+
 These values are initial tuning settings, not a finished economy or combat balance.
 
 ## Develop on Windows
@@ -35,6 +37,15 @@ rtk proxy powershell -NoProfile -ExecutionPolicy Bypass -File tools/dev.ps1 buil
 ```
 
 Use `run` to play from source or `editor` to open Godot. You can also import `project.godot` into an existing Godot 4.7.2 installation. RTK is a command wrapper, not a game dependency.
+
+If RTK is not installed, run these directly in PowerShell from the checkout:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/dev.ps1 setup
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/dev.ps1 run
+```
+
+Setup is needed only once. To produce `build/windows/Dorbit.exe`, replace `run` with `build`. To run the automated checks, replace it with `check`. Running from source does not need export templates or a separate build.
 
 The project uses Godot Compatibility rendering with 4x MSAA by default. The first scene uses simple meshes and a procedural sky; it does not require Blender or downloaded art assets.
 

@@ -105,13 +105,16 @@ func _draw() -> void:
 		text_at(center + Vector2(-150, 15), "Returning to the outpost in %d..." % ceili(sector.player_respawn), 17)
 	if sector.paused:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.006, 0.012, 0.025, 0.88))
-		panel(Rect2(center - Vector2(240, 160), Vector2(480, 320)))
-		text_at(center + Vector2(-208, -103), "FLIGHT PAUSED", 29)
-		text_at(center + Vector2(-208, -62), "Esc        Resume flight", 18, CYAN)
-		text_at(center + Vector2(-208, -23), "F11        Toggle fullscreen", 17)
-		text_at(center + Vector2(-208, 16), "F3          Performance overlay", 17)
-		text_at(center + Vector2(-208, 55), "F4          Graphics: " + ("Low" if sector.low_quality else "High"), 17)
-		text_at(center + Vector2(-208, 104), "F10        Quit to desktop", 17, MUTED)
+		panel(Rect2(center - Vector2(280, 160), Vector2(560, 360)))
+		text_at(center + Vector2(-248, -103), "FLIGHT PAUSED", 29)
+		text_at(center + Vector2(-248, -62), "Esc        Resume flight", 18, CYAN)
+		text_at(center + Vector2(-248, -23), "F11        Toggle fullscreen", 17)
+		text_at(center + Vector2(-248, 16), "F3          Performance overlay", 17)
+		text_at(center + Vector2(-248, 55), "F4          Antialiasing: " + ("Off" if sector.low_quality else "4x MSAA"), 17)
+		var pixels := DisplayServer.window_get_size()
+		text_at(center + Vector2(-248, 94), "F5 / F6  Window resolution: %d x %d" % [pixels.x, pixels.y], 17)
+		text_at(center + Vector2(-248, 120), "Changing resolution switches to windowed mode.", 13, MUTED)
+		text_at(center + Vector2(-248, 163), "F10        Quit to desktop", 17, MUTED)
 
 
 func draw_target_panel(width: float, height: float) -> void:

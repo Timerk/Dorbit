@@ -7,6 +7,10 @@ const SPAWN_POSITION := Vector3(0.0, 0.0, 45.0)
 const REPAIR_RADIUS: float = 60.0
 const KILL_REWARD: int = 75
 const RESPAWN_FEE: int = 10
+const WINDOW_RESOLUTIONS: Array[Vector2i] = [
+	Vector2i(960, 600), Vector2i(1280, 720), Vector2i(1440, 900),
+	Vector2i(1920, 1080), Vector2i(2560, 1440), Vector2i(3840, 2160),
+]
 
 var player: Pilot
 var alien: Alien
@@ -54,6 +58,7 @@ func configure_input() -> void:
 		"boost": KEY_SHIFT, "cycle_target": KEY_TAB, "fire": KEY_SPACE,
 		"repair": KEY_R, "pause_game": KEY_ESCAPE, "fullscreen": KEY_F11,
 		"performance": KEY_F3, "quality": KEY_F4, "quit_game": KEY_F10,
+		"resolution_down": KEY_F5, "resolution_up": KEY_F6,
 	}
 	for action: String in bindings:
 		if InputMap.has_action(action):
@@ -87,6 +92,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		low_quality = not low_quality
 		get_viewport().msaa_3d = Viewport.MSAA_DISABLED if low_quality else Viewport.MSAA_4X
 		notify("Graphics: %s" % ("low / antialiasing off" if low_quality else "high / 4x antialiasing"))
+	if paused and event.is_action_pressed("resolution_down"):
+		cycle_resolution(-1)
+	if paused and event.is_action_pressed("resolution_up"):
+		cycle_resolution(1)
 	if paused or not player.alive:
 		return
 	player.handle_mouse(event)
@@ -101,6 +110,26 @@ func _unhandled_input(event: InputEvent) -> void:
 			notify("Select an alien with Tab or left click first.")
 	if event.is_action_pressed("repair"):
 		request_repair()
+
+
+func cycle_resolution(direction: int) -> void:
+	var available: Array[Vector2i] = []
+	var screen := DisplayServer.window_get_current_screen()
+	# Leave room for window borders and the desktop taskbar.
+	var usable := DisplayServer.screen_get_usable_rect(screen)
+	for resolution in WINDOW_RESOLUTIONS:
+		if resolution.x <= usable.size.x - 32 and resolution.y <= usable.size.y - 64:
+			available.append(resolution)
+	if available.is_empty():
+		return
+	var current := DisplayServer.window_get_size()
+	var index := available.find(current)
+	if index < 0:
+		index = -1 if direction > 0 else 0
+	var next := available[posmod(index + direction, available.size())]
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	DisplayServer.window_set_size(next)
+	DisplayServer.window_set_position(usable.position + (usable.size - next) / 2)
 
 
 func _physics_process(delta: float) -> void:
