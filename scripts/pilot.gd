@@ -35,8 +35,9 @@ func handle_mouse(event: InputEvent) -> void:
 		steering = event.pressed
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if steering else Input.MOUSE_MODE_VISIBLE
 	if event is InputEventMouseMotion and steering:
-		rotation.y -= event.relative.x * mouse_sensitivity
-		rotation.x = clampf(rotation.x - event.relative.y * mouse_sensitivity, -1.48, 1.48)
+		# Screen-relative motion is unaffected by viewport stretch or resolution.
+		rotation.y -= event.screen_relative.x * mouse_sensitivity
+		rotation.x = clampf(rotation.x - event.screen_relative.y * mouse_sensitivity, -1.48, 1.48)
 
 
 func release_mouse() -> void:
