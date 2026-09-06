@@ -1,0 +1,6 @@
+.godot/
+.tools/
+build/*
+!build/.gdignore
+*.log
+export_credentials.cfg
