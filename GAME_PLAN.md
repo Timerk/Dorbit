@@ -1,6 +1,6 @@
 # Dorbit game requirements and development plan
 
-Status: Milestone 1 accepted after successful user playtesting. Milestone 2 now includes the host-controlled shared combat encounter. Internet latency and full-group performance testing remain outstanding. Combat balance remains provisional.
+Status: Milestones 1 and 2 accepted after user playtesting, including internet combat, rewards, death, repairs, health synchronization and good observed performance with five clients, including a laptop below the original reference hardware. Milestone 3 starts with a dedicated Linux server before persistent progression. Ten-player performance still needs representative measurement; combat balance remains provisional.
 
 This document records the planning discussion. Proposed values and open questions are marked separately so they can be adjusted through playtesting.
 
@@ -23,8 +23,8 @@ The core loop is to explore sectors, fight aliens, collect rewards, return to a 
 | Combat | DarkOrbit-style target selection and automatic weapon tracking |
 | Multiplayer | Approximately 10 concurrent players |
 | Enemies | Aliens controlled by the game server |
-| Early hosting | A player hosts a session while the group plays |
-| Later hosting | An independent server that friends can join when the project owner is offline |
+| Hosting | A dedicated Linux server; all players connect as clients, including when playing alone |
+| Local server testing | Ubuntu on WSL2, followed by a small Linux VPS |
 | Persistence | Save progression between sessions, starting with the progression milestone |
 | Progression | Frequent small upgrades and larger goals requiring several sessions |
 | PvP | Planned after cooperative gameplay works |
@@ -107,17 +107,15 @@ Exact prices, ship roles, upgrade limits, rewards, and sector unlocks remain ope
 
 ## Multiplayer and hosting
 
-### Early versions
+### Dedicated server direction
 
-One player runs the host and friends connect to the shared session. The world stops when the host closes it. Once persistence is implemented, progression survives between sessions.
+The user chose a dedicated Linux server at the start of Milestone 3. Everyone connects to the same server; playing alone means being the only connected pilot. The server runs independently of any player's game client and controls movement, alien behavior, damage, rewards and action validation. The normal client has a connection menu and does not fall back to a playable offline world.
 
-The server should control alien behavior, damage, rewards, and validation of player actions. Clients render the world and send player commands. Introduce multiplayer before building extensive content or progression systems.
+The first implementation runs headlessly from source with Godot 4.7.2 on Linux x86-64, initially in Ubuntu on WSL2. It supports ten client pilots without a host ship and keeps simulating when everyone disconnects. The original solo/listen-host modes remain development fixtures behind `--offline`, not a separate progression path for normal play.
 
-### Later versions
+This first server slice still uses temporary session credits. Stable identities, private-group access control, server-owned saves, restart recovery and backups follow before equipment purchases. Save ownership belongs to the server; there is no client-owned wallet to transfer between worlds.
 
-Support an independent server so friends can log in and progress without the project owner being online. Keep world simulation separate from rendering to support this transition.
-
-Always-on hosting, hosting providers, hosting costs, account systems, and public-server operations are outside the early milestones. Test internet connectivity in the multiplayer milestone. The connection and hosting setup are still to be selected.
+A small Linux VPS will follow local validation. Provider selection, measured resource requirements, service deployment, player identity details and backup operations remain to be implemented. No public account service or automatic matchmaking is included in the initial server.
 
 ## Performance
 
@@ -171,7 +169,7 @@ Implementation steps:
 2. Shared combat: the host simulates one alien and validates damage, destruction, repairs, and rewards. Health and encounter state replicate to clients, while visual effects remain separate. The original solo encounter remains available.
 3. Test two Windows PCs over the internet, tune prediction/interpolation under latency, and measure a representative friend-group encounter.
 
-The initial transport works with LAN or VPN addresses, or a publicly reachable host with UDP port forwarding. It does not provide automatic NAT traversal, matchmaking, or host migration. The preferred internet setup still needs a two-PC trial. Opening a menu stops that player's movement and fire commands but leaves the shared world, including incoming damage, running.
+The initial transport works with LAN or VPN addresses, or a publicly reachable host with UDP port forwarding. It does not provide automatic NAT traversal, matchmaking, or host migration. The user successfully tested cross-network play; the exact connection method was not recorded. Opening a menu stops that player's movement and fire commands but leaves the shared world, including incoming damage, running.
 
 Initial cooperative rules for playtesting:
 
@@ -193,10 +191,16 @@ Completion criteria:
 
 Add saved progression, equipment purchases, a second ship, a few alien types, and simple missions.
 
+Implementation order after the agreed server architecture change:
+
+1. Dedicated Linux server, normal Windows clients, WSL2 connection and shared-encounter validation.
+2. Stable pilot identities, private-group access and server-owned saves, including restart recovery and backups.
+3. Equipment purchases, a second ship, additional alien types and simple missions, with provisional prices tuned through playtesting.
+
 Completion criteria:
 
 - Players can hunt, earn rewards, repair, and buy meaningful upgrades.
-- Progress survives closing and reopening the hosted world.
+- Progress survives restarting the server.
 - Repeated sessions support frequent small upgrades and longer-term goals.
 - Group reward rules and death penalties can be evaluated through playtesting.
 
@@ -217,6 +221,6 @@ The following do not prevent beginning the first prototype:
 - Detailed art direction and asset selection.
 - Final performance budgets for aliens and effects.
 
-Before the relevant later milestones, choose the internet connection approach, player identity and save ownership rules, and independent hosting setup.
+Before deploying progression, finalize pilot identity, private-group access, save recovery and independent hosting operations.
 
-The next step is user playtesting of the shared hunt-and-repair loop on two PCs, followed by internet latency and group performance testing. Milestone 2 is not complete until those checks pass.
+The next step is testing Windows clients against the dedicated server in WSL2, followed by server-owned persistent progression. Full Milestone 3 completion still requires purchases, additional content and repeat-session playtesting.

@@ -58,28 +58,29 @@ static func ship_model(hostile: bool) -> Node3D:
 	return root
 
 
-static func station(parent: Node3D, location: Vector3) -> Node3D:
+static func station(parent: Node3D, location: Vector3, render: bool = true) -> Node3D:
 	var root := Node3D.new()
 	root.position = location
 	parent.add_child(root)
-	var armor := material(Color("8b9bad"))
-	var dark := material(Color("182d43"))
-	var glow := material(Color("5af4cf"), true)
-	var ring := TorusMesh.new()
-	ring.inner_radius = 12.0
-	ring.outer_radius = 15.5
-	mesh(root, ring, Vector3.ZERO, armor).rotation.x = PI / 2.0
-	var inner := TorusMesh.new()
-	inner.inner_radius = 11.6
-	inner.outer_radius = 12.1
-	mesh(root, inner, Vector3(0, 0, 0.9), glow).rotation.x = PI / 2.0
-	for side in [-1.0, 1.0]:
-		box(root, Vector3(side * 24, 0, 0), Vector3(20, 2, 2), armor)
-		box(root, Vector3(side * 28, 0, 0), Vector3(13, 0.7, 30), dark)
-		for offset in range(-6, 7):
-			box(root, Vector3(side * 28, 0.42, offset * 2.0), Vector3(12.5, 0.05, 0.06), glow)
-		box(root, Vector3(side * 10.0, -14.0, 0), Vector3(5, 7, 8), dark)
-	box(root, Vector3(0, -20, 0), Vector3(25, 5, 10), armor)
+	if render:
+		var armor := material(Color("8b9bad"))
+		var dark := material(Color("182d43"))
+		var glow := material(Color("5af4cf"), true)
+		var ring := TorusMesh.new()
+		ring.inner_radius = 12.0
+		ring.outer_radius = 15.5
+		mesh(root, ring, Vector3.ZERO, armor).rotation.x = PI / 2.0
+		var inner := TorusMesh.new()
+		inner.inner_radius = 11.6
+		inner.outer_radius = 12.1
+		mesh(root, inner, Vector3(0, 0, 0.9), glow).rotation.x = PI / 2.0
+		for side in [-1.0, 1.0]:
+			box(root, Vector3(side * 24, 0, 0), Vector3(20, 2, 2), armor)
+			box(root, Vector3(side * 28, 0, 0), Vector3(13, 0.7, 30), dark)
+			for offset in range(-6, 7):
+				box(root, Vector3(side * 28, 0.42, offset * 2.0), Vector3(12.5, 0.05, 0.06), glow)
+			box(root, Vector3(side * 10.0, -14.0, 0), Vector3(5, 7, 8), dark)
+		box(root, Vector3(0, -20, 0), Vector3(25, 5, 10), armor)
 	# Separate colliders preserve the open docking ring.
 	for side in [-1.0, 1.0]:
 		add_box_collider(root, Vector3(side * 14, 0, 0), Vector3(5, 27, 5))
@@ -101,31 +102,32 @@ static func add_box_collider(parent: Node3D, location: Vector3, size: Vector3) -
 	parent.add_child(body)
 
 
-static func environment(parent: Node3D) -> void:
-	var world := WorldEnvironment.new()
-	var settings := Environment.new()
-	settings.background_mode = Environment.BG_SKY
-	settings.sky = Sky.new()
-	var sky_material := ShaderMaterial.new()
-	sky_material.shader = preload("res://shaders/space.gdshader")
-	settings.sky.sky_material = sky_material
-	settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	settings.ambient_light_color = Color("91a5d0")
-	settings.ambient_light_energy = 0.65
-	settings.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	world.environment = settings
-	parent.add_child(world)
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-30, -35, 0)
-	sun.light_color = Color("c5deff")
-	sun.light_energy = 1.8
-	parent.add_child(sun)
-	var planet := SphereMesh.new()
-	planet.radius = 440.0
-	planet.height = 880.0
-	planet.radial_segments = 64
-	planet.rings = 32
-	mesh(parent, planet, Vector3(900, 310, -2200), material(Color("284762")))
+static func environment(parent: Node3D, render: bool = true) -> void:
+	if render:
+		var world := WorldEnvironment.new()
+		var settings := Environment.new()
+		settings.background_mode = Environment.BG_SKY
+		settings.sky = Sky.new()
+		var sky_material := ShaderMaterial.new()
+		sky_material.shader = preload("res://shaders/space.gdshader")
+		settings.sky.sky_material = sky_material
+		settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+		settings.ambient_light_color = Color("91a5d0")
+		settings.ambient_light_energy = 0.65
+		settings.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+		world.environment = settings
+		parent.add_child(world)
+		var sun := DirectionalLight3D.new()
+		sun.rotation_degrees = Vector3(-30, -35, 0)
+		sun.light_color = Color("c5deff")
+		sun.light_energy = 1.8
+		parent.add_child(sun)
+		var planet := SphereMesh.new()
+		planet.radius = 440.0
+		planet.height = 880.0
+		planet.radial_segments = 64
+		planet.rings = 32
+		mesh(parent, planet, Vector3(900, 310, -2200), material(Color("284762")))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7301
 	var rock_surface := material(Color("4b5063"))
@@ -134,12 +136,15 @@ static func environment(parent: Node3D) -> void:
 		var side := -1.0 if index % 2 == 0 else 1.0
 		body.position = Vector3(side * rng.randf_range(80, 280), rng.randf_range(-90, 90), rng.randf_range(-400, -70))
 		var radius := rng.randf_range(4.0, 16.0)
-		var rock := SphereMesh.new()
-		rock.radius = radius
-		rock.height = radius * 1.6
-		rock.radial_segments = 7
-		rock.rings = 4
-		mesh(body, rock, Vector3.ZERO, rock_surface).rotation = Vector3(rng.randf(), rng.randf(), rng.randf())
+		# Consume the same random values on clients and servers to preserve collision geometry.
+		var angles := Vector3(rng.randf(), rng.randf(), rng.randf())
+		if render:
+			var rock := SphereMesh.new()
+			rock.radius = radius
+			rock.height = radius * 1.6
+			rock.radial_segments = 7
+			rock.rings = 4
+			mesh(body, rock, Vector3.ZERO, rock_surface).rotation = angles
 		var collider := CollisionShape3D.new()
 		var shape := SphereShape3D.new()
 		shape.radius = radius
