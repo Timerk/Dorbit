@@ -47,7 +47,7 @@ PY
     fi
     checked --headless --path . --editor --import
     if [[ "$task" == run ]]; then
-      exec "$engine" --headless --path . -- --server "$@"
+      exec "$engine" --headless --max-fps 60 --path . -- --server "$@"
     fi
     checked --headless --path . --script res://tests/dedicated_server_test.gd
     ;;
