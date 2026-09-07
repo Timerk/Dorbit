@@ -4,8 +4,8 @@ Read [GAME_PLAN.md](GAME_PLAN.md) before implementing gameplay, choosing archite
 
 ## Branches, commits, and pull requests
 
-- Start each distinct task on a short-lived branch based on current `origin/main`. Use descriptive names such as `feat/ship-flight`, `fix/target-selection`, or `docs/game-plan`.
-- Keep `main` for merged work. Submit project changes through pull requests targeting `main`.
+- Start each distinct task on a short-lived branch based on current `origin/main` by default. When work depends on an unmerged PR, branching from that PR's feature branch is allowed. Use descriptive names such as `feat/ship-flight`, `fix/target-selection`, or `docs/game-plan`.
+- Keep `main` for merged work. Target pull requests at `main` by default. Use stacked PRs when dependencies make them useful: target the dependent PR at its prerequisite's feature branch so its diff shows only the new work, and state the dependency and intended merge order in the PR description. After the prerequisite merges, retarget the dependent PR to `main` and update its branch as needed to keep the diff focused.
 - Group changes into focused commits that each serve one purpose. Use descriptive messages such as `feat: add ship movement` or `fix: clear destroyed targets`.
 - Stage relevant files explicitly and inspect the staged diff before committing. Preserve unrelated local work.
 - Push completed task branches and open or update a pull request. Describe the resulting behavior, relevant validation, and any remaining limitations. Use a draft PR when required work is incomplete.
