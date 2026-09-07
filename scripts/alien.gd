@@ -17,7 +17,8 @@ func _init() -> void:
 
 func fly(delta: float, player: Pilot, station_position: Vector3) -> void:
 	patrol_time += delta
-	engaged = player.alive and player.global_position.distance_to(station_position) > 75.0
+	engaged = is_instance_valid(player) and player.alive
+	engaged = engaged and player.global_position.distance_to(station_position) > 75.0
 	engaged = engaged and global_position.distance_to(player.global_position) < 260.0
 	engaged = engaged and global_position.distance_to(home_position) < 350.0
 	var destination := home_position + Vector3(sin(patrol_time * 0.22) * 18.0, sin(patrol_time * 0.35) * 8.0, 0.0)
