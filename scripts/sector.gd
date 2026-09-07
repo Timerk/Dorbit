@@ -28,6 +28,7 @@ var objective_stage: int = 0
 var show_performance: bool = false
 var low_quality: bool = false
 var weapon_status: String = "NO TARGET"
+var session: FlightSession
 
 
 func _ready() -> void:
@@ -49,6 +50,10 @@ func _ready() -> void:
 	hud = FlightHud.new()
 	hud.sector = self
 	layer.add_child(hud)
+	session = FlightSession.new()
+	session.name = "FlightSession"
+	session.sector = self
+	add_child(session)
 
 
 func configure_input() -> void:
@@ -59,6 +64,7 @@ func configure_input() -> void:
 		"repair": KEY_R, "pause_game": KEY_ESCAPE, "fullscreen": KEY_F11,
 		"performance": KEY_F3, "quality": KEY_F4, "quit_game": KEY_F10,
 		"resolution_down": KEY_F5, "resolution_up": KEY_F6,
+		"multiplayer_menu": KEY_F7,
 	}
 	for action: String in bindings:
 		if InputMap.has_action(action):
@@ -79,7 +85,11 @@ func _notification(what: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("multiplayer_menu"):
+		session.open_menu()
+		return
 	if event.is_action_pressed("pause_game"):
+		session.menu.hide()
 		set_paused(not paused)
 	if event.is_action_pressed("quit_game") and paused:
 		get_tree().quit()
@@ -99,6 +109,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if paused or not player.alive:
 		return
 	player.handle_mouse(event)
+	if session.active:
+		return
 	if event.is_action_pressed("cycle_target"):
 		select_target(alien if alien.alive else null)
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -133,6 +145,9 @@ func cycle_resolution(direction: int) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if is_instance_valid(session) and (session.active or session.connecting):
+		session.tick(delta)
+		return
 	if paused:
 		return
 	toast_time = maxf(0.0, toast_time - delta)
