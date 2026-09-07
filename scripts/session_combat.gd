@@ -24,7 +24,8 @@ func begin() -> void:
 	sector.objective_stage = 0
 	sector.player_respawn = 0.0
 	sector.alien_respawn = 0.0
-	sector.player.simulation_authority = multiplayer.is_server()
+	if not sector.dedicated_server:
+		sector.player.simulation_authority = multiplayer.is_server()
 	sector.alien.simulation_authority = multiplayer.is_server()
 	sector.alien.position = sector.alien.home_position
 	sector.alien.patrol_time = 0.0
@@ -87,7 +88,8 @@ func tick(delta: float) -> void:
 			contributors.clear()
 			sector.alien.position = sector.alien.home_position
 			sector.alien.reset_health()
-	update_local(records[1])
+	if records.has(1):
+		update_local(records[1])
 	sector.alien_respawn = alien_respawn
 
 
@@ -141,6 +143,8 @@ func destroyed(ship: SpaceShip) -> void:
 
 
 func request_repair() -> bool:
+	if session.sector.dedicated_server:
+		return false
 	session.sector.auto_fire = false
 	if multiplayer.is_server():
 		return repair(1, records[1]["life"])
@@ -260,13 +264,13 @@ func receive_message(text: String) -> void:
 
 @rpc("authority", "call_local", "unreliable", 3)
 func show_laser(start: Vector3, finish: Vector3, hostile: bool) -> void:
-	if session.active:
+	if session.active and not session.sector.dedicated_server:
 		SectorVisuals.laser(session.sector, start, finish, hostile)
 
 
 @rpc("authority", "call_local", "reliable")
 func show_explosion(location: Vector3) -> void:
-	if session.active:
+	if session.active and not session.sector.dedicated_server:
 		SectorVisuals.explosion(session.sector, location)
 
 
@@ -279,5 +283,6 @@ func finish() -> void:
 	records.clear()
 	contributors.clear()
 	alien_goal.clear()
-	session.sector.player.simulation_authority = true
+	if not session.sector.dedicated_server:
+		session.sector.player.simulation_authority = true
 	session.sector.alien.simulation_authority = true

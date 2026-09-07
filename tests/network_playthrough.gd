@@ -12,6 +12,7 @@ func _initialize() -> void:
 func run() -> void:
 	var is_host := "host" in OS.get_cmdline_user_args()
 	sector = preload("res://scenes/sector.tscn").instantiate()
+	sector.client_only = false
 	root.add_child(sector)
 	await process_frame
 	if is_host:

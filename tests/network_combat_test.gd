@@ -8,12 +8,10 @@ func send_fire(client: Sector, fire: bool = true, life: int = 0, encounter_id: i
 
 
 func replicate(host: Sector) -> void:
-	var state: Dictionary = {}
-	for id: int in host.session.ships:
-		var ship := host.session.ships[id]
-		state[id] = {"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}
-		state[id].merge(host.session.combat.pack_player(id))
-	host.session.snapshot.rpc(state, host.session.combat.pack_alien())
+	# Unreliable snapshots converge over successive ticks; an individual packet may be dropped.
+	for frame in range(3):
+		host.session.send_snapshot()
+		await settle(0.05)
 	await settle(0.08)
 
 
