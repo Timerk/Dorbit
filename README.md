@@ -34,6 +34,8 @@ Use **Tab or left click** to select the shared Sentinel and **Space** to toggle 
 
 The alien's **75 credits** are split equally among connected players who damaged it during its current life. Each contributor also receives one kill. Integer shares differ by at most one credit, with the remainder assigned in peer-ID order. Dead contributors still receive their share if connected; disconnected players do not.
 
+Other living pilots' markers show **shield and hull bars with current / maximum values**, including on directional markers when a pilot is outside your view. These display the host's replicated health, so you can watch another pilot take damage, regenerate shields, and repair. Hull bars turn red at 35 hull or below. Markers disappear on destruction and return on respawn.
+
 Return to the station and press **R** to request repairs from the host. Each player's credits, damage, repair charge, and rescue fee are tracked independently. A destroyed player respawns after three seconds without resetting anyone else's fight; the shared alien returns after 12 seconds.
 
 Shared credits start at zero and last until you leave the session. Rejoining starts a new balance. Your solo credits remain separate and are restored when leaving shared play. Entering or leaving resets your ship at the station. There is no saved progression yet.
