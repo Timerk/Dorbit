@@ -55,6 +55,7 @@ switch ($Task) {
     'check' {
         Invoke-Godot @('--headless', '--path', $projectRoot, '--editor', '--import')
         Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/encounter_test.gd')
+        Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/network_test.gd')
         Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/flight_playthrough.gd')
     }
     'build' {

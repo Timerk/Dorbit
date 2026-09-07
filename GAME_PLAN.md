@@ -1,6 +1,6 @@
 # Dorbit game requirements and development plan
 
-Status: Milestone 1 implemented as a solo Windows prototype. Controls and balance need player feedback. Multiplayer starts in Milestone 2.
+Status: Milestone 1 accepted after successful user playtesting. Milestone 2 is in progress, starting with shared flight. Combat balance remains provisional.
 
 This document records the planning discussion. Proposed values and open questions are marked separately so they can be adjusted through playtesting.
 
@@ -165,6 +165,14 @@ Use simple art and temporary balancing values. Save persistence is not required 
 
 Connect two Windows computers over the internet and run the encounter in a shared sector. Establish server-controlled combat and rewards, then test with the full friend group.
 
+Implementation steps:
+
+1. Shared flight: host/join by address using ENet over UDP port 24567, up to 10 players, host-simulated movement and boost, replicated ships, and recoverable joins/disconnects. This first slice uses a combat-free training sector while the solo encounter remains available.
+2. Move alien simulation, damage, destruction, repairs, and rewards under host authority and replicate the shared encounter.
+3. Test two Windows PCs over the internet, tune prediction/interpolation under latency, and measure a representative friend-group encounter.
+
+The initial transport works with LAN or VPN addresses, or a publicly reachable host with UDP port forwarding. It does not provide automatic NAT traversal, matchmaking, or host migration. The preferred internet setup still needs a two-PC trial. Opening a menu in shared flight stops that player's commands but leaves the world running.
+
 Completion criteria:
 
 - Players see each other and interact with the same aliens.
@@ -202,4 +210,4 @@ The following do not prevent beginning the first prototype:
 
 Before the relevant later milestones, choose the internet connection approach, player identity and save ownership rules, and independent hosting setup.
 
-The next implementation step is Milestone 2 after feedback on the first encounter. Further content and balancing decisions should be informed by the playable prototype.
+The next step after shared flight is the host-controlled shared combat encounter. Milestone 2 is not complete until internet connectivity, shared combat consistency, latency behavior, and group performance have been tested.
