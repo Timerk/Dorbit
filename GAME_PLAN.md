@@ -1,6 +1,6 @@
 # Dorbit game requirements and development plan
 
-Status: Milestone 1 accepted after successful user playtesting. Milestone 2 is in progress, starting with shared flight. Combat balance remains provisional.
+Status: Milestone 1 accepted after successful user playtesting. Milestone 2 now includes the host-controlled shared combat encounter. Internet latency and full-group performance testing remain outstanding. Combat balance remains provisional.
 
 This document records the planning discussion. Proposed values and open questions are marked separately so they can be adjusted through playtesting.
 
@@ -167,11 +167,20 @@ Connect two Windows computers over the internet and run the encounter in a share
 
 Implementation steps:
 
-1. Shared flight: host/join by address using ENet over UDP port 24567, up to 10 players, host-simulated movement and boost, replicated ships, and recoverable joins/disconnects. This first slice uses a combat-free training sector while the solo encounter remains available.
-2. Move alien simulation, damage, destruction, repairs, and rewards under host authority and replicate the shared encounter.
+1. Shared flight: host/join by address using ENet over UDP port 24567, up to 10 players, host-simulated movement and boost, replicated ships, and recoverable joins/disconnects. Accepted after the user verified multiple local instances and two physical PCs on the same network.
+2. Shared combat: the host simulates one alien and validates damage, destruction, repairs, and rewards. Health and encounter state replicate to clients, while visual effects remain separate. The original solo encounter remains available.
 3. Test two Windows PCs over the internet, tune prediction/interpolation under latency, and measure a representative friend-group encounter.
 
-The initial transport works with LAN or VPN addresses, or a publicly reachable host with UDP port forwarding. It does not provide automatic NAT traversal, matchmaking, or host migration. The preferred internet setup still needs a two-PC trial. Opening a menu in shared flight stops that player's commands but leaves the world running.
+The initial transport works with LAN or VPN addresses, or a publicly reachable host with UDP port forwarding. It does not provide automatic NAT traversal, matchmaking, or host migration. The preferred internet setup still needs a two-PC trial. Opening a menu stops that player's movement and fire commands but leaves the shared world, including incoming damage, running.
+
+Initial cooperative rules for playtesting:
+
+- The alien attacks the nearest living player outside the station's protected 75 m radius, within its existing detection and leash ranges.
+- A kill splits the 75-credit pool equally among currently connected players who damaged that alien during its current life, including contributors awaiting rescue. Integer remainders are distributed in ascending peer-ID order; shares differ by at most one credit. Disconnected players lose eligibility. Each eligible player receives one kill toward the encounter objective.
+- Each player has a host-owned session wallet starting at zero. Shared credits are separate from solo credits and reset when that player leaves/rejoins. No persistent identities or saves are introduced here.
+- The host validates repairs against that player's position, speed, time since damage, hull, and balance. Existing repair prices and the up-to-10-credit rescue fee remain provisional.
+- Players respawn individually after three seconds at the station without resetting the alien for other players. The alien respawns once after 12 seconds. Old fire commands cannot carry into a new player or alien life.
+- No PvP damage is enabled. Ships can block weapon line of sight but cannot push each other.
 
 Completion criteria:
 
@@ -210,4 +219,4 @@ The following do not prevent beginning the first prototype:
 
 Before the relevant later milestones, choose the internet connection approach, player identity and save ownership rules, and independent hosting setup.
 
-The next step after shared flight is the host-controlled shared combat encounter. Milestone 2 is not complete until internet connectivity, shared combat consistency, latency behavior, and group performance have been tested.
+The next step is user playtesting of the shared hunt-and-repair loop on two PCs, followed by internet latency and group performance testing. Milestone 2 is not complete until those checks pass.
