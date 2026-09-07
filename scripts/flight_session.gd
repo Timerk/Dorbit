@@ -1,6 +1,6 @@
 class_name FlightSession
 extends Node
-## First multiplayer slice: host-simulated flight in a combat-free training sector.
+## Session transport and host-simulated movement for the shared encounter.
 
 const PORT: int = 24567
 const MAX_PLAYERS: int = 10
@@ -24,9 +24,14 @@ var status_label: Label
 var host_button: Button
 var join_button: Button
 var leave_button: Button
+var combat: SessionCombat
 
 
 func _ready() -> void:
+	combat = SessionCombat.new()
+	combat.name = "Combat"
+	combat.session = self
+	add_child(combat)
 	multiplayer.peer_disconnected.connect(peer_left)
 	multiplayer.connected_to_server.connect(connected)
 	multiplayer.connection_failed.connect(func(): disconnect_session("Connection failed. Check the address and UDP port 24567."))
@@ -56,17 +61,17 @@ func build_menu() -> void:
 	rows.add_theme_constant_override("separation", 12)
 	margin.add_child(rows)
 	var title := Label.new()
-	title.text = "SHARED FLIGHT"
+	title.text = "SHARED ENCOUNTER"
 	title.add_theme_font_size_override("font_size", 26)
 	rows.add_child(title)
 	var help := Label.new()
-	help.text = "Fly together with up to 10 players. Combat comes next.\nUse a LAN / VPN host address, or forward UDP port 24567."
+	help.text = "Hunt together with up to 10 players. Progress is session-only.\nUse a LAN / VPN host address, or forward UDP port 24567."
 	rows.add_child(help)
 	address = LineEdit.new()
 	address.placeholder_text = "Host address"
 	address.text = "127.0.0.1"
 	rows.add_child(address)
-	host_button = add_button(rows, "Host flight session", func(): host())
+	host_button = add_button(rows, "Host encounter", func(): host())
 	join_button = add_button(rows, "Join host", func(): join(address.text.strip_edges()))
 	leave_button = add_button(rows, "Leave session / return to solo", func(): disconnect_session("Returned to solo mode."))
 	status_label = Label.new()
@@ -138,14 +143,12 @@ func start_flight() -> void:
 	active = true
 	connecting = false
 	sector.select_target(null)
-	sector.alien.alive = false
-	sector.alien.hide()
-	sector.alien.collision_layer = 0
+	combat.begin()
 	sector.player.reset_health()
 	sector.player.energy = 100.0
 	sector.player.position = Sector.SPAWN_POSITION
 	sector.player.rotation = Vector3.ZERO
-	# Players cannot push each other in this cooperative flight test.
+	# Players cannot push each other, but can block weapon line of sight.
 	sector.player.collision_mask = 1
 	sector.set_paused(false)
 	menu.hide()
@@ -172,7 +175,7 @@ func ready_for_flight() -> void:
 	var slot := 1
 	while slot in occupied:
 		slot += 1
-	var location := Sector.SPAWN_POSITION + Vector3(slot * 9, 0, 0)
+	var location := Vector3(-24 + (slot % 5) * 6, int(slot / 5) * 6, 33)
 	spawn.rpc(id, location)
 	ships[id].set_meta("spawn_slot", slot)
 	status = "Hosting on UDP %d. Players: %d/%d" % [host_port, ships.size(), MAX_PLAYERS]
@@ -190,6 +193,8 @@ func spawn(id: int, location: Vector3) -> void:
 		sector.add_child(ship)
 		ship.camera.current = false
 		ship.collision_mask = 1
+		ship.destroyed.connect(sector.on_destroyed)
+		ship.fired.connect(sector.on_laser)
 		var label := Label3D.new()
 		label.text = "HOST" if id == 1 else "PILOT %d" % id
 		label.position.y = 4.0
@@ -198,6 +203,7 @@ func spawn(id: int, location: Vector3) -> void:
 		ship.add_child(label)
 	ship.position = location
 	ships[id] = ship
+	combat.add_player(id, location)
 	sector.player.camera.make_current()
 
 
@@ -214,6 +220,7 @@ func despawn(id: int) -> void:
 	ships.erase(id)
 	commands.erase(id)
 	goals.erase(id)
+	combat.remove_player(id)
 
 
 func tick(delta: float) -> void:
@@ -224,13 +231,18 @@ func tick(delta: float) -> void:
 		return
 	if not active:
 		return
+	sector.toast_time = maxf(0.0, sector.toast_time - delta)
+	sector.weapon_status = sector.player.firing_blocker(sector.target)
 	var movement := Vector3.ZERO if sector.paused else sector.player.read_movement()
 	var boost := not sector.paused and Input.is_action_pressed("boost")
 	send_clock += delta
 	if multiplayer.is_server():
-		sector.player.fly_command(delta, movement, boost)
+		if sector.player.alive:
+			sector.player.fly_command(delta, movement, boost)
 		for id: int in ships:
 			var ship := ships[id]
+			if not ship.alive:
+				continue
 			if id != 1:
 				var command: Dictionary = commands.get(id, {})
 				var fresh: bool = not command.is_empty() and Time.get_ticks_msec() - command["time"] < COMMAND_TIMEOUT * 1000
@@ -238,25 +250,29 @@ func tick(delta: float) -> void:
 					ship.rotation = command["rotation"]
 				ship.fly_command(delta, command["movement"] if fresh else Vector3.ZERO, command["boost"] if fresh else false)
 			bound_ship(ship)
+		combat.tick(delta)
 		if send_clock >= 0.05:
 			send_clock = 0.0
 			var state: Dictionary = {}
 			for id: int in ships:
 				var ship := ships[id]
 				state[id] = {"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}
+				state[id].merge(combat.pack_player(id))
 			if not multiplayer.get_peers().is_empty():
-				snapshot.rpc(state)
+				snapshot.rpc(state, combat.pack_alien())
 	else:
 		if not received_snapshot:
 			connect_clock += delta
 			if connect_clock >= CONNECT_TIMEOUT:
 				disconnect_session("The host did not send a sector. Use the same game version on both PCs.")
 			return
-		sector.player.fly_command(delta, movement, boost)
+		if sector.player.alive:
+			sector.player.fly_command(delta, movement, boost)
 		bound_ship(sector.player)
 		if send_clock >= 0.05:
 			send_clock = 0.0
-			command_flight.rpc_id(1, movement, sector.player.rotation, boost)
+			command_flight.rpc_id(1, movement, sector.player.rotation, boost, sector.auto_fire and sector.target == sector.alien and not sector.paused, int(sector.player.get_meta("life", 0)), combat.encounter)
+		combat.interpolate(delta)
 		for id: int in goals:
 			if not ships.has(id):
 				continue
@@ -277,23 +293,27 @@ func bound_ship(ship: Pilot) -> void:
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered", 1)
-func command_flight(movement: Vector3, angles: Vector3, boost: bool) -> void:
+func command_flight(movement: Vector3, angles: Vector3, boost: bool, fire: bool = false, life: int = 0, encounter: int = 0) -> void:
 	if not active or not multiplayer.is_server():
 		return
 	var id := multiplayer.get_remote_sender_id()
 	if not ships.has(id) or not movement.is_finite() or not angles.is_finite():
 		return
+	if not ships[id].alive or combat.records[id]["life"] != life:
+		return
 	commands[id] = {
 		"movement": movement.limit_length(),
 		"rotation": Vector3(clampf(angles.x, -1.48, 1.48), wrapf(angles.y, -PI, PI), 0),
 		"boost": boost, "time": Time.get_ticks_msec(),
+		"fire": fire, "encounter": encounter,
 	}
 
 
 @rpc("authority", "call_remote", "unreliable_ordered", 2)
-func snapshot(state: Dictionary) -> void:
+func snapshot(state: Dictionary, alien_state: Dictionary) -> void:
 	if not active:
 		return
+	combat.apply_alien(alien_state)
 	goals.clear()
 	for id: int in state:
 		if not ships.has(id):
@@ -301,6 +321,10 @@ func snapshot(state: Dictionary) -> void:
 		var data: Dictionary = state[id]
 		goals[id] = data
 		var ship := ships[id]
+		var reset := combat.apply_player(id, data)
+		if reset:
+			ship.position = data["position"]
+			ship.rotation = data["rotation"]
 		ship.energy = data["energy"]
 		if ship == sector.player:
 			# Predict locally for immediate controls; reconcile against host position.
@@ -309,7 +333,7 @@ func snapshot(state: Dictionary) -> void:
 				ship.position = location
 			else:
 				ship.position = ship.position.lerp(location, 0.2)
-			ship.velocity = data["velocity"]
+			ship.velocity = data["velocity"] if ship.alive else Vector3.ZERO
 			received_snapshot = true
 	status = "Connected. Players: %d/%d" % [ships.size(), MAX_PLAYERS]
 
@@ -317,6 +341,7 @@ func snapshot(state: Dictionary) -> void:
 func disconnect_session(message: String) -> void:
 	active = false
 	connecting = false
+	combat.finish()
 	multiplayer.multiplayer_peer.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	for ship: Pilot in ships.values():

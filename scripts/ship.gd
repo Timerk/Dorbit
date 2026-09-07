@@ -4,6 +4,7 @@ extends CharacterBody3D
 
 signal destroyed(ship: SpaceShip, attacker: SpaceShip)
 signal fired(origin: Vector3, destination: Vector3, hostile: bool)
+signal damaged(ship: SpaceShip, attacker: SpaceShip)
 
 @export var max_hull: float = 120.0
 @export var max_shield: float = 70.0
@@ -19,6 +20,7 @@ var hostile: bool = false
 var shot_cooldown: float = 0.0
 var time_since_hit: float = 100.0
 var model: Node3D
+var simulation_authority: bool = true
 
 
 func _ready() -> void:
@@ -36,6 +38,8 @@ func _ready() -> void:
 
 
 func tick_combat(delta: float) -> void:
+	if not simulation_authority:
+		return
 	shot_cooldown = maxf(0.0, shot_cooldown - delta)
 	time_since_hit += delta
 	if alive and time_since_hit >= 6.0:
@@ -54,12 +58,13 @@ func reset_health() -> void:
 
 
 func take_damage(amount: float, attacker: SpaceShip) -> void:
-	if not alive or amount <= 0.0:
+	if not simulation_authority or not alive or amount <= 0.0:
 		return
 	time_since_hit = 0.0
 	var absorbed := minf(shield, amount)
 	shield -= absorbed
 	hull = maxf(0.0, hull - (amount - absorbed))
+	damaged.emit(self, attacker)
 	if hull <= 0.0:
 		alive = false
 		velocity = Vector3.ZERO
@@ -87,7 +92,7 @@ func firing_blocker(target: SpaceShip) -> String:
 
 
 func try_fire(target: SpaceShip) -> bool:
-	if shot_cooldown > 0.0 or not firing_blocker(target).is_empty():
+	if not simulation_authority or shot_cooldown > 0.0 or not firing_blocker(target).is_empty():
 		return false
 	shot_cooldown = laser_interval
 	var endpoint := target.global_position

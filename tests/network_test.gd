@@ -49,7 +49,7 @@ func run() -> void:
 		return
 	var id := client.multiplayer.get_unique_id()
 	check(host.session.ships[id].position != host.player.position, "Players spawn in separate positions")
-	check(not host.alien.alive and not client.alien.alive, "Shared flight disables solo combat")
+	check(host.alien.alive and client.alien.alive and not client.alien.simulation_authority, "Shared alien is simulated only by the host")
 	check(client.player.camera.current, "The local camera stays active after remote ships spawn")
 	var start := host.session.ships[id].position
 	client.session.command_flight.rpc_id(1, Vector3(0, 0, -99), Vector3.ZERO, true)
