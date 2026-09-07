@@ -109,8 +109,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	if paused or not player.alive:
 		return
 	player.handle_mouse(event)
-	if session.active:
-		return
 	if event.is_action_pressed("cycle_target"):
 		select_target(alien if alien.alive else null)
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -210,10 +208,17 @@ func select_target(ship: SpaceShip) -> void:
 
 
 func on_laser(start: Vector3, finish: Vector3, hostile: bool) -> void:
+	if session.active:
+		if multiplayer.is_server():
+			session.combat.show_laser.rpc(start, finish, hostile)
+		return
 	SectorVisuals.laser(self, start, finish, hostile)
 
 
 func on_destroyed(ship: SpaceShip, attacker: SpaceShip) -> void:
+	if session.active:
+		session.combat.destroyed(ship)
+		return
 	SectorVisuals.explosion(self, ship.global_position)
 	if ship == alien:
 		if attacker == player:
@@ -245,23 +250,29 @@ func respawn_player() -> void:
 	alien_respawn = 0.0
 
 
-func repair_blocker() -> String:
-	if not player.alive:
+func repair_blocker(ship: Pilot = null) -> String:
+	if ship == null:
+		ship = player
+	if not ship.alive:
 		return "Wait for rescue."
-	if player.position.distance_to(STATION_POSITION) > REPAIR_RADIUS:
+	if ship.position.distance_to(STATION_POSITION) > REPAIR_RADIUS:
 		return "Move within 60 m of Outpost 01 to repair."
-	if player.velocity.length() > 8.0:
+	if ship.velocity.length() > 8.0:
 		return "Release movement controls and slow down to repair."
-	if player.time_since_hit < 5.0:
+	if ship.time_since_hit < 5.0:
 		return "Repairs available five seconds after the last hit."
 	return ""
 
 
-func repair_cost() -> int:
-	return mini(credits, ceili((player.max_hull - player.hull) * 0.12))
+func repair_cost(ship: Pilot = null, balance: int = -1) -> int:
+	if ship == null:
+		ship = player
+	return mini(credits if balance < 0 else balance, ceili((ship.max_hull - ship.hull) * 0.12))
 
 
 func request_repair() -> bool:
+	if session.active:
+		return session.combat.request_repair()
 	var blocker := repair_blocker()
 	if not blocker.is_empty():
 		notify(blocker)
