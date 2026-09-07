@@ -58,7 +58,7 @@ func _draw() -> void:
 	text_at(Vector2(32, 42), "D O R B I T", 26)
 	text_at(Vector2(33, 65), "OUTPOST 01  /  FIRST CONTACT", 11, CYAN)
 	text_at(Vector2(width - 200, 36), "%05d  CR" % sector.credits, 22, GREEN)
-	text_at(Vector2(width - 200, 60), "SHARED FLIGHT  /  %d PILOTS" % sector.session.ships.size() if shared else "LOCAL SECTOR  /  SOLO", 11, MUTED)
+	text_at(Vector2(width - 200, 60), "CO-OP  /  %d PILOTS" % sector.session.ships.size() if shared else "LOCAL SECTOR  /  SOLO", 11, MUTED)
 	draw_line(Vector2(32, 82), Vector2(width - 32, 82), Color(0.3, 0.5, 0.65, 0.25), 1.0)
 	var objective: String = [
 		"Leave the outpost. W to fly forward.",
@@ -67,18 +67,16 @@ func _draw() -> void:
 		"Return to Outpost 01. Slow down and press R to repair.",
 		"Encounter complete. Keep exploring or hunt another alien.",
 	][sector.objective_stage]
-	if shared:
-		objective = "Fly together around the outpost. F7 opens the session menu."
 	text_at(Vector2(33, 113), "OBJECTIVE", 11, GREEN)
 	text_at(Vector2(33, 137), objective, 14 if compact else 17)
-	if sector.toast_time > 0.0 and not shared:
+	if sector.toast_time > 0.0:
 		text_at(Vector2(33, 169), sector.toast, 12 if compact else 14, CYAN)
 	if sector.alien.alive:
 		marker(sector.alien.global_position, "SENTINEL", RED, sector.target == sector.alien)
 	marker(Sector.STATION_POSITION, "OUTPOST 01", GREEN, false)
 	if shared:
 		for ship: Pilot in sector.session.ships.values():
-			if ship != player:
+			if ship != player and ship.alive:
 				marker(ship.global_position, "PILOT", CYAN, false)
 	var center := size * 0.5
 	draw_line(center - Vector2(8, 0), center - Vector2(3, 0), Color(0.7, 0.85, 0.95, 0.5), 1.0)
@@ -91,15 +89,9 @@ func _draw() -> void:
 	meter(Vector2(50, height - 100), "BOOST", player.energy, 100.0, Color("e3b777"))
 	text_at(Vector2(343, height - 100), "%03d" % roundi(player.velocity.length()), 32)
 	text_at(Vector2(343, height - 79), "m/s  /  " + ("BOOST" if player.boosting else "FLIGHT ASSIST"), 10, MUTED)
-	if shared:
-		panel(Rect2(width - 322, height - 245, 290, 174))
-		text_at(Vector2(width - 304, height - 218), "SHARED FLIGHT TEST", 13, CYAN)
-		text_at(Vector2(width - 304, height - 180), "Combat comes in the next step.", 14)
-		text_at(Vector2(width - 304, height - 140), "F7  Session / leave", 14)
-	else:
-		draw_target_panel(width, height)
+	draw_target_panel(width, height)
 	var distance := player.global_position.distance_to(Sector.STATION_POSITION)
-	if distance <= Sector.REPAIR_RADIUS and player.alive and not shared:
+	if distance <= Sector.REPAIR_RADIUS and player.alive:
 		var label := "R  REPAIR / %d CR" % sector.repair_cost()
 		if player.velocity.length() > 8.0:
 			label = "SLOW DOWN TO REPAIR"
@@ -108,7 +100,7 @@ func _draw() -> void:
 		text_at(Vector2(width - 310, height - 256), label, 14, GREEN)
 	var controls := "WASD  Move    Q/E  Rise / descend    RMB  Steer    Tab  Target    Space  Fire    Shift  Boost    R  Repair    Esc  Pause"
 	if shared:
-		controls = "WASD  Move    Q/E  Rise / descend    RMB  Steer    Shift  Boost    Esc  Menu (world stays live)    F7  Session"
+		controls = "WASD  Move    Q/E  Rise / descend    RMB  Steer    Tab  Target    Space  Fire    Shift  Boost    R  Repair    F7  Session"
 	text_at(Vector2(33, height - 28), controls, 11 if compact else 13, MUTED)
 	if sector.show_performance:
 		var fps := Engine.get_frames_per_second()
