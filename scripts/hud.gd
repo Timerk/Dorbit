@@ -77,7 +77,7 @@ func _draw() -> void:
 	if shared:
 		for ship: Pilot in sector.session.ships.values():
 			if ship != player and ship.alive:
-				marker(ship.global_position, "PILOT", CYAN, false)
+				marker(ship.global_position, "PILOT", CYAN, false, ship)
 	var center := size * 0.5
 	draw_line(center - Vector2(8, 0), center - Vector2(3, 0), Color(0.7, 0.85, 0.95, 0.5), 1.0)
 	draw_line(center + Vector2(3, 0), center + Vector2(8, 0), Color(0.7, 0.85, 0.95, 0.5), 1.0)
@@ -148,7 +148,7 @@ func draw_target_panel(width: float, height: float) -> void:
 	text_at(origin + Vector2(0, 128), status, 12, RED if not blocker.is_empty() else GREEN)
 
 
-func marker(location: Vector3, label: String, color: Color, selected: bool) -> void:
+func marker(location: Vector3, label: String, color: Color, selected: bool, teammate: Pilot = null) -> void:
 	var camera := sector.player.camera
 	var point := camera.unproject_position(location)
 	var behind := camera.is_position_behind(location)
@@ -165,6 +165,8 @@ func marker(location: Vector3, label: String, color: Color, selected: bool) -> v
 		draw_circle(point, 4.0, color)
 		draw_line(point, point - direction * 15.0, color, 2.0)
 		text_at(point + Vector2(-42, 25), "%s / %d m" % [label, distance], 11, color)
+		if teammate != null:
+			teammate_health(point + Vector2(0, 36), teammate)
 		return
 	var radius := 25.0 if selected else 12.0
 	for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
@@ -172,3 +174,22 @@ func marker(location: Vector3, label: String, color: Color, selected: bool) -> v
 		draw_line(start, start - Vector2(corner.x * 8, 0), color, 2.0)
 		draw_line(start, start - Vector2(0, corner.y * 8), color, 2.0)
 	text_at(point + Vector2(-35, radius + 20), "%s / %d m" % [label, distance], 12, color)
+	if teammate != null:
+		teammate_health(point + Vector2(0, radius + 30), teammate)
+
+
+func teammate_health(point: Vector2, ship: Pilot) -> void:
+	# Keep the readout within the flight area, including directional markers at the edges.
+	var origin := Vector2(clampf(point.x - 80, 12, size.x - 172), clampf(point.y, 205, size.y - 305))
+	draw_style_box(background, Rect2(origin, Vector2(160, 54)))
+	for row in range(2):
+		var value := ship.shield if row == 0 else ship.hull
+		var maximum := ship.max_shield if row == 0 else ship.max_hull
+		var color := CYAN if row == 0 else (RED if ship.hull <= 35.0 else GREEN)
+		var offset := origin + Vector2(8, 13 + row * 25)
+		text_at(offset, "SHIELD" if row == 0 else "HULL", 11, color)
+		text_at(offset + Vector2(75, 0), "%d / %d" % [ceili(value), ceili(maximum)], 11, INK)
+		var bar := Rect2(offset + Vector2(0, 4), Vector2(144, 4))
+		draw_rect(bar, Color(0.18, 0.26, 0.34, 0.9))
+		bar.size.x *= clampf(value / maxf(maximum, 1.0), 0.0, 1.0)
+		draw_rect(bar, color)

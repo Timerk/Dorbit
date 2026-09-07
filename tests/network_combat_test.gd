@@ -130,6 +130,7 @@ func run() -> void:
 	await settle()
 	await replicate(host)
 	check(remote.hull == remote.max_hull and client.player.hull == remote.max_hull, "Accepted remote repair restores and replicates health")
+	check(late.session.ships[id].hull == remote.max_hull and late.session.ships[id].shield == remote.max_shield, "A teammate observer receives the repaired hull and shields")
 	check(client.credits == wallet - 2 and client.objective_stage == 4, "Host deducts the repair price and confirms encounter completion")
 	client.session.combat.repair_request.rpc_id(1, 0)
 	await settle()
