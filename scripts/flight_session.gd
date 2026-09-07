@@ -10,13 +10,16 @@ const CONNECT_TIMEOUT: float = 10.0
 var sector: Sector
 var active: bool = false
 var connecting: bool = false
-var status: String = "Choose Host or enter the host address."
+var status: String = "Enter the server address to connect."
 var ships: Dictionary[int, Pilot] = {}
 var commands: Dictionary[int, Dictionary] = {}
 var goals: Dictionary[int, Dictionary] = {}
 var send_clock: float = 0.0
 var connect_clock: float = 0.0
 var received_snapshot: bool = false
+var snapshot_sequence: int = 0
+var player_sequences: Dictionary[int, int] = {}
+var alien_sequence: int = -1
 var host_port: int = PORT
 var menu: PanelContainer
 var address: LineEdit
@@ -24,6 +27,8 @@ var status_label: Label
 var host_button: Button
 var join_button: Button
 var leave_button: Button
+var back_button: Button
+var port_field: SpinBox
 var combat: SessionCombat
 
 
@@ -34,9 +39,10 @@ func _ready() -> void:
 	add_child(combat)
 	multiplayer.peer_disconnected.connect(peer_left)
 	multiplayer.connected_to_server.connect(connected)
-	multiplayer.connection_failed.connect(func(): disconnect_session("Connection failed. Check the address and UDP port 24567."))
-	multiplayer.server_disconnected.connect(func(): disconnect_session("The host disconnected. You are back in solo mode."))
-	build_menu()
+	multiplayer.connection_failed.connect(func(): disconnect_session("Connection failed. Check the server address and UDP port."))
+	multiplayer.server_disconnected.connect(func(): disconnect_session("The server disconnected. Connect again when it is available."))
+	if not sector.dedicated_server:
+		build_menu()
 
 
 func build_menu() -> void:
@@ -51,8 +57,8 @@ func build_menu() -> void:
 	menu.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	menu.offset_left = -310
 	menu.offset_right = 310
-	menu.offset_top = -210
-	menu.offset_bottom = 210
+	menu.offset_top = -270
+	menu.offset_bottom = 270
 	var margin := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + side, 24)
@@ -61,24 +67,32 @@ func build_menu() -> void:
 	rows.add_theme_constant_override("separation", 12)
 	margin.add_child(rows)
 	var title := Label.new()
-	title.text = "SHARED ENCOUNTER"
+	title.text = "CONNECT TO DORBIT"
 	title.add_theme_font_size_override("font_size", 26)
 	rows.add_child(title)
 	var help := Label.new()
-	help.text = "Hunt together with up to 10 players. Progress is session-only.\nUse a LAN / VPN host address, or forward UDP port 24567."
+	help.text = "Join the same sector, alone or with friends.\nProgress is session-only in this server test build."
 	rows.add_child(help)
 	address = LineEdit.new()
-	address.placeholder_text = "Host address"
+	address.placeholder_text = "Server address"
 	address.text = "127.0.0.1"
 	rows.add_child(address)
-	host_button = add_button(rows, "Host encounter", func(): host())
-	join_button = add_button(rows, "Join host", func(): join(address.text.strip_edges()))
-	leave_button = add_button(rows, "Leave session / return to solo", func(): disconnect_session("Returned to solo mode."))
+	port_field = SpinBox.new()
+	port_field.min_value = 1
+	port_field.max_value = 65535
+	port_field.value = PORT
+	port_field.prefix = "UDP port: "
+	rows.add_child(port_field)
+	host_button = add_button(rows, "Host encounter (development)", func(): host())
+	host_button.visible = not sector.client_only
+	join_button = add_button(rows, "Connect", func(): join(address.text.strip_edges(), int(port_field.value)))
+	leave_button = add_button(rows, "Disconnect", func(): disconnect_session("Disconnected. Choose a server to play."))
 	status_label = Label.new()
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	status_label.custom_minimum_size.x = 540
 	rows.add_child(status_label)
-	add_button(rows, "Back to flight", func(): menu.hide(); sector.set_paused(false))
+	back_button = add_button(rows, "Back to flight", func(): menu.hide(); sector.set_paused(false))
+	add_button(rows, "Quit to desktop", func(): get_tree().quit())
 	menu.hide()
 
 
@@ -97,26 +111,34 @@ func open_menu() -> void:
 
 
 func _process(_delta: float) -> void:
+	if sector.dedicated_server:
+		return
 	status_label.text = status
 	host_button.disabled = active or connecting
 	join_button.disabled = active or connecting
 	address.editable = not active and not connecting
 	leave_button.disabled = not active and not connecting
+	port_field.editable = not active and not connecting
+	back_button.disabled = sector.client_only and not active
 
 
 func host(port: int = PORT) -> Error:
 	if active or connecting:
 		return ERR_ALREADY_IN_USE
 	var peer := ENetMultiplayerPeer.new()
-	var error := peer.create_server(port, MAX_PLAYERS - 1)
+	var error := peer.create_server(port, MAX_PLAYERS if sector.dedicated_server else MAX_PLAYERS - 1)
 	if error != OK:
 		status = "Cannot host: UDP port %d may already be in use." % port
 		return error
+	multiplayer.server_relay = false
 	multiplayer.multiplayer_peer = peer
 	host_port = port
 	start_flight()
-	spawn(1, Sector.SPAWN_POSITION)
-	status = "Hosting on UDP %d. Players: 1/%d" % [port, MAX_PLAYERS]
+	if not sector.dedicated_server:
+		spawn(1, Sector.SPAWN_POSITION)
+	status = "Server listening on UDP %d. Players: %d/%d" % [port, ships.size(), MAX_PLAYERS]
+	if sector.dedicated_server:
+		print(status)
 	return OK
 
 
@@ -144,6 +166,8 @@ func start_flight() -> void:
 	connecting = false
 	sector.select_target(null)
 	combat.begin()
+	if sector.dedicated_server:
+		return
 	sector.player.reset_health()
 	sector.player.energy = 100.0
 	sector.player.position = Sector.SPAWN_POSITION
@@ -178,7 +202,9 @@ func ready_for_flight() -> void:
 	var location := Vector3(-24 + (slot % 5) * 6, int(slot / 5) * 6, 33)
 	spawn.rpc(id, location)
 	ships[id].set_meta("spawn_slot", slot)
-	status = "Hosting on UDP %d. Players: %d/%d" % [host_port, ships.size(), MAX_PLAYERS]
+	status = "Server on UDP %d. Players: %d/%d" % [host_port, ships.size(), MAX_PLAYERS]
+	if sector.dedicated_server:
+		print(status)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -190,27 +216,44 @@ func spawn(id: int, location: Vector3) -> void:
 		ship = sector.player
 	else:
 		ship = Pilot.new()
+		ship.render_enabled = not sector.dedicated_server
 		sector.add_child(ship)
-		ship.camera.current = false
+		if not sector.dedicated_server:
+			ship.camera.current = false
 		ship.collision_mask = 1
 		ship.destroyed.connect(sector.on_destroyed)
 		ship.fired.connect(sector.on_laser)
-		var label := Label3D.new()
-		label.text = "HOST" if id == 1 else "PILOT %d" % id
-		label.position.y = 4.0
-		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		label.font_size = 32
-		ship.add_child(label)
+		if not sector.dedicated_server:
+			var label := Label3D.new()
+			label.text = "HOST" if id == 1 else "PILOT %d" % id
+			label.position.y = 4.0
+			label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+			label.font_size = 32
+			ship.add_child(label)
 	ship.position = location
 	ships[id] = ship
 	combat.add_player(id, location)
-	sector.player.camera.make_current()
+	if not sector.dedicated_server:
+		sector.player.camera.make_current()
 
 
 func peer_left(id: int) -> void:
 	if active and multiplayer.is_server():
-		despawn.rpc(id)
-		status = "Hosting on UDP %d. Players: %d/%d" % [host_port, ships.size(), MAX_PLAYERS]
+		despawn(id)
+		announce_departure.call_deferred(id)
+		status = "Server on UDP %d. Players: %d/%d" % [host_port, ships.size(), MAX_PLAYERS]
+		if sector.dedicated_server:
+			print(status)
+
+
+func announce_departure(id: int) -> void:
+	# Let ENet finish processing simultaneous disconnects before notifying remaining clients.
+	if not active or not multiplayer.is_server():
+		return
+	for peer_id in multiplayer.get_peers():
+		var peer: ENetPacketPeer = multiplayer.multiplayer_peer.get_peer(peer_id)
+		if peer.get_state() == ENetPacketPeer.STATE_CONNECTED:
+			despawn.rpc_id(peer_id, id)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -220,6 +263,7 @@ func despawn(id: int) -> void:
 	ships.erase(id)
 	commands.erase(id)
 	goals.erase(id)
+	player_sequences.erase(id)
 	combat.remove_player(id)
 
 
@@ -227,17 +271,18 @@ func tick(delta: float) -> void:
 	if connecting:
 		connect_clock += delta
 		if connect_clock >= CONNECT_TIMEOUT:
-			disconnect_session("Connection timed out. Check the host address and UDP port 24567.")
+			disconnect_session("Connection timed out. Check the server address and UDP port.")
 		return
 	if not active:
 		return
 	sector.toast_time = maxf(0.0, sector.toast_time - delta)
-	sector.weapon_status = sector.player.firing_blocker(sector.target)
-	var movement := Vector3.ZERO if sector.paused else sector.player.read_movement()
-	var boost := not sector.paused and Input.is_action_pressed("boost")
+	if not sector.dedicated_server:
+		sector.weapon_status = sector.player.firing_blocker(sector.target)
+	var movement := Vector3.ZERO if sector.dedicated_server or sector.paused else sector.player.read_movement()
+	var boost := not sector.dedicated_server and not sector.paused and Input.is_action_pressed("boost")
 	send_clock += delta
 	if multiplayer.is_server():
-		if sector.player.alive:
+		if not sector.dedicated_server and sector.player.alive:
 			sector.player.fly_command(delta, movement, boost)
 		for id: int in ships:
 			var ship := ships[id]
@@ -253,18 +298,12 @@ func tick(delta: float) -> void:
 		combat.tick(delta)
 		if send_clock >= 0.05:
 			send_clock = 0.0
-			var state: Dictionary = {}
-			for id: int in ships:
-				var ship := ships[id]
-				state[id] = {"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}
-				state[id].merge(combat.pack_player(id))
-			if not multiplayer.get_peers().is_empty():
-				snapshot.rpc(state, combat.pack_alien())
+			send_snapshot()
 	else:
 		if not received_snapshot:
 			connect_clock += delta
 			if connect_clock >= CONNECT_TIMEOUT:
-				disconnect_session("The host did not send a sector. Use the same game version on both PCs.")
+				disconnect_session("The server did not send a sector. Use matching client and server builds.")
 			return
 		if sector.player.alive:
 			sector.player.fly_command(delta, movement, boost)
@@ -284,6 +323,23 @@ func tick(delta: float) -> void:
 			var angles: Vector3 = goal["rotation"]
 			ship.rotation.x = lerp_angle(ship.rotation.x, angles.x, minf(1.0, delta * 15.0))
 			ship.rotation.y = lerp_angle(ship.rotation.y, angles.y, minf(1.0, delta * 15.0))
+
+
+func send_snapshot() -> void:
+	if multiplayer.get_peers().is_empty():
+		return
+	# Keep each datagram below the ENet MTU even at the ten-player limit.
+	var state: Dictionary = {}
+	snapshot_sequence += 1
+	for id: int in ships:
+		var ship := ships[id]
+		state[id] = {"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}
+		state[id].merge(combat.pack_player(id))
+		if state.size() == 2:
+			snapshot.rpc(state, combat.pack_alien(), snapshot_sequence)
+			state = {}
+	if not state.is_empty():
+		snapshot.rpc(state, combat.pack_alien(), snapshot_sequence)
 
 
 func bound_ship(ship: Pilot) -> void:
@@ -309,15 +365,18 @@ func command_flight(movement: Vector3, angles: Vector3, boost: bool, fire: bool 
 	}
 
 
-@rpc("authority", "call_remote", "unreliable_ordered", 2)
-func snapshot(state: Dictionary, alien_state: Dictionary) -> void:
+@rpc("authority", "call_remote", "unreliable", 2)
+func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int) -> void:
 	if not active:
 		return
-	combat.apply_alien(alien_state)
-	goals.clear()
+	# Chunks may arrive out of order. Reject stale state per entity, not per whole packet.
+	if sequence > alien_sequence:
+		combat.apply_alien(alien_state)
+		alien_sequence = sequence
 	for id: int in state:
-		if not ships.has(id):
+		if not ships.has(id) or sequence <= player_sequences.get(id, -1):
 			continue
+		player_sequences[id] = sequence
 		var data: Dictionary = state[id]
 		goals[id] = data
 		var ship := ships[id]
@@ -351,7 +410,13 @@ func disconnect_session(message: String) -> void:
 	commands.clear()
 	goals.clear()
 	received_snapshot = false
+	snapshot_sequence = 0
+	player_sequences.clear()
+	alien_sequence = -1
 	send_clock = 0.0
+	if sector.dedicated_server:
+		status = message
+		return
 	sector.player.collision_mask = 3
 	sector.respawn_player()
 	sector.set_paused(true)

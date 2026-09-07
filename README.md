@@ -1,8 +1,8 @@
 # Dorbit
 
-A space game inspired by DarkOrbit, built for Windows with Godot. The first milestone is a playable solo encounter with full 3D flight, target-lock combat, alien hunting, rewards, and station repairs.
+A space game inspired by DarkOrbit, built with Godot. Windows players connect to a dedicated Linux server to fly, hunt aliens, earn rewards and repair together. Playing alone uses the same server encounter.
 
-Milestone 2 includes a shared encounter for up to 10 players, with host-controlled flight, alien combat, rewards, repairs, and respawning. The complete solo encounter remains available. Progress lasts for the running session only. Ships, scenery, and effects use procedural placeholder art.
+Milestones 1 and 2 have passed user playtesting. Milestone 3 begins with the dedicated server; credits still last only for the current connection. Persistent identities, saves and purchases are next. Ships, scenery and effects use procedural placeholder art.
 
 - [Game requirements and development plan](GAME_PLAN.md)
 - [Development workflow](AGENTS.md)
@@ -11,6 +11,8 @@ Milestone 2 includes a shared encounter for up to 10 players, with host-controll
 
 Launch `build/windows/Dorbit.exe` after building, or download the `Dorbit-Windows` artifact from a successful GitHub Actions run. Extract the artifact before playing and keep the included third-party notices with the executable.
 
+Enter the server address and UDP port in the connection menu, then choose **Connect**. Use matching client and server builds.
+
 1. Hold right mouse and move the mouse to steer. Use W/S for forward/backward movement, A/D to strafe, and Q/E to descend/rise.
 2. Fly forward from the station toward the red Sentinel marker. Tab or left click selects it. Space toggles automatic lasers.
 3. Keep the alien ahead, within 170 m, and clear of obstacles. Shift boosts while energy is available. Releasing movement brakes the ship.
@@ -18,31 +20,49 @@ Launch `build/windows/Dorbit.exe` after building, or download the `Dorbit-Window
 
 Shields regenerate after six seconds without damage. Destruction returns the ship to the station after three seconds and costs up to 10 credits. Hull repairs cost a small amount, capped at the available balance so a player with no credits can recover. The alien returns after 12 seconds.
 
-Esc pauses and releases the mouse. F11 toggles fullscreen, F3 shows performance, and F4 switches antialiasing between high and low. F10 quits from the pause screen. Losing focus pauses the local encounter.
+Esc opens the flight menu and releases the mouse. The server keeps running. F11 toggles fullscreen, F3 shows performance, and F4 switches antialiasing between high and low. F10 quits from the pause screen. Losing focus releases your controls; incoming damage can continue.
 
 While paused, F5/F6 cycle window resolutions from 960 x 600 up to 3840 x 2160, offering only sizes that fit the current screen with room for borders and the taskbar. Selecting a resolution switches to windowed mode; F11 uses the desktop resolution for fullscreen. You can also resize the window manually. The pause menu shows the current pixel dimensions. Display settings are session-only. Mouse steering uses unscaled screen motion so viewport scaling does not change sensitivity.
 
 These values are initial tuning settings, not a finished economy or combat balance.
 
-## Shared encounter (Milestone 2)
+## Dedicated server and connections
 
-Press **F7** to open the session menu. On one computer, choose **Host encounter**. On the other, enter the host's LAN or VPN IP address and choose **Join host**. Use this same build on both PCs; older shared-flight builds are not compatible. For two game instances on one PC, enter `127.0.0.1` in the joining instance.
+The server supports **ten client pilots**, with no host player. It controls movement, boost, the shared Sentinel, damage, repairs, rewards, destruction and respawning. It keeps running when the last player leaves. **F7** opens the connection menu; **Disconnect** returns to that menu. A server shutdown also returns clients to the menu.
 
-The host listens on **UDP port 24567**. If Windows Firewall prompts, allow the game on the network you are using. LAN and VPN connections (for example, Tailscale) need a reachable host address; direct internet connections require UDP port forwarding to the host. There is no automatic NAT traversal or server browser.
+Other living pilots have cyan markers with shield and hull bars and current/maximum values. Hull turns red at 35 or below. Their health reflects server state, including repairs. Markers disappear on destruction and return on respawn.
 
-Use **Tab or left click** to select the shared Sentinel and **Space** to toggle lasers. The host validates range, firing arc, obstacles, cooldowns, and damage. Other pilots have cyan markers. The alien attacks the nearest eligible player outside the station's protected area. Players cannot damage each other, but can block laser line of sight.
+A kill splits the **75-credit pool** among connected contributors; integer shares differ by at most one credit. Dead contributors remain eligible while connected. Spectators receive no reward. Each contributor receives one kill. Repairs and the up-to-10-credit rescue fee are charged to the requesting pilot's server-owned session balance.
 
-The alien's **75 credits** are split equally among connected players who damaged it during its current life. Each contributor also receives one kill. Integer shares differ by at most one credit, with the remainder assigned in peer-ID order. Dead contributors still receive their share if connected; disconnected players do not.
+**Saves and accounts are not implemented yet.** Disconnecting or restarting the server resets progression. This first server build is for private testing; private-group access control follows with persistent identities. The former solo/listen-host modes are only development fixtures, accessible by launching with `--offline` after Godot's `--` separator (or `Dorbit.exe -- --offline`).
 
-Other living pilots' markers show **shield and hull bars with current / maximum values**, including on directional markers when a pilot is outside your view. These display the host's replicated health, so you can watch another pilot take damage, regenerate shields, and repair. Hull bars turn red at 35 hull or below. Markers disappear on destruction and return on respawn.
+### Start a server in Ubuntu / WSL2
 
-Return to the station and press **R** to request repairs from the host. Each player's credits, damage, repair charge, and rescue fee are tracked independently. A destroyed player respawns after three seconds without resetting anyone else's fight; the shared alien returns after 12 seconds.
+Requires Linux x86-64, `bash`, `curl`, `python3` and `sha256sum`. On this Windows checkout, run in PowerShell:
 
-Shared credits start at zero and last until you leave the session. Rejoining starts a new balance. Your solo credits remain separate and are restored when leaving shared play. Entering or leaving resets your ship at the station. There is no saved progression yet.
+```powershell
+wsl -d Ubuntu -- bash /mnt/c/Users/timbe/Desktop/Projekte/Dorbit/tools/server.sh setup
+wsl -d Ubuntu -- bash /mnt/c/Users/timbe/Desktop/Projekte/Dorbit/tools/server.sh run
+```
 
-Esc or F7 releases your controls and stops autofire while the shared world keeps running; you can still take damage. Choose **Leave session / return to solo** to disconnect. If the host leaves, clients return to solo with a status message. Hosting ends when the host closes the game; there is no host migration. Only one host can use a given UDP port on a PC.
+`setup` downloads and verifies the pinned Godot 4.7.2 Linux runtime. It is needed once. `run` imports the project and starts a headless server on **UDP 24567**. Leave that terminal running; **Ctrl+C** stops the server. No graphical Linux desktop or export-template download is needed.
 
-Local automated checks cover real ENet peers, late joining, movement and combat authority, reward splitting, repairs, rescue, and disconnection/reconnection. Shared flight was user-tested on two LAN PCs. The shared combat loop now needs the same user playtest; cross-PC internet play, latency tuning, and full-group performance still need testing.
+Find Ubuntu's address from PowerShell:
+
+```powershell
+wsl -d Ubuntu -- hostname -I
+```
+
+Enter that WSL IPv4 address in the Windows client's connection menu, with port **24567**. WSL's address can change after restarting. On this machine, the WSL IP worked for UDP; `127.0.0.1` did not. Localhost may work with other WSL networking configurations.
+
+From a Linux checkout, the equivalent commands are:
+
+```bash
+bash tools/server.sh setup
+bash tools/server.sh run
+```
+
+Append `--port=24600` to `run` to choose another UDP port, and use the same port in the client. For a VPS, clients use its reachable IP or DNS address and its firewall must allow the selected UDP port. Other PCs reaching WSL need suitable mirrored networking or UDP routing and Windows/WSL firewall rules; TCP-only `netsh portproxy` does not forward this game's UDP traffic. The helper does not change firewall rules.
 
 ## Develop on Windows
 
@@ -81,7 +101,9 @@ rtk proxy .tools/godot/Godot_v4.7.2-stable_win64_console.exe --path . --script r
 
 The replay opens a 2560 x 1440 window, disables VSync for measurement, and saves screenshots under `build/validation`. Keep its window focused while it runs. These changes apply only to the replay. The normal game uses VSync.
 
-GitHub Actions runs the headless checks, exports Windows, and uploads the playable build for each pull request.
+GitHub Actions runs the Windows checks, exports the Windows client, and tests the dedicated server on Linux for each pull request. `bash tools/server.sh check` runs the 43 dedicated-server checks locally, including ten simultaneous client connections, damage, rewards, repairs, respawning, empty-server operation, reconnecting, collision parity and reordered snapshots.
+
+For a two-client Windows-to-Linux replay, run the server on port 24684, then start two Windows Godot processes with `--path . --script res://tests/dedicated_client_playthrough.gd -- --address=YOUR_WSL_IP --label=a` (use `--label=b` for the other). Start both within ten seconds. Each replays the hunt and repair loop; rendered runs save screenshots under `build/validation`.
 
 ## Code layout
 

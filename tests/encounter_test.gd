@@ -37,6 +37,7 @@ func tap_key(code: Key, physical: bool = true) -> void:
 
 func run() -> void:
 	sector = preload("res://scenes/sector.tscn").instantiate()
+	sector.client_only = false
 	root.add_child(sector)
 	sector.set_physics_process(false)
 	await sync_physics()
