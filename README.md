@@ -2,7 +2,7 @@
 
 A space game inspired by DarkOrbit, built for Windows with Godot. The first milestone is a playable solo encounter with full 3D flight, target-lock combat, alien hunting, rewards, and station repairs.
 
-Milestone 2 starts with shared flight for up to 10 players. Shared combat is the next step; the complete solo encounter remains available. Progress currently lasts for the running session only. Ships, scenery, and effects use procedural placeholder art.
+Milestone 2 includes a shared encounter for up to 10 players, with host-controlled flight, alien combat, rewards, repairs, and respawning. The complete solo encounter remains available. Progress lasts for the running session only. Ships, scenery, and effects use procedural placeholder art.
 
 - [Game requirements and development plan](GAME_PLAN.md)
 - [Development workflow](AGENTS.md)
@@ -24,17 +24,23 @@ While paused, F5/F6 cycle window resolutions from 960 x 600 up to 3840 x 2160, o
 
 These values are initial tuning settings, not a finished economy or combat balance.
 
-## Shared flight (Milestone 2, first step)
+## Shared encounter (Milestone 2)
 
-Press **F7** to open the session menu. On one computer, choose **Host flight session**. On the other, enter the host's LAN or VPN IP address and choose **Join host**. Use the same build on both PCs. For two game instances on one PC, enter `127.0.0.1` in the joining instance.
+Press **F7** to open the session menu. On one computer, choose **Host encounter**. On the other, enter the host's LAN or VPN IP address and choose **Join host**. Use this same build on both PCs; older shared-flight builds are not compatible. For two game instances on one PC, enter `127.0.0.1` in the joining instance.
 
 The host listens on **UDP port 24567**. If Windows Firewall prompts, allow the game on the network you are using. LAN and VPN connections (for example, Tailscale) need a reachable host address; direct internet connections require UDP port forwarding to the host. There is no automatic NAT traversal or server browser.
 
-Players fly around the same outpost with host-controlled movement and boost. Other pilots have cyan markers. This is a combat-free flight test: shared aliens, combat, rewards, and persistence are not implemented yet. Entering or leaving shared flight resets the ship at the station; existing solo credits remain local.
+Use **Tab or left click** to select the shared Sentinel and **Space** to toggle lasers. The host validates range, firing arc, obstacles, cooldowns, and damage. Other pilots have cyan markers. The alien attacks the nearest eligible player outside the station's protected area. Players cannot damage each other, but can block laser line of sight.
 
-Esc or F7 releases your controls while the shared world keeps running. Choose **Leave session / return to solo** to disconnect. If the host leaves, clients return to solo with a status message. Hosting ends when the host closes the game; there is no host migration. Only one host can use a given UDP port on a PC.
+The alien's **75 credits** are split equally among connected players who damaged it during its current life. Each contributor also receives one kill. Integer shares differ by at most one credit, with the remainder assigned in peer-ID order. Dead contributors still receive their share if connected; disconnected players do not.
 
-Local automated checks cover real ENet peers, late joining, movement authority, input validation/timeouts, and disconnection/reconnection. Cross-PC internet play, latency tuning, and full-group performance still need testing.
+Return to the station and press **R** to request repairs from the host. Each player's credits, damage, repair charge, and rescue fee are tracked independently. A destroyed player respawns after three seconds without resetting anyone else's fight; the shared alien returns after 12 seconds.
+
+Shared credits start at zero and last until you leave the session. Rejoining starts a new balance. Your solo credits remain separate and are restored when leaving shared play. Entering or leaving resets your ship at the station. There is no saved progression yet.
+
+Esc or F7 releases your controls and stops autofire while the shared world keeps running; you can still take damage. Choose **Leave session / return to solo** to disconnect. If the host leaves, clients return to solo with a status message. Hosting ends when the host closes the game; there is no host migration. Only one host can use a given UDP port on a PC.
+
+Local automated checks cover real ENet peers, late joining, movement and combat authority, reward splitting, repairs, rescue, and disconnection/reconnection. Shared flight was user-tested on two LAN PCs. The shared combat loop now needs the same user playtest; cross-PC internet play, latency tuning, and full-group performance still need testing.
 
 ## Develop on Windows
 
@@ -82,7 +88,8 @@ GitHub Actions runs the headless checks, exports Windows, and uploads the playab
 - `scripts/alien.gd`: alien movement and engagement.
 - `scripts/sector.gd`: encounter lifecycle, targeting, rewards, repairs, and rescue.
 - `scripts/flight_session.gd`: session menu, ENet connection lifecycle, host flight simulation, and client prediction/interpolation.
+- `scripts/session_combat.gd`: host-owned alien encounter, per-player wallets, repairs, respawns, and combat snapshots/effects.
 - `scripts/visuals.gd` and `shaders/space.gdshader`: procedural placeholder art and effects.
 - `scripts/hud.gd`: flight instruments, targets, objectives, and pause display.
 
-Combat emits visual signals; visual effects do not award rewards or apply damage. The combat encounter still runs locally. Shared flight sends player commands to the host at 20 Hz and receives authoritative snapshots at 20 Hz, with local flight prediction and smoothing of other players. Shared combat will build on this transport.
+Combat emits visual signals; visual effects do not award rewards or apply damage. Shared play sends movement and fire intent to the host at 20 Hz and receives authoritative snapshots at 20 Hz, with local flight prediction and smoothing of other players and the alien. Only the host simulates combat; repair requests identify the requesting peer, never a client-supplied price or damage amount.
