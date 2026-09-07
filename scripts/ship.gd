@@ -21,6 +21,7 @@ var shot_cooldown: float = 0.0
 var time_since_hit: float = 100.0
 var model: Node3D
 var simulation_authority: bool = true
+var render_enabled: bool = true
 
 
 func _ready() -> void:
@@ -33,8 +34,9 @@ func _ready() -> void:
 	sphere.radius = 2.2
 	shape.shape = sphere
 	add_child(shape)
-	model = SectorVisuals.ship_model(hostile)
-	add_child(model)
+	if render_enabled:
+		model = SectorVisuals.ship_model(hostile)
+		add_child(model)
 
 
 func tick_combat(delta: float) -> void:

@@ -51,6 +51,7 @@ func run() -> void:
 		root.size = Vector2i(2560, 1440)
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	sector = preload("res://scenes/sector.tscn").instantiate()
+	sector.client_only = false
 	root.add_child(sector)
 	current_scene = sector
 	await create_timer(1.0).timeout

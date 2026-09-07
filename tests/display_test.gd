@@ -9,6 +9,7 @@ func _initialize() -> void:
 func run() -> void:
 	DirAccess.make_dir_recursive_absolute("res://build/validation")
 	var sector := preload("res://scenes/sector.tscn").instantiate()
+	sector.client_only = false
 	root.add_child(sector)
 	await process_frame
 	sector.set_paused(true)

@@ -1,6 +1,6 @@
 class_name Sector
 extends Node3D
-## Owns the local encounter. Multiplayer authority replaces this local orchestration later.
+## Builds the shared sector for server or client; retains the offline development fixture.
 
 const STATION_POSITION := Vector3(-38.0, -8.0, 0.0)
 const SPAWN_POSITION := Vector3(0.0, 0.0, 45.0)
@@ -29,31 +29,54 @@ var show_performance: bool = false
 var low_quality: bool = false
 var weapon_status: String = "NO TARGET"
 var session: FlightSession
+var dedicated_server: bool = false
+var client_only: bool = true
+var server_port: int = FlightSession.PORT
 
 
 func _ready() -> void:
+	dedicated_server = dedicated_server or "--server" in OS.get_cmdline_user_args()
+	client_only = client_only and not "--offline" in OS.get_cmdline_user_args()
 	configure_input()
-	SectorVisuals.environment(self)
-	SectorVisuals.station(self, STATION_POSITION)
-	player = Pilot.new()
-	player.position = SPAWN_POSITION
-	add_child(player)
+	SectorVisuals.environment(self, not dedicated_server)
+	SectorVisuals.station(self, STATION_POSITION, not dedicated_server)
+	if not dedicated_server:
+		player = Pilot.new()
+		player.position = SPAWN_POSITION
+		add_child(player)
+		player.destroyed.connect(on_destroyed)
+		player.fired.connect(on_laser)
 	alien = Alien.new()
+	alien.render_enabled = not dedicated_server
 	alien.position = alien.home_position
 	add_child(alien)
-	player.destroyed.connect(on_destroyed)
 	alien.destroyed.connect(on_destroyed)
-	player.fired.connect(on_laser)
 	alien.fired.connect(on_laser)
-	var layer := CanvasLayer.new()
-	add_child(layer)
-	hud = FlightHud.new()
-	hud.sector = self
-	layer.add_child(hud)
+	if not dedicated_server:
+		var layer := CanvasLayer.new()
+		add_child(layer)
+		hud = FlightHud.new()
+		hud.sector = self
+		layer.add_child(hud)
 	session = FlightSession.new()
 	session.name = "FlightSession"
 	session.sector = self
 	add_child(session)
+	if dedicated_server:
+		var port := server_port
+		for argument in OS.get_cmdline_user_args():
+			if argument.begins_with("--port="):
+				var value := argument.trim_prefix("--port=")
+				if not value.is_valid_int() or int(value) < 1 or int(value) > 65535:
+					printerr("Invalid server port: expected 1..65535")
+					get_tree().quit(1)
+					return
+				port = int(value)
+		if session.host(port) != OK:
+			printerr(session.status)
+			get_tree().quit(1)
+	elif client_only:
+		session.open_menu()
 
 
 func configure_input() -> void:
@@ -85,6 +108,12 @@ func _notification(what: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if dedicated_server:
+		return
+	if client_only and not session.active:
+		if event.is_action_pressed("quit_game"):
+			get_tree().quit()
+		return
 	if event.is_action_pressed("multiplayer_menu"):
 		session.open_menu()
 		return
@@ -146,6 +175,8 @@ func _physics_process(delta: float) -> void:
 	if is_instance_valid(session) and (session.active or session.connecting):
 		session.tick(delta)
 		return
+	if dedicated_server or client_only:
+		return
 	if paused:
 		return
 	toast_time = maxf(0.0, toast_time - delta)
@@ -183,7 +214,8 @@ func _process(_delta: float) -> void:
 func set_paused(value: bool) -> void:
 	paused = value
 	if paused:
-		player.release_mouse()
+		if is_instance_valid(player):
+			player.release_mouse()
 		auto_fire = false
 
 

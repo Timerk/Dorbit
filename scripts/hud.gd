@@ -58,7 +58,8 @@ func _draw() -> void:
 	text_at(Vector2(32, 42), "D O R B I T", 26)
 	text_at(Vector2(33, 65), "OUTPOST 01  /  FIRST CONTACT", 11, CYAN)
 	text_at(Vector2(width - 200, 36), "%05d  CR" % sector.credits, 22, GREEN)
-	text_at(Vector2(width - 200, 60), "CO-OP  /  %d PILOTS" % sector.session.ships.size() if shared else "LOCAL SECTOR  /  SOLO", 11, MUTED)
+	var connection := "CO-OP  /  %d PILOTS" % sector.session.ships.size() if shared else ("DISCONNECTED" if sector.client_only else "LOCAL SECTOR  /  SOLO")
+	text_at(Vector2(width - 200, 60), connection, 11, MUTED)
 	draw_line(Vector2(32, 82), Vector2(width - 32, 82), Color(0.3, 0.5, 0.65, 0.25), 1.0)
 	var objective: String = [
 		"Leave the outpost. W to fly forward.",

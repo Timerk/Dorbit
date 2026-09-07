@@ -15,6 +15,8 @@ var arm: SpringArm3D
 
 func _ready() -> void:
 	super._ready()
+	if not render_enabled:
+		return
 	arm = SpringArm3D.new()
 	arm.position = Vector3(0.0, 2.5, 0.0)
 	arm.rotation.x = -0.12
@@ -67,5 +69,6 @@ func fly_command(delta: float, movement: Vector3, boost: bool) -> void:
 	var speed := boost_speed if boosting else cruise_speed
 	velocity = velocity.move_toward(global_basis * movement * speed, acceleration * delta)
 	move_and_slide()
-	model.rotation.z = lerp_angle(model.rotation.z, -movement.x * 0.23, delta * 5.0)
-	camera.fov = lerpf(camera.fov, 83.0 if boosting else 75.0, delta * 3.0)
+	if render_enabled:
+		model.rotation.z = lerp_angle(model.rotation.z, -movement.x * 0.23, delta * 5.0)
+		camera.fov = lerpf(camera.fov, 83.0 if boosting else 75.0, delta * 3.0)
