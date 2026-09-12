@@ -91,6 +91,8 @@ The project uses Godot Compatibility rendering with 4x MSAA by default. The firs
 
 ## Validation
 
+For a repeatable ten-client Linux server workload, CPU/memory measurements and their limits, see [PERFORMANCE.md](PERFORMANCE.md). Headless simulation measurements do not establish rendered client FPS.
+
 `check` imports the project and runs headless integration tests against the actual scene and physics world, network checks with separate ENet peers, and a complete hunt-and-repair replay. It covers input actions, shield and hull damage, cooldowns, range, firing arcs, obstacles, rewards, repairs, rescue, movement, mouse steering, pause, joining, replication, and disconnects.
 
 For a rendered hunt-and-return replay:
