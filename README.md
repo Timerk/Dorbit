@@ -6,6 +6,7 @@ Milestones 1 and 2 have passed user playtesting. Milestone 3 begins with the ded
 
 - [Game requirements and development plan](GAME_PLAN.md)
 - [Development workflow](AGENTS.md)
+- [Linux deployment, systemd, updates and rollback](DEPLOYMENT.md)
 
 ## Play
 
