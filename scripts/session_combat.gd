@@ -41,6 +41,8 @@ func add_player(id: int, location: Vector3) -> void:
 	ship.set_meta("life", 0)
 	if multiplayer.is_server():
 		records[id] = {"credits": 0, "kills": 0, "stage": 0, "respawn": 0.0, "life": 0, "spawn": location}
+		if session.sector.dedicated_server:
+			records[id]["credits"] = session.store.pilots[session.pilot_ids[id]]["credits"]
 
 
 func remove_player(id: int) -> void:
@@ -118,10 +120,16 @@ func destroyed(ship: SpaceShip) -> void:
 	if ship == session.sector.alien:
 		# Integer credits: conserve the 75-credit pool and distribute the remainder in peer-ID order.
 		contributors.sort()
+		var balances: Dictionary[int, int] = {}
 		for index in range(contributors.size()):
 			var id := contributors[index]
 			var reward := int(Sector.KILL_REWARD / contributors.size()) + (1 if index < Sector.KILL_REWARD % contributors.size() else 0)
-			records[id]["credits"] += reward
+			balances[id] = mini(PilotStore.MAX_CREDITS, records[id]["credits"] + reward)
+		if not balances.is_empty() and not session.save_balances(balances):
+			return
+		for id: int in balances:
+			var reward: int = balances[id] - records[id]["credits"]
+			records[id]["credits"] = balances[id]
 			records[id]["kills"] += 1
 			records[id]["stage"] = maxi(records[id]["stage"], 3)
 			message(id, "Alien destroyed. Your share: +%d credits. Return to repair." % reward)
@@ -133,6 +141,8 @@ func destroyed(ship: SpaceShip) -> void:
 	else:
 		var id: int = session.ships.find_key(ship)
 		var fee := mini(records[id]["credits"], Sector.RESPAWN_FEE)
+		if not session.save_balances({id: records[id]["credits"] - fee}):
+			return
 		records[id]["credits"] -= fee
 		records[id]["respawn"] = 3.0
 		session.commands.erase(id)
@@ -167,6 +177,8 @@ func repair(id: int, life: int) -> bool:
 		message(id, blocker)
 		return false
 	var cost := session.sector.repair_cost(ship, records[id]["credits"])
+	if not session.save_balances({id: records[id]["credits"] - cost}):
+		return false
 	records[id]["credits"] -= cost
 	ship.reset_health()
 	ship.energy = 100.0
