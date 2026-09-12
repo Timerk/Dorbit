@@ -124,6 +124,14 @@ environment file if changing them so they can be restored too.
 WSL supports release preparation, the existing server checks, foreground startup,
 custom-port UDP binding and `systemd-analyze verify`. Validate there without
 installing the unit or changing local services or firewalls.
+Use a Linux-native checkout in WSL; Linux Git cannot resolve the Windows paths
+in a Windows-created worktree's metadata.
+
+Locally verified in Ubuntu on WSL2: a clean committed release downloaded and
+verified Godot, passed all 43 dedicated-server checks, and started through a
+symlink as an unprivileged user on UDP 24791. Bash syntax and unit-file validation
+passed. Missing arguments, invalid revisions and existing releases were rejected;
+a simulated download failure left no release or staging directory.
 
 On the real VPS, verify service installation under `dorbit`, automatic crash
 restart, startup after a reboot, journal retention, and update/rollback with
