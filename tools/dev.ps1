@@ -53,12 +53,19 @@ if (-not (Test-Path -LiteralPath $engine)) {
 
 switch ($Task) {
     'check' {
-        Invoke-Godot @('--headless', '--path', $projectRoot, '--editor', '--import')
-        Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/encounter_test.gd')
-        Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/network_test.gd')
-        Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/network_combat_test.gd')
-        Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/dedicated_server_test.gd')
-        Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/flight_playthrough.gd')
+        $previousAppData = $env:APPDATA
+        try {
+            $env:APPDATA = Join-Path $projectRoot 'build/connection-menu-profile'
+            New-Item -ItemType Directory -Force -Path $env:APPDATA | Out-Null
+            Invoke-Godot @('--headless', '--path', $projectRoot, '--editor', '--import')
+            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/encounter_test.gd')
+            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/network_test.gd')
+            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/network_combat_test.gd')
+            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/dedicated_server_test.gd')
+            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/connection_menu_test.gd')
+            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/connection_menu_test.gd', '--', '--restart')
+            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/flight_playthrough.gd')
+        } finally { $env:APPDATA = $previousAppData }
     }
     'build' {
         $templateDir = Join-Path $toolRoot 'templates'
