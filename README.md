@@ -30,6 +30,8 @@ These values are initial tuning settings, not a finished economy or combat balan
 
 The server supports **ten client pilots**, with no host player. It controls movement, boost, the shared Sentinel, damage, repairs, rewards, destruction and respawning. It keeps running when the last player leaves. **F7** opens the connection menu; **Disconnect** returns to that menu. A server shutdown also returns clients to the menu.
 
+The client remembers the last successfully connected address and UDP port on this device in `user://connection.cfg`. Failed or cancelled attempts do not replace it. After a disconnect, the fields stay filled in; choose **Connect again** or press Enter on the focused button to retry. You can edit either field or cancel a pending connection. Reconnecting is always manual. Connection messages identify the attempted endpoint and report failure or timeout without guessing the network cause.
+
 Other living pilots have cyan markers with shield and hull bars and current/maximum values. Hull turns red at 35 or below. Their health reflects server state, including repairs. Markers disappear on destruction and return on respawn.
 
 A kill splits the **75-credit pool** among connected contributors; integer shares differ by at most one credit. Dead contributors remain eligible while connected. Spectators receive no reward. Each contributor receives one kill. Repairs and the up-to-10-credit rescue fee are charged to the requesting pilot's server-owned session balance.
