@@ -2,7 +2,7 @@
 
 A space game inspired by DarkOrbit, built with Godot. Windows players connect to a dedicated Linux server to fly, hunt aliens, earn rewards and repair together. Playing alone uses the same server encounter.
 
-Milestones 1 and 2 have passed user playtesting. Milestone 3 begins with the dedicated server; credits still last only for the current connection. Persistent identities, saves and purchases are next. Ships, scenery and effects use procedural placeholder art.
+Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated server with provisioned pilot identities and persistent credits. Purchases and additional content follow. Ships, scenery and effects use procedural placeholder art.
 
 - [Game requirements and development plan](GAME_PLAN.md)
 - [Development workflow](AGENTS.md)
@@ -11,7 +11,7 @@ Milestones 1 and 2 have passed user playtesting. Milestone 3 begins with the ded
 
 Launch `build/windows/Dorbit.exe` after building, or download the `Dorbit-Windows` artifact from a successful GitHub Actions run. Extract the artifact before playing and keep the included third-party notices with the executable.
 
-Enter the server address and UDP port in the connection menu, then choose **Connect**. Use matching client and server builds.
+Set `DORBIT_PILOT_FILE` to your private credential file as described below. Enter the server address and UDP port in the connection menu, then choose **Connect**. Use matching client and server builds.
 
 1. Hold right mouse and move the mouse to steer. Use W/S for forward/backward movement, A/D to strafe, and Q/E to descend/rise.
 2. Fly forward from the station toward the red Sentinel marker. Tab or left click selects it. Space toggles automatic lasers.
@@ -32,9 +32,62 @@ The server supports **ten client pilots**, with no host player. It controls move
 
 Other living pilots have cyan markers with shield and hull bars and current/maximum values. Hull turns red at 35 or below. Their health reflects server state, including repairs. Markers disappear on destruction and return on respawn.
 
-A kill splits the **75-credit pool** among connected contributors; integer shares differ by at most one credit. Dead contributors remain eligible while connected. Spectators receive no reward. Each contributor receives one kill. Repairs and the up-to-10-credit rescue fee are charged to the requesting pilot's server-owned session balance.
+A kill splits the **75-credit pool** among connected contributors; integer shares differ by at most one credit. Dead contributors remain eligible while connected. Spectators receive no reward. Each contributor receives one kill. Repairs and the up-to-10-credit rescue fee are charged to the requesting pilot's saved server balance. Credits are capped at 2 billion.
 
-**Saves and accounts are not implemented yet.** Disconnecting or restarting the server resets progression. This first server build is for private testing; private-group access control follows with persistent identities. The former solo/listen-host modes are only development fixtures, accessible by launching with `--offline` after Godot's `--` separator (or `Dorbit.exe -- --offline`).
+Credits survive disconnects and server restarts. Ship position, health, kills and encounter objectives reset on a new connection. The former solo/listen-host modes are development fixtures with temporary wallets, accessible by launching with `--offline` after Godot's `--` separator or `Dorbit.exe -- --offline`. They cannot read or transfer the dedicated server's wallets.
+
+### Provision the private group
+
+The operator assigns each pilot a stable lowercase ID and a random 256-bit token. There is no self-registration or password service. Stop the server before adding pilots or rotating credentials. Keep data outside the checkout and exported build, on a local filesystem.
+
+On Linux, as the user that will run the server:
+
+```bash
+umask 077
+mkdir -p "$HOME/dorbit-data" "$HOME/dorbit-credentials"
+python3 tools/pilots.py "$HOME/dorbit-data" alex "$HOME/dorbit-credentials/alex.json" --init
+python3 tools/pilots.py "$HOME/dorbit-data" sam "$HOME/dorbit-credentials/sam.json"
+export DORBIT_DATA_DIR="$HOME/dorbit-data"
+bash tools/server.sh run
+```
+
+Use `--init` only for the first pilot in a new ledger. A missing or invalid save prevents startup. The tool never prints tokens. Give each player only their own credential file through a private channel. Protect `pilots.json`, its backups, and credential files; the saved verifier can also authenticate. The Linux helper applies `umask 077`; apply it yourself if launching Godot directly. On Windows, use a directory accessible only to your user account.
+
+On the Windows client, launch from PowerShell with the credential path set:
+
+```powershell
+$env:DORBIT_PILOT_FILE = 'C:\Users\YOUR_USER\Dorbit\alex.json'
+& 'C:\Games\Dorbit\Dorbit.exe'
+```
+
+The client reads this file when connecting. The file contains only `id` and `token`; it contains no balance. For another pilot, restart with that pilot's file. Connection-menu integrations can supply `FlightSession.credential_id` and `credential_token` before calling the existing `join(address, port)` method. Address preferences and status presentation remain separate work.
+
+Authentication uses a fresh server challenge and HMAC-SHA256 proof. The token is never sent over ENet. Unknown IDs, wrong proofs and duplicate logins fail before spawning or receiving world snapshots. The first connected login keeps its session; the newcomer is rejected. After an abrupt network loss, wait for ENet to detect the disconnect before retrying. Authentication attempts time out after five seconds. Gameplay RPCs use the authenticated peer mapping and never accept a pilot ID or balance.
+
+ENet gameplay traffic is not encrypted and this handshake does not authenticate the server. Use a trusted LAN or private VPN, such as WireGuard, for the group. It is not a public-internet account or transport security service.
+
+To replace a lost or exposed credential while preserving credits, stop the server and run:
+
+```bash
+python3 tools/pilots.py "$HOME/dorbit-data" alex "$HOME/dorbit-credentials/alex-new.json" --rotate
+```
+
+Distribute the new file and restart. The old token no longer works. To revoke access without redistributing a token, rotate it and retain the new file with the operator. Keep the same ID to keep the wallet. Do not rename a pilot or change credentials while the server runs.
+
+### Saves, backups and recovery
+
+The ledger is `DORBIT_DATA_DIR/pilots.json`, schema version 1. Every reward, repair charge and rescue fee is committed before the server confirms the balance. All contributors' shares use one commit. Writes go to a sibling temporary file, flush and verify its contents, then rename over the destination. `pilots.json.bak` keeps the previous complete ledger. A save failure stops simulation and exits the server with code 1 before granting the pending transaction.
+
+Only one server or provisioning tool may own the directory. `pilots.json.lock` is an exclusive directory lock. Clean shutdown removes it. A crash or forced termination can leave it behind. Missing, malformed, unsupported or out-of-range data fails closed. The server does not replace an invalid ledger with zero balances, and it detects primary-file edits made while running.
+
+Recovery is an operator action:
+
+1. Stop the server and confirm no other process uses this data directory. Copy the entire directory elsewhere before changing anything, including `.bak`, `.tmp`, `.bak.tmp` and the lock.
+2. Inspect the primary and backup. If the primary is valid, keep it. If it is invalid or missing, copy a known-good backup to `pilots.json`. A temporary file may contain an unconfirmed transaction; preserve it for inspection rather than promoting it automatically.
+3. Move leftover temporary files out of the data directory, remove the now-stale empty `pilots.json.lock` directory, and fix any disk-space or permission problem. Restart with the same `DORBIT_DATA_DIR`. The server validates the ledger before opening its port.
+4. Reconnect with an existing pilot and verify their credits. Restoring an older backup rolls back later transactions and credential rotations. Rotate exposed credentials again after a restore.
+
+Keep dated copies of the ledger on another disk or machine, especially before provisioning and server updates. Stop the server while taking a copy. The automatic `.bak` is only one transaction old and does not protect against disk loss. Godot's runtime flush does not guarantee directory metadata reaches physical storage before sudden power loss; recovery may require the backup after a machine or storage failure. Process restarts retain completed saves. Equipment, ship ownership and public accounts are outside this slice.
 
 ### Start a server in Ubuntu / WSL2
 
@@ -42,10 +95,10 @@ Requires Linux x86-64, `bash`, `curl`, `python3` and `sha256sum`. On this Window
 
 ```powershell
 wsl -d Ubuntu -- bash /mnt/c/Users/timbe/Desktop/Projekte/Dorbit/tools/server.sh setup
-wsl -d Ubuntu -- bash /mnt/c/Users/timbe/Desktop/Projekte/Dorbit/tools/server.sh run
+wsl -d Ubuntu -- env DORBIT_DATA_DIR=/home/YOUR_LINUX_USER/dorbit-data bash /mnt/c/Users/timbe/Desktop/Projekte/Dorbit/tools/server.sh run
 ```
 
-`setup` downloads and verifies the pinned Godot 4.7.2 Linux runtime. It is needed once. `run` imports the project and starts a headless server on **UDP 24567**. Leave that terminal running; **Ctrl+C** stops the server. No graphical Linux desktop or export-template download is needed.
+`setup` downloads and verifies the pinned Godot 4.7.2 Linux runtime. It is needed once. Provision pilots inside Ubuntu before `run`, using the instructions above. Replace the checkout path and `YOUR_LINUX_USER` with your own paths. Each new `wsl` invocation needs `DORBIT_DATA_DIR`; an export in another Ubuntu terminal does not carry over. `run` imports the project and starts a headless server on **UDP 24567**. Leave that terminal running; **Ctrl+C** stops the server. No graphical Linux desktop or export-template download is needed.
 
 Find Ubuntu's address from PowerShell:
 
@@ -101,9 +154,9 @@ rtk proxy .tools/godot/Godot_v4.7.2-stable_win64_console.exe --path . --script r
 
 The replay opens a 2560 x 1440 window, disables VSync for measurement, and saves screenshots under `build/validation`. Keep its window focused while it runs. These changes apply only to the replay. The normal game uses VSync.
 
-GitHub Actions runs the Windows checks, exports the Windows client, and tests the dedicated server on Linux for each pull request. `bash tools/server.sh check` runs the 43 dedicated-server checks locally, including ten simultaneous client connections, damage, rewards, repairs, respawning, empty-server operation, reconnecting, collision parity and reordered snapshots.
+GitHub Actions runs the Windows checks, exports the Windows client, and tests the dedicated server on Linux for each pull request. `bash tools/server.sh check` covers ten authenticated clients, combat, reconnects, restart recovery, duplicate logins, malformed credentials, corrupted saves and write failures. Tests provision isolated disposable data directories under Godot's user-data directory; they do not read production credentials or saves.
 
-For a two-client Windows-to-Linux replay, run the server on port 24684, then start two Windows Godot processes with `--path . --script res://tests/dedicated_client_playthrough.gd -- --address=YOUR_WSL_IP --label=a` (use `--label=b` for the other). Start both within ten seconds. Each replays the hunt and repair loop; rendered runs save screenshots under `build/validation`.
+For a two-client Windows-to-Linux replay, provision two fresh test pilots and run the server on port 24684 with a disposable data directory. Set a different `DORBIT_PILOT_FILE` for each Windows Godot process, then launch with `--path . --script res://tests/dedicated_client_playthrough.gd -- --address=YOUR_WSL_IP --label=a`, using `--label=b` for the other. Start both within ten seconds. Each replays the hunt and repair loop; rendered runs save screenshots under `build/validation`.
 
 ## Code layout
 
@@ -113,6 +166,8 @@ For a two-client Windows-to-Linux replay, run the server on port 24684, then sta
 - `scripts/sector.gd`: encounter lifecycle, targeting, rewards, repairs, and rescue.
 - `scripts/flight_session.gd`: session menu, ENet connection lifecycle, host flight simulation, and client prediction/interpolation.
 - `scripts/session_combat.gd`: host-owned alien encounter, per-player wallets, repairs, respawns, and combat snapshots/effects.
+- `scripts/pilot_store.gd`: validated pilot ledger, challenge verification, atomic replacement and previous-save backup.
+- `tools/pilots.py`: operator provisioning and credential rotation with the server stopped.
 - `scripts/visuals.gd` and `shaders/space.gdshader`: procedural placeholder art and effects.
 - `scripts/hud.gd`: flight instruments, targets, objectives, and pause display.
 

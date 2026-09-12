@@ -7,6 +7,7 @@ var worlds: Array[SubViewport] = []
 
 
 func _initialize() -> void:
+	OS.unset_environment("DORBIT_PILOT_FILE")
 	run.call_deferred()
 
 
@@ -18,6 +19,16 @@ func check(condition: bool, description: String) -> void:
 
 
 func make_sector(label: String, dedicated: bool = false) -> Sector:
+	if dedicated:
+		var directory := ProjectSettings.globalize_path("user://pilot-tests-%d-%d" % [OS.get_process_id(), Time.get_ticks_usec()])
+		DirAccess.make_dir_recursive_absolute(directory)
+		var pilots: Dictionary = {}
+		for index in range(10):
+			pilots["pilot%d" % index] = {"verifier": test_token(index).sha256_text(), "credits": 0}
+		var file := FileAccess.open(directory.path_join("pilots.json"), FileAccess.WRITE)
+		file.store_string(JSON.stringify({"version": 1, "pilots": pilots}))
+		file.close()
+		OS.set_environment("DORBIT_DATA_DIR", directory)
 	var viewport := SubViewport.new()
 	viewport.name = label
 	viewport.own_world_3d = true
@@ -31,6 +42,10 @@ func make_sector(label: String, dedicated: bool = false) -> Sector:
 	viewport.add_child(sector)
 	sector.set_physics_process(false)
 	return sector
+
+
+func test_token(index: int) -> String:
+	return ("test-pilot-%d" % index).sha256_text()
 
 
 func settle(seconds: float = 0.15) -> void:

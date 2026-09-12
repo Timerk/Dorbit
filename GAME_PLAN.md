@@ -113,9 +113,9 @@ The user chose a dedicated Linux server at the start of Milestone 3. Everyone co
 
 The first implementation runs headlessly from source with Godot 4.7.2 on Linux x86-64, initially in Ubuntu on WSL2. It supports ten client pilots without a host ship and keeps simulating when everyone disconnects. The original solo/listen-host modes remain development fixtures behind `--offline`, not a separate progression path for normal play.
 
-This first server slice still uses temporary session credits. Stable identities, private-group access control, server-owned saves, restart recovery and backups follow before equipment purchases. Save ownership belongs to the server; there is no client-owned wallet to transfer between worlds.
+The persistence slice adds operator-provisioned stable pilot IDs and private credentials, with one login per pilot. The server saves credits after each reward or charge and restores them on reconnect or restart. Invalid saves and write failures stop progression for operator recovery; each successful write retains the previous ledger as a backup. Save ownership belongs to the server; there is no client-owned wallet to transfer between worlds. Position, health and encounter objectives remain session state. Equipment purchases follow this slice.
 
-A small Linux VPS will follow local validation. Provider selection, measured resource requirements, service deployment, player identity details and backup operations remain to be implemented. No public account service or automatic matchmaking is included in the initial server.
+A small Linux VPS will follow local validation. Provider selection, measured resource requirements, service deployment and scheduled off-machine backups remain to be implemented. Pilot provisioning, token rotation and save recovery are documented in README.md. ENet traffic remains unencrypted; a private VPN is recommended outside trusted LANs. No public account service or automatic matchmaking is included in the initial server.
 
 ## Performance
 
@@ -221,6 +221,6 @@ The following do not prevent beginning the first prototype:
 - Detailed art direction and asset selection.
 - Final performance budgets for aliens and effects.
 
-Before deploying progression, finalize pilot identity, private-group access, save recovery and independent hosting operations.
+Before deploying progression, configure the private network, dated off-machine backups and independent hosting operations.
 
-The next step is testing Windows clients against the dedicated server in WSL2, followed by server-owned persistent progression. Full Milestone 3 completion still requires purchases, additional content and repeat-session playtesting.
+Local and LAN dedicated-server play have passed manual testing. Cross-network dedicated-server testing remains pending and does not block pilot identity and persistence work. Full Milestone 3 completion still requires purchases, additional content and repeat-session playtesting.
