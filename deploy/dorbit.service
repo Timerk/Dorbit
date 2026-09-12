@@ -1,0 +1,30 @@
+[Unit]
+Description=Dorbit dedicated server
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=dorbit
+Group=dorbit
+WorkingDirectory=/opt/dorbit/current
+Environment=HOME=/var/lib/dorbit
+Environment=DORBIT_PORT=24567
+EnvironmentFile=-/etc/dorbit/server.env
+ExecStart=/usr/bin/bash /opt/dorbit/current/tools/server.sh run --port=${DORBIT_PORT}
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+StateDirectory=dorbit
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dorbit
+
+[Install]
+WantedBy=multi-user.target
