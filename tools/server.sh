@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Linux x86-64 / WSL2 helper; no desktop, GPU or export templates required.
 set -euo pipefail
+umask 077 # Saves and their backups contain authentication verifiers.
 cd "$(dirname "$0")/.."
 task="${1:-run}"
 if (( $# > 0 )); then shift; fi
@@ -50,6 +51,7 @@ PY
       exec "$engine" --headless --max-fps 60 --path . -- --server "$@"
     fi
     checked --headless --path . --script res://tests/dedicated_server_test.gd
+    checked --headless --path . --script res://tests/pilot_persistence_test.gd
     ;;
   *)
     echo "Usage: bash tools/server.sh {setup|run|check} [--port=24567]" >&2
