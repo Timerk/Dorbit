@@ -10,7 +10,7 @@ const CONNECT_TIMEOUT: float = 10.0
 var sector: Sector
 var active: bool = false
 var connecting: bool = false
-var status: String = "Enter the server address to connect."
+var status: String = "Choose a server and connect."
 var ships: Dictionary[int, Pilot] = {}
 var commands: Dictionary[int, Dictionary] = {}
 var goals: Dictionary[int, Dictionary] = {}
@@ -29,6 +29,10 @@ var join_button: Button
 var leave_button: Button
 var back_button: Button
 var port_field: SpinBox
+var preferences := ConnectionPreferences.new()
+var attempted_address: String = ""
+var attempted_port: int = PORT
+var preference_label: Label
 var combat: SessionCombat
 
 
@@ -39,13 +43,14 @@ func _ready() -> void:
 	add_child(combat)
 	multiplayer.peer_disconnected.connect(peer_left)
 	multiplayer.connected_to_server.connect(connected)
-	multiplayer.connection_failed.connect(func(): disconnect_session("Connection failed. Check the server address and UDP port."))
-	multiplayer.server_disconnected.connect(func(): disconnect_session("The server disconnected. Connect again when it is available."))
+	multiplayer.connection_failed.connect(func(): disconnect_session("Connection failed. Check the address and UDP port, then try again."))
+	multiplayer.server_disconnected.connect(func(): disconnect_session("Connection to the server was lost. You can try connecting again."))
 	if not sector.dedicated_server:
 		build_menu()
 
 
 func build_menu() -> void:
+	preferences.load_from()
 	var layer := CanvasLayer.new()
 	layer.layer = 5
 	add_child(layer)
@@ -73,20 +78,29 @@ func build_menu() -> void:
 	var help := Label.new()
 	help.text = "Join the same sector, alone or with friends.\nProgress is session-only in this server test build."
 	rows.add_child(help)
+	var address_label := Label.new()
+	address_label.text = "Server address"
+	rows.add_child(address_label)
 	address = LineEdit.new()
 	address.placeholder_text = "Server address"
-	address.text = "127.0.0.1"
+	address.text = preferences.address
 	rows.add_child(address)
 	port_field = SpinBox.new()
 	port_field.min_value = 1
 	port_field.max_value = 65535
-	port_field.value = PORT
+	port_field.value = preferences.port
 	port_field.prefix = "UDP port: "
 	rows.add_child(port_field)
 	host_button = add_button(rows, "Host encounter (development)", func(): host())
 	host_button.visible = not sector.client_only
-	join_button = add_button(rows, "Connect", func(): join(address.text.strip_edges(), int(port_field.value)))
-	leave_button = add_button(rows, "Disconnect", func(): disconnect_session("Disconnected. Choose a server to play."))
+	join_button = add_button(rows, "Connect", connect_from_menu)
+	leave_button = add_button(rows, "Disconnect", func(): disconnect_session("Connection cancelled." if connecting else "Disconnected. You can connect again when ready."))
+	address.text_submitted.connect(func(_text: String): connect_from_menu())
+	port_field.get_line_edit().text_submitted.connect(func(_text: String): connect_from_menu.call_deferred())
+	preference_label = Label.new()
+	preference_label.text = "Remembers the last successful connection on this device."
+	preference_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rows.add_child(preference_label)
 	status_label = Label.new()
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	status_label.custom_minimum_size.x = 540
@@ -107,19 +121,36 @@ func add_button(parent: Node, title: String, action: Callable) -> Button:
 func open_menu() -> void:
 	sector.set_paused(true)
 	menu.show()
-	address.grab_focus()
+	if active:
+		back_button.grab_focus()
+	elif connecting:
+		leave_button.grab_focus()
+	else:
+		join_button.grab_focus()
 
 
 func _process(_delta: float) -> void:
 	if sector.dedicated_server:
 		return
 	status_label.text = status
+	if not attempted_address.is_empty():
+		status_label.text = "%s | UDP %d\n%s" % [attempted_address, attempted_port, status]
+	if connecting:
+		status_label.text += "\nWaiting for the server, up to %d seconds." % int(CONNECT_TIMEOUT)
+	preference_label.text = "Could not save this connection for the next launch." if preferences.save_failed else "Remembers the last successful connection on this device."
+	join_button.text = "Connect again" if not attempted_address.is_empty() else "Connect"
+	leave_button.text = "Cancel connection" if connecting else "Disconnect"
 	host_button.disabled = active or connecting
 	join_button.disabled = active or connecting
 	address.editable = not active and not connecting
 	leave_button.disabled = not active and not connecting
 	port_field.editable = not active and not connecting
 	back_button.disabled = sector.client_only and not active
+
+
+func connect_from_menu() -> void:
+	port_field.apply()
+	join(address.text.strip_edges(), int(port_field.value))
 
 
 func host(port: int = PORT) -> Error:
@@ -145,19 +176,26 @@ func host(port: int = PORT) -> Error:
 func join(host_address: String, port: int = PORT) -> Error:
 	if active or connecting:
 		return ERR_ALREADY_IN_USE
+	host_address = host_address.strip_edges()
+	attempted_address = host_address
+	attempted_port = port
+	address.text = host_address
+	port_field.value = port
 	if host_address.is_empty():
-		status = "Enter the host address first."
+		status = "Enter a server address first."
 		return ERR_INVALID_PARAMETER
 	var peer := ENetMultiplayerPeer.new()
 	var error := peer.create_client(host_address, port)
 	if error != OK:
-		status = "Could not connect to that address."
+		status = "Could not start the connection: %s. Check the address and UDP port." % error_string(error)
 		return error
 	multiplayer.multiplayer_peer = peer
 	connecting = true
 	connect_clock = 0.0
 	sector.set_paused(true)
-	status = "Connecting to %s..." % host_address
+	status = "Connecting..."
+	leave_button.disabled = false
+	leave_button.grab_focus()
 	return OK
 
 
@@ -179,8 +217,10 @@ func start_flight() -> void:
 
 
 func connected() -> void:
+	if sector.client_only:
+		preferences.remember(attempted_address, attempted_port)
 	start_flight()
-	status = "Connected. Waiting for the host's sector..."
+	status = "Connected. Waiting for the server's sector..."
 	ready_for_flight.rpc_id(1)
 
 
@@ -271,7 +311,7 @@ func tick(delta: float) -> void:
 	if connecting:
 		connect_clock += delta
 		if connect_clock >= CONNECT_TIMEOUT:
-			disconnect_session("Connection timed out. Check the server address and UDP port.")
+			disconnect_session("No connection after %d seconds. Check the address and UDP port, then try again." % int(CONNECT_TIMEOUT))
 		return
 	if not active:
 		return
@@ -303,7 +343,7 @@ func tick(delta: float) -> void:
 		if not received_snapshot:
 			connect_clock += delta
 			if connect_clock >= CONNECT_TIMEOUT:
-				disconnect_session("The server did not send a sector. Use matching client and server builds.")
+				disconnect_session("Connected, but no sector arrived. Check that client and server builds match, then try again.")
 			return
 		if sector.player.alive:
 			sector.player.fly_command(delta, movement, boost)
@@ -422,6 +462,8 @@ func disconnect_session(message: String) -> void:
 	sector.set_paused(true)
 	status = message
 	menu.show()
+	join_button.disabled = false
+	join_button.grab_focus()
 
 
 func _exit_tree() -> void:
