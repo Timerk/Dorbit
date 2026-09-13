@@ -73,12 +73,13 @@ func run() -> void:
 	flight_replay_running = true
 	sampling = true
 	await press(KEY_TAB)
+	var expected_reward: int = (sector.target as Alien).tuning()["reward"]
 	await press(KEY_SPACE)
 	await hunt_selected()
 	await snapshot("02-combat")
 	check(sector.kills == 1, "Pilot can kill the first alien with target-lock lasers")
 	check(sector.player.alive, "First encounter is survivable without upgrades")
-	check(sector.credits == int(Alien.TYPES["Scout"]["reward"]), "Combat reward arrives through the live encounter")
+	check(sector.credits == expected_reward, "Combat reward matches the selected alien in the live encounter")
 	await snapshot("03-reward")
 	await return_to_station()
 	await press(KEY_R)
