@@ -6,6 +6,7 @@ Milestones 1 and 2 have passed user playtesting. Milestone 3 begins with the ded
 
 - [Game requirements and development plan](GAME_PLAN.md)
 - [Development workflow](AGENTS.md)
+- [Blender ship review collection](art/ship-review/README.md)
 
 ## Play
 

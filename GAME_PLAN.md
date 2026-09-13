@@ -141,6 +141,8 @@ Develop an original name, ship and alien designs, interface, and audio for any e
 
 The precise visual style and detailed asset pipeline remain open. Improve models, lighting, effects, and sound progressively after the core gameplay works.
 
+The user requested a separate Blender review collection of recognizable DarkOrbit ships, including playable variants and excluding cosmetic-only skins. This reference-based art study lives in `art/ship-review`, outside Godot's imported assets. It does not add ships to gameplay or change the current progression milestone. Final production art remains subject to review.
+
 ## Development milestones
 
 ### Milestone 1: Flight and one complete combat encounter
