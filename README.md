@@ -30,6 +30,8 @@ These values are initial tuning settings, not a finished economy or combat balan
 
 The server supports **ten client pilots**, with no host player. It controls movement, boost, the shared Sentinel, damage, repairs, rewards, destruction and respawning. It keeps running when the last player leaves. **F7** opens the connection menu; **Disconnect** returns to that menu. A server shutdown also returns clients to the menu.
 
+The client remembers the last successfully connected address and UDP port on this device in `user://connection.cfg`. Failed or cancelled attempts do not replace it. After a disconnect, the fields stay filled in; choose **Connect again** or press Enter on the focused button to retry. You can edit either field or cancel a pending connection. Reconnecting is always manual. Connection messages identify the attempted endpoint and report failure or timeout without guessing the network cause.
+
 Other living pilots have cyan markers with shield and hull bars and current/maximum values. Hull turns red at 35 or below. Their health reflects server state, including repairs. Markers disappear on destruction and return on respawn.
 
 A kill splits the **75-credit pool** among connected contributors; integer shares differ by at most one credit. Dead contributors remain eligible while connected. Spectators receive no reward. Each contributor receives one kill. Repairs and the up-to-10-credit rescue fee are charged to the requesting pilot's saved server balance. Credits are capped at 2 billion.
@@ -60,7 +62,7 @@ $env:DORBIT_PILOT_FILE = 'C:\Users\YOUR_USER\Dorbit\alex.json'
 & 'C:\Games\Dorbit\Dorbit.exe'
 ```
 
-The client reads this file when connecting. The file contains only `id` and `token`; it contains no balance. For another pilot, restart with that pilot's file. Connection-menu integrations can supply `FlightSession.credential_id` and `credential_token` before calling the existing `join(address, port)` method. Address preferences and status presentation remain separate work.
+The client reads this file when connecting. The file contains only `id` and `token`; it contains no balance. For another pilot, restart with that pilot's file. Connection-menu integrations can supply `FlightSession.credential_id` and `credential_token` before calling the existing `join(address, port)` method. The menu remembers successful server addresses separately from pilot credentials.
 
 Authentication uses a fresh server challenge and HMAC-SHA256 proof. The token is never sent over ENet. Unknown IDs, wrong proofs and duplicate logins fail before spawning or receiving world snapshots. The first connected login keeps its session; the newcomer is rejected. After an abrupt network loss, wait for ENet to detect the disconnect before retrying. Authentication attempts time out after five seconds. Gameplay RPCs use the authenticated peer mapping and never accept a pilot ID or balance.
 
@@ -143,6 +145,8 @@ Setup is needed only once. To produce `build/windows/Dorbit.exe`, replace `run` 
 The project uses Godot Compatibility rendering with 4x MSAA by default. The first scene uses simple meshes and a procedural sky; it does not require Blender or downloaded art assets.
 
 ## Validation
+
+For a repeatable ten-client Linux server workload, CPU/memory measurements and their limits, see [PERFORMANCE.md](PERFORMANCE.md). Headless simulation measurements do not establish rendered client FPS.
 
 `check` imports the project and runs headless integration tests against the actual scene and physics world, network checks with separate ENet peers, and a complete hunt-and-repair replay. It covers input actions, shield and hull damage, cooldowns, range, firing arcs, obstacles, rewards, repairs, rescue, movement, mouse steering, pause, joining, replication, and disconnects.
 
