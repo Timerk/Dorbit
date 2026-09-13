@@ -13,6 +13,9 @@ func replicate(host: Sector) -> void:
 			var peer: Sector = viewport.get_child(0)
 			if peer == host or not peer.session.active:
 				continue
+			for alien_id: int in host.aliens:
+				if peer.session.alien_sequences.get(alien_id, -1) < expected:
+					complete = false
 			for id: int in host.session.ships:
 				if peer.session.player_sequences.get(id, -1) < expected:
 					complete = false
@@ -53,8 +56,9 @@ func run() -> void:
 	var remote := server.session.ships[id]
 	var combat := server.session.combat
 	var alien := server.alien
-	remote.position = Vector3(0, 60, 0)
-	alien.position = Vector3(0, 60, -100)
+	remote.position = Vector3(0, 100, 0)
+	alien.position = Vector3(0, 100, -100)
+	alien.home_position = alien.position
 	var start := remote.position
 	client.session.command_flight.rpc_id(1, Vector3(0, 0, -1), Vector3.ZERO, true)
 	await settle()
@@ -64,7 +68,7 @@ func run() -> void:
 	var initial := alien.shield
 	await send_fire(client)
 	combat.tick(0.01)
-	check(alien.shield < initial and id in combat.contributors, "Dedicated server validates client fire and contribution")
+	check(alien.shield < initial and id in alien.contributors, "Dedicated server validates client fire and contribution")
 	alien.take_damage(999, remote)
 	await replicate(server)
 	check(client.credits == 75 and client.kills == 1, "Dedicated server awards the full pool to the sole contributor")
@@ -88,13 +92,13 @@ func run() -> void:
 	var saved: Dictionary = client.session.goals[id].duplicate()
 	var newer := saved.duplicate()
 	newer["shield"] = 20.0
-	client.session.snapshot({id: newer}, combat.pack_alien(), sequence)
-	client.session.snapshot({id: saved}, combat.pack_alien(), sequence - 1)
+	client.session.snapshot({id: newer}, combat.pack_alien(alien), sequence)
+	client.session.snapshot({id: saved}, combat.pack_alien(alien), sequence - 1)
 	check(client.player.shield == 20.0, "An older chunk cannot roll back a newer player snapshot")
 	var other_id := clients[1].multiplayer.get_unique_id()
 	var other: Dictionary = client.session.goals[other_id].duplicate()
 	other["shield"] = 30.0
-	client.session.snapshot({other_id: other}, combat.pack_alien(), sequence - 1)
+	client.session.snapshot({other_id: other}, combat.pack_alien(alien), sequence - 1)
 	check(client.session.ships[other_id].shield == 30.0, "An out-of-order chunk for a different pilot is still applied")
 	server.session.snapshot_sequence = sequence
 	await replicate(server)

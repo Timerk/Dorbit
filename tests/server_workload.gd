@@ -19,6 +19,9 @@ var deaths := 0
 var alive_ticks := 0
 var minimum_roster := 10
 var command_clock := 0.0
+var hits_by_alien: Dictionary[int, int] = {}
+var deaths_by_alien: Dictionary[int, int] = {}
+var simultaneous_ticks := 0
 
 
 func run() -> void:
@@ -35,11 +38,15 @@ func run() -> void:
 		sector.session.credential_token = test_token(index)
 		check(sector.session.join("127.0.0.1", 24683) == OK, "Workload client joins")
 		return
-	sector.alien.damaged.connect(record_hit)
-	sector.alien.destroyed.connect(func(_ship: SpaceShip, _attacker: SpaceShip):
-		if measuring: deaths += 1)
-	sector.alien.fired.connect(func(_a: Vector3, _b: Vector3, _hostile: bool):
-		if measuring: alien_shots += 1)
+	for enemy: Alien in sector.aliens.values():
+		enemy.damaged.connect(record_hit)
+		enemy.destroyed.connect(func(ship: SpaceShip, _attacker: SpaceShip):
+			if measuring:
+				deaths += 1
+				var alien_id := (ship as Alien).alien_id
+				deaths_by_alien[alien_id] = deaths_by_alien.get(alien_id, 0) + 1)
+		enemy.fired.connect(func(_a: Vector3, _b: Vector3, _hostile: bool):
+			if measuring: alien_shots += 1)
 	print("BENCHMARK_READY")
 	var deadline := Time.get_ticks_msec() + 30000
 	while sector.session.ships.size() != 10 and Time.get_ticks_msec() < deadline:
@@ -65,7 +72,8 @@ func run() -> void:
 	check(minimum_roster == 10 and distances.size() == 10, "Ten pilots remain throughout measurement")
 	check(distances.values().all(func(value: float): return value > 100.0), "Every pilot moves more than 100 m")
 	check(hits.values().all(func(value: int): return value > 0), "Every pilot damages the alien")
-	check(deaths > 0 and alien_shots > 0, "Alien fights and dies during measurement")
+	check(deaths > 0 and alien_shots > 0, "Aliens fight and die during measurement")
+	check(hits_by_alien.size() == 5 and deaths_by_alien.size() == 5 and simultaneous_ticks > 0, "Every alien fights and dies, with overlapping encounters")
 	write_json("server.json", {
 		"passed": failures == 0, "elapsed_seconds": elapsed,
 		"physics_ticks": tick_us.size(), "ticks_per_second": tick_us.size() / elapsed,
@@ -75,6 +83,8 @@ func run() -> void:
 		"engine_physics_ms": distribution(physics_ms), "minimum_roster": minimum_roster,
 		"distance_m_by_peer": distances, "hits_by_peer": hits,
 		"alien_shots": alien_shots, "alien_deaths": deaths,
+		"hits_by_alien": hits_by_alien, "deaths_by_alien": deaths_by_alien,
+		"simultaneous_combat_tick_fraction": float(simultaneous_ticks) / maxi(tick_us.size(), 1),
 		"alien_alive_tick_fraction": float(alive_ticks) / maxi(tick_us.size(), 1),
 	})
 	# The runner stops clients first, then terminates this owned server process.
@@ -87,7 +97,7 @@ func step() -> void:
 		drive_client(delta)
 		return
 	var before := Time.get_ticks_usec()
-	var alien_was_alive := sector.alien.alive
+	var alien_was_alive := sector.aliens.values().any(func(enemy: Alien): return enemy.alive)
 	sector._physics_process(delta)
 	var elapsed := Time.get_ticks_usec() - before
 	if not measuring:
@@ -100,8 +110,10 @@ func step() -> void:
 	previous_tick = before
 	physics_ms.append(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0)
 	minimum_roster = mini(minimum_roster, sector.session.ships.size())
-	if sector.alien.alive:
+	if alien_was_alive:
 		alive_ticks += 1
+	if sector.aliens.values().filter(func(enemy: Alien): return enemy.alive and enemy.engaged).size() >= 2:
+		simultaneous_ticks += 1
 	for id: int in sector.session.ships:
 		var location := sector.session.ships[id].position
 		distances[id] = distances.get(id, 0.0) + location.distance_to(positions.get(id, location))
@@ -122,18 +134,21 @@ func drive_client(delta: float) -> void:
 	var location: Vector3 = sector.session.goals[id]["position"]
 	var index := int(options.get("index", "0"))
 	var phase := Time.get_ticks_msec() / 1000.0 * 0.18 + index * TAU / 10.0
-	var target := sector.alien.position
+	var enemy := sector.aliens[index % sector.aliens.size()]
+	var target := enemy.position
 	var destination := target + Vector3(cos(phase) * 100.0, 25.0 + sin(phase * 0.7) * 15.0, sin(phase) * 100.0)
 	var facing := Basis.looking_at((target - location).normalized(), Vector3.UP)
 	var movement := (facing.inverse() * (destination - location) / 25.0).limit_length()
 	sector.session.command_flight.rpc_id(1, movement, facing.get_euler(), false,
-		sector.alien.alive, int(sector.player.get_meta("life", 0)), sector.session.combat.encounter)
+		enemy.available(), int(sector.player.get_meta("life", 0)), enemy.life, enemy.alien_id)
 
 
-func record_hit(_ship: SpaceShip, attacker: SpaceShip) -> void:
+func record_hit(ship: SpaceShip, attacker: SpaceShip) -> void:
 	if measuring:
 		var id: int = sector.session.ships.find_key(attacker)
 		hits[id] = hits.get(id, 0) + 1
+		var alien_id := (ship as Alien).alien_id
+		hits_by_alien[alien_id] = hits_by_alien.get(alien_id, 0) + 1
 
 
 func distribution(values: Array[float]) -> Dictionary:

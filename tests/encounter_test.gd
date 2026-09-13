@@ -44,7 +44,7 @@ func run() -> void:
 	var player := sector.player
 	var alien := sector.alien
 	await tap_key(KEY_TAB)
-	check(sector.target == alien, "Tab input selects the alien")
+	check(sector.target == sector.aliens[1], "Tab input selects the nearest Scout")
 	await tap_key(KEY_SPACE)
 	check(sector.auto_fire, "Space input toggles laser fire")
 	await tap_key(KEY_F3)
@@ -68,9 +68,10 @@ func run() -> void:
 	player.reset_health()
 
 	# A shot needs range, aim, line of sight, and an available cooldown.
-	player.position = Vector3(0, 60, 0)
+	player.position = Vector3(0, 100, 0)
 	player.rotation = Vector3.ZERO
-	alien.position = Vector3(0, 60, -100)
+	alien.position = Vector3(0, 100, -100)
+	alien.home_position = alien.position
 	await sync_physics()
 	check(player.try_fire(alien), "Valid target can be fired on")
 	var after_first_shot := alien.shield
@@ -90,7 +91,7 @@ func run() -> void:
 	box.size = Vector3(20, 20, 4)
 	shape.shape = box
 	wall.add_child(shape)
-	wall.position = Vector3(0, 60, -50)
+	wall.position = Vector3(0, 100, -50)
 	sector.add_child(wall)
 	await sync_physics()
 	check(not player.try_fire(alien), "An obstacle blocks laser damage")
@@ -106,7 +107,7 @@ func run() -> void:
 	check(sector.credits == Sector.KILL_REWARD, "One kill awards exactly one reward")
 	check(sector.kills == 1 and not alien.alive, "Alien destruction updates the encounter")
 	check(sector.target == null and not sector.auto_fire, "Destroyed target clears lock and autofire")
-	check(sector.alien_respawn > 0.0, "A replacement alien is scheduled")
+	check(alien.respawn > 0.0, "A replacement alien is scheduled")
 
 	# Repair must require a safe, slow station approach, and allow recovery at zero credits.
 	player.take_damage(100.0, alien)
@@ -139,7 +140,7 @@ func run() -> void:
 	sector._physics_process(3.1)
 	check(player.alive and player.position.is_equal_approx(Sector.SPAWN_POSITION), "Rescue respawns at station")
 	check(player.velocity.is_zero_approx() and player.hull == player.max_hull, "Rescue resets health and velocity")
-	check(alien.alive and alien.position.distance_to(alien.home_position) < 1.0, "Rescue resets alien away from station")
+	check(not alien.alive and alien.respawn > 0.0, "Rescue leaves the alien respawn independent")
 
 	# Verify input wiring, braking, pause, and boost through actual movement.
 	var start := player.position

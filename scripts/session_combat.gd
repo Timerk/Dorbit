@@ -4,36 +4,35 @@ extends Node
 
 var session: FlightSession
 var records: Dictionary[int, Dictionary] = {}
-var contributors: Array[int] = []
-var encounter: int = 0
-var alien_respawn: float = 0.0
 var solo: Dictionary = {}
-var alien_goal: Dictionary = {}
 
 
 func begin() -> void:
 	var sector := session.sector
 	solo = {"credits": sector.credits, "kills": sector.kills, "stage": sector.objective_stage}
 	records.clear()
-	contributors.clear()
-	encounter = 0
-	alien_respawn = 0.0
-	alien_goal.clear()
 	sector.credits = 0
 	sector.kills = 0
 	sector.objective_stage = 0
 	sector.player_respawn = 0.0
-	sector.alien_respawn = 0.0
 	if not sector.dedicated_server:
 		sector.player.simulation_authority = multiplayer.is_server()
-	sector.alien.simulation_authority = multiplayer.is_server()
-	sector.alien.position = sector.alien.home_position
-	sector.alien.patrol_time = 0.0
-	sector.alien.reset_health()
-	sector.alien.set_meta("feedback_health_received", false)
-	if not sector.alien.damaged.is_connected(record_damage):
-		sector.alien.damaged.connect(record_damage)
-	sector.notify("Shared encounter. Select the Sentinel and hunt together. F7 opens the session menu.")
+	for alien: Alien in sector.aliens.values():
+		alien.simulation_authority = multiplayer.is_server()
+		alien.position = alien.home_position
+		alien.patrol_time = 0.0
+		alien.life = 0
+		alien.respawn = 0.0
+		alien.returning = false
+		alien.engaged = false
+		alien.contributors.clear()
+		alien.snapshot_goal.clear()
+		alien.reset_health()
+		alien.set_meta("feedback_health_received", false)
+		alien.visible = multiplayer.is_server()
+		if not alien.damaged.is_connected(record_damage):
+			alien.damaged.connect(record_damage)
+	sector.notify("Scouts near the approach. Sentinels ahead. Heavy on the right flank.")
 
 
 func add_player(id: int, location: Vector3) -> void:
@@ -49,19 +48,25 @@ func add_player(id: int, location: Vector3) -> void:
 
 func remove_player(id: int) -> void:
 	records.erase(id)
-	contributors.erase(id)
+	for alien: Alien in session.sector.aliens.values():
+		alien.contributors.erase(id)
 
 
-func record_damage(_ship: SpaceShip, attacker: SpaceShip) -> void:
+func record_damage(ship: SpaceShip, attacker: SpaceShip) -> void:
 	if not session.active or not multiplayer.is_server():
 		return
 	var id: Variant = session.ships.find_key(attacker)
-	if id != null and id not in contributors:
-		contributors.append(id)
+	var alien := ship as Alien
+	if id != null and id not in alien.contributors:
+		alien.contributors.append(id)
 
 
 func tick(delta: float) -> void:
 	var sector := session.sector
+	for alien: Alien in sector.aliens.values():
+		alien.check_retreat(choose_target(alien))
+		if sector.target == alien and not alien.available():
+			sector.select_target(null)
 	for id: int in records:
 		var ship := session.ships[id]
 		ship.tick_combat(delta)
@@ -78,37 +83,42 @@ func tick(delta: float) -> void:
 			continue
 		if ship.position.distance_to(Sector.STATION_POSITION) > 75.0:
 			records[id]["stage"] = maxi(records[id]["stage"], 1)
-		var firing := sector.auto_fire and sector.target == sector.alien and not sector.paused if id == 1 else remote_firing(id)
-		if firing:
+		var enemy: Alien = sector.target as Alien if id == 1 else remote_target(id)
+		var firing := sector.auto_fire and not sector.paused if id == 1 else remote_firing(id)
+		if firing and is_instance_valid(enemy) and enemy.available():
 			records[id]["stage"] = maxi(records[id]["stage"], 2)
-			ship.try_fire(sector.alien)
-	sector.alien.tick_combat(delta)
-	if sector.alien.alive:
-		sector.alien.fly(delta, choose_target(), Sector.STATION_POSITION)
-	else:
-		alien_respawn = maxf(0.0, alien_respawn - delta)
-		if alien_respawn <= 0.0:
-			encounter += 1
-			contributors.clear()
-			sector.alien.position = sector.alien.home_position
-			sector.alien.reset_health()
+			ship.try_fire(enemy)
+	for alien: Alien in sector.aliens.values():
+		alien.tick_combat(delta)
+		if alien.alive:
+			alien.fly(delta, choose_target(alien), Sector.STATION_POSITION)
+		else:
+			alien.respawn = maxf(0.0, alien.respawn - delta)
+			if alien.respawn <= 0.0:
+				alien.position = alien.home_position
+				alien.returning = false
+				alien.reset_encounter()
 	if records.has(1):
 		update_local(records[1])
-	sector.alien_respawn = alien_respawn
+
+
+func remote_target(id: int) -> Alien:
+	return session.sector.aliens.get(session.commands.get(id, {}).get("target", -1))
 
 
 func remote_firing(id: int) -> bool:
 	var command: Dictionary = session.commands.get(id, {})
-	return not command.is_empty() and command.get("fire", false) and command.get("encounter", -1) == encounter and Time.get_ticks_msec() - command["time"] < FlightSession.COMMAND_TIMEOUT * 1000
+	var alien := remote_target(id)
+	return is_instance_valid(alien) and alien.available() and command.get("fire", false) and command.get("encounter", -1) == alien.life and Time.get_ticks_msec() - command["time"] < FlightSession.COMMAND_TIMEOUT * 1000
 
 
-func choose_target() -> Pilot:
+func choose_target(alien: Alien) -> Pilot:
 	var target: Pilot = null
-	var nearest := 260.0
+	var nearest: float = alien.tuning()["detection"]
 	for ship: Pilot in session.ships.values():
 		if not ship.alive or ship.position.distance_to(Sector.STATION_POSITION) <= 75.0:
 			continue
-		var distance := ship.position.distance_to(session.sector.alien.position)
+		var distance := ship.position.distance_to(alien.position)
 		if distance < nearest:
 			target = ship
 			nearest = distance
@@ -119,13 +129,16 @@ func destroyed(ship: SpaceShip) -> void:
 	if not multiplayer.is_server():
 		return
 	show_explosion.rpc(ship.position)
-	if ship == session.sector.alien:
-		# Integer credits: conserve the 75-credit pool and distribute the remainder in peer-ID order.
+	if ship is Alien:
+		var alien := ship as Alien
+		var contributors := alien.contributors
+		var pool: int = alien.tuning()["reward"]
+		# Conserve each pool; distribute integer remainders in peer-ID order.
 		contributors.sort()
 		var balances: Dictionary[int, int] = {}
 		for index in range(contributors.size()):
 			var id := contributors[index]
-			var reward := int(Sector.KILL_REWARD / contributors.size()) + (1 if index < Sector.KILL_REWARD % contributors.size() else 0)
+			var reward := int(pool / contributors.size()) + (1 if index < pool % contributors.size() else 0)
 			balances[id] = mini(PilotStore.MAX_CREDITS, records[id]["credits"] + reward)
 		if not balances.is_empty() and not session.save_balances(balances):
 			return
@@ -136,10 +149,12 @@ func destroyed(ship: SpaceShip) -> void:
 			records[id]["stage"] = maxi(records[id]["stage"], 3)
 			message(id, "Alien destroyed. Your share: +%d credits. Return to repair." % reward)
 		contributors.clear()
-		alien_respawn = 12.0
-		session.sector.select_target(null)
+		alien.respawn = alien.tuning()["respawn"]
+		if session.sector.target == alien:
+			session.sector.select_target(null)
 		for id: int in session.commands:
-			session.commands[id]["fire"] = false
+			if session.commands[id].get("target", -1) == alien.alien_id:
+				session.commands[id]["fire"] = false
 	else:
 		var id: int = session.ships.find_key(ship)
 		var fee := mini(records[id]["credits"], Sector.RESPAWN_FEE)
@@ -203,9 +218,9 @@ func pack_player(id: int) -> Dictionary:
 	return data
 
 
-func pack_alien() -> Dictionary:
-	var data := health(session.sector.alien)
-	data.merge({"position": session.sector.alien.position, "rotation": session.sector.alien.rotation, "respawn": alien_respawn, "encounter": encounter})
+func pack_alien(alien: Alien) -> Dictionary:
+	var data := health(alien)
+	data.merge({"id": alien.alien_id, "kind": alien.kind, "position": alien.position, "rotation": alien.rotation, "respawn": alien.respawn, "encounter": alien.life, "returning": alien.returning, "engaged": alien.engaged})
 	return data
 
 
@@ -245,26 +260,31 @@ func update_local(data: Dictionary) -> void:
 
 
 func apply_alien(data: Dictionary) -> void:
-	var alien := session.sector.alien
-	if encounter != data["encounter"] or not data["alive"]:
+	var alien: Alien = session.sector.aliens.get(data["id"])
+	if alien == null or alien.kind != data["kind"]:
+		return
+	var reset: bool = alien.life != data["encounter"] or alien.alive != data["alive"]
+	if session.sector.target == alien and (reset or data["returning"]):
 		session.sector.select_target(null)
-	if encounter != data["encounter"] or alien.alive != data["alive"] or alien_goal.is_empty():
+	if reset or alien.snapshot_goal.is_empty() or alien.returning != data["returning"]:
 		alien.position = data["position"]
 		alien.rotation = data["rotation"]
-	encounter = data["encounter"]
+	alien.life = data["encounter"]
+	alien.returning = data["returning"]
+	alien.engaged = data["engaged"]
+	alien.respawn = data["respawn"]
 	apply_health(alien, data)
-	alien_goal = data
-	session.sector.alien_respawn = data["respawn"]
+	alien.snapshot_goal = data
 
 
 func interpolate(delta: float) -> void:
-	if alien_goal.is_empty():
-		return
-	var alien := session.sector.alien
-	alien.position = alien.position.lerp(alien_goal["position"], minf(1.0, delta * 15.0))
-	var angles: Vector3 = alien_goal["rotation"]
-	for axis in range(3):
-		alien.rotation[axis] = lerp_angle(alien.rotation[axis], angles[axis], minf(1.0, delta * 15.0))
+	for alien: Alien in session.sector.aliens.values():
+		if alien.snapshot_goal.is_empty():
+			continue
+		alien.position = alien.position.lerp(alien.snapshot_goal["position"], minf(1.0, delta * 15.0))
+		var angles: Vector3 = alien.snapshot_goal["rotation"]
+		for axis in range(3):
+			alien.rotation[axis] = lerp_angle(alien.rotation[axis], angles[axis], minf(1.0, delta * 15.0))
 
 
 func message(id: int, text: String, sound_cue: String = "") -> void:
@@ -301,8 +321,9 @@ func finish() -> void:
 		session.sector.objective_stage = solo["stage"]
 	solo.clear()
 	records.clear()
-	contributors.clear()
-	alien_goal.clear()
+	for alien: Alien in session.sector.aliens.values():
+		alien.contributors.clear()
+		alien.snapshot_goal.clear()
+		alien.simulation_authority = true
 	if not session.sector.dedicated_server:
 		session.sector.player.simulation_authority = true
-	session.sector.alien.simulation_authority = true
