@@ -117,8 +117,11 @@ func _draw() -> void:
 	if sector.toast_time > 0.0:
 		text_at(Vector2(33, 169), sector.toast, 12 if compact else 14, CYAN)
 	marker(Sector.STATION_POSITION, "[+] OUTPOST 01", GREEN, false)
-	if sector.alien.alive:
-		marker(sector.alien.global_position, "HOSTILE SENTINEL", RED, sector.target == sector.alien)
+	if is_instance_valid(sector.target):
+		alien_marker(sector.target as Alien)
+	for enemy: Alien in sector.aliens.values():
+		if enemy != sector.target and enemy.alive and enemy.visible:
+			alien_marker(enemy)
 	if shared:
 		for ship: Pilot in sector.session.ships.values():
 			if ship != player and ship.alive:
@@ -181,24 +184,27 @@ func draw_target_panel(width: float, height: float) -> void:
 		text_at(origin, "NO TARGET", 13, MUTED)
 		text_at(origin + Vector2(0, 34), "Tab or click an alien to lock", 15)
 		text_at(origin + Vector2(0, 64), "%02d  ALIENS DESTROYED" % sector.kills, 12, MUTED)
-		if sector.alien_respawn > 0.0:
-			text_at(origin + Vector2(0, 104), "New contact in %d s" % ceili(sector.alien_respawn), 13, CYAN)
+		text_at(origin + Vector2(0, 104), "Scouts near the station approach", 13, CYAN)
 		return
-	var enemy := sector.target
-	text_at(origin, "SELECTED SENTINEL / %d m" % sector.player.global_position.distance_to(enemy.global_position), 12, RED)
+	var enemy := sector.target as Alien
+	text_at(origin, "%s %d / %d m" % [enemy.kind.to_upper(), enemy.alien_id + 1, sector.player.global_position.distance_to(enemy.global_position)], 12, enemy.tuning()["color"])
 	meter(origin + Vector2(0, 28), "SHIELD", enemy.shield, enemy.max_shield, CYAN)
 	meter(origin + Vector2(0, 72), "HULL", enemy.hull, enemy.max_hull, RED)
 	text_at(origin + Vector2(0, 128), fire_feedback(), 12, RED if sector.auto_fire and not sector.weapon_status.is_empty() else GREEN)
 
 
-func marker(location: Vector3, label: String, color: Color, selected: bool, teammate: Pilot = null) -> void:
+func alien_marker(enemy: Alien) -> void:
+	marker(enemy.global_position, "HOSTILE %s %d%s" % [enemy.kind.to_upper(), enemy.alien_id + 1, " / RETURNING" if enemy.returning else ""], enemy.tuning()["color"], sector.target == enemy, null, sector.target == enemy)
+
+
+func marker(location: Vector3, label: String, color: Color, selected: bool, teammate: Pilot = null, priority: bool = true) -> void:
 	var camera := sector.player.camera
 	var point := camera.unproject_position(location)
 	var behind := camera.is_position_behind(location)
 	var bounds := Rect2(38, 205, size.x - 76, size.y - 480)
 	var distance := sector.player.global_position.distance_to(location)
 	if behind or not bounds.has_point(point):
-		if teammate != null:
+		if teammate != null or not priority:
 			return
 		var direction := point - size * 0.5
 		if behind:
@@ -220,7 +226,7 @@ func marker(location: Vector3, label: String, color: Color, selected: bool, team
 		var start: Vector2 = point + corner * radius
 		draw_line(start, start - Vector2(corner.x * 8, 0), color, 2.0)
 		draw_line(start, start - Vector2(0, corner.y * 8), color, 2.0)
-	marker_caption(point + Vector2(0, radius + 20), "%s%s / %d m" % ["LOCK / " if selected else "", label, distance], color, teammate == null)
+	marker_caption(point + Vector2(0, radius + 20), "%s%s / %d m" % ["LOCK / " if selected else "", label, distance], color, priority and teammate == null)
 
 
 func marker_caption(point: Vector2, caption: String, color: Color, priority: bool) -> void:

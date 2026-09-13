@@ -51,7 +51,7 @@ func run() -> void:
 	attacker.session.disconnect_session("Adversarial test complete")
 	await settle(0.3)
 	var combat := server.session.combat
-	combat.contributors.append(id)
+	server.session.ships[id].position = Vector3(0, 100, -200)
 	server.alien.take_damage(999, server.session.ships[id])
 	await replicate(server)
 	check(client.credits == 75, "Earned reward is replicated after persistence")
@@ -144,7 +144,7 @@ func save_failure_process() -> void:
 	var path := server.session.store.path
 	var original := FileAccess.get_file_as_string(path)
 	DirAccess.make_dir_absolute(path + ".bak.tmp")
-	server.session.combat.contributors.append(id)
+	server.session.ships[id].position = Vector3(0, 100, -200)
 	server.alien.take_damage(999, server.session.ships[id])
 	if server.session.store.failed and not server.is_physics_processing() and server.session.combat.records[id]["credits"] == 0 and FileAccess.get_file_as_string(path) == original:
 		print("SAVE_FAILURE_VERIFIED")

@@ -84,6 +84,10 @@ func present_impact(shield_hit: bool, hull_hit: bool) -> void:
 func firing_blocker(target: SpaceShip) -> String:
 	if not alive or not is_instance_valid(target) or not target.alive:
 		return "NO TARGET"
+	if target is Alien and not target.available():
+		return "TARGET RETURNING"
+	if (hostile and target is Pilot and target.position.distance_to(Sector.STATION_POSITION) <= 75.0) or (self is Pilot and target is Alien and position.distance_to(Sector.STATION_POSITION) <= 75.0):
+		return "STATION PROTECTION"
 	var offset := target.global_position - global_position
 	if offset.length() > laser_range:
 		return "OUT OF RANGE"
