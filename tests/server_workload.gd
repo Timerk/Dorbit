@@ -30,6 +30,9 @@ func run() -> void:
 	sector = make_sector("Workload", server)
 	physics_frame.connect(step)
 	if not server:
+		var index := int(options.get("index", "0"))
+		sector.session.credential_id = "pilot%d" % index
+		sector.session.credential_token = test_token(index)
 		check(sector.session.join("127.0.0.1", 24683) == OK, "Workload client joins")
 		return
 	sector.alien.damaged.connect(record_hit)

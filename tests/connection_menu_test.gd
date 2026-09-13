@@ -6,6 +6,8 @@ func run() -> void:
 	var client := make_sector("Client")
 	client.client_only = true
 	var session := client.session
+	session.credential_id = "pilot0"
+	session.credential_token = test_token(0)
 	session.open_menu()
 	await settle()
 	if "--restart" in OS.get_cmdline_user_args():
@@ -27,8 +29,8 @@ func run() -> void:
 	check(session.join("   ") == ERR_INVALID_PARAMETER, "Blank address is rejected locally")
 	await settle()
 	check(session.menu.visible and not session.join_button.disabled and session.address.editable, "Blank address leaves editable menu")
-	var server := make_sector("Server")
-	check(server.session.host(24731) == OK, "Test server opens its own UDP port")
+	var server := make_sector("Server", true, 24731)
+	check(server.session.active, "Test server opens its own UDP port")
 	session.address.text = " localhost "
 	session.port_field.get_line_edit().text = "24731"
 	session.join_button.pressed.emit()
