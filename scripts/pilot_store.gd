@@ -58,6 +58,13 @@ func open(directory: String) -> bool:
 		if not (credits is float or credits is int) or not is_finite(credits) or credits < 0 or credits > MAX_CREDITS or credits != floor(credits):
 			return fail("Invalid pilot credits. Original file preserved.")
 		pilot["credits"] = int(credits)
+		var contract: Variant = pilot.get("contract", {})
+		if not HuntingContracts.valid(contract):
+			return fail("Invalid hunting contract. Original file preserved.")
+		for field in ["required", "reward", "progress"]:
+			if contract.has(field):
+				contract[field] = int(contract[field])
+		pilot["contract"] = contract
 	pilots = data["pilots"]
 	return true
 
@@ -70,7 +77,7 @@ func verifies(id: String, nonce: PackedByteArray, proof: PackedByteArray) -> boo
 
 
 # Commit all shares of a kill together, before combat publishes the new balances.
-func commit(balances: Dictionary) -> bool:
+func commit(balances: Dictionary, contracts: Dictionary = {}) -> bool:
 	if failed or not locked:
 		return false
 	var next := pilots.duplicate(true)
@@ -79,6 +86,10 @@ func commit(balances: Dictionary) -> bool:
 		if not next.has(id) or not amount is int or amount < 0 or amount > MAX_CREDITS:
 			return fail("Invalid server wallet update.")
 		next[id]["credits"] = amount
+	for id: String in contracts:
+		if not next.has(id) or not HuntingContracts.valid(contracts[id]):
+			return fail("Invalid server contract update.")
+		next[id]["contract"] = contracts[id].duplicate()
 	var current := FileAccess.open(path, FileAccess.READ)
 	if current == null or current.get_as_text() != saved_text:
 		return fail("pilots.json changed or became unreadable while running. Save preserved; stop and recover.")

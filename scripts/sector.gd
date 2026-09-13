@@ -29,6 +29,7 @@ var target: SpaceShip
 var hud: FlightHud
 var credits: int = 0
 var kills: int = 0
+var active_contract: Dictionary = {}
 var auto_fire: bool = false
 var paused: bool = false
 var player_respawn: float = 0.0
@@ -106,7 +107,7 @@ func configure_input() -> void:
 		"repair": KEY_R, "pause_game": KEY_ESCAPE, "fullscreen": KEY_F11,
 		"performance": KEY_F3, "quality": KEY_F4, "quit_game": KEY_F10,
 		"resolution_down": KEY_F5, "resolution_up": KEY_F6,
-		"multiplayer_menu": KEY_F7,
+		"multiplayer_menu": KEY_F7, "contracts": KEY_C,
 	}
 	for action: String in bindings:
 		if InputMap.has_action(action):
@@ -134,9 +135,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().quit()
 		return
 	if event.is_action_pressed("multiplayer_menu"):
+		hud.contract_panel.hide()
 		session.open_menu()
 		return
+	if event.is_action_pressed("contracts") and session.active:
+		hud.toggle_contracts()
+		return
 	if event.is_action_pressed("pause_game"):
+		hud.contract_panel.hide()
 		session.menu.hide()
 		set_paused(not paused)
 	if event.is_action_pressed("quit_game") and paused:
