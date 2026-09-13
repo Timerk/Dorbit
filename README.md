@@ -38,6 +38,14 @@ A kill splits the **75-credit pool** among connected contributors; integer share
 
 Credits survive disconnects and server restarts. Ship position, health, kills and encounter objectives reset on a new connection. The former solo/listen-host modes are development fixtures with temporary wallets, accessible by launching with `--offline` after Godot's `--` separator or `Dorbit.exe -- --offline`. They cannot read or transfer the dedicated server's wallets.
 
+### Hunting contracts
+
+Press C at Outpost 01 to choose one repeatable hunt: 3 Scouts for 90 credits, 2 Sentinels for 150, or 1 Heavy for 200. Return to the station to claim the reward. The board shows progress, reward and readiness; the flight HUD tracks the active hunt. C or Esc returns to flight.
+
+Contract actions require the same position, speed and damage cooldown as repairs. Each eligible contributor earns a full kill of matching progress after acceptance, separately from split kill credits. Death preserves progress. A completed hunt stays active until claimed or abandoned, and abandonment costs nothing. You can then accept the same hunt again. Counts and rewards need playtesting.
+
+Contracts and their accepted terms are saved with the pilot. Kill progress and credit shares commit together; claiming commits its reward and clears the contract in one save. Repeated claims cannot pay twice. A wallet too close to the credit cap must spend credits before claiming. Existing version-1 ledgers without a contract load with no active hunt; malformed contract data stops startup for recovery. Use matching client and server builds, and preserve the ledger when updating or rotating credentials.
+
 ### Provision the private group
 
 The operator assigns each pilot a stable lowercase ID and a random 256-bit token. There is no self-registration or password service. Stop the server before adding pilots or rotating credentials. Keep data outside the checkout and exported build, on a local filesystem.
@@ -161,6 +169,8 @@ The replay opens a 2560 x 1440 window, disables VSync for measurement, and saves
 GitHub Actions runs the Windows checks, exports the Windows client, and tests the dedicated server on Linux for each pull request. `bash tools/server.sh check` covers ten authenticated clients, combat, reconnects, restart recovery, duplicate logins, malformed credentials, corrupted saves and write failures. Tests provision isolated disposable data directories under Godot's user-data directory; they do not read production credentials or saves.
 
 For a two-client Windows-to-Linux replay, provision two fresh test pilots and run the server on port 24684 with a disposable data directory. Set a different `DORBIT_PILOT_FILE` for each Windows Godot process, then launch with `--path . --script res://tests/dedicated_client_playthrough.gd -- --address=YOUR_WSL_IP --label=a`, using `--label=b` for the other. Start both within ten seconds. Each replays the hunt and repair loop; rendered runs save screenshots under `build/validation`.
+
+`tests/hunting_contracts_test.gd` checks authenticated contract actions, shared kill progress, restart recovery, abandonment, repeatability and failed saves. Both check helpers run it. For a rendered accept/hunt/claim replay, run Godot with `--path . --script res://tests/contracts_playthrough.gd`. It provisions a disposable pilot and server on UDP 24690, flies three Scout hunts, claims through the station controls, and saves frames under `build/validation/contracts-*.png`.
 
 ## Code layout
 

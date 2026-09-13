@@ -278,18 +278,24 @@ func authentication_failed(id: int) -> void:
 
 
 # Called only by server combat, before applying any visible reward or charge.
-func save_balances(balances: Dictionary[int, int]) -> bool:
+func save_balances(balances: Dictionary[int, int], contracts: Dictionary[int, Dictionary] = {}) -> bool:
 	if not sector.dedicated_server:
 		return true
 	if store.failed:
 		return false
 	var wallets: Dictionary = {}
+	var saved_contracts: Dictionary = {}
 	for id: int in balances:
 		if not pilot_ids.has(id):
 			store.fail("Wallet update without an authenticated pilot.")
 			break
 		wallets[pilot_ids[id]] = balances[id]
-	if not store.failed and store.commit(wallets):
+	for id: int in contracts:
+		if not pilot_ids.has(id):
+			store.fail("Contract update without an authenticated pilot.")
+			break
+		saved_contracts[pilot_ids[id]] = contracts[id]
+	if not store.failed and store.commit(wallets, saved_contracts):
 		return true
 	printerr("Persistence stopped the server: " + store.error)
 	# Stop simulation immediately; close peers outside any active combat callback.

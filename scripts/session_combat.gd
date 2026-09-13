@@ -9,6 +9,7 @@ var solo: Dictionary = {}
 
 func begin() -> void:
 	var sector := session.sector
+	sector.active_contract = {}
 	solo = {"credits": sector.credits, "kills": sector.kills, "stage": sector.objective_stage}
 	records.clear()
 	sector.credits = 0
@@ -40,8 +41,10 @@ func add_player(id: int, location: Vector3) -> void:
 	ship.set_meta("life", 0)
 	if multiplayer.is_server():
 		records[id] = {"credits": 0, "kills": 0, "stage": 0, "respawn": 0.0, "life": 0, "spawn": location}
+		records[id]["contract"] = {}
 		if session.sector.dedicated_server:
 			records[id]["credits"] = session.store.pilots[session.pilot_ids[id]]["credits"]
+			records[id]["contract"] = session.store.pilots[session.pilot_ids[id]]["contract"].duplicate()
 
 
 func remove_player(id: int) -> void:
@@ -134,15 +137,18 @@ func destroyed(ship: SpaceShip) -> void:
 		# Conserve each pool; distribute integer remainders in peer-ID order.
 		contributors.sort()
 		var balances: Dictionary[int, int] = {}
+		var contracts: Dictionary[int, Dictionary] = {}
 		for index in range(contributors.size()):
 			var id := contributors[index]
 			var reward := int(pool / contributors.size()) + (1 if index < pool % contributors.size() else 0)
 			balances[id] = mini(PilotStore.MAX_CREDITS, records[id]["credits"] + reward)
-		if not balances.is_empty() and not session.save_balances(balances):
+			contracts[id] = HuntingContracts.after_kill(records[id]["contract"], alien.kind.to_lower())
+		if not balances.is_empty() and not session.save_balances(balances, contracts):
 			return
 		for id: int in balances:
 			var reward: int = balances[id] - records[id]["credits"]
 			records[id]["credits"] = balances[id]
+			records[id]["contract"] = contracts[id]
 			records[id]["kills"] += 1
 			records[id]["stage"] = maxi(records[id]["stage"], 3)
 			message(id, "Alien destroyed. Your share: +%d credits. Return to repair." % reward)
@@ -175,6 +181,67 @@ func request_repair() -> bool:
 		return repair(1, records[1]["life"])
 	repair_request.rpc_id(1, int(session.sector.player.get_meta("life", 0)))
 	return false # Host confirms the result asynchronously.
+
+
+func request_contract(action: String, offer: String = "") -> void:
+	if not session.active or session.sector.dedicated_server:
+		return
+	var current := session.sector.active_contract
+	var run: String = current.get("run", "")
+	var life := int(session.sector.player.get_meta("life", 0))
+	if multiplayer.is_server():
+		contract_action(1, life, action, offer, run)
+	else:
+		contract_request.rpc_id(1, life, action, offer, run)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func contract_request(life: int, action: String, offer: String, run: String) -> void:
+	if session.active and multiplayer.is_server():
+		contract_action(multiplayer.get_remote_sender_id(), life, action, offer, run)
+
+
+# A run ID prevents old claim/abandon requests from affecting a repeated trip.
+func contract_action(id: int, life: int, action: String, offer: String, run: String) -> bool:
+	if not multiplayer.is_server() or not records.has(id) or records[id]["life"] != life:
+		return false
+	var blocker := session.sector.repair_blocker(session.ships[id])
+	if not blocker.is_empty():
+		message(id, blocker)
+		return false
+	var current: Dictionary = records[id]["contract"]
+	var next: Dictionary = {}
+	var balance: int = records[id]["credits"]
+	var notice: String
+	match action:
+		"accept":
+			if not current.is_empty() or not run.is_empty() or not HuntingContracts.OFFERS.has(offer):
+				return false
+			next = HuntingContracts.accept(offer)
+			notice = "Contract accepted. " + HuntingContracts.objective(next)
+		"claim":
+			if not HuntingContracts.ready(current) or current["run"] != run:
+				return false
+			if balance > PilotStore.MAX_CREDITS - current["reward"]:
+				message(id, "Spend credits before claiming this reward. Your contract is still ready.")
+				return false
+			balance += current["reward"]
+			notice = "Contract claimed: +%d credits. Choose another hunt at the station." % current["reward"]
+		"abandon":
+			if current.is_empty() or current["run"] != run:
+				return false
+			notice = "Contract abandoned. No credits charged."
+		_:
+			return false
+	if not session.save_balances({id: balance}, {id: next}):
+		return false
+	records[id]["credits"] = balance
+	records[id]["contract"] = next
+	session.commands.erase(id)
+	message(id, notice)
+	if id == 1:
+		update_local(records[id])
+	return true
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -247,6 +314,7 @@ func apply_player(id: int, data: Dictionary) -> bool:
 
 
 func update_local(data: Dictionary) -> void:
+	session.sector.active_contract = data.get("contract", {}).duplicate()
 	session.sector.credits = data["credits"]
 	session.sector.kills = data["kills"]
 	session.sector.objective_stage = maxi(session.sector.objective_stage, data["stage"])
@@ -307,6 +375,7 @@ func show_explosion(location: Vector3) -> void:
 
 
 func finish() -> void:
+	session.sector.active_contract = {}
 	if not solo.is_empty():
 		session.sector.credits = solo["credits"]
 		session.sector.kills = solo["kills"]

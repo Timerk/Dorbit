@@ -60,6 +60,7 @@ func run() -> void:
 	await snapshot("01-departure")
 	sampling = true
 	await press(KEY_TAB)
+	var expected_reward: int = (sector.target as Alien).tuning()["reward"]
 	await press(KEY_SPACE)
 	Input.action_press("forward")
 	await create_timer(3.4).timeout
@@ -71,7 +72,7 @@ func run() -> void:
 		await physics_frame
 	check(sector.kills == 1, "Pilot can kill the first alien with target-lock lasers")
 	check(sector.player.alive, "First encounter is survivable without upgrades")
-	check(sector.credits == Sector.KILL_REWARD, "Combat reward arrives through the live encounter")
+	check(sector.credits == expected_reward, "Combat reward matches the selected alien in the live encounter")
 	await snapshot("03-reward")
 	Input.action_press("backward")
 	deadline = Time.get_ticks_msec() + 10000
