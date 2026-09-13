@@ -76,6 +76,8 @@ func take_damage(amount: float, attacker: SpaceShip) -> void:
 
 
 func firing_blocker(target: SpaceShip) -> String:
+	if laser_damage <= 0.0:
+		return "NO LASER INSTALLED"
 	if not alive or not is_instance_valid(target) or not target.alive:
 		return "NO TARGET"
 	var offset := target.global_position - global_position

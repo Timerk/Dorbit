@@ -291,11 +291,15 @@ func save_balances(balances: Dictionary[int, int]) -> bool:
 		wallets[pilot_ids[id]] = balances[id]
 	if not store.failed and store.commit(wallets):
 		return true
+	stop_for_save_failure()
+	return false
+
+
+func stop_for_save_failure() -> void:
 	printerr("Persistence stopped the server: " + store.error)
 	# Stop simulation immediately; close peers outside any active combat callback.
 	sector.set_physics_process(false)
 	get_tree().quit(1)
-	return false
 
 
 func start_flight() -> void:
@@ -343,6 +347,7 @@ func ready_for_flight() -> void:
 	var location := Vector3(-24 + (slot % 5) * 6, int(slot / 5) * 6, 33)
 	spawn.rpc(id, location)
 	ships[id].set_meta("spawn_slot", slot)
+	combat.publish_inventory(id)
 	status = "Server on UDP %d. Players: %d/%d" % [host_port, ships.size(), MAX_PLAYERS]
 	if sector.dedicated_server:
 		print(status)
