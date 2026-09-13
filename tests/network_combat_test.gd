@@ -105,6 +105,7 @@ func run() -> void:
 	check(absi(combat.records[1]["credits"] - combat.records[id]["credits"]) <= 1, "Contributors receive equal integer shares")
 	check(combat.records[late_id]["credits"] == 0, "A spectator receives no reward")
 	check(client.credits == combat.records[id]["credits"] and client.kills == 1, "Personal rewards and kill count reach the client")
+	check(client.toast.contains("Your share: +%d credits" % client.credits), "Reward feedback names the local awarded share, not the total pool")
 	check(not client.alien.alive and not late.alien.alive and client.target == null, "Alien death and target clearing reach every client")
 	check(client.alien_respawn > 0, "Clients receive the alien respawn countdown")
 	# Repair validates the requesting peer's ship, location, speed, cooldown and wallet.
