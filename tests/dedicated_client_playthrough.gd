@@ -30,7 +30,7 @@ func run() -> void:
 	await process_frame
 	check(sector.session.join(address, 24684) == OK, "Replay client starts")
 	var deadline := Time.get_ticks_msec() + 10000
-	while (sector.session.ships.size() < 2 or not sector.session.received_snapshot) and Time.get_ticks_msec() < deadline:
+	while (sector.session.ships.size() < 2 or not sector.session.received_snapshot or sector.session.alien_sequences.size() < sector.aliens.size()) and Time.get_ticks_msec() < deadline:
 		await physics_frame
 	check(sector.session.ships.size() == 2 and not sector.session.ships.has(1), "Both clients connect without a host pilot")
 	if failures > 0:
@@ -41,28 +41,14 @@ func run() -> void:
 	await press(KEY_TAB)
 	await press(KEY_SPACE)
 	firing = true
-	Input.action_press("forward")
-	await create_timer(3.4).timeout
-	Input.action_release("forward")
-	await create_timer(0.6).timeout
-	await snapshot("dedicated-combat-" + label)
-	deadline = Time.get_ticks_msec() + 25000
-	while sector.kills == 0 and Time.get_ticks_msec() < deadline and sector.player.alive:
-		await physics_frame
+	await hunt_selected()
+	await snapshot("scout-combat-" + label)
 	firing = false
 	check(sector.kills == 1, "Both contributors receive a kill")
-	check(sector.credits in [37, 38], "Both contributors receive half the reward pool")
+	check(sector.credits == 15, "Both contributors receive half the reward pool")
 	check(sector.player.alive, "Co-op encounter is survivable")
 	await snapshot("dedicated-reward-" + label)
-	Input.action_press("backward")
-	deadline = Time.get_ticks_msec() + 10000
-	while sector.player.position.z < 30 and Time.get_ticks_msec() < deadline:
-		await physics_frame
-	Input.action_release("backward")
-	await create_timer(1.0).timeout
-	deadline = Time.get_ticks_msec() + 6000
-	while sector.player.time_since_hit < 5 and Time.get_ticks_msec() < deadline:
-		await physics_frame
+	await return_to_station()
 	await press(KEY_R)
 	await create_timer(0.5).timeout
 	check(sector.objective_stage == 4 and sector.player.hull == sector.player.max_hull, "Both players return and repair through the host")
