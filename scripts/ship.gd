@@ -66,6 +66,7 @@ func take_damage(amount: float, attacker: SpaceShip) -> void:
 	var absorbed := minf(shield, amount)
 	shield -= absorbed
 	hull = maxf(0.0, hull - (amount - absorbed))
+	present_impact(absorbed > 0.0, amount > absorbed)
 	damaged.emit(self, attacker)
 	if hull <= 0.0:
 		alive = false
@@ -73,6 +74,11 @@ func take_damage(amount: float, attacker: SpaceShip) -> void:
 		set_collision_layer_value(2, false)
 		hide()
 		destroyed.emit(self, attacker)
+
+
+func present_impact(shield_hit: bool, hull_hit: bool) -> void:
+	if render_enabled and (shield_hit or hull_hit):
+		SectorVisuals.impact(self, global_position, shield_hit, hull_hit)
 
 
 func firing_blocker(target: SpaceShip) -> String:
