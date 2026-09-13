@@ -30,6 +30,7 @@ func begin() -> void:
 	sector.alien.position = sector.alien.home_position
 	sector.alien.patrol_time = 0.0
 	sector.alien.reset_health()
+	sector.alien.set_meta("feedback_health_received", false)
 	if not sector.alien.damaged.is_connected(record_damage):
 		sector.alien.damaged.connect(record_damage)
 	sector.notify("Shared encounter. Select the Sentinel and hunt together. F7 opens the session menu.")
@@ -39,6 +40,7 @@ func add_player(id: int, location: Vector3) -> void:
 	var ship := session.ships[id]
 	ship.simulation_authority = multiplayer.is_server()
 	ship.set_meta("life", 0)
+	ship.set_meta("feedback_health_received", false)
 	if multiplayer.is_server():
 		records[id] = {"credits": 0, "kills": 0, "stage": 0, "respawn": 0.0, "life": 0, "spawn": location}
 		if session.sector.dedicated_server:
@@ -185,7 +187,7 @@ func repair(id: int, life: int) -> bool:
 	session.commands.erase(id)
 	if records[id]["stage"] >= 3:
 		records[id]["stage"] = 4
-	message(id, "Repairs complete. Cost: %d credits." % cost)
+	message(id, "Repairs complete. Cost: %d credits." % cost, "purchase")
 	if id == 1:
 		session.sector.auto_fire = false
 	return true
@@ -208,6 +210,10 @@ func pack_alien() -> Dictionary:
 
 
 func apply_health(ship: SpaceShip, data: Dictionary) -> void:
+	# Only decreases in authoritative snapshots produce feedback; initial joins and rescue do not.
+	if ship.alive and bool(ship.get_meta("feedback_health_received", false)):
+		ship.present_impact(float(data["shield"]) < ship.shield, float(data["hull"]) < ship.hull)
+	ship.set_meta("feedback_health_received", true)
 	ship.hull = data["hull"]
 	ship.shield = data["shield"]
 	ship.alive = data["alive"]
@@ -261,17 +267,19 @@ func interpolate(delta: float) -> void:
 		alien.rotation[axis] = lerp_angle(alien.rotation[axis], angles[axis], minf(1.0, delta * 15.0))
 
 
-func message(id: int, text: String) -> void:
+func message(id: int, text: String, sound_cue: String = "") -> void:
 	if id == 1:
-		receive_message(text)
+		receive_message(text, sound_cue)
 	else:
-		receive_message.rpc_id(id, text)
+		receive_message.rpc_id(id, text, sound_cue)
 
 
 @rpc("authority", "call_remote", "reliable")
-func receive_message(text: String) -> void:
+func receive_message(text: String, sound_cue: String = "") -> void:
 	if session.active:
 		session.sector.notify(text)
+		if not sound_cue.is_empty() and not session.sector.dedicated_server:
+			SectorVisuals.sound(session.sector, sound_cue, session.sector.player.position)
 
 
 @rpc("authority", "call_local", "unreliable", 3)

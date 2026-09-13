@@ -370,13 +370,6 @@ func spawn(id: int, location: Vector3) -> void:
 		ship.collision_mask = 1
 		ship.destroyed.connect(sector.on_destroyed)
 		ship.fired.connect(sector.on_laser)
-		if not sector.dedicated_server:
-			var label := Label3D.new()
-			label.text = "HOST" if id == 1 else "PILOT %d" % id
-			label.position.y = 4.0
-			label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-			label.font_size = 32
-			ship.add_child(label)
 	ship.position = location
 	ships[id] = ship
 	combat.add_player(id, location)

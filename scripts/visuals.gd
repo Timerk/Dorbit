@@ -154,6 +154,9 @@ static func environment(parent: Node3D, render: bool = true) -> void:
 
 
 static func laser(parent: Node3D, start: Vector3, finish: Vector3, hostile: bool) -> void:
+	sound(parent, "laser", start)
+	if parent.get_tree().get_nodes_in_group("transient_feedback").size() >= 64:
+		return
 	var shape := CylinderMesh.new()
 	shape.top_radius = 0.10
 	shape.bottom_radius = 0.10
@@ -161,6 +164,7 @@ static func laser(parent: Node3D, start: Vector3, finish: Vector3, hostile: bool
 	shape.radial_segments = 6
 	var surface := material(Color("ff675b") if hostile else Color("74f3ff"), true)
 	var beam := mesh(parent, shape, (start + finish) * 0.5, surface)
+	beam.add_to_group("transient_feedback")
 	beam.quaternion = Quaternion(Vector3.UP, (finish - start).normalized())
 	var tween := parent.create_tween()
 	tween.tween_property(beam, "scale", Vector3(0.01, 1.0, 0.01), 0.13)
@@ -168,13 +172,60 @@ static func laser(parent: Node3D, start: Vector3, finish: Vector3, hostile: bool
 
 
 static func explosion(parent: Node3D, location: Vector3) -> void:
+	sound(parent, "destruction", location)
+	if parent.get_tree().get_nodes_in_group("transient_feedback").size() >= 80:
+		return
 	var shape := SphereMesh.new()
 	shape.radius = 1.0
 	shape.height = 2.0
 	var surface := material(Color("ffb96c"), true)
 	surface.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	var burst := mesh(parent, shape, location, surface)
+	burst.add_to_group("transient_feedback")
 	var tween := parent.create_tween().set_parallel(true)
 	tween.tween_property(burst, "scale", Vector3.ONE * 9.0, 0.45)
 	tween.tween_property(surface, "albedo_color:a", 0.0, 0.45)
 	tween.chain().tween_callback(burst.queue_free)
+
+
+static func sound(parent: Node, cue: String, location: Vector3) -> void:
+	var audio := parent.get_tree().get_first_node_in_group("feedback_audio") as FeedbackAudio
+	if audio != null:
+		audio.play(cue, location)
+
+
+static func impact(parent: Node3D, location: Vector3, shield_hit: bool, hull_hit: bool) -> void:
+	# Parent effects to the sector so a destroyed ship cannot hide its final impact.
+	var world := parent.get_parent() as Node3D
+	if world == null:
+		return
+	sound(parent, "hull" if hull_hit else "shield", location)
+	if parent.get_tree().get_nodes_in_group("transient_feedback").size() >= 64:
+		return
+	if shield_hit:
+		var ring := TorusMesh.new()
+		ring.inner_radius = 2.95
+		ring.outer_radius = 3.05
+		var surface := material(Color("8cf1ff"), true)
+		surface.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		var pulse := mesh(world, ring, location, surface)
+		pulse.add_to_group("transient_feedback")
+		pulse.rotation.x = PI / 2.0
+		var camera := parent.get_viewport().get_camera_3d()
+		if camera != null:
+			pulse.basis = camera.global_basis * Basis(Vector3.RIGHT, PI / 2.0)
+		var tween := world.create_tween().set_parallel(true)
+		tween.tween_property(pulse, "scale", Vector3.ONE * 1.35, 0.22)
+		tween.tween_property(surface, "albedo_color:a", 0.0, 0.22)
+		tween.chain().tween_callback(pulse.queue_free)
+	if hull_hit:
+		for angle in [-PI / 4, PI / 4]:
+			var spark := box(world, location, Vector3(4, 0.18, 0.18), material(Color("ffbd70"), true))
+			spark.add_to_group("transient_feedback")
+			var camera := parent.get_viewport().get_camera_3d()
+			if camera != null:
+				spark.basis = camera.global_basis
+			spark.rotate_object_local(Vector3.FORWARD, angle)
+			var tween := world.create_tween()
+			tween.tween_property(spark, "scale", Vector3(1.6, 0.01, 0.01), 0.18)
+			tween.tween_callback(spark.queue_free)
