@@ -1,0 +1,80 @@
+{
+  "catalogue": "D:\\Ship images\\darkorbit_ship_and_design_references.md",
+  "date": "2026-09-13",
+  "references": [
+    {
+      "file": "aegis-base.png",
+      "local_source": "D:\\Ship images\\Aegis\\00 - Base - Aegis.png",
+      "source_page": "https://darkorbitwiki.com/ships/aegis/",
+      "image_url": "https://darkorbitwiki.com/images/aegis.png",
+      "use": "Primary green base paint and silhouette reference",
+      "dimensions": [
+        256,
+        208
+      ],
+      "sha256": "7fd1ba9fc90ac12d7be6924ab565fefe1d4d6fbea74164122285e97dd62ac183"
+    },
+    {
+      "file": "goliath-base.png",
+      "local_source": "D:\\Ship images\\Goliath\\00 - Base - Goliath.png",
+      "source_page": "https://darkorbitwiki.com/ships/goliath/",
+      "image_url": "https://darkorbitwiki.com/images/goliath.png",
+      "use": "Primary silver base paint and silhouette reference",
+      "dimensions": [
+        256,
+        208
+      ],
+      "sha256": "332f3f4068237c6112e0264b8f67d28117870c2e2b3e33a830112865ce402838"
+    },
+    {
+      "file": "aegis-engineering-browser-crop.png",
+      "source_page": "https://darkorbit.fandom.com/de/wiki/Aegis",
+      "image_url": "https://static.wikia.nocookie.net/darkorbit/images/0/02/Fbf4677022f5efc62a54e01bc7e060e64f2002a1.jpg/revision/latest?cb=20120608154843&path-prefix=de",
+      "capture": "Crop of the visibly rendered browser lightbox, not a native download",
+      "dimensions": [
+        950,
+        444
+      ],
+      "observed_source_dimensions": [
+        960,
+        450
+      ],
+      "use": "Two angles establish engineering deck, front tools and rear fins; blue paint is not copied",
+      "sha256": "b603259c278486b215fec8b3fba7c614a56e27bd2bb83b8e8f32b92882cc9075"
+    },
+    {
+      "file": "aegis-engineering-thumbnail.webp",
+      "source_page": "https://darkorbit.fandom.com/de/wiki/Aegis",
+      "image_url": "https://static.wikia.nocookie.net/darkorbit/images/0/02/Fbf4677022f5efc62a54e01bc7e060e64f2002a1.jpg/revision/latest/scale-to-width-down/248?cb=20120608154843&path-prefix=de",
+      "capture": "Downloaded observed page asset, preserved as returned WebP",
+      "use": "Small companion thumbnail of the engineering sheet",
+      "dimensions": [
+        248,
+        116
+      ],
+      "sha256": "b29846f33241987271cb52f3bc5a3e0af13c2b901623606a1ceff0796a101d4b"
+    },
+    {
+      "file": "goliath-secondary.webp",
+      "source_page": "https://darkorbit.fandom.com/de/wiki/Goliath",
+      "image_url": "https://static.wikia.nocookie.net/darkorbit/images/3/3b/10_Goliath.jpg/revision/latest/scale-to-width-down/180?cb=20111127100039&path-prefix=de",
+      "capture": "Downloaded observed page asset, preserved as returned WebP",
+      "use": "Small supplementary angle; does not establish fine surface detail",
+      "dimensions": [
+        180,
+        135
+      ],
+      "sha256": "9ad3b9d7a4bcadcd31adc595c927e5cf47de0b12cc9f43d4d431e17a4c034453"
+    }
+  ],
+  "excluded_reference": {
+    "url": "https://sketchfab.com/3d-models/space-ship-goliath-42ef0fb091db4981a03a387dd1e6ba5e",
+    "reason": "Preview depicts an unrelated black/orange spaceship; rejected after visual inspection"
+  },
+  "inferred": [
+    "Unseen undersides",
+    "Exact thicknesses and panel depths",
+    "Internal joints",
+    "Small fasteners and cooling details"
+  ]
+}
