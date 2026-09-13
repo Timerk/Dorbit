@@ -82,6 +82,8 @@ func present_impact(shield_hit: bool, hull_hit: bool) -> void:
 
 
 func firing_blocker(target: SpaceShip) -> String:
+	if laser_damage <= 0.0:
+		return "NO LASER INSTALLED"
 	if not alive or not is_instance_valid(target) or not target.alive:
 		return "NO TARGET"
 	if target is Alien and not target.available():
