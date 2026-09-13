@@ -11,12 +11,55 @@ const PANEL := Color(0.023, 0.042, 0.069, 0.92)
 var sector: Sector
 var font: Font = ThemeDB.fallback_font
 var background: StyleBoxFlat
+var marker_labels: Array[Rect2] = []
+var audio_controls: VBoxContainer
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background = panel_style()
+	build_audio_controls()
+
+
+func build_audio_controls() -> void:
+	audio_controls = VBoxContainer.new()
+	audio_controls.position = Vector2(32, 220)
+	audio_controls.custom_minimum_size.x = 155
+	add_child(audio_controls)
+	for setting in ["master", "effects"]:
+		var label := Label.new()
+		label.text = setting.capitalize() + " volume"
+		audio_controls.add_child(label)
+		var slider := HSlider.new()
+		slider.max_value = 1.0
+		slider.step = 0.05
+		slider.value = sector.audio.get(setting)
+		slider.value_changed.connect(func(value: float) -> void:
+			sector.audio.set(setting, value)
+			sector.audio.save_preferences())
+		audio_controls.add_child(slider)
+	var mute := CheckButton.new()
+	mute.text = "Mute"
+	mute.button_pressed = sector.audio.muted
+	mute.toggled.connect(func(value: bool) -> void:
+		sector.audio.muted = value
+		sector.audio.save_preferences())
+	audio_controls.add_child(mute)
+
+
+func _process(_delta: float) -> void:
+	audio_controls.visible = sector.paused and not sector.session.menu.visible
+
+
+func fire_feedback() -> String:
+	if not is_instance_valid(sector.target) or not sector.target.alive:
+		return "NO TARGET"
+	if not sector.auto_fire:
+		return "AUTO FIRE OFF / SPACE TO ENGAGE"
+	if sector.weapon_status == "TURN TOWARD TARGET":
+		return "OUTSIDE FIRING ARC"
+	return sector.weapon_status if not sector.weapon_status.is_empty() else "AUTO FIRE ACTIVE"
 
 
 func text_at(point: Vector2, text: String, size_px: int = 16, color: Color = INK) -> void:
@@ -47,6 +90,7 @@ func meter(point: Vector2, title: String, value: float, maximum: float, color: C
 
 
 func _draw() -> void:
+	marker_labels.clear()
 	if not is_instance_valid(sector.player):
 		return
 	var width := size.x
@@ -72,13 +116,13 @@ func _draw() -> void:
 	text_at(Vector2(33, 137), objective, 14 if compact else 17)
 	if sector.toast_time > 0.0:
 		text_at(Vector2(33, 169), sector.toast, 12 if compact else 14, CYAN)
+	marker(Sector.STATION_POSITION, "[+] OUTPOST 01", GREEN, false)
 	if sector.alien.alive:
-		marker(sector.alien.global_position, "SENTINEL", RED, sector.target == sector.alien)
-	marker(Sector.STATION_POSITION, "OUTPOST 01", GREEN, false)
+		marker(sector.alien.global_position, "HOSTILE SENTINEL", RED, sector.target == sector.alien)
 	if shared:
 		for ship: Pilot in sector.session.ships.values():
 			if ship != player and ship.alive:
-				marker(ship.global_position, "PILOT", CYAN, false, ship)
+				marker(ship.global_position, "FRIEND %s" % sector.session.ships.find_key(ship), CYAN, false, ship)
 	var center := size * 0.5
 	draw_line(center - Vector2(8, 0), center - Vector2(3, 0), Color(0.7, 0.85, 0.95, 0.5), 1.0)
 	draw_line(center + Vector2(3, 0), center + Vector2(8, 0), Color(0.7, 0.85, 0.95, 0.5), 1.0)
@@ -141,12 +185,10 @@ func draw_target_panel(width: float, height: float) -> void:
 			text_at(origin + Vector2(0, 104), "New contact in %d s" % ceili(sector.alien_respawn), 13, CYAN)
 		return
 	var enemy := sector.target
-	text_at(origin, "SENTINEL  /  HOSTILE", 12, RED)
+	text_at(origin, "SELECTED SENTINEL / %d m" % sector.player.global_position.distance_to(enemy.global_position), 12, RED)
 	meter(origin + Vector2(0, 28), "SHIELD", enemy.shield, enemy.max_shield, CYAN)
 	meter(origin + Vector2(0, 72), "HULL", enemy.hull, enemy.max_hull, RED)
-	var blocker := sector.weapon_status
-	var status := blocker if not blocker.is_empty() else ("LASERS ACTIVE" if sector.auto_fire else "SPACE TO ENGAGE")
-	text_at(origin + Vector2(0, 128), status, 12, RED if not blocker.is_empty() else GREEN)
+	text_at(origin + Vector2(0, 128), fire_feedback(), 12, RED if sector.auto_fire and not sector.weapon_status.is_empty() else GREEN)
 
 
 func marker(location: Vector3, label: String, color: Color, selected: bool, teammate: Pilot = null) -> void:
@@ -156,41 +198,39 @@ func marker(location: Vector3, label: String, color: Color, selected: bool, team
 	var bounds := Rect2(38, 205, size.x - 76, size.y - 480)
 	var distance := sector.player.global_position.distance_to(location)
 	if behind or not bounds.has_point(point):
+		if teammate != null:
+			return
 		var direction := point - size * 0.5
 		if behind:
 			direction = -direction
 		if direction.length_squared() < 0.01:
 			direction = Vector2.DOWN
 		direction = direction.normalized()
-		point = size * 0.5 + direction * Vector2(size.x * 0.40, size.y * 0.23)
-		draw_circle(point, 4.0, color)
-		draw_line(point, point - direction * 15.0, color, 2.0)
-		text_at(point + Vector2(-42, 25), "%s / %d m" % [label, distance], 11, color)
-		if teammate != null:
-			teammate_health(point + Vector2(0, 36), teammate)
+		var center := bounds.get_center()
+		var extent := bounds.size * 0.5
+		var reach := minf(extent.x / maxf(absf(direction.x), 0.001), extent.y / maxf(absf(direction.y), 0.001))
+		point = center + direction * reach
+		var side := direction.orthogonal() * 6
+		draw_line(point, point - direction * 14 + side, color, 2.5)
+		draw_line(point, point - direction * 14 - side, color, 2.5)
+		marker_caption(point + Vector2(0, 24), "%s / %d m" % [label, distance], color, true)
 		return
 	var radius := 25.0 if selected else 12.0
 	for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
 		var start: Vector2 = point + corner * radius
 		draw_line(start, start - Vector2(corner.x * 8, 0), color, 2.0)
 		draw_line(start, start - Vector2(0, corner.y * 8), color, 2.0)
-	text_at(point + Vector2(-35, radius + 20), "%s / %d m" % [label, distance], 12, color)
-	if teammate != null:
-		teammate_health(point + Vector2(0, radius + 30), teammate)
+	marker_caption(point + Vector2(0, radius + 20), "%s%s / %d m" % ["LOCK / " if selected else "", label, distance], color, teammate == null)
 
 
-func teammate_health(point: Vector2, ship: Pilot) -> void:
-	# Keep the readout within the flight area, including directional markers at the edges.
-	var origin := Vector2(clampf(point.x - 80, 12, size.x - 172), clampf(point.y, 205, size.y - 305))
-	draw_style_box(background, Rect2(origin, Vector2(160, 54)))
-	for row in range(2):
-		var value := ship.shield if row == 0 else ship.hull
-		var maximum := ship.max_shield if row == 0 else ship.max_hull
-		var color := CYAN if row == 0 else (RED if ship.hull <= 35.0 else GREEN)
-		var offset := origin + Vector2(8, 13 + row * 25)
-		text_at(offset, "SHIELD" if row == 0 else "HULL", 11, color)
-		text_at(offset + Vector2(75, 0), "%d / %d" % [ceili(value), ceili(maximum)], 11, INK)
-		var bar := Rect2(offset + Vector2(0, 4), Vector2(144, 4))
-		draw_rect(bar, Color(0.18, 0.26, 0.34, 0.9))
-		bar.size.x *= clampf(value / maxf(maximum, 1.0), 0.0, 1.0)
-		draw_rect(bar, color)
+func marker_caption(point: Vector2, caption: String, color: Color, priority: bool) -> void:
+	var text_size := font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 12)
+	var rect := Rect2(Vector2(clampf(point.x - text_size.x * 0.5 - 5, 12, size.x - text_size.x - 22), point.y - 14), text_size + Vector2(10, 6))
+	for occupied in marker_labels:
+		if occupied.intersects(rect):
+			if not priority:
+				return
+			rect.position.y = occupied.end.y + 3
+	marker_labels.append(rect)
+	draw_style_box(background, rect)
+	text_at(rect.position + Vector2(5, 14), caption, 12, color)
