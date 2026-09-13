@@ -1,0 +1,115 @@
+{
+  "implementation_commit": "045fe4c",
+  "source_sha256": {
+    "tests/alien_sector_playthrough.gd": "9ba7c2151fb8248d48af6677c71ddbb75cd072afc6026e8e8f3d1a058c7d1456",
+    "tests/server_workload.gd": "676e801e58014d9cfcff7ca688922f1eb0ba83a586b570915bd2f6c0fdfedddc",
+    "scripts/hud.gd": "bbdd3f320d74e126af664c9b7dbc6b76665a7b48564cb0baf8d57b09abf12c62",
+    "scripts/alien.gd": "d9ef9784a2f8074fd559cc9aa72046ed14ece013e46623b0fc0b257557f3a9f3",
+    "scripts/flight_session.gd": "8eb236b8a1be7647fbc336ba74a6976c352fcef49a1bacc896c4f3635354f99e",
+    "scripts/sector.gd": "2215ee0bb0b9fe1cb12805589f273810be4e5f8176604d28644b45ee351a5226",
+    "scripts/session_combat.gd": "ec13edf6a3efacab137c0746892d9f9783d3442b68c25953c82300cbec83656a",
+    "scripts/ship.gd": "0d18428978b7308fcd168fd711a705cc3647a9600ad68e8665bf9b08c64e8d23"
+  },
+  "rendered_client": {
+    "adapter": "NVIDIA RTX A500 Laptop GPU",
+    "average_fps": 60.0393612457978,
+    "elapsed_seconds": 60.060599,
+    "frame_ms": {
+      "count": 3606,
+      "max": 79.298,
+      "mean": 16.6557235163616,
+      "p50": 16.656,
+      "p95": 17.405,
+      "p99": 18.05
+    },
+    "frames": 3606,
+    "msaa": "4x",
+    "notes": "One rendered scripted client plus nine headless clients and a dedicated server on one Windows machine; no input prediction.",
+    "os": "Windows",
+    "renderer": "GL Compatibility",
+    "resolution": "1440x900"
+  },
+  "windows_server": {
+    "alien_alive_session_tick_us": {
+      "count": 2535,
+      "max": 54019,
+      "mean": 2622.39605522682,
+      "p50": 1021,
+      "p95": 8199,
+      "p99": 18288
+    },
+    "alien_alive_tick_fraction": 0.704166666666667,
+    "alien_deaths": 20,
+    "alien_shots": 87,
+    "deaths_by_alien": {
+      "0": 4,
+      "1": 5,
+      "2": 5,
+      "3": 4,
+      "4": 2
+    },
+    "distance_m_by_peer": {
+      "58847226": 1033.11544787139,
+      "230201240": 1098.82464966923,
+      "240487424": 2678.35191070568,
+      "258477964": 1203.85284021497,
+      "266018148": 1222.08878955245,
+      "280792145": 1275.56686651707,
+      "768927870": 1159.43899461627,
+      "801052419": 1106.53271778673,
+      "1275530128": 1158.32479329407,
+      "1284951278": 1181.28400307149
+    },
+    "elapsed_seconds": 60.060236,
+    "engine_physics_ms": {
+      "count": 3600,
+      "max": 91.292,
+      "mean": 15.6294216666663,
+      "p50": 11.547,
+      "p95": 40.995,
+      "p99": 91.292
+    },
+    "hits_by_alien": {
+      "0": 55,
+      "1": 40,
+      "2": 40,
+      "3": 68,
+      "4": 87
+    },
+    "hits_by_peer": {
+      "58847226": 50,
+      "230201240": 19,
+      "240487424": 37,
+      "258477964": 28,
+      "266018148": 32,
+      "280792145": 27,
+      "768927870": 21,
+      "801052419": 16,
+      "1275530128": 24,
+      "1284951278": 36
+    },
+    "minimum_roster": 10,
+    "passed": true,
+    "physics_ticks": 3600,
+    "session_tick_us": {
+      "count": 3600,
+      "max": 54019,
+      "mean": 2403.44305555556,
+      "p50": 940,
+      "p95": 7657,
+      "p99": 15143
+    },
+    "simultaneous_combat_tick_fraction": 0.286666666666667,
+    "system_elapsed_seconds": 60.0599999427795,
+    "tick_interval_us": {
+      "count": 3599,
+      "max": 91304,
+      "mean": 16684.4153931648,
+      "p50": 15688,
+      "p95": 30816,
+      "p99": 34223
+    },
+    "ticks_per_second": 59.9398244122784,
+    "ticks_per_system_second": 59.9400599971661
+  }
+}

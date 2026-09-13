@@ -1,6 +1,6 @@
 # Dedicated server performance workload
 
-This benchmark measures one Linux dedicated server with ten automated headless clients in the existing single-alien sector. It does not measure rendered client FPS or validate the 60 FPS at 1440p target. Cross-network dedicated-server testing remains pending and is independent of this workload.
+This benchmark measures one Linux dedicated server with ten automated headless clients hunting the five-alien sector. The original single-alien measurements remain below as a historical baseline. It does not measure rendered client FPS or validate the 60 FPS at 1440p target. Cross-network dedicated-server testing remains pending and is independent of this workload.
 
 ## Reproduce
 
@@ -26,11 +26,11 @@ The runner imports the project, starts one server process, then ten independent 
 
 `tests/server_workload.gd` extends the existing ENet test fixture in `tests/network_test.gd`, also used by `tests/dedicated_server_test.gd`. Each process creates one sector with the same multiplayer root path and its own physics world. The dedicated sector contains no local pilot or render meshes. A physics-frame callback calls its existing `Sector._physics_process` at the project's nominal 60 Hz; the benchmark does not accelerate ticks or alter gameplay state.
 
-Each client receives normal roster, health, reward, snapshot and effect RPCs. At a nominal 20 Hz it sends normal flight and fire intent, using the replicated position and current life/encounter identifiers. Pilots pursue phase-offset orbits approximately 100 m from the alien, with vertical movement, and fire whenever it is alive. Boost is off. The server retains ordinary collision checks, weapon cooldowns, damage, death, rewards and the 12-second alien respawn delay. No teleports, forced damage or shortened cooldowns create the encounter.
+Each client receives normal roster, health, reward, snapshot and effect RPCs. At a nominal 20 Hz it sends normal flight and fire intent, using the replicated position and current life/encounter identifiers. Pairs of pilots pursue phase-offset orbits approximately 100 m from each of the five alien slots, with vertical movement, and fire while their assigned alien is available. Boost is off. The server retains ordinary collision checks, weapon cooldowns, damage, death, rewards and each type's normal respawn delay. No teleports, forced damage or shortened cooldowns create the encounter.
 
 The drivers replace human input and the normal client prediction loop. They still instantiate client scenes and receive effect RPCs, but `--headless` uses dummy rendering. Client CPU and memory are excluded from server process measurements, although all eleven processes compete for the same machine. This is a server load test, not a normal rendered-client performance test.
 
-The workload fails unless ten pilots remain throughout measurement, each travels over 100 m and damages the alien, and the alien fires and dies. Distance sums authoritative position changes, including any ordinary rescue teleport. It records hits per peer, alien shots/deaths and the fraction of ticks with a living alien. Peer IDs and exact timings vary between runs; the workload is repeatable, not a deterministic replay.
+The workload fails unless ten pilots remain throughout measurement, each travels over 100 m and damages an alien, every alien slot receives hits and dies, aliens fire, and at least two encounters overlap. Distance sums authoritative position changes, including any ordinary rescue teleport. It records hits per peer, alien shots/deaths and the fraction of ticks with a living alien. Peer IDs and exact timings vary between runs; the workload is repeatable, not a deterministic replay.
 
 ## Measurement definitions
 
@@ -42,7 +42,7 @@ The workload fails unless ten pilots remain throughout measurement, each travels
 
 Percentiles use the nearest-rank method. The server window excludes warmup. External CPU/RSS sampling detects the start marker within about 0.1 seconds and the end within about 1 second under normal scheduling. Its window can also differ from Godot elapsed time when the clocks disagree, as observed below. Instrumentation records timings and distances every tick and receives combat signals; its overhead is included. There is no uninstrumented baseline subtraction. System Unix time can be adjusted; compare it against the monotonic sample window before interpreting the rate.
 
-## Results
+## Single-alien results, 12 September 2026
 
 Measured on 12 September 2026, from an independent Windows-owned worktree based on `origin/codex/dedicated-server` at `236f52437426b38a363acf608d51d20401c65b1b`. The committed [raw results](performance-results.json) include the exact workload source hashes, environment and process samples. The captured dirty status records the benchmark files being developed on that base.
 
@@ -77,10 +77,45 @@ The clock discrepancy matters. Linux monotonic time advanced approximately 10% f
 
 The benchmark and all ten client logs were free of Godot errors. The runner retained logs and intermediate data under `build/performance-run-2`; `performance-results.json` preserves the final measurements and environment for review. `bash tools/server.sh check` passed all 43 dedicated-server checks. Python syntax, result JSON and source-hash checks passed. The runner rejected an invalid duration and an existing output directory before launching processes.
 
-## Limits and suggested follow-up
+## Limits of the single-alien baseline
 
 Ten pilots rapidly kill the current single alien, followed by its normal respawn delay. Whole-window averages therefore describe movement, replication and brief combat bursts. The living-alien timing distribution helps expose those bursts, but this is not sustained combat with many aliens.
 
 These short local runs cannot establish VPS sizing, long-term memory stability, internet behavior, or performance for ten rendered Windows clients. No latency, loss or bandwidth constraints are injected. The host differs from the game's Ryzen 7 5800X reference PC. A separate rendered measurement on reference hardware at 1440p and a representative multi-machine encounter are still needed.
 
 No optimizations are implemented here. Before changing code, profile snapshot serialization and replication separately from movement and combat, and compare a dedicated machine against this shared WSL host. If a future approved encounter adds more aliens, rerun with that content and sustained combat before choosing a server capacity target. The current results alone do not identify a production bottleneck.
+
+## Five-alien results, 13 September 2026
+
+The updated workload assigns two pilots to each of two Scouts, two Sentinels and one Heavy. Raw measurements and source hashes are in [alien-performance-results.json](alien-performance-results.json). The host is the same i7-13800H Windows laptop and Ubuntu WSL2 environment as the baseline. This run uses the current persistent credit ledger and the normal per-type respawn delays.
+
+| Measurement | Result |
+| --- | --- |
+| Window | 120.011 Godot seconds; 120.096 system seconds |
+| Server callback | Mean 0.427 ms; p95 1.116 ms; p99 1.522 ms; max 10.745 ms |
+| Server CPU, one core = 100% | Mean 3.44%; p95 4.98%; max 6.97%, using Linux monotonic time |
+| Server RSS | Mean 114.74 MiB; max and lifetime HWM 115.94 MiB |
+| Simulation | 7,201 ticks; 59.96 per system second |
+| Activity | All ten pilots landed 39 to 114 hits; all five slots died and respawned |
+| Combat | 611 player hits; 176 alien shots; 40 alien deaths |
+| Overlap | At least two engaged living aliens on 31.44% of ticks; at least one living alien on 63.67% |
+
+The WSL clock discrepancy persists: the external window was 130.217 monotonic seconds and 120.198 monotonic-raw seconds. CPU percentages use the former, so they understate utilization relative to the raw clock. Callback durations and simulation rate are separate measurements, not rendered FPS. These results do not establish VPS capacity or internet performance.
+
+The executable on the Windows-mounted drive initially exceeded the runner's startup deadline. The completed run used the same Godot 4.7.2 executable copied to Linux storage, selected with the new optional --engine argument. The source project remained in the Windows worktree. The failed startup attempt produced no measurement.
+
+### Rendered client inspection
+
+A separate Windows run uses tests/alien_sector_playthrough.gd for one visible client, plus nine headless tests/server_workload.gd clients and one headless dedicated workload server. All use port 24683, one shared new output directory, --seconds=60 and --warmup=15. Start the server with --role=server, then clients with --role=client and distinct --index=0 through --index=9. The rendered script replaces the workload script only for index 0; omit --headless on that process. Stop the owned processes after rendered-client.json and rendered-sector.png appear. This retains the ordinary server combat and replication but drives input automatically.
+
+The rendered viewport is 1440 by 900 with 4x MSAA, GL Compatibility and default VSync. The GPU is NVIDIA RTX A500 Laptop GPU. This is not the Ryzen/Radeon reference hardware or a 1440p target validation. All eleven processes share the laptop. Godot viewport images were inspected directly because the native computer-use helper failed to connect after retries. A separate frozen lineup confirmed Scout, Sentinel and Heavy placeholder shapes, colors and markers; it is visual inspection, not gameplay or performance evidence.
+
+The final rendered run averaged 60.04 FPS over 60.061 wall-clock seconds, with frame intervals of 17.405 ms at p95, 18.050 ms at p99 and 79.298 ms maximum. Frame intervals use Time.get_ticks_usec rather than Godot's supplied delta, which was fixed in the initial run. Sampling includes fixture overhead and one mid-run screenshot. Default VSync limits this result; the maximum shows that occasional stalls still occurred. The renderer consumes current alien and remote-pilot snapshots and receives ordinary laser effects. [Raw rendered results](alien-rendered-results.json) also preserve the separate Windows server timings from this run. They are not the Linux server measurements above. All ten pilots hit aliens and all five slots died in the rendered run.
+
+Departure and combat captures showed the current sector's alien markers, selected-target health, returning state and weapon effects. Crowded off-screen teammate labels can overlap. Provisional combat tuning still needs human starter-ship and upgraded/group playtesting. No internet latency or packet loss was injected.
+
+## Validation for the alien slice
+
+Godot 4.7.2 passed 265 checks across the new alien-sector suite and existing network, shared-combat, dedicated-server, pilot-persistence, offline encounter and connection-menu suites. The 54 new checks include independent live fire, separate contributions, equal rewards including rescue eligibility, stale/unknown target rejection, ordinary and blocked returns, death and empty-sector respawns, late joins, reordered snapshots, Tab cycling and ray selection. The Linux runner and rendered workload both enforce activity checks. The full Windows check command also passed the starter hunt-and-repair replay. The new 54-check suite passed on Linux. Source import, Windows release export, Python syntax and git diff checks passed.
+
+The optional legacy two-process listen-host replay timed out before the two processes joined on this host. Its Scout steering and reward expectations were updated, but that end-to-end replay and the manual two-client Windows-to-Linux replay remain unverified. The required Windows check command, new real-ENet suites and separate-process dedicated workloads passed.
