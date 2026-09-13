@@ -23,7 +23,7 @@ func replicate(host: Sector) -> void:
 
 func run() -> void:
 	var server := make_sector("Dedicated", true)
-	check(server.player == null and server.hud == null and server.session.menu == null, "Server creates no local player, HUD or menu")
+	check(server.player == null and server.hud == null and server.audio == null and server.session.menu == null, "Server creates no local player, HUD, audio or menu")
 	check(server.session.active and server.session.ships.is_empty(), "Dedicated server starts with zero pilots")
 	check(server.find_children("*", "MeshInstance3D", true, false).is_empty(), "Server creates no render meshes")
 	var time := server.alien.patrol_time

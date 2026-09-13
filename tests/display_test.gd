@@ -14,6 +14,17 @@ func run() -> void:
 	await process_frame
 	sector.set_paused(true)
 	var failures := 0
+	var original := [sector.audio.master, sector.audio.effects, sector.audio.muted]
+	# Change the actual controls, then load a fresh audio node from the saved preferences.
+	var controls: VBoxContainer = sector.hud.audio_controls
+	controls.get_child(1).value = 0.35
+	controls.get_child(3).value = 0.45
+	controls.get_child(4).button_pressed = true
+	var reloaded := FeedbackAudio.new()
+	root.add_child(reloaded)
+	if not is_equal_approx(reloaded.master, 0.35) or not is_equal_approx(reloaded.effects, 0.45) or not reloaded.muted:
+		failures += 1
+	reloaded.queue_free()
 	for resolution in [Vector2i(960, 600), Vector2i(1440, 900), Vector2i(1920, 1080)]:
 		DisplayServer.window_set_size(resolution)
 		await create_timer(0.3).timeout
@@ -40,4 +51,8 @@ func run() -> void:
 	key.pressed = false
 	Input.parse_input_event(key)
 	print("Display checks: %d failures" % failures)
+	sector.audio.master = original[0]
+	sector.audio.effects = original[1]
+	sector.audio.muted = original[2]
+	sector.audio.save_preferences()
 	quit(0 if failures == 0 else 1)
