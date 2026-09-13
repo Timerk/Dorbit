@@ -32,6 +32,7 @@ var session: FlightSession
 var dedicated_server: bool = false
 var client_only: bool = true
 var server_port: int = FlightSession.PORT
+var audio: FeedbackAudio
 
 
 func _ready() -> void:
@@ -41,6 +42,8 @@ func _ready() -> void:
 	SectorVisuals.environment(self, not dedicated_server)
 	SectorVisuals.station(self, STATION_POSITION, not dedicated_server)
 	if not dedicated_server:
+		audio = FeedbackAudio.new()
+		add_child(audio)
 		player = Pilot.new()
 		player.position = SPAWN_POSITION
 		add_child(player)
@@ -317,6 +320,7 @@ func request_repair() -> bool:
 	if objective_stage >= 3:
 		objective_stage = 4
 	notify("Repairs complete. Hull, shields and boost restored. Cost: %d credits." % cost)
+	SectorVisuals.sound(self, "purchase", player.position)
 	return true
 
 
