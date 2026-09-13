@@ -105,6 +105,33 @@ Proposed progression principles:
 
 Exact prices, ship roles, upgrade limits, rewards, and sector unlocks remain open.
 
+### First station equipment shop and fitting
+
+This Milestone 3 slice adds equipment for the Pathfinder starter. The second playable ship is a separate feature.
+
+- Each equipment item is individually owned, either in storage or installed in exactly one slot on one owned ship. Players may buy multiple copies of each model.
+- Ships own their fittings. Installing, removing and transferring items between owned ships is free at the station. Switching ships will not move equipment automatically.
+- The starter has two laser slots and two shared generator slots. A generator slot accepts either a shield generator or an engine.
+- Lasers add damage, shield generators add shield capacity, and engines add speed. Bonuses stack by addition. Hull and base movement belong to the ship; empty slots never prevent flight.
+- New pilots receive one laser, one shield generator and one engine installed. Existing saves receive the same starter fitting exactly once, retaining credits and unrelated progression fields.
+- Press B near the station to open the shop and fitting panel. It uses the repair checks: alive, within 60 m, speed at most 8 m/s, and at least five seconds since damage. The server checks every action again.
+- The panel shows credits, prices, individually owned items, slot contents, and current and proposed damage, shield capacity, cruise and boost speeds. Unavailable purchases and fitting actions explain why.
+- Fitting changes never repair hull, refill shields or boost energy, or reset weapon cooldowns. Added shield capacity starts empty and recovers through the normal shield regeneration rules. Removing capacity discards excess charge.
+- The server commits a purchase's credit deduction, new item and request sequence together. Successful requests cannot run again, even after restart. A new intentional purchase uses the next sequence. Inventory and fittings survive death, reconnects and server restarts.
+- No selling, trading, materials, rarity, equipment leveling or further tiers are included.
+
+Provisional equipment values:
+
+| Model | Price | Bonus per installed item |
+| --- | --- | --- |
+| Pulse laser | 3,000 CR | +11 damage per shot |
+| Shield generator | 2,400 CR | +70 shield capacity |
+| Ion engine | 2,400 CR | +8 m/s cruise and boost speed |
+
+The unequipped Pathfinder has 120 hull, no laser damage or shield capacity, 28 m/s cruise and 70 m/s boost. One of each starter item preserves the previous 11 damage, 70 shield, 36 m/s cruise and 78 m/s boost. Acceleration stays 55 m/s² and laser interval stays 0.42 seconds. A second laser fills the empty laser slot; a second shield or engine requires giving up the other generator type.
+
+These prices target a first useful purchase in roughly 15–30 minutes for solo or two-player hunting. The Sentinel has 180 combined health and awards a shared pool of 75 CR. Ideal solo firing takes about seven seconds, followed by a 12-second respawn; movement, aiming, shield recovery and occasional station returns extend that cycle. Budgeting 22–30 seconds per solo kill and an average 2–8 CR for repairs or rescue gives roughly 135–200 net CR/minute, or 15–22 minutes for the second laser. Two contributors split the pool into 37/38 CR; a 17–20 second cycle with roughly 1–3 CR of upkeep per pilot gives about 104–130 net CR/minute, or 23–29 minutes. These are tuning assumptions, not measured progression sessions. Highly efficient hunting can be faster. More contributors divide the same pool and can take substantially longer, so the ten-player economy needs additional content and playtesting. Contract rewards are not included in these estimates and should trigger a pricing review when integrated.
+
 ## Multiplayer and hosting
 
 ### Dedicated server direction

@@ -2,7 +2,7 @@
 
 A space game inspired by DarkOrbit, built with Godot. Windows players connect to a dedicated Linux server to fly, hunt aliens, earn rewards and repair together. Playing alone uses the same server encounter.
 
-Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated server with provisioned pilot identities and persistent credits. Purchases and additional content follow. Ships, scenery and effects use procedural placeholder art.
+Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated server with provisioned pilot identities, persistent credits, and station equipment purchases and fitting. Ships, scenery and effects use procedural placeholder art.
 
 - [Game requirements and development plan](GAME_PLAN.md)
 - [Development workflow](AGENTS.md)
@@ -76,9 +76,19 @@ python3 tools/pilots.py "$HOME/dorbit-data" alex "$HOME/dorbit-credentials/alex-
 
 Distribute the new file and restart. The old token no longer works. To revoke access without redistributing a token, rotate it and retain the new file with the operator. Keep the same ID to keep the wallet. Do not rename a pilot or change credentials while the server runs.
 
+### Station equipment
+
+Press **B** within 60 m of Outpost 01 while moving at most 8 m/s and five seconds clear of damage. Buy equipment into storage, select an owned item and a compatible empty slot, then install it. Move installed items to storage for free. The Pathfinder has two laser slots and two generator slots shared by shields and engines. The panel previews the resulting stats and explains blocked actions. The server keeps running while it is open.
+
+New pilots start with one of each item installed. A second laser costs 3,000 CR; shields and engines cost 2,400 CR each. All values are provisional, with economy assumptions in [GAME_PLAN.md](GAME_PLAN.md). Fitting changes do not repair or refill your ship. Inventory and fittings survive rescue, reconnects and restart. Equipment purchases require the persistent dedicated server; the offline development fixture retains its original stats.
+
 ### Saves, backups and recovery
 
-The ledger is `DORBIT_DATA_DIR/pilots.json`, schema version 1. Every reward, repair charge and rescue fee is committed before the server confirms the balance. All contributors' shares use one commit. Writes go to a sibling temporary file, flush and verify its contents, then rename over the destination. `pilots.json.bak` keeps the previous complete ledger. A save failure stops simulation and exits the server with code 1 before granting the pending transaction.
+The ledger is `DORBIT_DATA_DIR/pilots.json`, schema version 2. Version 1 saves migrate before the server opens its port, retaining credits and adding starter equipment once. Keep matching server, client and provisioning-tool versions; older builds cannot read version 2. The migration uses the normal backup and failure path. Version 2 records with missing or invalid equipment fail validation rather than receiving replacements. Credential rotation preserves inventory, fittings and other pilot fields.
+
+Every reward, repair charge, rescue fee, purchase and fitting change is committed before the server confirms it. All contributors' shares use one commit. Writes go to a sibling temporary file, flush and verify its contents, then rename over the destination. `pilots.json.bak` keeps the previous complete ledger. A save failure stops simulation and exits the server with code 1 before granting the pending transaction.
+
+Each pilot's equipment record contains owned ship IDs, the active ship, item IDs with a single ship/slot location, and a successful-request sequence. Empty ship and slot strings mean storage. Inventory is sent reliably only to its owner; snapshots carry combat and movement stats for all ships. Purchase and fitting requests supply the next sequence and the current life, never a pilot ID, price or stat bonus. Retrying a successful sequence refreshes inventory without applying another transaction. After reconnecting, review the server inventory before making a new purchase.
 
 Only one server or provisioning tool may own the directory. `pilots.json.lock` is an exclusive directory lock. Clean shutdown removes it. A crash or forced termination can leave it behind. Missing, malformed, unsupported or out-of-range data fails closed. The server does not replace an invalid ledger with zero balances, and it detects primary-file edits made while running.
 
