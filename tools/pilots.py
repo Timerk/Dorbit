@@ -56,7 +56,8 @@ def main() -> None:
             parser.error("Use --rotate for an existing pilot; omit it for a new pilot")
         token = secrets.token_hex(32)
         credits = data["pilots"].get(args.pilot, {}).get("credits", 0)
-        data["pilots"][args.pilot] = {"verifier": hashlib.sha256(token.encode()).hexdigest(), "credits": credits}
+        record = data["pilots"].setdefault(args.pilot, {"credits": credits})
+        record["verifier"] = hashlib.sha256(token.encode()).hexdigest()
         temporary = path.with_name("pilots.json.tmp")
         if temporary.exists():
             parser.error("Interrupted pilots.json.tmp exists; preserve it and recover first")

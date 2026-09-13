@@ -39,6 +39,14 @@ Each alien kill splits its credit pool among connected pilots who damaged that a
 
 Credits survive disconnects and server restarts. Ship position, health, kills and encounter objectives reset on a new connection. The former solo/listen-host modes are development fixtures with temporary wallets, accessible by launching with `--offline` after Godot's `--` separator or `Dorbit.exe -- --offline`. They cannot read or transfer the dedicated server's wallets.
 
+### Hunting contracts
+
+Press C at Outpost 01 to choose one repeatable hunt: 3 Scouts for 90 credits, 2 Sentinels for 150, or 1 Heavy for 200. Return to the station to claim the reward. The board shows progress, reward and readiness; the flight HUD tracks the active hunt. C or Esc returns to flight.
+
+Contract actions require the same position, speed and damage cooldown as repairs. Each eligible contributor earns a full kill of matching progress after acceptance, separately from split kill credits. Death preserves progress. A completed hunt stays active until claimed or abandoned, and abandonment costs nothing. You can then accept the same hunt again. Counts and rewards need playtesting.
+
+Contracts and their accepted terms are saved with the pilot. Kill progress and credit shares commit together; claiming commits its reward and clears the contract in one save. Repeated claims cannot pay twice. A wallet too close to the credit cap must spend credits before claiming. Existing version-1 ledgers without a contract load with no active hunt; malformed contract data stops startup for recovery. Use matching client and server builds, and preserve the ledger when updating or rotating credentials.
+
 ### Provision the private group
 
 The operator assigns each pilot a stable lowercase ID and a random 256-bit token. There is no self-registration or password service. Stop the server before adding pilots or rotating credentials. Keep data outside the checkout and exported build, on a local filesystem.
@@ -180,6 +188,8 @@ Esc opens master and effects volume controls and mute. Preferences stay on this 
 On 18 September, alien variety was integrated with the merged feedback changes. Enemy captions use type and slot number; the station and selected target take priority over secondary contacts. The Windows gameplay/network/persistence checks passed, as did the rendered 2560 x 1440 Scout hunt and feedback replay. A separate 60-second run with one rendered client, nine headless clients and a dedicated server kept ten pilots connected: all five aliens fought and died, with overlapping encounters on 33.8% of ticks. The capped 1440 x 900 client averaged 59.97 FPS with 16.82 ms p95 frame time on the RTX A500 Laptop GPU. This is a local integration check, not an internet or reference-hardware benchmark. The busy encounter capture above now shows that run.
 
 Purchases follow on the equipment branch. Its successful server confirmation must trigger `SessionCombat.message(peer_id, text, "purchase")`; failed purchases and wallet snapshots must not trigger it. Clients and server must use matching builds.
+
+`tests/hunting_contracts_test.gd` checks authenticated contract actions, shared kill progress, restart recovery, abandonment, repeatability and failed saves. Both check helpers run it. For a rendered accept/hunt/claim replay, run Godot with `--path . --script res://tests/contracts_playthrough.gd`. It provisions a disposable pilot and server on UDP 24690, flies three Scout hunts, claims through the station controls, and saves frames under `build/validation/contracts-*.png`.
 
 ## Code layout
 
