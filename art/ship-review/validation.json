@@ -1,0 +1,33 @@
+{
+  "ships": 2,
+  "checks": [
+    "Only Aegis and Goliath models remain",
+    "Both saved files reopen in Blender",
+    "Mesh components parented to the ship root",
+    "Nonempty mesh geometry with materials",
+    "Finite base and evaluated vertex coordinates",
+    "No zero-area base polygons",
+    "Five cameras and five 1600 x 1440 renders per ship, newer than the saved model",
+    "All file-based reference images packed into the blend"
+  ],
+  "models": [
+    {
+      "name": "Aegis",
+      "mesh_components": 228,
+      "base_faces": 20770,
+      "evaluated_faces": 43670,
+      "packed_references": 3,
+      "cameras": 5,
+      "bytes": 668777
+    },
+    {
+      "name": "Goliath",
+      "mesh_components": 217,
+      "base_faces": 11464,
+      "evaluated_faces": 40205,
+      "packed_references": 2,
+      "cameras": 5,
+      "bytes": 405946
+    }
+  ]
+}

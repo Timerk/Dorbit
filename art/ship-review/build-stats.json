@@ -1,0 +1,26 @@
+{
+  "Aegis": {
+    "mesh_components": 228,
+    "base_faces": 20770,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Goliath": {
+    "mesh_components": 221,
+    "base_faces": 11490,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  }
+}
