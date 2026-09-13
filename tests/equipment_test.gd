@@ -10,6 +10,9 @@ func request(client: Sector, sequence: int, action: String, subject: String, shi
 func screenshot(client: Sector, label: String) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
+	# This test advances simulation manually; finish interpolation before capturing the UI.
+	client.session.combat.interpolate(1.0)
+	client.weapon_status = client.player.firing_blocker(client.target)
 	await RenderingServer.frame_post_draw
 	var directory := ProjectSettings.globalize_path("res://build/validation")
 	DirAccess.make_dir_recursive_absolute(directory)
@@ -113,7 +116,7 @@ func run() -> void:
 	var health_before := server.alien.shield + server.alien.hull
 	check(ship.try_fire(server.alien), "Fitted ship fires in the live physics world")
 	check(is_equal_approx(health_before - server.alien.shield - server.alien.hull, 22), "Actual combat applies both lasers")
-	await settle(0.03)
+	await replicate(server)
 	await screenshot(client, "equipment-combat")
 	for frame in range(60):
 		ship.fly_command(1.0 / 60.0, Vector3(1, 0, 0), false)
