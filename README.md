@@ -2,7 +2,7 @@
 
 A space game inspired by DarkOrbit, built with Godot. Windows players connect to a dedicated Linux server to fly, hunt aliens, earn rewards and repair together. Playing alone uses the same server encounter.
 
-Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated server with provisioned pilot identities and persistent credits. Purchases and additional content follow. Ships, scenery and effects use procedural placeholder art.
+Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated server with provisioned pilot identities and persistent credits. The sector supports independent Scout, Sentinel and Heavy hunts. Purchases and hunting contracts follow. Ships, scenery and effects use procedural placeholder art.
 
 - [Game requirements and development plan](GAME_PLAN.md)
 - [Development workflow](AGENTS.md)
@@ -15,11 +15,11 @@ Launch `build/windows/Dorbit.exe` after building, or download the `Dorbit-Window
 Set `DORBIT_PILOT_FILE` to your private credential file as described below. Enter the server address and UDP port in the connection menu, then choose **Connect**. Use matching client and server builds.
 
 1. Hold right mouse and move the mouse to steer. Use W/S for forward/backward movement, A/D to strafe, and Q/E to descend/rise.
-2. Fly forward from the station toward the red Sentinel marker. Tab or left click selects it. Space toggles automatic lasers.
+2. Start with an amber Scout near the station approach. Tab selects the nearest available alien, then cycles nearby contacts; left click selects the ship under the pointer. Space toggles automatic lasers.
 3. Keep the alien ahead, within 170 m, and clear of obstacles. Shift boosts while energy is available. Releasing movement brakes the ship.
-4. Destroy the alien to receive 75 credits. Return within 60 m of the green outpost marker, slow below 8 m/s, and press R to repair. Repairs require five seconds without taking damage.
+4. Scout, Sentinel and Heavy kills grant pools of 30, 75 and 180 credits respectively, split equally among eligible contributors. Return within 60 m of the green outpost marker, slow below 8 m/s, and press R to repair. Repairs require five seconds without taking damage.
 
-Shields regenerate after six seconds without damage. Destruction returns the ship to the station after three seconds and costs up to 10 credits. Hull repairs cost a small amount, capped at the available balance so a player with no credits can recover. The alien returns after 12 seconds.
+Shields regenerate after six seconds without damage. Destruction returns the ship to the station after three seconds and costs up to 10 credits. Hull repairs cost a small amount, capped at the available balance so a player with no credits can recover. Scouts respawn after 10 seconds, Sentinels after 12, and the Heavy after 18. Each encounter respawns independently.
 
 Esc opens the flight menu and releases the mouse. The server keeps running. F11 toggles fullscreen, F3 shows performance, and F4 switches antialiasing between high and low. F10 quits from the pause screen. Losing focus releases your controls; incoming damage can continue.
 
@@ -29,13 +29,13 @@ These values are initial tuning settings, not a finished economy or combat balan
 
 ## Dedicated server and connections
 
-The server supports **ten client pilots**, with no host player. It controls movement, boost, the shared Sentinel, damage, repairs, rewards, destruction and respawning. It keeps running when the last player leaves. **F7** opens the connection menu; **Disconnect** returns to that menu. A server shutdown also returns clients to the menu.
+The server supports **ten client pilots**, with no host player. It controls movement, boost, all five aliens, damage, repairs, rewards, destruction and respawning. It keeps running when the last player leaves. **F7** opens the connection menu; **Disconnect** returns to that menu. A server shutdown also returns clients to the menu.
 
 The client remembers the last successfully connected address and UDP port on this device in `user://connection.cfg`. Failed or cancelled attempts do not replace it. After a disconnect, the fields stay filled in; choose **Connect again** or press Enter on the focused button to retry. You can edit either field or cancel a pending connection. Reconnecting is always manual. Connection messages identify the attempted endpoint and report failure or timeout without guessing the network cause.
 
 Other living pilots have cyan markers with shield and hull bars and current/maximum values. Hull turns red at 35 or below. Their health reflects server state, including repairs. Markers disappear on destruction and return on respawn.
 
-A kill splits the **75-credit pool** among connected contributors; integer shares differ by at most one credit. Dead contributors remain eligible while connected. Spectators receive no reward. Each contributor receives one kill. Repairs and the up-to-10-credit rescue fee are charged to the requesting pilot's saved server balance. Credits are capped at 2 billion.
+Each alien kill splits its credit pool among connected pilots who damaged that alien in its current life; integer shares differ by at most one credit. Dead contributors remain eligible while connected. Spectators receive no reward. Each contributor receives one kill. Leash returns reset health and contribution eligibility; returning aliens cannot be damaged. Station protection blocks combat in both directions. Repairs and the up-to-10-credit rescue fee are charged to the requesting pilot's saved server balance. Credits are capped at 2 billion.
 
 Credits survive disconnects and server restarts. Ship position, health, kills and encounter objectives reset on a new connection. The former solo/listen-host modes are development fixtures with temporary wallets, accessible by launching with `--offline` after Godot's `--` separator or `Dorbit.exe -- --offline`. They cannot read or transfer the dedicated server's wallets.
 
@@ -161,7 +161,7 @@ The replay opens a 2560 x 1440 window, disables VSync for measurement, and saves
 
 GitHub Actions runs the Windows checks, exports the Windows client, and tests the dedicated server on Linux for each pull request. `bash tools/server.sh check` covers ten authenticated clients, combat, reconnects, restart recovery, duplicate logins, malformed credentials, corrupted saves and write failures. It also starts separate Linux processes to test SIGTERM, Ctrl+C, repeated restart, concurrent-server exclusion, crashes and shutdown timeout. Tests provision isolated disposable data directories under Godot's user-data directory or the system temporary directory; they do not read production credentials or saves.
 
-For a two-client Windows-to-Linux replay, provision two fresh test pilots and run the server on port 24684 with a disposable data directory. Set a different `DORBIT_PILOT_FILE` for each Windows Godot process, then launch with `--path . --script res://tests/dedicated_client_playthrough.gd -- --address=YOUR_WSL_IP --label=a`, using `--label=b` for the other. Start both within ten seconds. Each replays the hunt and repair loop; rendered runs save screenshots under `build/validation`.
+The Scout hunt-and-repair replays follow the selected alien through 3D flight. For a two-client Windows-to-Linux replay, provision two fresh test pilots and run the server on port 24684 with a disposable data directory. Set a different `DORBIT_PILOT_FILE` for each Windows Godot process, then launch with `--path . --script res://tests/dedicated_client_playthrough.gd -- --address=YOUR_WSL_IP --label=a`, using `--label=b` for the other. Start both within ten seconds. Each replays the hunt and repair loop; rendered runs save screenshots under `build/validation`.
 
 ## Feedback validation
 
@@ -183,13 +183,13 @@ Purchases are not on this branch's mainline base. The same confirmation cue curr
 
 - `scripts/ship.gd`: shared combat state and weapon validation.
 - `scripts/pilot.gd`: flight input and chase camera.
-- `scripts/alien.gd`: alien movement and engagement.
+- `scripts/alien.gd`: type tuning, per-alien life/contributions, movement and leash returns.
 - `scripts/sector.gd`: encounter lifecycle, targeting, rewards, repairs, and rescue.
 - `scripts/flight_session.gd`: session menu, ENet connection lifecycle, host flight simulation, and client prediction/interpolation.
-- `scripts/session_combat.gd`: host-owned alien encounter, per-player wallets, repairs, respawns, and combat snapshots/effects.
+- `scripts/session_combat.gd`: server-owned independent alien encounters, per-player wallets, repairs, respawns, and combat snapshots/effects.
 - `scripts/pilot_store.gd`: validated pilot ledger, challenge verification, atomic replacement and previous-save backup.
 - `tools/pilots.py`: operator provisioning and credential rotation with the server stopped.
 - `scripts/visuals.gd` and `shaders/space.gdshader`: procedural placeholder art and effects.
 - `scripts/hud.gd`: flight instruments, targets, objectives, and pause display.
 
-Combat emits visual signals; visual effects do not award rewards or apply damage. Shared play sends movement and fire intent to the host at 20 Hz and receives authoritative snapshots at 20 Hz, with local flight prediction and smoothing of other players and the alien. Only the host simulates combat; repair requests identify the requesting peer, never a client-supplied price or damage amount.
+Combat emits visual signals; visual effects do not award rewards or apply damage. Shared play sends movement and fire intent to the host at 20 Hz and receives authoritative snapshots at 20 Hz, with local flight prediction and smoothing of other players and aliens. Only the host simulates combat; repair requests identify the requesting peer, never a client-supplied price or damage amount.
