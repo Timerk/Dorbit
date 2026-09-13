@@ -41,6 +41,7 @@ def process_sample(pid):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--engine", type=Path, default=ENGINE, help="Godot Linux executable")
     parser.add_argument("--seconds", type=int, default=120)
     parser.add_argument("--warmup", type=int, default=15)
     parser.add_argument("--git", default="git", help="Use git.exe for a Windows-owned worktree in WSL")
@@ -52,10 +53,11 @@ def main():
     revision = subprocess.check_output([args.git, "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     git_status = subprocess.check_output([args.git, "status", "--short"], cwd=ROOT, text=True)
     source_hashes = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in (
-        "tests/server_workload.gd", "tests/network_test.gd", "tools/benchmark_server.py")}
+        "tests/server_workload.gd", "tests/network_test.gd", "tools/benchmark_server.py",
+        "scripts/alien.gd", "scripts/session_combat.gd", "scripts/flight_session.gd", "scripts/sector.gd", "scripts/ship.gd")}
     started_utc = datetime.now(timezone.utc).isoformat()
     output.mkdir(parents=True, exist_ok=False)
-    command = [str(ENGINE), "--headless", "--max-fps", "60", "--path", str(ROOT)]
+    command = [str(args.engine), "--headless", "--max-fps", "60", "--path", str(ROOT)]
     imported = subprocess.run(command + ["--editor", "--import"], capture_output=True, text=True, timeout=120)
     (output / "import.log").write_text(imported.stdout + imported.stderr)
     if imported.returncode or "ERROR:" in imported.stdout + imported.stderr:
@@ -106,7 +108,7 @@ def main():
             "lscpu": subprocess.check_output(["lscpu"], text=True),
             "memory": Path("/proc/meminfo").read_text(),
             "os_release": Path("/etc/os-release").read_text(),
-            "engine": subprocess.check_output([str(ENGINE), "--headless", "--version"], text=True).strip(),
+            "engine": subprocess.check_output([str(args.engine), "--headless", "--version"], text=True).strip(),
             "git_commit": revision, "git_status": git_status,
             "source_sha256": source_hashes, "started_utc": started_utc,
             "command": command, "clients": 10, "transport": "ENet UDP IPv4 loopback port 24683",

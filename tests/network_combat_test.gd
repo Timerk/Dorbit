@@ -3,7 +3,7 @@ extends "res://tests/network_test.gd"
 
 
 func send_fire(client: Sector, fire: bool = true, life: int = 0, encounter_id: int = 0) -> void:
-	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false, fire, life, encounter_id)
+	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false, fire, life, encounter_id, 0)
 	await settle(0.06)
 
 
@@ -33,9 +33,10 @@ func run() -> void:
 	var remote := host.session.ships[id]
 	var alien := host.alien
 	check(host.credits == 0 and client.credits == 0, "Shared wallets start independently of solo credits")
-	host.player.position = Vector3(-12, 60, 0)
-	remote.position = Vector3(12, 60, 0)
-	alien.position = Vector3(0, 60, -100)
+	host.player.position = Vector3(-12, 100, 0)
+	remote.position = Vector3(12, 100, 0)
+	alien.position = Vector3(0, 100, -100)
+	alien.home_position = alien.position
 	await physics_frame
 	await replicate(host)
 	check(client.alien.position.is_equal_approx(alien.position), "Client receives the host's alien position")
@@ -51,17 +52,17 @@ func run() -> void:
 	check(alien.shield == after_first, "Repeated fire intent obeys the weapon cooldown")
 	await replicate(host)
 	check(is_equal_approx(client.alien.shield, alien.shield), "Alien damage is replicated exactly")
-	check(id in combat.contributors, "A valid hit records the contributing player")
+	check(id in alien.contributors, "A valid hit records the contributing player")
 	# Server geometry, rather than client HUD/aim claims, determines whether a shot is legal.
-	remote.position = Vector3(0, 60, 300)
+	remote.position = Vector3(0, 100, 300)
 	remote.shot_cooldown = 0
 	await send_fire(client)
 	await physics_frame
 	var before_blocked := alien.shield
 	combat.tick(0.01)
 	check(alien.shield == before_blocked, "Host rejects out-of-range fire intent")
-	remote.position = Vector3(12, 60, 0)
-	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3(0, PI, 0), false, true, 0, 0)
+	remote.position = Vector3(12, 100, 0)
+	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3(0, PI, 0), false, true, 0, 0, 0)
 	await settle(0.06)
 	host.session.tick(0.01)
 	check(alien.shield == before_blocked, "Host rejects shots facing away from the alien")
@@ -72,7 +73,7 @@ func run() -> void:
 	box.size = Vector3(50, 50, 4)
 	shape.shape = box
 	wall.add_child(shape)
-	wall.position = Vector3(0, 60, -50)
+	wall.position = Vector3(0, 100, -50)
 	host.add_child(wall)
 	await physics_frame
 	await send_fire(client)
@@ -92,8 +93,8 @@ func run() -> void:
 	check(host.player in host.session.ships.values(), "Host retains its own ship")
 	# The client is closer, so the alien attacks it rather than always targeting the host.
 	remote.position = alien.position + Vector3(0, 0, 80)
-	host.player.position = Vector3(-100, 60, 0)
-	check(combat.choose_target() == remote, "Alien chooses the nearest eligible player")
+	host.player.position = Vector3(-100, 100, 0)
+	check(combat.choose_target(alien) == remote, "Alien chooses the nearest eligible player")
 	remote.take_damage(80, alien)
 	await replicate(host)
 	check(client.player.shield == 0 and client.player.hull == 110, "Player shield overflow and hull damage replicate")
@@ -106,7 +107,7 @@ func run() -> void:
 	check(combat.records[late_id]["credits"] == 0, "A spectator receives no reward")
 	check(client.credits == combat.records[id]["credits"] and client.kills == 1, "Personal rewards and kill count reach the client")
 	check(not client.alien.alive and not late.alien.alive and client.target == null, "Alien death and target clearing reach every client")
-	check(client.alien_respawn > 0, "Clients receive the alien respawn countdown")
+	check(client.alien.respawn > 0, "Clients receive the alien respawn countdown")
 	# Repair validates the requesting peer's ship, location, speed, cooldown and wallet.
 	var wallet: int = combat.records[id]["credits"]
 	client.session.combat.repair_request.rpc_id(1, 0)
@@ -139,17 +140,17 @@ func run() -> void:
 	await replicate(host)
 	check(not client.player.alive and client.player_respawn == 3.0, "Remote destruction and rescue timer replicate")
 	check(client.credits == wallet - 12, "Rescue fee is charged once")
-	var alien_timer := combat.alien_respawn
+	var alien_timer := alien.respawn
 	combat.tick(3.1)
 	await replicate(host)
 	check(client.player.alive and client.player.position.is_equal_approx(remote.position), "Host respawn teleports the client to the station")
 	check(remote.position.is_equal_approx(combat.records[id]["spawn"]) and int(remote.get_meta("life")) == 1, "Respawn starts a fresh player life")
-	check(not alien.alive and combat.alien_respawn < alien_timer, "Player rescue does not reset the shared alien encounter")
+	check(not alien.alive and alien.respawn < alien_timer, "Player rescue does not reset the shared alien encounter")
 	await send_fire(client, true, 0)
 	check(not host.session.commands.has(id), "Commands from a previous player life are rejected")
 	combat.tick(13)
 	await replicate(host)
-	check(alien.alive and client.alien.alive and combat.encounter == 1, "Alien respawns once and reaches all clients")
+	check(alien.alive and client.alien.alive and alien.life == 1, "Alien respawns once and reaches all clients")
 	await send_fire(client, true, 1, 0)
 	check(not combat.remote_firing(id), "Old fire intent cannot attack a newly spawned alien")
 	# A disconnected contributor does not receive a reward or leave stale state.
@@ -157,7 +158,7 @@ func run() -> void:
 	alien.take_damage(1, remote)
 	client.session.disconnect_session("Test leave")
 	await settle()
-	check(id not in combat.contributors and not combat.records.has(id), "Leaving removes combat state and reward eligibility")
+	check(id not in alien.contributors and not combat.records.has(id), "Leaving removes combat state and reward eligibility")
 	check(client.credits == 456, "Leaving restores the client's separate solo credits")
 	alien.take_damage(999, host.player)
 	check(combat.records[1]["credits"] == 113, "Remaining contributor receives the next reward pool")

@@ -72,8 +72,9 @@ func _draw() -> void:
 	text_at(Vector2(33, 137), objective, 14 if compact else 17)
 	if sector.toast_time > 0.0:
 		text_at(Vector2(33, 169), sector.toast, 12 if compact else 14, CYAN)
-	if sector.alien.alive:
-		marker(sector.alien.global_position, "SENTINEL", RED, sector.target == sector.alien)
+	for enemy: Alien in sector.aliens.values():
+		if enemy.alive and enemy.visible:
+			marker(enemy.global_position, "%s %d%s" % [enemy.kind.to_upper(), enemy.alien_id + 1, " / RETURNING" if enemy.returning else ""], enemy.tuning()["color"], sector.target == enemy)
 	marker(Sector.STATION_POSITION, "OUTPOST 01", GREEN, false)
 	if shared:
 		for ship: Pilot in sector.session.ships.values():
@@ -137,11 +138,10 @@ func draw_target_panel(width: float, height: float) -> void:
 		text_at(origin, "NO TARGET", 13, MUTED)
 		text_at(origin + Vector2(0, 34), "Tab or click an alien to lock", 15)
 		text_at(origin + Vector2(0, 64), "%02d  ALIENS DESTROYED" % sector.kills, 12, MUTED)
-		if sector.alien_respawn > 0.0:
-			text_at(origin + Vector2(0, 104), "New contact in %d s" % ceili(sector.alien_respawn), 13, CYAN)
+		text_at(origin + Vector2(0, 104), "Scouts near the station approach", 13, CYAN)
 		return
 	var enemy := sector.target
-	text_at(origin, "SENTINEL  /  HOSTILE", 12, RED)
+	text_at(origin, "%s %d / HOSTILE" % [(enemy as Alien).kind.to_upper(), (enemy as Alien).alien_id + 1], 12, (enemy as Alien).tuning()["color"])
 	meter(origin + Vector2(0, 28), "SHIELD", enemy.shield, enemy.max_shield, CYAN)
 	meter(origin + Vector2(0, 72), "HULL", enemy.hull, enemy.max_hull, RED)
 	var blocker := sector.weapon_status
