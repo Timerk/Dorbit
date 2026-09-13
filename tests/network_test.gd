@@ -18,7 +18,7 @@ func check(condition: bool, description: String) -> void:
 		push_error(description)
 
 
-func make_sector(label: String, dedicated: bool = false) -> Sector:
+func make_sector(label: String, dedicated: bool = false, port: int = 24683) -> Sector:
 	if dedicated:
 		var directory := ProjectSettings.globalize_path("user://pilot-tests-%d-%d" % [OS.get_process_id(), Time.get_ticks_usec()])
 		DirAccess.make_dir_recursive_absolute(directory)
@@ -37,7 +37,7 @@ func make_sector(label: String, dedicated: bool = false) -> Sector:
 	set_multiplayer(SceneMultiplayer.new(), viewport.get_path())
 	var sector := preload("res://scenes/sector.tscn").instantiate()
 	sector.dedicated_server = dedicated
-	sector.server_port = 24683
+	sector.server_port = port
 	sector.client_only = false
 	viewport.add_child(sector)
 	sector.set_physics_process(false)
