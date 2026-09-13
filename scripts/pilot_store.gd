@@ -43,9 +43,10 @@ func open(directory: String) -> bool:
 	if file == null:
 		return fail("Cannot read pilots.json. Provision or recover it before starting.")
 	saved_text = file.get_as_text()
+	file.close()
 	var json := JSON.new()
 	var data: Variant = json.data if json.parse(saved_text) == OK else null
-	if not data is Dictionary or data.get("version") != 1 or not data.get("pilots") is Dictionary or data["pilots"].is_empty():
+	if not data is Dictionary or (data.get("version") != 1 and data.get("version") != 2) or not data.get("pilots") is Dictionary or data["pilots"].is_empty():
 		return fail("Invalid pilots.json schema. Original file preserved.")
 	for id: Variant in data["pilots"]:
 		var pilot: Variant = data["pilots"][id]
@@ -65,8 +66,15 @@ func open(directory: String) -> bool:
 			if contract.has(field):
 				contract[field] = int(contract[field])
 		pilot["contract"] = contract
+		if data["version"] == 1:
+			if pilot.has("equipment"):
+				return fail("Unexpected equipment in legacy save. Original file preserved.")
+			pilot["equipment"] = Equipment.starter()
+		elif not Equipment.valid(pilot.get("equipment")):
+			return fail("Invalid pilot equipment. Original file preserved.")
+		pilot["equipment"]["revision"] = int(pilot["equipment"]["revision"])
 	pilots = data["pilots"]
-	return true
+	return persist(pilots) if data["version"] == 1 else true
 
 
 func verifies(id: String, nonce: PackedByteArray, proof: PackedByteArray) -> bool:
@@ -90,11 +98,54 @@ func commit(balances: Dictionary, contracts: Dictionary = {}) -> bool:
 		if not next.has(id) or not HuntingContracts.valid(contracts[id]):
 			return fail("Invalid server contract update.")
 		next[id]["contract"] = contracts[id].duplicate()
+	return persist(next)
+
+
+# The persisted sequence rejects every old request, including after a reconnect or restart.
+# Only successful changes advance it; distinct purchases use the next sequence.
+func transact(id: String, sequence: int, action: String, subject: String, ship: String, slot: String) -> String:
+	if failed or not locked or not pilots.has(id):
+		return "Persistence unavailable."
+	var next := pilots.duplicate(true)
+	var pilot: Dictionary = next[id]
+	var equipment: Dictionary = pilot["equipment"]
+	if sequence <= equipment["revision"]:
+		return "Request already processed. Inventory refreshed."
+	if sequence != equipment["revision"] + 1 or sequence > MAX_CREDITS:
+		return "Inventory changed. Review it and try again."
+	if action == "buy":
+		if not Equipment.MODELS.has(subject):
+			return "Unknown equipment model."
+		var price: int = Equipment.MODELS[subject]["price"]
+		if equipment["items"].has("purchase-%d" % sequence):
+			fail("Equipment item ID conflicts with its transaction sequence.")
+			return "Persistence unavailable."
+		if pilot["credits"] < price:
+			return "Insufficient credits. Need %d CR." % price
+		pilot["credits"] -= price
+		equipment["items"]["purchase-%d" % sequence] = {"model": subject, "ship": "", "slot": ""}
+	elif action == "fit":
+		var blocker := Equipment.fitting_blocker(equipment, subject, ship, slot)
+		if not blocker.is_empty():
+			return blocker
+		equipment["items"][subject]["ship"] = ship
+		equipment["items"][subject]["slot"] = slot
+	else:
+		return "Unknown station action."
+	equipment["revision"] = sequence
+	if not persist(next):
+		return "Persistence unavailable."
+	return "Purchased. Item is in storage." if action == "buy" else "Fitting saved."
+
+
+func persist(next: Dictionary) -> bool:
+	if failed or not locked:
+		return false
 	var current := FileAccess.open(path, FileAccess.READ)
 	if current == null or current.get_as_text() != saved_text:
 		return fail("pilots.json changed or became unreadable while running. Save preserved; stop and recover.")
 	current.close()
-	var text := JSON.stringify({"version": 1, "pilots": next}, "\t") + "\n"
+	var text := JSON.stringify({"version": 2, "pilots": next}, "\t") + "\n"
 	if not replace_file(path + ".bak", saved_text) or not replace_file(path, text):
 		return false
 	pilots = next

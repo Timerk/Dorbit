@@ -55,7 +55,7 @@ func build_audio_controls() -> void:
 
 
 func _process(_delta: float) -> void:
-	audio_controls.visible = sector.paused and not sector.session.menu.visible and not contract_panel.visible
+	audio_controls.visible = sector.paused and not sector.session.menu.visible and not contract_panel.visible and not sector.shop.visible
 
 
 func fire_feedback() -> String:
@@ -122,6 +122,7 @@ func toggle_contracts() -> void:
 		sector.notify(blocker)
 		return
 	sector.session.menu.hide()
+	sector.shop.hide()
 	sector.set_paused(true)
 	contract_panel.show()
 	update_contract_panel()
@@ -172,7 +173,7 @@ func meter(point: Vector2, title: String, value: float, maximum: float, color: C
 	text_at(point + Vector2(218, 0), "%03d" % ceili(value), 14, color)
 	var bar := Rect2(point + Vector2(0, 10), Vector2(250, 5))
 	draw_rect(bar, Color(0.18, 0.26, 0.34, 0.6))
-	bar.size.x *= clampf(value / maximum, 0.0, 1.0)
+	bar.size.x *= clampf(value / maxf(maximum, 1.0), 0.0, 1.0)
 	draw_rect(bar, color)
 
 
@@ -238,6 +239,7 @@ func _draw() -> void:
 		elif player.time_since_hit < 5.0:
 			label = "REPAIRS AVAILABLE IN %d s" % ceili(5.0 - player.time_since_hit)
 		text_at(Vector2(width - 310, height - 256), label, 14, GREEN)
+		text_at(Vector2(width - 310, height - 279), "B  EQUIPMENT SHOP / FITTING", 14, CYAN)
 	var controls := "WASD  Move    Q/E  Rise / descend    RMB  Steer    Tab  Target    Space  Fire    Shift  Boost    R  Repair    Esc  Pause"
 	if shared:
 		controls = "WASD  Move    Q/E  Rise / descend    RMB  Steer    Tab  Target    Space  Fire    Shift  Boost    R  Repair    F7  Session"
@@ -252,7 +254,7 @@ func _draw() -> void:
 		text_at(center + Vector2(-150, 15), "Returning to the outpost in %d..." % ceili(sector.player_respawn), 17)
 	if sector.paused:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.006, 0.012, 0.025, 0.88))
-		if sector.session.menu.visible or contract_panel.visible:
+		if sector.session.menu.visible or contract_panel.visible or sector.shop.visible:
 			return
 		panel(Rect2(center - Vector2(280, 160), Vector2(560, 400)))
 		text_at(center + Vector2(-248, -103), "FLIGHT MENU" if shared else "FLIGHT PAUSED", 29)
