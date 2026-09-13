@@ -1,25 +1,23 @@
-"""Build the review collection with Blender 5.2. Run from any directory.
+"""Individually authored Aegis and Goliath reference studies for Blender 5.2.
 
-blender --background --factory-startup --python build_models.py -- [ship names]
-Geometry is authored from the linked reference images, with inferred undersides.
+blender --background --factory-startup --python build_models.py -- [Aegis|Goliath] [--draft]
+Forward is -Y, up is Z. Dimensions are reconstruction units, not canonical meters.
 """
 import bpy
+import bmesh
 import json
 import math
 import sys
 from pathlib import Path
-from mathutils import Vector, Quaternion
+from mathutils import Vector
 
 HERE = Path(__file__).resolve().parent
-ROSTER = json.loads((HERE / 'roster.json').read_text(encoding='utf-8'))
-MODELS = HERE / 'models'
-PREVIEWS = HERE / 'previews'
-MODELS.mkdir(exist_ok=True)
-PREVIEWS.mkdir(exist_ok=True)
 PARTS = []
 M = {}
+GROUP = None
 
-def material(name, color, metal=0.65, rough=0.32, emission=0):
+
+def material(name, color, metal=.7, rough=.35, emission=0):
     mat = bpy.data.materials.new(name)
     mat.diffuse_color = (*color, 1)
     mat.use_nodes = True
@@ -27,601 +25,657 @@ def material(name, color, metal=0.65, rough=0.32, emission=0):
     bs.inputs['Base Color'].default_value = (*color, 1)
     bs.inputs['Metallic'].default_value = metal
     bs.inputs['Roughness'].default_value = rough
+    if metal > .45 and not emission:
+        # Subtle metal grain only. Large panel joints are mesh geometry.
+        noise=mat.node_tree.nodes.new('ShaderNodeTexNoise')
+        noise.inputs['Scale'].default_value=175
+        noise.inputs['Detail'].default_value=2
+        bump=mat.node_tree.nodes.new('ShaderNodeBump')
+        bump.inputs['Strength'].default_value=.12
+        bump.inputs['Distance'].default_value=.008
+        mat.node_tree.links.new(noise.outputs['Fac'],bump.inputs['Height'])
+        mat.node_tree.links.new(bump.outputs['Normal'],bs.inputs['Normal'])
     if emission:
         bs.inputs['Emission Color'].default_value = (*color, 1)
         bs.inputs['Emission Strength'].default_value = emission
     return mat
 
-def finish(obj, name, mat='hull', bevel=0):
+
+def group(name):
+    global GROUP
+    GROUP = bpy.data.collections.new(name)
+    bpy.context.scene.collection.children.link(GROUP)
+
+
+def finish(obj, name, mat, bevel=.012, smooth=False):
     obj.name = name
+    for c in list(obj.users_collection):
+        c.objects.unlink(obj)
+    GROUP.objects.link(obj)
     obj.data.materials.append(M[mat])
-    PARTS.append(obj)
     if bevel:
-        mod = obj.modifiers.new('Machined edges', 'BEVEL')
+        mod = obj.modifiers.new('Edge radius', 'BEVEL')
         mod.width = bevel
-        mod.segments = 2
+        mod.segments = 3
+    if smooth:
+        for p in obj.data.polygons:
+            p.use_smooth = True
+    if bevel:
+        mod = obj.modifiers.new('Weighted surface normals', 'WEIGHTED_NORMAL')
+        mod.keep_sharp = True
+        mod.weight = 40
+    PARTS.append(obj)
     return obj
 
-def mesh(name, verts, faces, mat='hull', bevel=0.025):
+
+def mesh(name, verts, faces, mat='steel', bevel=.012, smooth=False):
     data = bpy.data.meshes.new(name)
     data.from_pydata(verts, [], faces)
     data.update()
-    obj = bpy.data.objects.new(name, data)
-    bpy.context.collection.objects.link(obj)
-    # Recalculate normals for manually authored mirrored components.
-    import bmesh
     bm = bmesh.new()
     bm.from_mesh(data)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bm.to_mesh(data)
     bm.free()
-    return finish(obj, name, mat, bevel)
+    obj = bpy.data.objects.new(name, data)
+    GROUP.objects.link(obj)
+    return finish(obj, name, mat, bevel, smooth)
 
-def box(name, loc, size, mat='hull', bevel=0.06):
+
+def box(name, loc, size, mat='dark', bevel=.025):
     bpy.ops.mesh.primitive_cube_add(size=1, location=loc)
     obj = bpy.context.object
     obj.scale = size
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     return finish(obj, name, mat, bevel)
 
-def loft(name, sections, mat='hull', x=0):
-    # Each station describes y, half-width, center-height, half-height.
-    verts=[]
-    for y,w,z,h in sections:
-        for a,b in [(-.65,1),(.65,1),(1,.4),(1,-.4),(.65,-1),(-.65,-1),(-1,-.4),(-1,.4)]:
-            verts.append((x+a*w,y,z+b*h))
-    faces=[tuple(range(7,-1,-1))]
-    for j in range(len(sections)-1):
-        for k in range(8):
-            faces.append((j*8+k,j*8+(k+1)%8,(j+1)*8+(k+1)%8,(j+1)*8+k))
-    faces.append(tuple(range(len(verts)-8,len(verts))))
-    return mesh(name,verts,faces,mat)
 
-def body(length=5, width=.7, height=.4, y=0, z=0, mat='hull', x=0):
-    obj=loft('Armored fuselage',[(y-length*.52,width*.18,z-.05,height*.3),(y-length*.27,width*.82,z,height*.8),(y+length*.12,width,z,height),(y+length*.43,width*.7,z,height*.75),(y+length*.5,width*.5,z,height*.55)],mat,x)
-    for side in [-1,1]:
-        pts=[(x+side*width*.68,y-length*.22),(x+side*width*.87,y+length*.08),(x+side*width*.62,y+length*.32),(x+side*width*.48,y+length*.28)]
-        plate('Shoulder armor seam',pts,z+height*.62,.035,'dark')
-        if length>3:
-            for i in range(3):
-                box('Aft armor louver',(x+side*width*.43,y+length*(.19+i*.045),z+height*.93),(.18*width,.045,.04),'dark',.009)
-    return obj
+def tube(name, a, b, radius, mat='dark', r2=None, vertices=32, bevel=.009):
+    delta = Vector(b) - Vector(a)
+    bpy.ops.mesh.primitive_cone_add(vertices=vertices, radius1=radius,
+        radius2=radius if r2 is None else r2, depth=delta.length,
+        location=(Vector(a) + Vector(b)) / 2)
+    obj = bpy.context.object
+    obj.rotation_euler = delta.to_track_quat('Z', 'Y').to_euler()
+    return finish(obj, name, mat, bevel, True)
 
-def plate(name, points, z=0, thick=.15, mat='hull'):
-    n=len(points)
-    verts=[(x,y,z-thick/2) for x,y in points]+[(x,y,z+thick/2) for x,y in points]
-    faces=[tuple(range(n-1,-1,-1)),tuple(range(n,n*2))]
+
+def sphere(name, loc, size, mat='dark'):
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, location=loc)
+    obj = bpy.context.object
+    obj.scale = size
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    return finish(obj, name, mat, 0, True)
+
+
+def ring(name, loc, major, minor, mat='steel', axis=(0,0,1)):
+    bpy.ops.mesh.primitive_torus_add(major_segments=64, minor_segments=12,
+        major_radius=major, minor_radius=minor, location=loc)
+    obj = bpy.context.object
+    obj.rotation_euler = Vector(axis).to_track_quat('Z','Y').to_euler()
+    return finish(obj, name, mat, 0, True)
+
+
+def pipe(name, points, radius=.018, mat='steel'):
+    curve = bpy.data.curves.new(name, 'CURVE')
+    curve.dimensions = '3D'
+    curve.resolution_u = 2
+    curve.bevel_depth = radius
+    curve.bevel_resolution = 3
+    curve.use_fill_caps = True
+    spline = curve.splines.new('POLY')
+    spline.points.add(len(points)-1)
+    for p, co in zip(spline.points, points):
+        p.co = (*co, 1)
+    obj = bpy.data.objects.new(name, curve)
+    GROUP.objects.link(obj)
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+    bpy.ops.object.convert(target='MESH')
+    obj.select_set(False)
+    return finish(obj, name, mat, 0, True)
+
+
+def panel(name, points, depth=.04, mat='steel', bevel=.012, normal=(0,0,1)):
+    n = len(points)
+    delta = Vector(normal).normalized() * depth
+    verts = [tuple(Vector(p)-delta/2) for p in points] + [tuple(Vector(p)+delta/2) for p in points]
+    faces = [tuple(reversed(range(n))), tuple(range(n,2*n))]
     faces += [(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
-    return mesh(name,verts,faces,mat)
+    return mesh(name, verts, faces, mat, bevel)
 
-def wings(points,z=0,thick=.18,mat='hull', inset=True):
+
+def loft(name, stations, mat='steel', bevel=.025):
+    # Stations: center x, y, center z, half width, half height.
+    profile = [(-.65,1),(.65,1),(1,.45),(1,-.45),(.65,-1),(-.65,-1),(-1,-.45),(-1,.45)]
+    verts = [(x+w*u,y,z+h*v) for x,y,z,w,h in stations for u,v in profile]
+    faces = [tuple(reversed(range(8)))]
+    for j in range(len(stations)-1):
+        faces.extend((j*8+k,j*8+(k+1)%8,(j+1)*8+(k+1)%8,(j+1)*8+k) for k in range(8))
+    faces.append(tuple(range(len(verts)-8,len(verts))))
+    return mesh(name, verts, faces, mat, bevel)
+
+
+def bolt(loc, axis=(0,0,1), radius=.025):
+    a = Vector(loc)
+    v = Vector(axis).normalized()
+    tube('Recessed fastener',a-v*.004,a+v*.012,radius,'recess',vertices=12,bevel=.002)
+    tube('Hex socket screw',a+v*.012,a+v*.021,radius*.64,'steel',vertices=6,bevel=.001)
+
+
+def nozzle(name, center, axis, radius, length):
+    c = Vector(center)
+    v = Vector(axis).normalized()
+    tube(name+' housing',c-v*length,c,radius*1.1,'dark',r2=radius)
+    ring(name+' machined lip',c,radius,.035,'steel',axis)
+    tube(name+' recessed well',c-v*.06,c-v*.045,radius*.83,'recess')
+    tube(name+' emitter',c-v*.037,c-v*.028,radius*.57,'light',bevel=0)
+    # Vanes remain inside the rim, not a solid luminous disk over the engine.
+    u = v.cross(Vector((1,0,0)))
+    if u.length < .1:
+        u = v.cross(Vector((0,1,0)))
+    u.normalize()
+    w = v.cross(u)
+    for i in range(12):
+        r = u*math.cos(i*math.tau/12)+w*math.sin(i*math.tau/12)
+        tube(name+' nozzle vane',c+r*radius*.65,c+r*radius*.92,.016,'steel',vertices=8,bevel=0)
+
+
+def aegis_barrel(name, angles, lower, upper, mat, radius=1.02, wall=.14):
+    # Rounded U-shaped engineering shell. Front opening exposes the neck.
+    verts=[]
+    levels=[(lower,.83),(lower+.14,.98),(upper-.15,1),(upper,.89)]
+    for z,scale in levels:
+        for inner in [False,True]:
+            r=radius*scale-(wall if inner else 0)
+            verts += [(math.sin(a)*r,.85+math.cos(a)*r,z) for a in angles]
+    n=len(angles)
+    faces=[]
+    for j in range(3):
+        for layer in range(2):
+            for k in range(n-1):
+                a=j*n*2+layer*n+k
+                faces.append((a,a+1,a+n*2+1,a+n*2))
+    for j in [0,3]:
+        for k in range(n-1):
+            a=j*n*2+k
+            faces.append((a,a+1,a+n+1,a+n))
+    for k in [0,n-1]:
+        for j in range(3):
+            a=j*n*2+k
+            faces.append((a,a+n,a+n*3,a+n*2))
+    return mesh(name,verts,faces,mat,.018,True)
+
+
+def build_aegis():
+    group('Aegis | engineering body')
+    angles=[math.radians(-148+296*i/64) for i in range(65)]
+    aegis_barrel('Continuous engineering chassis',angles,-.45,1.88,'dark')
+    # Segmented cast armor with narrow real gaps, including chamfered rims.
+    for i in range(8):
+        lo=-148+i*37+.8
+        hi=lo+35.4
+        ang=[math.radians(lo+(hi-lo)*j/10) for j in range(11)]
+        aegis_barrel('Green engineering armor %02d'%i,ang,-.32,1.92,'green',1.058)
+    # Broad deck closes the space between outer armor and the emitter socket.
+    deck_angles=[math.radians(-145+290*i/64) for i in range(65)]
+    aegis_barrel('Upper engineering deck',deck_angles,1.71,1.91,'green',1.01,.48)
+    ring('Recessed upper socket',(0,.86,1.92),.47,.025,'gunmetal')
+    for a in [-115,-55,0,55,115]:
+        a=math.radians(a)
+        x,y=math.sin(a)*.78,.85+math.cos(a)*.78
+        bolt((x,y,1.91),radius=.037)
     for side in [-1,1]:
-        pts=[(x*side,y) for x,y in points]
-        plate('Port wing' if side<0 else 'Starboard wing',pts,z,thick,mat)
-        if inset:
-            cx=sum(x for x,y in pts)/len(pts)
-            cy=sum(y for x,y in pts)/len(pts)
-            plate('Inset wing armor',[(cx+(x-cx)*.77,cy+(y-cy)*.84) for x,y in pts],z+thick/2+.018,.035,'panel')
-
-def tube(name,a,b,r,mat='dark',r2=None,vertices=12):
-    delta=Vector(b)-Vector(a)
-    bpy.ops.mesh.primitive_cone_add(vertices=vertices,radius1=r,radius2=r if r2 is None else r2,depth=delta.length, location=(Vector(a)+Vector(b))/2)
-    obj=bpy.context.object
-    obj.rotation_euler=delta.to_track_quat('Z','Y').to_euler()
-    return finish(obj,name,mat,.015)
-
-def ball(name,loc,scale,mat='hull'):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=20,ring_count=12,location=loc)
-    obj=bpy.context.object
-    obj.scale=scale
-    bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
-    for p in obj.data.polygons: p.use_smooth=True
-    return finish(obj,name,mat)
-
-def ring(name,loc,major,minor,mat='trim',rotation=(math.pi/2,0,0)):
-    bpy.ops.mesh.primitive_torus_add(major_segments=32,minor_segments=8,location=loc,major_radius=major,minor_radius=minor,rotation=rotation)
-    return finish(bpy.context.object,name,mat)
-
-def engine(x,y,z=.05,r=.34,length=.85):
-    tube('Engine casing',(x,y-length/2,z),(x,y+length/2,z),r*1.2,'dark',r2=r)
-    tube('Engine armor sleeve',(x,y-length*.35,z),(x,y+length*.15,z),r*1.24,'panel')
-    ring('Exhaust rim',(x,y+length*.51,z),r*.9,r*.12)
-    tube('Recessed exhaust',(x,y+length*.49,z),(x,y+length*.51,z),r*.72,'dark')
-    tube('Ion emitter',(x,y+length*.515,z),(x,y+length*.52,z),r*.46,'glow')
-    for i in range(6):
-        a=i*math.tau/6
-        tube('Nozzle vane',(x+math.cos(a)*r*.55,y+length*.53,z+math.sin(a)*r*.55),(x+math.cos(a)*r*.78,y+length*.53,z+math.sin(a)*r*.78),r*.045,'trim')
-
-def engines(xs,y,z=0,r=.32,length=.85):
-    for x in xs: engine(x,y,z,r,length)
-
-def cockpit(y=-.35,z=.52,width=.36,length=1.45):
-    loft('Canopy frame',[(y-length*.6,width*.12,z-.08,.08),(y-length*.18,width,z,.16),(y+length*.32,width*.8,z+.06,.24),(y+length*.5,width*.5,z,.13)],'trim')
-    loft('Tinted cockpit glass',[(y-length*.52,width*.12,z+.03,.03),(y-length*.14,width*.85,z+.09,.13),(y+length*.28,width*.65,z+.13,.18),(y+length*.43,width*.36,z+.08,.09)],'glass')
-
-def guns(xs,y=-1.8,z=.08,length=1):
-    for x in xs:
-        tube('Weapon shroud',(x,y+.3,z),(x,y-.15,z),.11,'panel',r2=.075)
-        tube('Laser barrel',(x,y-.1,z),(x,y-length,z),.045,'dark')
-        tube('Laser aperture',(x,y-length,z),(x,y-length-.012,z),.027,'glow')
-
-def fin(x,y,z=.1,height=1,length=1.1):
-    verts=[(x-.04,y,z),(x-.04,y+length,z),(x-.04,y+length*.8,z+height),(x-.04,y+length*.3,z+height*.65)]
-    verts += [(a+.08,b,c) for a,b,c in verts]
-    return mesh('Vertical stabilizer',verts,[(0,3,2,1),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)],'panel')
-
-def vents(x,y,z,count=5,span=.5):
-    for i in range(count):
-        box('Cooling louver',(x,y+i*.14,z),(span,.055,.045),'dark',.01)
-
-def curved_arms(scale=1,z=0,mat='hull',wide=.6):
-    # Open crescent, connected to the rear fuselage.
+        def cheek_x(y):
+            return side*(math.sqrt(1.058**2-(y-.85)**2)+.014)
+        # The broad flat cheeks border the front slot.
+        panel('Raised front cheek',[(side*.5,-.02,1.81),(side*.91,.2,1.87),
+            (side*1.01,.16,.0),(side*.72,-.18,-.23),(side*.52,-.22,.35)],.11,'green',.035,(side,0,0))
+        for z in [.35,.51,1.26,1.42]:
+            pipe('Cheek inset channel',[(cheek_x(.2),.2,z),(cheek_x(.57),.57,z),
+                 (cheek_x(.72),.72,z+.09)],.016,'recess')
+        for y in [.34,.61]:
+            for z in [.63,1.15]:
+                bolt((cheek_x(y),y,z),(side,0,0))
+        # Small identification marks, as opposed to broad luminous armor.
+        for z in [.64,.74,.84]:
+            box('Service indicator',(cheek_x(.29),.29,z),(.015,.065,.025),'pale',.004)
+        pipe('Side coolant return',[(cheek_x(.25),.25,.05),(cheek_x(.48),.48,-.12),
+            (cheek_x(1.15),1.15,-.12),(cheek_x(1.34),1.34,.3)],.023,'gunmetal')
+    tube('Central reactor column',(0,.86,-.53),(0,.86,2.12),.47,'dark')
+    for z in [-.3,.04,.42,1.25,1.72,1.95]:
+        ring('Reactor retention ring',(0,.86,z),.48,.026,'gunmetal')
+    nozzle('Ventral reactor', (0,.86,-.58),(0,0,-1),.36,.28)
+    group('Aegis | exposed upper assembly')
+    tube('Turret foundation',(0,.86,1.74),(0,.86,2.07),.43,'dark')
+    for i in range(10):
+        a=i*math.tau/10
+        x,y=math.cos(a)*.37,.86+math.sin(a)*.37
+        tube('Exposed vertical actuator',(x,y,1.93),(x,y,2.31),.047,'steel')
+    for z,r in [(2.10,.43),(2.27,.46),(2.36,.40)]:
+        ring('Upper assembly collar',(0,.86,z),r,.019,'gunmetal')
+    tube('Upper assembly drum',(0,.86,2.19),(0,.86,2.37),.43,'dark')
+    for i in range(16):
+        a=i*math.tau/16
+        obj=box('Collar slot',(math.cos(a)*.432,.86+math.sin(a)*.432,2.28),(.052,.025,.037),'pale',.004)
+        obj.rotation_euler.z=a-math.pi/2
+    sphere('Rounded emitter crown',(0,.86,2.38),(.36,.36,.25),'dark')
+    sphere('Green crown lens',(0,.86,2.56),(.13,.13,.06),'green')
+    for a in [-math.pi/2,math.pi/6,5*math.pi/6]:
+        sphere('Crown sensor housing',(math.cos(a)*.27,.86+math.sin(a)*.27,2.47),(.115,.115,.14),'gunmetal')
+        sphere('Crown sensor window',(math.cos(a)*.325,.86+math.sin(a)*.325,2.48),(.065,.065,.075),'glass')
+    # The supplied green base render has a whip antenna absent from the blue
+    # engineering illustration. Retain this visible base-ship distinction.
+    tube('Base ship antenna socket',(0,.94,2.53),(0,.94,2.70),.073,'dark',r2=.045)
+    tube('Base ship whip antenna',(0,.94,2.69),(0,.94,3.29),.016,'dark',r2=.007,vertices=16,bevel=.002)
+    for z in [2.75,2.93,3.11]:
+        tube('Antenna insulator',(0,.94,z),(0,.94,z+.045),.026,'gunmetal',vertices=16,bevel=.002)
+    group('Aegis | forward hull and neck')
+    loft('Sloping nose chassis',[(0,-2.92,-.06,.29,.16),(0,-2.58,.02,.45,.26),
+        (0,-1.84,.32,.59,.31),(0,-1.03,.67,.57,.30),(0,-.68,.73,.34,.22)],'dark')
+    loft('Dorsal nose armor',[(0,-2.83,.095,.27,.07),(0,-2.49,.24,.39,.11),
+        (0,-1.82,.57,.44,.10),(0,-1.1,.94,.43,.07),(0,-.82,.96,.31,.05)],'graphite')
     for side in [-1,1]:
-        pts=[]
-        for i in range(13):
-            a=-1.15+i*2.35/12
-            pts.append((side*(.5+2.05*math.cos(a))*scale,(.1+2.65*math.sin(a))*scale))
-        pts += [(x-side*wide*scale*(.15+.85*math.sin(math.pi*i/12)**.5),y+.04*scale) for i,(x,y) in reversed(list(enumerate(pts)))]
-        plate('Curved assault arm',pts,z,.24,mat)
-        cx=sum(x for x,y in pts)/len(pts)
-        cy=sum(y for x,y in pts)/len(pts)
-        plate('Crescent armor',[(cx+(x-cx)*.92,cy+(y-cy)*.95) for x,y in pts],z+.14,.06,'panel')
-        for i in range(1,12,2):
-            a=-1.15+i*2.35/12
-            x=side*(.5+2.05*math.cos(a)-wide*.48)*scale
-            y=(.1+2.65*math.sin(a))*scale
-            box('Arm running light',(x,y,z+.19),(.09,.20,.035),'glow',.01)
-            tube('Arm panel joint',(x-side*wide*.23,y-.09,z+.19),(x+side*wide*.27,y+.09,z+.19),.016,'dark',vertices=6)
+        panel('Nose flanking armor',[(side*.40,-2.55,.18),(side*.60,-1.85,.46),
+            (side*.56,-1.06,.78),(side*.82,-1.39,.04),(side*.62,-2.31,-.13)],.055,'graphite',.025,(side,0,.3))
+        pipe('Nose longitudinal seam',[(side*.26,-2.75,.20),(side*.39,-2.15,.49),
+            (side*.41,-1.49,.81),(side*.30,-1.05,1.02)],.014,'recess')
+        for y,z in [(-2.49,.25),(-1.73,.64),(-1.21,.9)]:
+            bolt((side*.28,y,z))
+        panel('Forward lateral fin',[(side*.48,-1.22,.12),(side*.99,-.83,.0),
+            (side*1.08,-1.31,-.20),(side*.80,-1.67,-.23)],.09,'graphite',.025)
+        panel('Forward fin tip marking',[(side*.93,-.92,.015),(side*1.035,-1.02,-.03),
+            (side*1.04,-1.24,-.12),(side*.94,-1.23,-.10)],.012,'green')
+    loft('Inset dark cockpit',[(0,-2.15,.57,.16,.04),(0,-1.64,.80,.20,.075),
+        (0,-1.43,.88,.17,.045)],'glass',.02)
+    pipe('Canopy frame left',[(-.17,-2.15,.61),(-.22,-1.65,.84),(-.18,-1.43,.92)],.022,'steel')
+    pipe('Canopy frame right',[(.17,-2.15,.61),(.22,-1.65,.84),(.18,-1.43,.92)],.022,'steel')
+    for y,z in [(-2.4,.33),(-1.27,.965)]:
+        box('Nose transverse panel joint',(0,y,z),(.49,.018,.015),'recess',.003)
+    loft('Exposed inclined neck',[(0,-.92,.76,.28,.18),(0,-.26,1.27,.28,.18),(0,.42,1.45,.27,.18)],'dark')
+    for x in [-.23,-.08,.08,.23]:
+        pipe('Neck piston rail',[(x,-1,.87),(x,-.30,1.44),(x,.33,1.62)],.035,'gunmetal')
+        tube('Neck actuator sleeve',(x,-.5,1.24),(x,-.11,1.51),.064,'graphite')
+    for y,z in [(-.76,1.1),(-.52,1.29),(-.19,1.5),(.12,1.6)]:
+        box('Neck transverse rib',(0,y,z),(.56,.046,.05),'dark',.008)
+    group('Aegis | articulated forward tools')
+    for side in [-1,1]:
+        tube('Tool lateral pivot',(side*.38,-2.45,-.15),(side*.77,-2.45,-.15),.19,'dark')
+        ring('Tool pivot collar',(side*.72,-2.45,-.15),.183,.03,'steel',(1,0,0))
+        sphere('Tool elbow',(side*.77,-2.75,-.32),(.11,.14,.12),'dark')
+        tube('Tool upper arm',(side*.74,-2.46,-.15),(side*.77,-2.82,-.35),.083,'graphite')
+        tube('Tool piston',(side*.72,-2.68,-.22),(side*.72,-3.05,-.34),.035,'steel')
+        tube('Tool wrist',(side*.77,-2.80,-.35),(side*.81,-3.12,-.38),.066,'dark')
+        for finger in [-1,1]:
+            pipe('Split manipulator finger',[(side*.81+finger*.035,-3.08,-.38),
+                (side*.81+finger*.105,-3.19,-.37),(side*.81+finger*.08,-3.31,-.34),
+                (side*.81+finger*.025,-3.35,-.33)],.033,'steel')
+    group('Aegis | swept rear fins')
+    for side in [-1,1]:
+        pts=[(side*.60,1.25,1.37),(side*.77,1.34,1.90),
+            (side*1.16,2.43,2.26),(side*1.20,2.42,1.90),(side*.85,1.94,1.32)]
+        panel('Tall swept stabilizer',pts,.09,'graphite',.025,(side,0,0))
+        pipe('Tall fin leading metal edge',[pts[1],pts[2],pts[3]],.024,'steel')
+        panel('Tall fin inset armor',[(side*.795,1.50,1.84),(side*1.10,2.30,2.12),
+            (side*1.10,2.24,1.92),(side*.90,1.89,1.57)],.014,'dark',.009,(side,0,0))
+        panel('Tall fin green marking',[(side*1.02,2.05,2.10),(side*1.095,2.23,2.17),
+            (side*1.11,2.25,1.93),(side*1.035,2.07,1.76)],.018,'green',.007,(side,0,0))
+        panel('Lower rear stabilizer',[(side*.75,1.3,.45),(side*1.27,1.98,.13),
+            (side*1.22,2.20,-.03),(side*.69,1.78,-.12)],.075,'graphite',.018)
+    group('Aegis | service panels')
+    for side in [-1,1]:
+        # Small cooling banks sit on the shoulder behind the sloped cockpit.
+        for i in range(5):
+            y=-1.26+i*.075
+            z=(.67+(y+1.82)*.34/.72 if y < -1.1 else 1.01)+.003
+            obj=box('Nose shoulder cooling slit',(side*.20,y,z),(.075,.029,.015),'recess',.005)
+            obj.rotation_euler.z=side*.13
+        for y,z in [(-2.68,.23),(-2.30,.44)]:
+            tube('Nose service latch',(side*.34,y,z-.02),(side*.34,y,z+.015),.035,'gunmetal',vertices=16)
+        pipe('Shoulder recessed perimeter',[(side*.54,-1.37,.54),(side*.73,-1.45,.14),
+             (side*.59,-2.21,-.02),(side*.48,-2.36,.14)],.013,'recess')
+    for a in [-100,-65,-30,30,65,100]:
+        a=math.radians(a)
+        # Rear and side armor hatches follow the curved body, not a flat decal.
+        def pt(da,z):
+            return (math.sin(a+da)*1.064,.85+math.cos(a+da)*1.064,z)
+        pipe('Engineering panel engraved outline',[pt(-.12,.10),pt(-.12,1.22),
+             pt(.12,1.22),pt(.12,.10),pt(-.12,.10)],.011,'recess')
+        for z in [.26,.36,.46]:
+            pipe('Engineering lower cooling slit',[pt(-.08,z),pt(.08,z)],.015,'dark')
 
-def arch(radius=2,y=.65,z=.05,vertical=True):
-    # Structural loop, not a flat texture. Tempest is upright; Solaris has two planes.
-    pts=[]
-    for i in range(41):
-        a=i*math.tau/40
-        p=(math.cos(a)*radius,y, z+radius+math.sin(a)*radius) if vertical else (math.cos(a)*radius,y+math.sin(a)*radius,z)
-        pts.append(p)
-    for i in range(40):
-        tube('Field ring segment',pts[i],pts[i+1],.085,'panel',vertices=6)
-    for i in range(0,40,5):
-        tube('Field ring light',pts[i],pts[i+1],.09,'glow',vertices=6)
 
-# Base hull color, armor color, cockpit/emitter color, visible trim.
-PALETTES={
- 'Phoenix':('681d26','aeb4b8','56c8ec','d6dfe4'),
- 'Yamato':('3d5158','8eabae','56cef5','bfcacf'),
- 'Defcom':('203b25','6b875e','74e767','a4af9b'),
- 'Liberator':('253e62','7c9abe','42c9fd','cbdde9'),
- 'Piranha':('343f4d','8794a4','75d9ff','d1d9df'),
- 'Nostromo':('252c2d','4e6468','5ebbe6','b3c4c4'),
- 'Vengeance':('283c3b','567371','6fece0','aabcc0'),
- 'Bigboy':('29364a','7d899b','83c3ff','c5cdd4'),
- 'Leonov':('454c53','929e9e','83dada','d5dadd'),
- 'Goliath':('30343c','99a6ad','63d6f6','e4ebed'),
- 'Aegis':('162c20','43832e','52ff94','aeb8ab'),
- 'Citadel':('201e23','712a2c','ff923c','b8b4b1'),
- 'Spearhead':('172635','285eaf','3ee5fc','bcc9d8'),
- 'Diminisher':('332f37','c8c6c8','fb3253','e5e4df'),
- 'Sentinel':('263c40','77958e','60eed5','c9ddd5'),
- 'Solace':('343f3b','a6b8ad','b5ffba','d5e5d9'),
- 'Spectrum':('465663','acc6d0','5dc8f6','dcecf0'),
- 'Venom':('4b3519','d99919','ffde65','eccb79'),
- 'Pusat':('243e40','38aca9','65f1ef','bcd2d0'),
- 'Tartarus':('562129','bd3234','3dc7ff','d3b2a1'),
- 'Mimesis':('233c45','c87d2b','35d6e3','d8c5a7'),
- 'Cyborg':('352b37','605168','ce77ff','bf9161'),
- 'Hammerclaw':('24383c','987842','20e5e7','b2b5ac'),
- 'Centurion':('35433e','797b58','76d9f3','bfccb9'),
- 'Hecate':('3a3039','b8353e','42f4da','c3cad1'),
- 'Disruptor':('356997','dadde2','40b9ff','e5eff4'),
- 'Berserker':('2e3033','6d6c68','ffaa54','b9b4a9'),
- 'Zephyr':('202833','31414d','37ecff','b9cbd5'),
- 'Solaris':('505c68','b1bdcb','31eafb','e8eef3'),
- 'Keres':('343a46','626c79','ff941b','b7c0c6'),
- 'Retiarus':('252a33','465363','ffc627','99afbd'),
- 'Orcus':('333747','a9b4c4','25e8ff','d5a45d'),
- 'Holo':('25262b','4a4d56','ff3263','dadce2'),
- 'Basilisk':('2e2343','b44152','31f5ed','b99cbb'),
- 'Tempest':('58586a','d4dde7','f8479a','edf5ff'),
- 'Paladin':('605026','c59c38','fff0a3','e4d3a3'),
- 'Hyperion':('466a99','d8dfef','29deff','edf4ff'),
-}
-VARIANT_COLORS={
- 'A-Elite':'ae2330','A-Veteran':'4b75b3','C-Elite':'285faf','C-Veteran':'4e872c',
- 'S-Elite':'64c92c','S-Veteran':'9e3b37','Solemn':'e0e5e9','D-Raven':'b59a39',
- 'N-Ambassador':'dadbd8','N-Diplomat':'c1c3c2','N-Envoy':'e7a337','Y-Ronin':'5c512c',
- 'G-Surgeon':'6aa828','G-Saturn':'d2b532','G-Centaur':'8ab8d1','G-Referee':'d8862e',
- 'G-Goal':'cdd3d8','G-Vanquisher':'b84840','G-Sovereign':'4977b5','G-Peacemaker':'578b43',
- 'G-Exalted':'c53836','G-Veteran':'d9e1e3','G-Enforcer':'bd4833','G-Bastion':'9ec1b3',
- 'G-Kick':'35bc28','G-Ignite':'e7e2c5','G-Champion':'7c858c',
- 'V-Lightning':'c59924','V-Revenge':'be353c','V-Avenger':'87bbc3','V-Corsair':'8a262a','V-Adept':'d0d5d8',
-}
+# The Goliath arm section changes in plan, elevation and width; it is not an
+# extruded semicircle. The stations follow the catalogue's silver base hull.
+ARM=[(.53,1.10,.03,.24,.20),(1.05,.95,.01,.34,.23),(1.60,.45,-.04,.40,.25),
+     (1.96,-.27,-.12,.44,.24),(2.08,-1.10,-.19,.43,.22),
+     (1.94,-1.90,-.26,.36,.19),(1.64,-2.61,-.32,.24,.145),
+     (1.22,-3.12,-.33,.115,.08),(.87,-3.43,-.28,.018,.016)]
 
-def rgb(code):
-    # Convert sRGB swatches to linear values for Blender materials.
-    values=[int(code[i:i+2],16)/255 for i in (0,2,4)]
-    return tuple(v/12.92 if v<=.04045 else ((v+.055)/1.055)**2.4 for v in values)
 
-def make_ship(ship):
-    global PARTS,M
-    PARTS=[]
-    name=ship['name']
-    family=ship['family'].replace(' Plus','')
-    family={'D-Raven':'Defcom','Goliath-X':'Goliath','N-Ambassador':'Nostromo','N-Diplomat':'Nostromo','N-Envoy':'Nostromo','Y-Ronin':'Yamato'}.get(family,family)
-    plus=ship['kind']=='plus'
-    h,p,g,t=PALETTES[family]
-    p=VARIANT_COLORS.get(name,p)
-    if name=='V-Lightning': h='54451c'
-    if name=='G-Surgeon': h='284715'
-    if name=='Goliath-X': p='aab0a2'
-    M={k:material(name+' / '+k,rgb(c),metal,rough,emit) for k,c,metal,rough,emit in [('hull',h,.72,.32,0),('panel',p,.58,.3,0),('trim',t,.8,.24,0),('glass',g,.6,.16,.08),('glow',g,.2,.24,3),('dark','111922',.6,.4,0)]}
-    if family=='Phoenix':
-        body(2.6,.61,.48,mat='panel')
-        cockpit(-.1,.55,.4,1.4)
-        wings([(.45,.25),(1,.8),(.95,1),(.4,.75)],-.1,.12)
-        engine(0,1.23,0,.32)
-        guns([0],-1.25,-.05,.35)
-    elif family in ['Yamato','Vengeance','Nostromo']:
-        l=4.2 if family=='Yamato' else 5
-        body(l,.65,.38)
-        cockpit(-.6,.45,.38,1.8)
-        if family=='Nostromo':
-            wings([(.5,-.3),(2,1.3),(2.05,2),(.55,1.2)],-.18,.18)
-            engines([-1,1],1.65,.65,.53,1.4)
-            guns([-.48,.48],-1.65,.02,.6)
-        elif family=='Yamato':
-            wings([(.4,.2),(1.8,.65),(1.8,1.4),(.35,1.3)],0,.23)
-            engines([-1.65,1.65],1,.3,.49,1.2)
-            engines([-.48,.48],-.45,-.3,.22,.7)
-        else:
-            wings([(.4,-.7),(1.75,.2),(2,1.65),(.8,2),(.5,.8)],-.18,.3)
-            engines([-1.3,1.3],1.25,.4,.43,1.5)
-            engines([-1.6,1.6],1.2,-.35,.33,1.2)
-            engines([-.5,.5],1.85,.05,.23,.7)
-            for x in [-.8,.8]: vents(x,.1,.38,4,.3)
-            guns([-.45,.45],-1.8,.1,.65)
-    elif family in ['Defcom','Goliath']:
-        scale=.7 if family=='Defcom' else 1
-        body(2.7*scale,.58*scale,.38,y=1.0*scale)
-        cockpit(.7*scale,.46,.34*scale,1.4*scale)
-        curved_arms(scale,0,wide=.58)
-        wings([(.35,.7*scale),(2*scale,1.2*scale),(1.7*scale,1.75*scale),(.4,1.7*scale)],0,.25)
-        engines([-.5*scale,.5*scale],2.35*scale,0,.26*scale)
-        if family=='Goliath':
-            loop=[(0,1.25,.35),(0,1.7,1.48),(0,2.55,1.48),(0,2.35,.35)]
-            for i in range(4): tube('Open dorsal stabilizer',loop[i],loop[(i+1)%4],.065,'panel',vertices=6)
-            wings([(.5,1.8),(1.1,2.5),(.9,2.65),(.35,2.2)],.3,.12)
-            guns([-1.58,1.58],-1.2,.1,.9)
-    elif family in ['Liberator','Leonov','Piranha']:
-        l={'Liberator':4.8,'Leonov':4.1,'Piranha':6.5}[family]
-        body(l,.48,.28)
-        cockpit(-.25,.4,.28,1.45)
-        if family=='Piranha':
-            wings([(.35,-.7),(1.5,1.1),(1.7,2),(.6,1.55)],-.05,.12)
-            for x in [-.52,.52]: body(4.5,.16,.14,y=-.7,x=x,mat='panel')
-            guns([-.42,.42],-2.4,.02,.85)
-        else:
-            wings([(.35,-1.5),(1.9,.75),(1.45,1.6),(.65,1.1)],0,.16)
-            if family=='Leonov':
-                for x in [-.85,.85]: body(3.5,.25,.22,x=x,mat='panel')
-                guns([-1,1],-1.5,.05,.7)
-            else:
-                fin(-.9,1,.1,.65,.9); fin(.9,1,.1,.65,.9)
-                guns([-1.2,1.2],-.8,.08,.8)
-        engines([-.55,.55],l*.38,0,.29)
-    elif family=='Bigboy':
-        body(4.4,1.05,.5)
-        cockpit(-.65,.59,.62,2)
-        wings([(.7,-.55),(1.7,-.25),(2.2,1.25),(1.35,1.5),(.65,.7)],-.1,.26)
-        engines([-1.2,1.2],1.5,.3,.4,1.2)
-        ball('Dorsal turret',(0,.8,.66),(.4,.5,.27),'panel')
-        guns([-.17,.17],.6,.83,.75)
-        guns([-1.6,1.6],.4,0,.6)
-    elif family in ['Aegis','Spearhead']:
-        l=5.8 if family=='Spearhead' else 5
-        body(l,.48,.35)
-        cockpit(-.5,.45,.29,1.45)
-        wings([(.3,-.25),(2,1.5),(1.7,1.9),(.3,.7)],-.1,.17)
-        box('Dorsal support',(0,1.3,.75),(.5,.8,.9),'dark')
-        tube('Dorsal equipment module',(-.85,1.25,1.15),(.85,1.25,1.15),.36,'panel',vertices=12)
-        for x in [-.65,0,.65]: ring('Dorsal module rib',(x,1.25,1.15),.37,.04,'trim',(0,math.pi/2,0))
-        engines([-.48,.48],2,.0,.28)
-        guns([-.25,.25],-2.2,.0,.8)
-        if family=='Aegis':
-            ball('Repair emitter',(0,.25,.52),(.39,.5,.25),'panel')
-            box('Repair light cross',(0,.25,.79),(.32,.075,.04),'glow',.01)
-            box('Repair light cross',(0,.25,.79),(.075,.32,.04),'glow',.01)
-    elif family in ['Citadel','Centurion','Berserker','Tartarus','Spectrum']:
-        if family=='Citadel':
-            body(5.5,1.05,.6)
-            cockpit(-.7,.65,.45,1.5)
-            wings([(.65,-1.8),(1.6,-.9),(1.65,.6),(.65,1.2)],-.12,.55)
-            tube('Shield outrigger',(-2,1.6,.5),(2,1.6,.5),.2,'dark')
-            for x in [-2,2]:
-                box('Upright shield bastion',(x,1.6,.8),(.4,1.25,2.5),'panel',.17)
-                box('Bastion inset',(x-.22 if x<0 else x+.22,1.6,.85),(.05,.8,1.7),'dark')
-                for z in [.2,.6,1,1.4]: box('Bastion light',(x, .96,z),(.22,.03,.08),'glow',.01)
-            engines([-.7,.7],2.5,.0,.42,1.2)
-            guns([-.9,.9],-1.8,.1,.7)
-        elif family=='Spectrum':
-            for x in [-.85,.85]: body(5.4,.5,.4,x=x,mat='panel')
-            box('Central reactor',(0,.9,.0),(1.3,1.6,.55),'hull')
-            cockpit(.1,.6,.35,1.1)
-            engines([-.85,.85],1.1,.87,.36,1.7)
-            wings([(.9,.5),(2.45,1.35),(2.3,2.2),(1.1,1.3)],-.2,.18)
-            guns([-.85,.85],-2.5,0,.25)
-        elif family=='Tartarus':
-            body(5.1,.88,.5,mat='panel')
-            cockpit(-.6,.57,.4,1.5)
-            wings([(.55,-1),(2.5,-.4),(2.65,1.8),(1,2.2)],-.1,.5)
-            engines([-1.5,1.5],1.2,0,.53,1.6)
-            for x in [-1.6,1.6]:
-                vents(x,.3,.55,7,.7)
-                fin(x,1.15,.3,.8,.85)
-            guns([-.6,.6],-1.9,.1,.5)
-        elif family=='Centurion':
-            body(5, .7,.5)
-            cockpit(-.65,.65,.33,1.2)
-            for x in [-1.2,1.2]:
-                body(3.5,.48,.43,x=x,y=.3,mat='panel')
-                engine(x,1.9,.2,.44,1.25)
-                box('Siege armor block',(x,-.2,.6),(.55,1.2,.35),'panel')
-            wings([(.4,-.5),(1.7,.1),(1.7,.6),(.4,.6)],-.1,.25)
-            guns([-.45,.45],-2,.2,.9)
-            fin(0,1.5,.5,.65,.9)
-        else:
-            body(4.4,1,.35)
-            wings([(.4,-2.25),(1.7,-1.65),(2,1),(1.2,1.5),(.7,.3)],.12,.36)
-            cockpit(-.2,.47,.35,1.4)
-            engines([-.8,.8],1.8,0,.4,1)
-            guns([-1.15,1.15],-1.65,-.05,.8)
-            for x in [-1.15,1.15]: vents(x,-.2,.36,6,.38)
-    elif family in ['Diminisher','Sentinel','Solace','Venom','Cyborg']:
-        body(4.5,.5,.35)
-        cockpit(-.6,.45,.32,1.4)
-        if family=='Diminisher':
-            wings([(.35,-.6),(2.2,.9),(1.95,1.55),(.4,.35)],.1,.22)
-            for x in [-1.2,1.2]: fin(x,.5,.15,1.4,1.3)
-        elif family=='Sentinel':
-            wings([(.35,.4),(1.4,-1.2),(2.6,-2.5),(1.7,1.55),(.45,1.1)],-.1,.2)
-            wings([(.25,1.2),(1.35,2),(1.1,2.35),(.3,1.8)],.2,.14)
-            fin(0,1,.45,1.2,1)
-        elif family=='Solace':
-            wings([(.25,1),(1.8,.7),(2.1,1.35),(.3,1.7)],0,.22)
-            for x in [-1.65,1.65]:
-                body(4.6,.28,.18,x=x,y=-.65,mat='panel')
-                vents(x,-1.3,.22,8,.4)
-            fin(0,1.25,.3,.65,1)
-        elif family=='Venom':
-            wings([(.35,-.6),(1.4,-1.1),(2.35,.5),(2.2,1.9),(1.5,1.45),(.5,.1)],.1,.25)
-            for x in [-1.75,1.75]: body(2.5,.35,.2,x=x,y=.4,mat='panel')
-            fin(0,1,.3,1.1,1.2)
-        else:
-            wings([(.3,0),(1.4,.1),(2.55,1.65),(2.65,2.25),(1.9,2),(.6,.65)],0,.2)
-            for x in [-1.9,1.9]:
-                tube('Exposed cybernetic spar',(x*.5,0,.2),(x,1.2,.25),.085,'trim')
-                body(2.4,.26,.15,x=x,y=.9,mat='panel')
-            fin(0,1.2,.35,.8,.95)
-        engines([-.6,.6],1.9,0,.29)
-        guns([-.6,.6],-1.65,.05,1.2)
-    elif family in ['Hammerclaw','Mimesis','Pusat']:
-        body(4.7,.55,.36)
-        cockpit(-.45,.51,.36,1.4)
-        if family=='Hammerclaw':
-            wings([(.45,1.2),(1,-1.8),(1.7,-2.35),(1.65,1.6)],-.1,.28)
-            for x in [-1.1,1.1]:
-                body(4.2,.34,.25,x=x,y=-.1,mat='panel')
-                ball('Repair reservoir',(x,.5,.38),(.3,.65,.3),'glass')
-            ball('Dorsal reservoir',(0,.4,.68),(.3,.55,.3),'glass')
-        elif family=='Mimesis':
-            wings([(.4,-.8),(1.9,-1.3),(2.3,-.7),(1.1,.5),(2.2,1.8),(1.1,1.65),(.4,.6)],0,.23)
-            for x in [-1,1]: ring('Phase drive',(x,.6,.25),.38,.1,'panel',(0,0,0))
-        else:
-            wings([(.45,-.5),(1.7,.1),(2,1.7),(1.2,1.55),(.6,.6)],-.2,.28)
-            for x in [-1.1,1.1]:
-                body(3.4,.47,.38,x=x,y=.35,mat='panel')
-                fin(x,1.25,.2,1.1,1)
-            guns([-1.15,1.15],-1.3,.1,1)
-        engines([-1.1,1.1],1.9,.0,.38,1)
-        guns([-.4,.4],-1.8,.05,1)
-    elif family in ['Hecate','Orcus','Paladin','Retiarus']:
-        body(5,.6,.37)
-        cockpit(-.5,.53,.38,1.7)
-        if family=='Hecate':
-            wings([(.4,.6),(1,-1.1),(2.5,-1.65),(1.9,-.4),(2.8,1.7),(1.6,1.25),(.55,.9)],0,.18)
-            for x in [-.8,.8]: fin(x,.6,.2,1.3,1.1)
-            wings([(.4,1.5),(1.9,2.25),(1.2,2.45),(.4,2)],.1,.12)
-        elif family=='Orcus':
-            wings([(.45,-.6),(2.35,.75),(1.1,.95),(.5,.4)],0,.16)
-            wings([(.5,1),(1.1,1.7),(1.3,2.1),(.35,1.8)],0,.2)
-            for x in [-.75,.75]: fin(x,.55,.1,1.2,1.3)
-        elif family=='Paladin':
-            wings([(.4,-1.8),(1.15,-1.35),(1.8,.25),(1.2,1.7),(.45,.7)],.0,.3)
-            for x in [-.9,.9]:
-                for y in [-.3,.6,1.5]:
-                    wings([(abs(x),y),(abs(x)+.85,y+.55),(abs(x)+.35,y+.7)],.1,.1)
-                fin(x,.7,.3,1,1.1)
-            for y in [-.7,-.25,.2]: box('Command armor rib',(0,y,.45),(1.15,.13,.12),'panel')
-        else:
-            wings([(.4,.6),(1.4,-1.9),(2.7,-2.6),(2.1,-.7),(2.8,1.8),(1.4,.75)],-.05,.18)
-            wings([(.45,1),(1.1,1.6),(.9,2.2),(.3,1.6)],.1,.15)
-        engines([-.55,.55],2.1,.05,.3)
-        guns([-.6,.6],-1.8,0,.7)
-    elif family in ['Solaris','Tempest']:
-        body(5.3,.78,.4,mat='panel')
-        cockpit(-.65,.58,.44,1.7)
-        wings([(.5,-1.2),(1.7,.2),(1.55,1.45),(.7,1.8)],-.08,.14)
-        arch(1.72,.7,.15,True)
-        if family=='Solaris': arch(2.05,.3,-.15,False)
-        else:
-            curved_arms(.78,-.2,wide=.2)
-            guns([-.3,.3],-2,.05,.95)
-        engines([-.7,.7],2.0,-.05,.3)
-    elif family=='Basilisk':
-        ball('Rounded command hull',(0,.2,0),(1.3,1.65,.5),'panel')
-        ball('Observation canopy',(0,-.15,.55),(.72,.85,.53),'glass')
-        ring('Canopy seal',(0,-.15,.3),.73,.09,'trim',(0,0,0))
-        wings([(.9,1),(1.7,.4),(2.25,-1.75),(2.05,-2.5),(1.6,-.7),(.85,.3)],-.12,.22)
-        for x in [-1,1]:
-            ball('Toxic dispersal port',(x,-.45,.1),(.18,.23,.18),'glow')
-            engine(x*.7,1.6,-.1,.29)
-    elif family=='Disruptor':
-        body(4.5,.7,.45,mat='panel')
-        cockpit(-.6,.58,.45,1.7)
-        for x in [-1.15,1.15]:
-            body(3.1,.47,.32,x=x,y=.2,mat='panel')
-            ball('Shield array',(x,.0,.3),(.38,.83,.33),'panel')
-            box('Shield array light',(x,-.1,.65),(.14,.75,.035),'glow')
-        wings([(.5,0),(1.3,.65),(2.1,1.7),(1.4,1.25)],-.2,.16)
-        engines([-1.05,1.05],1.5,.0,.32)
-        fin(0,1.1,.4,.9,1)
-    elif family=='Hyperion':
-        body(5.3,.7,.35,mat='panel')
-        cockpit(-.4,.5,.37,1.6)
-        wings([(.45,-1.7),(1.1,-.85),(1.6,.65),(1.25,1.8),(.45,.8)],-.07,.2)
-        engines([-1.4,1.4],1,.15,.49,2.3)
-        fin(0,1.3,.2,.85,1)
-    elif family in ['Keres','Holo','Zephyr']:
-        l={'Keres':4.6,'Holo':6.2,'Zephyr':7.4}[family]
-        body(l,.65,.4)
-        cockpit(-.25,.57,.39,1.8)
-        wings([(.5,.4),(1.9,1.75),(1.2,1.55),(.5,1)],-.05,.12)
-        if family=='Keres':
-            for x in [-.8,.8]:
-                tube('Forward intake',(x,-1.6,0),(x,-.6,0),.4,'dark',r2=.27)
-                ring('Intake rim',(x,-1.62,0),.34,.05)
-            ball('Plasma core',(0,-1.5,.0),(.3,.4,.31),'glow')
-            fin(0,1.2,.35,1.1,1.5)
-        elif family=='Holo':
-            fin(0,1.1,.4,1.8,1.7)
-            for x in [-.4,.4]: body(3,.16,.15,x=x,y=-1.4,mat='panel')
-        else:
-            wings([(.4,1.1),(1.75,2.4),(1.1,2.5),(.4,1.8)],.1,.16)
-            for x in [-.6,.6]: fin(x,1.4,.2,.8,1.5)
-        engines([-.65,.65],l*.36,.02,.32)
-        guns([-.42,.42],-l*.4,.05,.7)
-    else:
-        raise ValueError(f'No authored hull for {name}: {family}')
+def arm_station(t):
+    # Cubic Hermite interpolation keeps broad arms smoothly tapered.
+    i=min(int(t),len(ARM)-2)
+    f=t-i
+    a,b=ARM[i],ARM[i+1]
+    p=ARM[max(0,i-1)]
+    q=ARM[min(len(ARM)-1,i+2)]
+    return tuple((2*f**3-3*f*f+1)*a[j]+(f**3-2*f*f+f)*(b[j]-p[j])*.5+
+        (-2*f**3+3*f*f)*b[j]+(f**3-f*f)*(q[j]-a[j])*.5 for j in range(5))
 
-    if plus:
-        # Plus references retain the parent silhouette with heavier attachments.
-        if family=='Goliath':
-            wings([(1.45,-1.8),(2.45,-1.75),(2.9,-.6),(2.55,-.3),(1.95,-1)],.12,.2)
-            engines([-.65,0,.65],2.65,.15,.25)
-            wings([(.4,2),(1.35,3.1),(.8,2.8),(.3,2.4)],.15,.16)
-        elif family=='Retiarus':
-            curved_arms(1.05,-.12,wide=.38)
-            guns([0],-2.1,.08,1.3)
-        elif family=='Tartarus':
-            wings([(.55,-1.3),(3.2,-.55),(3.05,1.4),(1.4,1.6)],.15,.33)
-        elif family=='Citadel':
-            wings([(.7,-1.7),(1.95,-.95),(1.95,.55),(.75,1.1)],.3,.32)
-        elif family=='Hecate':
-            for x in [-1.25,1.25]: fin(x,.75,.15,1.65,1.15)
-        elif family=='Solace':
-            for x in [-1.65,1.65]: box('Plus forward armor',(x,-2.35,.18),(.55,1.1,.3),'panel')
-        elif family=='Spectrum':
-            engines([-.85,.85],.8,1.5,.26,1.4)
-            fin(0,1.35,.3,1.6,1.2)
-        else:
-            wings([(.5,-1),(1.4,-.45),(2.1,1.3),(1.3,.95),(.5,.1)],.3,.13)
-        for x in [-.45,.45]:
-            box('Plus reactor rail',(x,.8,.65),(.14,1.1,.15),'glow',.03)
 
-    # A few variants have actual additional silhouette changes in their references.
-    if name=='G-Bastion':
-        for x in [-.95,.95]:
-            for y in [1.15,1.8]: ball('Shield emitter',(x,y,.4),(.27,.3,.25),'glass')
-    if name=='G-Champion':
-        wings([(.45,1.4),(1.75,2.5),(1,2.4),(.3,1.9)],.4,.15)
-    if name=='Goliath-X':
-        wings([(.5,.7),(1.3,1.5),(1.15,1.95),(.45,1.1)],.5,.16)
-    # Belly service plate and navigation lights make the models usable from below.
-    box('Ventral service hatch',(0,.35,-.39),(.55,.85,.1),'dark',.05)
-    for x in [-.3,.3]: box('Ventral fastener',(x,.35,-.45),(.05,.5,.04),'trim',.01)
-    root=bpy.data.objects.new(name,None)
-    bpy.context.collection.objects.link(root)
-    root['ship']=name
-    root['reference']=ship['source']
-    root['review_status']='Reference-based interpretation; underside and depth inferred.'
-    root['forward_axis']='-Y; Z up'
-    for obj in PARTS: obj.parent=root
-    return root
+def arm_shape(name,side,start,end,mat,section='full'):
+    profile=[(-1,0),(-.85,.68),(-.5,1),(.33,.90),(.78,.55),(1,-.05),
+        (.77,-.62),(.18,-1),(-.64,-.82)]
+    if section=='armor':
+        profile=[(-.97,.08),(-.81,.75),(-.47,1.07),(.35,.98),(.79,.61),(.96,.07),
+            (.80,.04),(.28,.83),(-.43,.90),(-.77,.58)]
+    count=max(3,int((end-start)*14))
+    verts=[]
+    for k in range(count+1):
+        t=start+(end-start)*k/count
+        x,y,z,w,h=arm_station(t)
+        prev=arm_station(max(0,t-.001)); nxt=arm_station(min(8,t+.001))
+        tangent=Vector((nxt[0]-prev[0],nxt[1]-prev[1],0)).normalized()
+        across=Vector((-tangent.y,tangent.x,0))
+        for u,v in profile:
+            verts.append((side*(x+across.x*w*u),y+across.y*w*u,z+h*v))
+    n=len(profile)
+    faces=[tuple(reversed(range(n)))]
+    for j in range(count):
+        faces.extend((j*n+k,j*n+(k+1)%n,(j+1)*n+(k+1)%n,(j+1)*n+k) for k in range(n))
+    faces.append(tuple(range(len(verts)-n,len(verts))))
+    return mesh(name,verts,faces,mat,.006,True)
 
-def point_at(obj,point): obj.rotation_euler=(Vector(point)-obj.location).to_track_quat('-Z','Y').to_euler()
 
-def studio(root):
-    scene=bpy.context.scene
-    scene.render.engine='CYCLES'
-    scene.cycles.samples=24
-    scene.cycles.use_denoising=True
-    scene.render.resolution_x=800
-    scene.render.resolution_y=720
-    scene.render.resolution_percentage=100
-    scene.render.image_settings.file_format='JPEG'
-    scene.render.image_settings.quality=93
-    scene.world.color=(.13,.13,.13)
-    scene.world.use_nodes=True
-    bg=scene.world.node_tree.nodes.get('Background')
-    bg.inputs[0].default_value=(.16,.21,.3,1)
-    bg.inputs[1].default_value=.5
-    scene.view_settings.view_transform='AgX'
-    bounds=[o.matrix_world @ Vector(p) for o in PARTS for p in o.bound_box]
-    # Update transforms before framing.
+def build_goliath():
+    group('Goliath | tapered assault arms')
+    for side in [-1,1]:
+        arm_shape('Continuous curved arm chassis',side,0,8,'dark')
+        for i,(a,b) in enumerate([(0,.97),(1.02,2.12),(2.17,3.35),(3.40,4.60),(4.65,5.85),(5.90,6.95),(7,8)]):
+            arm_shape('Sculpted silver arm shell %02d'%i,side,a,b,'steel' if i%3 else 'silver','armor')
+        # Narrow underside strip makes the darker structural core visible.
+        points=[]
+        for k in range(46):
+            x,y,z,w,h=arm_station(.7+6.9*k/45)
+            points.append((side*(x-w*.5),y,z-h*.5))
+        pipe('Inner arm conduit',points,.026,'gunmetal')
+        for t in [1.35,2.5,3.0,3.7,4.2,4.95,5.45,6.15]:
+            x,y,z,w,h=arm_station(t)
+            bolt((side*x,y,z+h*1.02),radius=.025)
+        for t in [2.6,3.9,5.15,6.2]:
+            x,y,z,w,h=arm_station(t)
+            box('Arm side recessed port',(side*(x+w*.92),y,z),(.022,.15,.076),'recess',.012)
+            box('Arm side port insert',(side*(x+w*.935),y,z),(.012,.08,.031),'pale',.003)
+        for start,end in [(1.35,2.04),(2.42,3.12),(3.68,4.35),(4.91,5.55),(6.08,6.73)]:
+            for offset in [-.42,.30]:
+                pts=[]
+                for k in range(12):
+                    t=start+(end-start)*k/11
+                    x,y,z,w,h=arm_station(t)
+                    p=arm_station(t-.001);q=arm_station(t+.001)
+                    tangent=Vector((q[0]-p[0],q[1]-p[1],0)).normalized()
+                    across=Vector((-tangent.y,tangent.x,0))
+                    # Armor crown slopes gently between its two ridge points.
+                    crown=1.07-(offset+.47)*.09/.82
+                    pts.append((side*(x+across.x*w*offset),y+across.y*w*offset,z+h*crown+.004))
+                pipe('Fine arm armor channel',pts,.008,'gunmetal')
+        # Broad swept winglets are part of the reference silhouette.
+        def wing_point(x,y,offset=0):
+            return (side*x,y,.08+.12*(y+.6)+offset)
+        pts=[wing_point(1.92,-1.66),wing_point(2.83,-1.00),
+             wing_point(2.92,-.62),wing_point(2.47,-.50),wing_point(1.97,-.62)]
+        panel('Outer swept arm winglet',pts,.09,'steel',.024)
+        panel('Winglet inset armor',[wing_point(2.03,-1.48,.067),wing_point(2.65,-1.06,.067),
+             wing_point(2.77,-.70,.067),wing_point(2.40,-.65,.067),wing_point(2.04,-.76,.067)],.022,'silver',.012)
+        pipe('Winglet panel channel',[wing_point(2.09,-1.37,.081),wing_point(2.40,-1.13,.081),
+             wing_point(2.61,-.75,.081)],.009,'dark')
+        for x,y,z in [(2.38,-1.12,.025),(2.68,-.76,.13)]:
+            bolt(wing_point(x,y,.086),radius=.022)
+    group('Goliath | central fuselage')
+    loft('Lower mechanical hull',[(0,-.65,-.13,.18,.18),(0,-.30,-.05,.45,.27),
+        (0,.55,.06,.68,.30),(0,1.38,.13,.58,.27),(0,2.20,.13,.28,.21),
+        (0,2.58,.10,.15,.12)],'dark')
+    loft('Upper silver fuselage',[(0,-.35,.10,.18,.10),(0,.05,.32,.35,.18),
+        (0,.68,.43,.47,.22),(0,1.29,.44,.39,.23),(0,1.92,.38,.24,.18),
+        (0,2.37,.30,.11,.08)],'steel')
+    for side in [-1,1]:
+        loft('Fuselage shoulder shell',[(side*.40,.10,.16,.14,.12),
+            (side*.67,.47,.29,.20,.16),(side*.57,1.05,.34,.18,.14),
+            (side*.36,1.60,.32,.13,.09)],'silver')
+        pipe('Shoulder armor channel',[(side*.46,.19,.37),(side*.62,.54,.49),
+            (side*.48,1.14,.49),(side*.29,1.66,.47)],.013,'dark')
+        for y,z in [(.42,.47),(.96,.50),(1.38,.48)]:
+            bolt((side*.29,y,z))
+        tube('Arm shoulder joint',(side*.43,.86,-.04),(side*.83,.72,-.08),.21,'gunmetal')
+    group('Goliath | dorsal paneling')
+    for side in [-1,1]:
+        panel('Spine armor panel',[(side*.055,.29,.576),(side*.21,.34,.588),
+            (side*.28,.69,.68),(side*.235,1.21,.696),(side*.055,1.23,.698)],.022,'silver',.009)
+        pipe('Spine panel engraved border',[(side*.09,.37,.607),(side*.18,.40,.614),
+            (side*.235,.71,.703),(side*.20,1.13,.715)],.008,'gunmetal')
+        panel('Aft spine armor panel',[(side*.05,1.34,.702),(side*.21,1.36,.69),
+            (side*.15,1.81,.614),(side*.05,1.89,.598)],.02,'steel',.008)
+        for i in range(4):
+            obj=box('Aft spine radiator',(side*.14,1.44+i*.075,.695-i*.014),(.11,.028,.022),'recess',.004)
+            obj.rotation_euler.x=-.18
+        for y,z in [(.46,.645),(1.07,.73)]:
+            bolt((side*.14,y,z),radius=.019)
+    # Narrow forward beak hangs inside the open arms, below the rear fuselage.
+    loft('Central forward beak',[(0,-2.16,-.26,.075,.065),(0,-1.68,-.23,.17,.10),
+        (0,-.91,-.13,.25,.16),(0,-.30,.015,.31,.20),(0,.16,.11,.30,.16)],'gunmetal')
+    loft('Inset bronze bridge',[(0,-1.13,.045,.12,.035),(0,-.66,.18,.21,.05),
+        (0,-.32,.25,.18,.055),(0,-.16,.26,.13,.03)],'glass')
+    for side in [-1,1]:
+        pipe('Bridge canopy rim',[(side*.12,-1.12,.095),(side*.23,-.65,.235),
+            (side*.18,-.29,.30)],.018,'steel')
+        panel('Beak shoulder cheek',[(side*.13,-1.66,-.20),(side*.30,-.65,.03),
+            (side*.45,-.21,.07),(side*.32,-.43,-.14)],.04,'steel',.012)
+    tube('Forward beak aperture',(0,-2.155,-.26),(0,-2.18,-.26),.044,'recess')
+    for y,z in [(-1.57,-.12),(-1.31,-.06),(-1.06,.02)]:
+        box('Beak spine rib',(0,y,z),(.20,.035,.033),'dark',.008)
+    group('Goliath | raised dorsal fins')
+    for side in [-1,1]:
+        # These lean outward; they must read tall in profile rather than flat.
+        def fin_point(y,z,inset=0):
+            height=(z-.36)*.65
+            return (side*(.36+1.60*height+inset),y,.36+height)
+        pts=[fin_point(.43,.36),fin_point(.30,1.40),fin_point(.97,1.53),
+            fin_point(1.23,.83),fin_point(1.61,.40)]
+        panel('Raised swept dorsal fin',pts,.085,'steel',.035,(side,0,0))
+        panel('Dorsal fin inset',[fin_point(.57,.56,.058),fin_point(.48,1.31,.058),
+            fin_point(.91,1.38,.058),fin_point(1.15,.79,.058),fin_point(1.39,.52,.058)],
+            .018,'silver',.017,(side,0,0))
+        pipe('Dorsal fin leading edge',[pts[0],pts[1],pts[2]],.019,'pale')
+    loft('Tail dorsal ridge',[(0,1.56,.48,.10,.05),(0,2.09,.63,.13,.06),
+        (0,2.45,.86,.08,.10),(0,2.69,.86,.025,.025)],'silver')
+    panel('Small tail crest',[(-.19,2.30,.81),(-.10,2.66,.92),(0,2.51,.96),
+        (.10,2.66,.92),(.19,2.30,.81),(0,2.38,.77)],.055,'steel')
+    group('Goliath | engines and mechanical bays')
+    for side in [-1,1]:
+        nozzle('Aft ion engine',(side*.285,2.16,-.07),(0,1,0),.18,.58)
+        loft('Engine dorsal cover',[(side*.32,1.20,-.05,.17,.15),
+            (side*.36,1.72,.025,.21,.18),(side*.29,2.07,-.015,.19,.13)],'gunmetal')
+        for i in range(6):
+            box('Engine cooling louver',(side*.50,1.27+i*.10,.15),(.16,.044,.026),'recess',.006)
+        pipe('Ventral hydraulic line',[(side*.30,-.22,-.25),(side*.56,.31,-.25),
+             (side*.52,.98,-.19),(side*.23,1.58,-.15)],.027,'steel')
+        for i in range(4):
+            box('Ventral mechanical rib',(side*.39,.05+i*.18,-.24),(.16,.06,.09),'gunmetal',.012)
+    panel('Ventral access cover',[(-.26,.29,-.29),(.26,.29,-.29),(.33,.94,-.22),
+        (.18,1.40,-.17),(-.18,1.40,-.17),(-.33,.94,-.22)],.045,'graphite')
+    # The reference's central beak is short and dark, recessed between the arms.
+    beak_names=('Central forward beak','Inset bronze bridge','Bridge canopy rim',
+                'Beak shoulder cheek','Forward beak aperture','Beak spine rib')
     bpy.context.view_layer.update()
-    bounds=[o.matrix_world @ Vector(p) for o in PARTS for p in o.bound_box]
+    for obj in PARTS:
+        if obj.name.startswith(beak_names):
+            for v in obj.data.vertices:
+                world=obj.matrix_world @ v.co
+                world.y=world.y*.70
+                v.co=obj.matrix_world.inverted() @ world
+    for collection_name in ['Goliath | central fuselage','Goliath | dorsal paneling',
+                            'Goliath | engines and mechanical bays']:
+        for obj in bpy.data.collections[collection_name].objects:
+            for v in obj.data.vertices:
+                world=obj.matrix_world @ v.co
+                world.x*=.80
+                v.co=obj.matrix_world.inverted() @ world
+
+
+def point_at(obj, target):
+    obj.rotation_euler=(Vector(target)-obj.location).to_track_quat('-Z','Y').to_euler()
+
+
+def setup(name, draft=False):
+    global PARTS, M
+    PARTS=[]
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    scene=bpy.context.scene
+    scene.world=bpy.data.worlds.new('Neutral studio environment')
+    M={key:material(label,color,metal,rough,emission) for key,label,color,metal,rough,emission in [
+        ('steel','Brushed titanium',(.18,.21,.23),.76,.32,0),
+        ('silver','Satin silver armor',(.30,.33,.35),.72,.37,0),
+        ('pale','Pale metal details',(.36,.39,.40),.65,.3,0),
+        ('dark','Dark mechanical structure',(.024,.033,.039),.7,.40,0),
+        ('graphite','Graphite nose armor',(.045,.057,.065),.75,.36,0),
+        ('gunmetal','Gunmetal',(.11,.13,.14),.8,.34,0),
+        ('recess','Deep panel recess',(.006,.009,.011),.25,.48,0),
+        ('green','Aegis green enamel',(.024,.085,.022),.53,.35,0),
+        ('glass','Dark sensor glass',(.018,.055,.068) if name=='Aegis' else (.095,.04,.016),.62,.21,0),
+        ('light','Green reactor lens' if name=='Aegis' else 'Ion blue',
+         (.13,.72,.025) if name=='Aegis' else (.10,.39,.72),.35,.22,1.7) ]}
+    (build_aegis if name=='Aegis' else build_goliath)()
+    root=bpy.data.objects.new(name,None)
+    scene.collection.objects.link(root)
+    root['forward_axis']='-Y, Z up'
+    root['reference_status']='Base catalogue appearance; engineering references and reconstruction notes in README.'
+    root['inferred_geometry']='Underside, hidden joints, exact panel depths and small fasteners.'
+    for obj in PARTS:
+        obj.parent=root
+    bpy.context.view_layer.update()
+    bounds=[obj.matrix_world @ Vector(p) for obj in PARTS for p in obj.bound_box]
     low=Vector(tuple(min(p[i] for p in bounds) for i in range(3)))
     high=Vector(tuple(max(p[i] for p in bounds) for i in range(3)))
-    center=(low+high)*.5
-    extent=max(high.x-low.x,high.y-low.y,high.z-low.z)
-    bpy.ops.object.camera_add(location=center+Vector((8,-11,10)))
-    camera=bpy.context.object
-    camera.name='Review camera'
-    point_at(camera,center)
-    camera.data.type='ORTHO'
-    camera.data.ortho_scale=extent*1.35
-    scene.camera=camera
-    for name,loc,power,size,color in [('Key',(-4,-6,9),1900,7,(.79,.88,1)),('Rim',(5,4,6),2300,5,(.4,.73,1)),('Fill',(6,-4,3),1300,6,(1,.8,.59))]:
-        data=bpy.data.lights.new(name,'AREA'); data.energy=power; data.shape='DISK'; data.size=size; data.color=color
-        obj=bpy.data.objects.new(name,data); scene.collection.objects.link(obj); obj.location=loc; point_at(obj,center)
-    # Clean studio background with a contact shadow.
-    mat=material('Studio floor',(.017,.025,.04),.15,.48)
-    bpy.ops.mesh.primitive_plane_add(size=200,location=(0,0,low.z-.5))
-    floor=bpy.context.object; floor.name='Studio floor'; floor.data.materials.append(mat)
-    # Open directly in a useful material-colored, solid viewport.
+    center=(low+high)/2
+    extent=max(high-low)
+    scene.render.engine='CYCLES'
+    if '--gpu' in sys.argv:
+        prefs=bpy.context.preferences.addons['cycles'].preferences
+        prefs.compute_device_type='OPTIX'
+        prefs.get_devices()
+        for device in prefs.devices:
+            device.use=device.type=='OPTIX'
+        if any(device.use for device in prefs.devices):
+            scene.cycles.device='GPU'
+    scene.cycles.samples=20 if draft else 64
+    scene.cycles.use_denoising=True
+    scene.render.resolution_x=1000 if draft else 1600
+    scene.render.resolution_y=900 if draft else 1440
+    scene.render.resolution_percentage=100
+    scene.render.image_settings.file_format='PNG'
+    scene.render.film_transparent=True
+    scene.world.use_nodes=True
+    bg=scene.world.node_tree.nodes.get('Background')
+    bg.inputs[0].default_value=(.24,.28,.34,1)
+    bg.inputs[1].default_value=.45
+    scene.view_settings.view_transform='AgX'
+    scene.view_settings.look='AgX - Medium High Contrast'
+    group('Studio | cameras and lights')
+    cameras={}
+    views={'perspective':(7,-10,10) if name=='Aegis' else (10,-6,7),
+           'rear':(-7,10,5),'top':(0,0,15),'side':(15,0,0),'front':(0,-15,0)}
+    for view,offset in views.items():
+        data=bpy.data.cameras.new(name+' '+view)
+        obj=bpy.data.objects.new(name+' '+view,data)
+        GROUP.objects.link(obj)
+        obj.location=center+Vector(offset)
+        point_at(obj,center)
+        data.type='ORTHO'
+        data.ortho_scale=extent*(1.28 if name=='Aegis' else 1.15)
+        cameras[view]=obj
+    for label,loc,power,size,color in [
+        ('Large soft key',(-4,-6,9),1500,7,(.92,.96,1)),
+        ('Soft fill',(5,-3,4),1150,6,(.82,.90,1)),
+        ('Aft rim',(2,6,7),1900,5,(1,.93,.82)),
+        ('Lower fill',(-3,0,-5),650,5,(.65,.77,1))]:
+        data=bpy.data.lights.new(label,'AREA'); data.energy=power; data.size=size; data.color=color
+        obj=bpy.data.objects.new(label,data); GROUP.objects.link(obj); obj.location=loc; point_at(obj,center)
+    scene.camera=cameras['perspective']
+    # Pack source images into the .blend. Hidden image empties are available
+    # from the Outliner for inspection without needing D: on another machine.
+    group('References | hidden, enable for comparison')
+    for path in sorted((HERE/'references').glob(name.lower()+'*')):
+        if path.suffix.lower() not in {'.png','.jpg','.webp'}:
+            continue
+        img=bpy.data.images.load(str(path)); img.pack()
+        obj=bpy.data.objects.new(path.stem,None); obj.empty_display_type='IMAGE'; obj.data=img
+        obj.empty_display_size=4; obj.location=(7,0,1); GROUP.objects.link(obj); obj.hide_render=True
+    GROUP.hide_viewport=True
+    notes=bpy.data.texts.new('READ ME - reference study')
+    notes.write(name+' base hull. Forward -Y; Z up.\n'
+        'Collections separate the editable ship assemblies, studio and packed references.\n'
+        'Five named orthographic cameras are available. F12 renders the current camera.\n'
+        'Reference pictures guided the visible forms. Undersides, internal construction,\n'
+        'panel depths and fine fasteners are reconstructed; see the accompanying README.\n'
+        'These are review models, with no game integration or production optimization.\n')
     for screen in bpy.data.screens:
         for area in screen.areas:
             if area.type=='VIEW_3D':
-                space=area.spaces.active
-                space.shading.type='SOLID'; space.shading.color_type='MATERIAL'; space.shading.light='STUDIO'
-                space.shading.show_cavity=True; space.shading.cavity_type='BOTH'
-                space.overlay.show_floor=False; space.overlay.show_axis_x=False; space.overlay.show_axis_y=False
-                space.region_3d.view_distance=extent*1.8
-                space.region_3d.view_location=center
-                space.region_3d.view_rotation=camera.rotation_euler.to_quaternion()
+                s=area.spaces.active
+                s.shading.type='MATERIAL'
+                s.overlay.show_floor=False
+                s.overlay.show_axis_x=False; s.overlay.show_axis_y=False
+                s.region_3d.view_location=center
+                s.region_3d.view_distance=extent*1.55
+                s.region_3d.view_rotation=cameras['perspective'].rotation_euler.to_quaternion()
     bpy.ops.object.select_all(action='DESELECT')
     root.select_set(True); bpy.context.view_layer.objects.active=root
-    floor.hide_set(True)
     for obj in scene.objects:
-        if obj.type in {'LIGHT','CAMERA'}: obj.hide_set(True)
-    return len(PARTS),sum(len(o.data.polygons) for o in PARTS)
+        if obj.type in {'LIGHT','CAMERA'}:
+            obj.hide_set(True)
+    return cameras,root
+
 
 def run():
     args=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
-    wanted=[s for s in ROSTER if not args or s['name'] in args or s['slug'] in args]
-    if not wanted: raise ValueError(f'Unknown ships: {args}')
-    stats=[]
-    for ship in wanted:
-        bpy.ops.wm.read_factory_settings(use_empty=True)
-        bpy.context.scene.world=bpy.data.worlds.new('Review world')
-        root=make_ship(ship)
-        count,faces=studio(root)
+    requested={arg for arg in args if not arg.startswith('--')}
+    names=[name for name in ['Aegis','Goliath'] if not requested or name in requested]
+    if not names:
+        raise ValueError('Choose Aegis or Goliath')
+    draft='--draft' in args
+    for directory in ['models','previews']:
+        (HERE/directory).mkdir(exist_ok=True)
+    stats={}
+    stats_path=HERE/'build-stats.json'
+    if stats_path.exists():
+        previous=json.loads(stats_path.read_text())
+        if isinstance(previous,dict):
+            stats=previous
+    for name in names:
+        cameras,root=setup(name,draft)
+        slug=name.lower()
         bpy.context.preferences.filepaths.save_version=0
-        path=MODELS/(ship['slug']+'.blend')
-        bpy.ops.wm.save_as_mainfile(filepath=str(path),compress=True)
-        bpy.context.scene.render.filepath=str(PREVIEWS/(ship['slug']+'.jpg'))
-        bpy.ops.render.render(write_still=True)
-        stats.append(dict(name=ship['name'],objects=count,faces=faces))
-        print('SHIP COMPLETE',ship['name'],count,faces,flush=True)
-    (HERE/'build-stats.json').write_text(json.dumps(stats,indent=2)+'\n')
+        bpy.context.scene.render.filepath=str(HERE/'previews'/(slug+'.png'))
+        bpy.ops.wm.save_as_mainfile(filepath=str(HERE/'models'/(slug+'.blend')),compress=True)
+        stats[name]={'mesh_components':len(PARTS),'base_faces':sum(len(o.data.polygons) for o in PARTS),
+            'draft':draft,'views':list(cameras)}
+        for view,camera in cameras.items():
+            if draft and view not in ['perspective','top']:
+                continue
+            bpy.context.scene.camera=camera
+            filename=slug+('' if view=='perspective' else '-'+view)+'.png'
+            bpy.context.scene.render.filepath=str(HERE/'previews'/filename)
+            bpy.ops.render.render(write_still=True)
+        # Preserve the other ship's result if separate builds run concurrently.
+        current=json.loads(stats_path.read_text()) if stats_path.exists() else {}
+        if not isinstance(current,dict):
+            current={}
+        current[name]=stats[name]
+        stats_path.write_text(json.dumps(current,indent=2)+'\n')
+        print('COMPLETE',name,stats[name],flush=True)
 
-if __name__=='__main__': run()
+
+if __name__=='__main__':
+    run()
