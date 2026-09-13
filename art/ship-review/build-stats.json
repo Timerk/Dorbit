@@ -1,0 +1,412 @@
+[
+  {
+    "name": "Aegis",
+    "objects": 54,
+    "faces": 2092
+  },
+  {
+    "name": "Basilisk",
+    "objects": 34,
+    "faces": 2058
+  },
+  {
+    "name": "Berserker",
+    "objects": 58,
+    "faces": 1128
+  },
+  {
+    "name": "Bigboy",
+    "objects": 53,
+    "faces": 1380
+  },
+  {
+    "name": "Centurion",
+    "objects": 67,
+    "faces": 1234
+  },
+  {
+    "name": "Citadel",
+    "objects": 59,
+    "faces": 1138
+  },
+  {
+    "name": "Cyborg",
+    "objects": 55,
+    "faces": 1186
+  },
+  {
+    "name": "Defcom",
+    "objects": 62,
+    "faces": 1212
+  },
+  {
+    "name": "D-Raven",
+    "objects": 62,
+    "faces": 1212
+  },
+  {
+    "name": "Diminisher",
+    "objects": 48,
+    "faces": 1064
+  },
+  {
+    "name": "Disruptor",
+    "objects": 63,
+    "faces": 1630
+  },
+  {
+    "name": "Goliath",
+    "objects": 76,
+    "faces": 1352
+  },
+  {
+    "name": "Goliath-X",
+    "objects": 80,
+    "faces": 1376
+  },
+  {
+    "name": "Hammerclaw",
+    "objects": 67,
+    "faces": 1936
+  },
+  {
+    "name": "Hecate",
+    "objects": 52,
+    "faces": 1100
+  },
+  {
+    "name": "Holo",
+    "objects": 53,
+    "faces": 1150
+  },
+  {
+    "name": "Hyperion",
+    "objects": 41,
+    "faces": 978
+  },
+  {
+    "name": "Keres",
+    "objects": 52,
+    "faces": 1838
+  },
+  {
+    "name": "Leonov",
+    "objects": 64,
+    "faces": 1216
+  },
+  {
+    "name": "Liberator",
+    "objects": 48,
+    "faces": 1064
+  },
+  {
+    "name": "Mimesis",
+    "objects": 48,
+    "faces": 1576
+  },
+  {
+    "name": "Nostromo",
+    "objects": 46,
+    "faces": 1052
+  },
+  {
+    "name": "N-Ambassador",
+    "objects": 46,
+    "faces": 1052
+  },
+  {
+    "name": "N-Diplomat",
+    "objects": 46,
+    "faces": 1052
+  },
+  {
+    "name": "N-Envoy",
+    "objects": 46,
+    "faces": 1052
+  },
+  {
+    "name": "Orcus",
+    "objects": 52,
+    "faces": 1088
+  },
+  {
+    "name": "Paladin",
+    "objects": 75,
+    "faces": 1206
+  },
+  {
+    "name": "Phoenix",
+    "objects": 26,
+    "faces": 578
+  },
+  {
+    "name": "Piranha",
+    "objects": 64,
+    "faces": 1216
+  },
+  {
+    "name": "Pusat",
+    "objects": 72,
+    "faces": 1316
+  },
+  {
+    "name": "Retiarus",
+    "objects": 50,
+    "faces": 1084
+  },
+  {
+    "name": "Sentinel",
+    "objects": 51,
+    "faces": 1086
+  },
+  {
+    "name": "Solace",
+    "objects": 81,
+    "faces": 1318
+  },
+  {
+    "name": "Solaris",
+    "objects": 136,
+    "faces": 1736
+  },
+  {
+    "name": "Spearhead",
+    "objects": 51,
+    "faces": 1840
+  },
+  {
+    "name": "Spectrum",
+    "objects": 56,
+    "faces": 1140
+  },
+  {
+    "name": "Tartarus",
+    "objects": 62,
+    "faces": 1148
+  },
+  {
+    "name": "Tempest",
+    "objects": 122,
+    "faces": 1716
+  },
+  {
+    "name": "Vengeance",
+    "objects": 98,
+    "faces": 2688
+  },
+  {
+    "name": "Venom",
+    "objects": 53,
+    "faces": 1158
+  },
+  {
+    "name": "Yamato",
+    "objects": 62,
+    "faces": 1760
+  },
+  {
+    "name": "Y-Ronin",
+    "objects": 62,
+    "faces": 1760
+  },
+  {
+    "name": "Zephyr",
+    "objects": 52,
+    "faces": 1088
+  },
+  {
+    "name": "Citadel Plus",
+    "objects": 65,
+    "faces": 1174
+  },
+  {
+    "name": "Goliath Plus",
+    "objects": 119,
+    "faces": 2604
+  },
+  {
+    "name": "Hammerclaw Plus",
+    "objects": 73,
+    "faces": 1976
+  },
+  {
+    "name": "Hecate Plus",
+    "objects": 56,
+    "faces": 1124
+  },
+  {
+    "name": "Liberator Plus",
+    "objects": 54,
+    "faces": 1104
+  },
+  {
+    "name": "Pusat Plus",
+    "objects": 78,
+    "faces": 1356
+  },
+  {
+    "name": "Retiarus Plus",
+    "objects": 83,
+    "faces": 1418
+  },
+  {
+    "name": "Solace Plus",
+    "objects": 85,
+    "faces": 1342
+  },
+  {
+    "name": "Solaris Plus",
+    "objects": 142,
+    "faces": 1776
+  },
+  {
+    "name": "Spearhead Plus",
+    "objects": 57,
+    "faces": 1880
+  },
+  {
+    "name": "Spectrum Plus",
+    "objects": 81,
+    "faces": 1950
+  },
+  {
+    "name": "Tartarus Plus",
+    "objects": 68,
+    "faces": 1184
+  },
+  {
+    "name": "A-Elite",
+    "objects": 54,
+    "faces": 2092
+  },
+  {
+    "name": "A-Veteran",
+    "objects": 54,
+    "faces": 2092
+  },
+  {
+    "name": "Solemn",
+    "objects": 53,
+    "faces": 1380
+  },
+  {
+    "name": "C-Elite",
+    "objects": 59,
+    "faces": 1138
+  },
+  {
+    "name": "C-Veteran",
+    "objects": 59,
+    "faces": 1138
+  },
+  {
+    "name": "G-Surgeon",
+    "objects": 76,
+    "faces": 1352
+  },
+  {
+    "name": "G-Saturn",
+    "objects": 76,
+    "faces": 1352
+  },
+  {
+    "name": "G-Centaur",
+    "objects": 76,
+    "faces": 1352
+  },
+  {
+    "name": "G-Referee",
+    "objects": 76,
+    "faces": 1352
+  },
+  {
+    "name": "G-Goal",
+    "objects": 76,
+    "faces": 1352
+  },
+  {
+    "name": "G-Vanquisher",
+    "objects": 76,
+    "faces": 1352
+  },
+  {
+    "name": "G-Sovereign",
+    "objects": 76,
+    "faces": 1352
+  },
+  {
+    "name": "G-Peacemaker",
+    "objects": 76,
+    "faces": 1352
+  },
+  {
+    "name": "G-Exalted",
+    "objects": 76,
+    "faces": 1352
+  },
+  {
+    "name": "G-Veteran",
+    "objects": 76,
+    "faces": 1352
+  },
+  {
+    "name": "G-Enforcer",
+    "objects": 76,
+    "faces": 1352
+  },
+  {
+    "name": "G-Bastion",
+    "objects": 80,
+    "faces": 2312
+  },
+  {
+    "name": "G-Kick",
+    "objects": 76,
+    "faces": 1352
+  },
+  {
+    "name": "G-Ignite",
+    "objects": 76,
+    "faces": 1352
+  },
+  {
+    "name": "G-Champion",
+    "objects": 80,
+    "faces": 1376
+  },
+  {
+    "name": "S-Elite",
+    "objects": 51,
+    "faces": 1840
+  },
+  {
+    "name": "S-Veteran",
+    "objects": 51,
+    "faces": 1840
+  },
+  {
+    "name": "V-Lightning",
+    "objects": 98,
+    "faces": 2688
+  },
+  {
+    "name": "V-Revenge",
+    "objects": 98,
+    "faces": 2688
+  },
+  {
+    "name": "V-Avenger",
+    "objects": 98,
+    "faces": 2688
+  },
+  {
+    "name": "V-Corsair",
+    "objects": 98,
+    "faces": 2688
+  },
+  {
+    "name": "V-Adept",
+    "objects": 98,
+    "faces": 2688
+  }
+]
