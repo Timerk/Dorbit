@@ -9,6 +9,9 @@ var encounter: int = 0
 var alien_respawn: float = 0.0
 var solo: Dictionary = {}
 var alien_goal: Dictionary = {}
+var inventory: Dictionary = {}
+var station_pending: bool = false
+var station_message: String = ""
 
 
 func begin() -> void:
@@ -43,6 +46,8 @@ func add_player(id: int, location: Vector3) -> void:
 		records[id] = {"credits": 0, "kills": 0, "stage": 0, "respawn": 0.0, "life": 0, "spawn": location}
 		if session.sector.dedicated_server:
 			records[id]["credits"] = session.store.pilots[session.pilot_ids[id]]["credits"]
+			Equipment.apply_stats(ship, Equipment.stats(session.store.pilots[session.pilot_ids[id]]["equipment"]))
+			ship.reset_health() # Initial spawn, not a fitting change.
 
 
 func remove_player(id: int) -> void:
@@ -198,6 +203,9 @@ func health(ship: SpaceShip) -> Dictionary:
 func pack_player(id: int) -> Dictionary:
 	var data := health(session.ships[id])
 	data.merge(records[id])
+	var ship := session.ships[id]
+	# Fixed four-number wire format keeps two-player snapshot chunks below the MTU.
+	data["stats"] = Vector4(ship.laser_damage, ship.max_shield, ship.cruise_speed, ship.boost_speed)
 	return data
 
 
@@ -222,6 +230,8 @@ func apply_player(id: int, data: Dictionary) -> bool:
 	var ship := session.ships[id]
 	var reset: bool = int(ship.get_meta("life", 0)) != data["life"] or ship.alive != data["alive"]
 	ship.set_meta("life", data["life"])
+	var stats: Vector4 = data["stats"]
+	Equipment.apply_stats(ship, {"damage": stats.x, "shield": stats.y, "speed": stats.z, "boost": stats.w})
 	apply_health(ship, data)
 	if ship == session.sector.player:
 		update_local(data)
@@ -287,6 +297,9 @@ func show_explosion(location: Vector3) -> void:
 
 
 func finish() -> void:
+	inventory.clear()
+	station_pending = false
+	station_message = ""
 	if not solo.is_empty():
 		session.sector.credits = solo["credits"]
 		session.sector.kills = solo["kills"]
@@ -297,4 +310,50 @@ func finish() -> void:
 	alien_goal.clear()
 	if not session.sector.dedicated_server:
 		session.sector.player.simulation_authority = true
+		Equipment.apply_stats(session.sector.player, Equipment.stats(Equipment.starter()))
 	session.sector.alien.simulation_authority = true
+
+
+func request_station(action: String, subject: String, ship: String = "", slot: String = "") -> void:
+	if station_pending or inventory.is_empty() or not session.active:
+		return
+	station_pending = true
+	station_message = "Waiting for server..."
+	station_request.rpc_id(1, int(inventory["revision"]) + 1, action, subject, ship, slot, int(session.sector.player.get_meta("life", 0)))
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func station_request(sequence: int, action: String, subject: String, ship: String, slot: String, life: int) -> void:
+	if not session.active or not multiplayer.is_server() or not session.sector.dedicated_server:
+		return
+	var id := multiplayer.get_remote_sender_id()
+	if not records.has(id) or not session.pilot_ids.has(id):
+		return
+	var blocker := session.sector.repair_blocker(session.ships[id])
+	if records[id]["life"] != life:
+		blocker = "Ship changed. Review your fitting after rescue."
+	if not blocker.is_empty():
+		publish_inventory(id, blocker)
+		return
+	var pilot_id := session.pilot_ids[id]
+	var result := session.store.transact(pilot_id, sequence, action, subject, ship, slot)
+	if session.store.failed:
+		session.stop_for_save_failure()
+		return
+	var pilot: Dictionary = session.store.pilots[pilot_id]
+	records[id]["credits"] = pilot["credits"]
+	Equipment.apply_stats(session.ships[id], Equipment.stats(pilot["equipment"]))
+	publish_inventory(id, result)
+
+
+func publish_inventory(id: int, result: String = "") -> void:
+	if session.sector.dedicated_server:
+		station_result.rpc_id(id, session.store.pilots[session.pilot_ids[id]]["equipment"], result)
+
+
+@rpc("authority", "call_remote", "reliable")
+func station_result(data: Dictionary, result: String) -> void:
+	if session.active:
+		inventory = data
+		station_pending = false
+		station_message = result
