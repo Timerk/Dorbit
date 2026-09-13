@@ -32,6 +32,8 @@ func run() -> void:
 	var clients: Array[Sector] = []
 	for index in range(10):
 		var client := make_sector("Client%d" % index)
+		client.session.credential_id = "pilot%d" % index
+		client.session.credential_token = test_token(index)
 		clients.append(client)
 		check(client.session.join("127.0.0.1", 24683) == OK, "Client %d begins joining" % index)
 	await settle(0.5)
@@ -108,6 +110,7 @@ func run() -> void:
 	await settle(0.5)
 	await replicate(server)
 	check(client.session.ships.size() == 1 and client.session.received_snapshot, "A player reconnects to the still-running server")
+	check(client.credits == 63, "Reconnect restores the authenticated pilot's saved credits")
 	server.session.disconnect_session("Test shutdown")
 	await settle(0.5)
 	check(not client.session.active and client.session.menu.visible, "Server shutdown returns client to connection menu")
