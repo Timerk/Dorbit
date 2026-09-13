@@ -64,6 +64,32 @@ The starting combat proposal is:
 
 Weapon ranges, firing arcs, damage, shield recovery, and alien behavior need playtesting. Additional weapons and abilities can follow after basic laser combat is enjoyable.
 
+### Huntable sector and initial enemy variety
+
+Milestone 3 now includes multiple simultaneous aliens in the current sector. This slice precedes equipment and hunting contracts. It adds no connected sectors, bosses, loot tables, missions or art pipeline.
+
+- Five fixed spawn slots support independent encounters. Every alien owns its identity, movement, target choice, health, contribution list, life number, death and respawn timer. The server controls these and all rewards, including when no pilots are connected.
+- Scouts are starter encounters near the station approach. Sentinels keep the reference combat stats farther ahead. The Heavy occupies the outer right flank and is intended for upgraded pilots or a small group. Upgrades are outside this slice.
+- Each kill splits that type's credit pool equally among connected pilots who damaged that alien in its current life. Contributors awaiting rescue remain eligible; disconnected pilots are removed. Integer remainders go in ascending peer-ID order. Persistence commits the shares before clients see them.
+- Killing or resetting one alien must leave other encounters, contributions and active fire intact. Player rescue also leaves encounters independent.
+- Station protection remains a 75 m sphere. Aliens cannot attack protected pilots. Protected pilots cannot damage aliens.
+- Exceeding the home leash, or losing all eligible targets after engagement, starts a return. Health and contributions reset and the life number advances. Returning aliens reject damage and cannot attack until they reach home. If direct flight is blocked, a 30-second server timeout places them at home so a rock cannot strand an invulnerable slot. Old fire commands cannot cross a reset or respawn.
+- Joining clients receive every alien's current identity, transform, health, life, engagement/return state and respawn countdown. Snapshot ordering is tracked per entity.
+- Left click selects the visible alien intersected by the camera ray. Tab starts with the nearest available alien within 550 m, then cycles fixed slot order to avoid reordering as enemies move. Death, return, life changes and leaving selection range clear that target and fire.
+- Names and numbered markers distinguish contacts. Scouts have smaller amber-accented hulls, Sentinels retain the reference shape with red accents, and Heavies use larger purple-accented hulls with an extra armor block.
+
+Provisional tuning lives in `Alien.TYPES` and `Sector.ALIEN_SPAWNS`. These values need human balance playtesting.
+
+| Type | Count | Hull / shield | Speed | Laser damage / interval | Weapon range | Detection | Home leash | Credits | Respawn |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Scout | 2 | 60 / 20 | 29 m/s | 6 / 0.85 s | 120 m | 155 m | 170 m | 30 | 10 s |
+| Sentinel | 2 | 130 / 50 | 18 m/s | 10 / 0.75 s | 155 m | 180 m | 230 m | 75 | 12 s |
+| Heavy | 1 | 340 / 140 | 12 m/s | 23 / 0.9 s | 165 m | 220 m | 180 m | 180 | 18 s |
+
+Home coordinates are relative to sector origin. Slot 0 is Sentinel at `(0, 8, -440)`; slots 1 and 2 are Scouts at `(-85, 8, -150)` and `(85, -12, -175)`; slot 3 is Sentinel at `(-230, 35, -430)`; slot 4 is Heavy at `(320, 15, -390)`. Patrols stay within 18 m horizontally and 8 m vertically of home before engagement. Fixed slots respawn in place; timers never create extra nodes.
+
+Hunting contracts will stack on this work and use `Alien.kind` plus each kill's contribution eligibility. Merge alien variety first, hunting contracts second. The existing `SessionCombat.destroyed()` reward path holds the eligible contributor list until rewards are committed and applied.
+
 ### Death and recovery
 
 The agreed starting direction is to retain owned ships and installed equipment, respawn at the station, and apply a modest repair cost. Losing some unbanked loot is a possible additional penalty to test.

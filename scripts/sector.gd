@@ -12,15 +12,25 @@ const WINDOW_RESOLUTIONS: Array[Vector2i] = [
 	Vector2i(1920, 1080), Vector2i(2560, 1440), Vector2i(3840, 2160),
 ]
 
+# Fixed slots bound the population. Slot 0 remains the reference Sentinel for development fixtures.
+const ALIEN_SPAWNS := [
+	{"kind": "Sentinel", "home": Vector3(0, 8, -440)},
+	{"kind": "Scout", "home": Vector3(-85, 8, -150)},
+	{"kind": "Scout", "home": Vector3(85, -12, -175)},
+	{"kind": "Sentinel", "home": Vector3(-230, 35, -430)},
+	{"kind": "Heavy", "home": Vector3(320, 15, -390)},
+]
+const TARGET_RANGE: float = 550.0
 var player: Pilot
-var alien: Alien
+var aliens: Dictionary[int, Alien] = {}
+var alien: Alien:
+	get: return aliens[0]
 var target: SpaceShip
 var hud: FlightHud
 var credits: int = 0
 var kills: int = 0
 var auto_fire: bool = false
 var paused: bool = false
-var alien_respawn: float = 0.0
 var player_respawn: float = 0.0
 var toast: String = "Welcome to Outpost 01. Hold right mouse to steer."
 var toast_time: float = 8.0
@@ -46,12 +56,18 @@ func _ready() -> void:
 		add_child(player)
 		player.destroyed.connect(on_destroyed)
 		player.fired.connect(on_laser)
-	alien = Alien.new()
-	alien.render_enabled = not dedicated_server
-	alien.position = alien.home_position
-	add_child(alien)
-	alien.destroyed.connect(on_destroyed)
-	alien.fired.connect(on_laser)
+	for id in range(ALIEN_SPAWNS.size()):
+		var enemy := Alien.new()
+		enemy.alien_id = id
+		enemy.name = "Alien%d" % id
+		enemy.kind = ALIEN_SPAWNS[id]["kind"]
+		enemy.home_position = ALIEN_SPAWNS[id]["home"]
+		enemy.position = enemy.home_position
+		enemy.render_enabled = not dedicated_server
+		aliens[id] = enemy
+		add_child(enemy)
+		enemy.destroyed.connect(on_destroyed)
+		enemy.fired.connect(on_laser)
 	if not dedicated_server:
 		var layer := CanvasLayer.new()
 		add_child(layer)
@@ -139,7 +155,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	player.handle_mouse(event)
 	if event.is_action_pressed("cycle_target"):
-		select_target(alien if alien.alive else null)
+		cycle_target()
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		pick_target(event.position)
 	if event.is_action_pressed("fire"):
@@ -180,8 +196,8 @@ func _physics_process(delta: float) -> void:
 	if paused:
 		return
 	toast_time = maxf(0.0, toast_time - delta)
+	validate_target()
 	player.tick_combat(delta)
-	alien.tick_combat(delta)
 	if player.alive:
 		player.fly(delta)
 		if player.position.length() > 700.0:
@@ -196,13 +212,16 @@ func _physics_process(delta: float) -> void:
 		player_respawn -= delta
 		if player_respawn <= 0.0:
 			respawn_player()
-	if alien.alive:
-		alien.fly(delta, player, STATION_POSITION)
-	elif alien_respawn > 0.0:
-		alien_respawn -= delta
-		if alien_respawn <= 0.0:
-			alien.position = alien.home_position
-			alien.reset_health()
+	for enemy: Alien in aliens.values():
+		enemy.tick_combat(delta)
+		if enemy.alive:
+			enemy.fly(delta, player if player.alive and player.position.distance_to(STATION_POSITION) > 75.0 and player.position.distance_to(enemy.position) < float(enemy.tuning()["detection"]) else null, STATION_POSITION)
+		else:
+			enemy.respawn = maxf(0.0, enemy.respawn - delta)
+			if enemy.respawn <= 0.0:
+				enemy.position = enemy.home_position
+				enemy.returning = false
+				enemy.reset_encounter()
 	weapon_status = player.firing_blocker(target)
 
 
@@ -226,10 +245,37 @@ func pick_target(screen_position: Vector2) -> void:
 	var query := PhysicsRayQueryParameters3D.create(start, finish, 3)
 	query.exclude = [player.get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	if not hit.is_empty() and hit.collider == alien and alien.alive:
-		select_target(alien)
+	if not hit.is_empty() and hit.collider is Alien and target_available(hit.collider):
+		select_target(hit.collider)
 	else:
 		select_target(null)
+
+
+func target_available(enemy: Alien) -> bool:
+	return is_instance_valid(enemy) and enemy.available() and enemy.visible and player.position.distance_to(enemy.position) <= TARGET_RANGE
+
+
+func validate_target() -> void:
+	if target != null and (not is_instance_valid(target) or not target_available(target as Alien)):
+		select_target(null)
+
+
+func cycle_target() -> void:
+	var candidates: Array[Alien] = []
+	for enemy: Alien in aliens.values():
+		if target_available(enemy):
+			candidates.append(enemy)
+	# Fixed slot order after the first nearest selection avoids cycling jitter as enemies move.
+	if candidates.is_empty():
+		select_target(null)
+	elif target in candidates:
+		select_target(candidates[(candidates.find(target) + 1) % candidates.size()])
+	else:
+		var nearest := candidates[0]
+		for enemy in candidates:
+			if player.position.distance_squared_to(enemy.position) < player.position.distance_squared_to(nearest.position):
+				nearest = enemy
+		select_target(nearest)
 
 
 func select_target(ship: SpaceShip) -> void:
@@ -252,14 +298,17 @@ func on_destroyed(ship: SpaceShip, attacker: SpaceShip) -> void:
 		session.combat.destroyed(ship)
 		return
 	SectorVisuals.explosion(self, ship.global_position)
-	if ship == alien:
+	if ship is Alien:
+		var enemy := ship as Alien
+		var reward: int = enemy.tuning()["reward"]
 		if attacker == player:
-			credits += KILL_REWARD
+			credits += reward
 			kills += 1
 			objective_stage = maxi(objective_stage, 3)
-			notify("Alien destroyed. +%d credits. Return to Outpost 01 to repair." % KILL_REWARD)
-		select_target(null)
-		alien_respawn = 12.0
+			notify("Alien destroyed. +%d credits. Return to Outpost 01 to repair." % reward)
+		if target == enemy:
+			select_target(null)
+		enemy.respawn = enemy.tuning()["respawn"]
 	else:
 		var fee := mini(credits, RESPAWN_FEE)
 		credits -= fee
@@ -276,10 +325,7 @@ func respawn_player() -> void:
 	player.energy = 100.0
 	player.reset_health()
 	player_respawn = 0.0
-	# Reset the encounter so enemies cannot camp the rescue position.
-	alien.position = alien.home_position
-	alien.reset_health()
-	alien_respawn = 0.0
+	select_target(null)
 
 
 func repair_blocker(ship: Pilot = null) -> String:

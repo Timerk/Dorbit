@@ -61,27 +61,13 @@ func run() -> void:
 	sampling = true
 	await press(KEY_TAB)
 	await press(KEY_SPACE)
-	Input.action_press("forward")
-	await create_timer(3.4).timeout
-	Input.action_release("forward")
-	await create_timer(0.6).timeout
+	await hunt_selected()
 	await snapshot("02-combat")
-	var deadline := Time.get_ticks_msec() + 25000
-	while sector.kills == 0 and Time.get_ticks_msec() < deadline and sector.player.alive:
-		await physics_frame
 	check(sector.kills == 1, "Pilot can kill the first alien with target-lock lasers")
 	check(sector.player.alive, "First encounter is survivable without upgrades")
-	check(sector.credits == Sector.KILL_REWARD, "Combat reward arrives through the live encounter")
+	check(sector.credits == int(Alien.TYPES["Scout"]["reward"]), "Combat reward arrives through the live encounter")
 	await snapshot("03-reward")
-	Input.action_press("backward")
-	deadline = Time.get_ticks_msec() + 10000
-	while sector.player.position.z < 30.0 and Time.get_ticks_msec() < deadline:
-		await physics_frame
-	Input.action_release("backward")
-	await create_timer(1.0).timeout
-	deadline = Time.get_ticks_msec() + 6000
-	while sector.player.time_since_hit < 5.0 and Time.get_ticks_msec() < deadline:
-		await physics_frame
+	await return_to_station()
 	await press(KEY_R)
 	await process_frame
 	check(sector.objective_stage == 4, "Pilot returns to the station and completes repairs")
@@ -100,3 +86,33 @@ func run() -> void:
 	sector.queue_free()
 	await process_frame
 	quit(0 if failures == 0 else 1)
+
+
+func hunt_selected() -> void:
+	var enemy := sector.target as Alien
+	var deadline := Time.get_ticks_msec() + 30000
+	while is_instance_valid(enemy) and enemy.alive and sector.player.alive and Time.get_ticks_msec() < deadline:
+		sector.player.look_at(enemy.global_position, Vector3.UP)
+		if sector.player.position.distance_to(enemy.position) > 85.0 or sector.player.position.distance_to(Sector.STATION_POSITION) < 85.0:
+			Input.action_press("forward")
+		else:
+			Input.action_release("forward")
+		if enemy.available() and sector.target != enemy:
+			sector.select_target(enemy)
+		sector.auto_fire = enemy.available()
+		await physics_frame
+	Input.action_release("forward")
+	sector.auto_fire = false
+
+
+func return_to_station() -> void:
+	var deadline := Time.get_ticks_msec() + 15000
+	while sector.player.alive and sector.player.position.distance_to(Sector.STATION_POSITION) > 45.0 and Time.get_ticks_msec() < deadline:
+		sector.player.look_at(Sector.STATION_POSITION, Vector3.UP)
+		Input.action_press("forward")
+		await physics_frame
+	Input.action_release("forward")
+	await create_timer(1.0).timeout
+	deadline = Time.get_ticks_msec() + 6000
+	while sector.player.time_since_hit < 5.0 and Time.get_ticks_msec() < deadline:
+		await physics_frame
