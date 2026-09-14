@@ -10,7 +10,7 @@ const CONNECT_TIMEOUT: float = 10.0
 var sector: Sector
 var active: bool = false
 var connecting: bool = false
-var status: String = "Enter the server address to connect."
+var status: String = "Choose a server and connect."
 var ships: Dictionary[int, Pilot] = {}
 var commands: Dictionary[int, Dictionary] = {}
 var goals: Dictionary[int, Dictionary] = {}
@@ -29,7 +29,18 @@ var join_button: Button
 var leave_button: Button
 var back_button: Button
 var port_field: SpinBox
+var preferences := ConnectionPreferences.new()
+var attempted_address: String = ""
+var attempted_port: int = PORT
+var preference_label: Label
 var combat: SessionCombat
+var store: PilotStore
+var pilot_ids: Dictionary[int, String] = {}
+var challenges: Dictionary[int, PackedByteArray] = {}
+# May also be supplied by a client UI. Neither value is a wallet selector in gameplay RPCs.
+var credential_id: String = ""
+var credential_token: String = ""
+var auth_proof_sent: bool = false
 
 
 func _ready() -> void:
@@ -37,15 +48,20 @@ func _ready() -> void:
 	combat.name = "Combat"
 	combat.session = self
 	add_child(combat)
+	multiplayer.auth_callback = authenticate
+	multiplayer.auth_timeout = 5.0
+	multiplayer.peer_authenticating.connect(begin_authentication)
+	multiplayer.peer_authentication_failed.connect(authentication_failed)
 	multiplayer.peer_disconnected.connect(peer_left)
 	multiplayer.connected_to_server.connect(connected)
-	multiplayer.connection_failed.connect(func(): disconnect_session("Connection failed. Check the server address and UDP port."))
-	multiplayer.server_disconnected.connect(func(): disconnect_session("The server disconnected. Connect again when it is available."))
+	multiplayer.connection_failed.connect(func(): disconnect_session("Connection failed. Check the address and UDP port, then try again."))
+	multiplayer.server_disconnected.connect(func(): disconnect_session("Connection to the server was lost. You can try connecting again."))
 	if not sector.dedicated_server:
 		build_menu()
 
 
 func build_menu() -> void:
+	preferences.load_from()
 	var layer := CanvasLayer.new()
 	layer.layer = 5
 	add_child(layer)
@@ -71,22 +87,31 @@ func build_menu() -> void:
 	title.add_theme_font_size_override("font_size", 26)
 	rows.add_child(title)
 	var help := Label.new()
-	help.text = "Join the same sector, alone or with friends.\nProgress is session-only in this server test build."
+	help.text = "Join the same sector, alone or with friends.\nYour pilot's credits are saved on the server."
 	rows.add_child(help)
+	var address_label := Label.new()
+	address_label.text = "Server address"
+	rows.add_child(address_label)
 	address = LineEdit.new()
 	address.placeholder_text = "Server address"
-	address.text = "127.0.0.1"
+	address.text = preferences.address
 	rows.add_child(address)
 	port_field = SpinBox.new()
 	port_field.min_value = 1
 	port_field.max_value = 65535
-	port_field.value = PORT
+	port_field.value = preferences.port
 	port_field.prefix = "UDP port: "
 	rows.add_child(port_field)
 	host_button = add_button(rows, "Host encounter (development)", func(): host())
 	host_button.visible = not sector.client_only
-	join_button = add_button(rows, "Connect", func(): join(address.text.strip_edges(), int(port_field.value)))
-	leave_button = add_button(rows, "Disconnect", func(): disconnect_session("Disconnected. Choose a server to play."))
+	join_button = add_button(rows, "Connect", connect_from_menu)
+	leave_button = add_button(rows, "Disconnect", func(): disconnect_session("Connection cancelled." if connecting else "Disconnected. You can connect again when ready."))
+	address.text_submitted.connect(func(_text: String): connect_from_menu())
+	port_field.get_line_edit().text_submitted.connect(func(_text: String): connect_from_menu.call_deferred())
+	preference_label = Label.new()
+	preference_label.text = "Remembers the last successful connection on this device."
+	preference_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rows.add_child(preference_label)
 	status_label = Label.new()
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	status_label.custom_minimum_size.x = 540
@@ -107,13 +132,25 @@ func add_button(parent: Node, title: String, action: Callable) -> Button:
 func open_menu() -> void:
 	sector.set_paused(true)
 	menu.show()
-	address.grab_focus()
+	if active:
+		back_button.grab_focus()
+	elif connecting:
+		leave_button.grab_focus()
+	else:
+		join_button.grab_focus()
 
 
 func _process(_delta: float) -> void:
 	if sector.dedicated_server:
 		return
 	status_label.text = status
+	if not attempted_address.is_empty():
+		status_label.text = "%s | UDP %d\n%s" % [attempted_address, attempted_port, status]
+	if connecting:
+		status_label.text += "\nWaiting for the server, up to %d seconds." % int(CONNECT_TIMEOUT)
+	preference_label.text = "Could not save this connection for the next launch." if preferences.save_failed else "Remembers the last successful connection on this device."
+	join_button.text = "Connect again" if not attempted_address.is_empty() else "Connect"
+	leave_button.text = "Cancel connection" if connecting else "Disconnect"
 	host_button.disabled = active or connecting
 	join_button.disabled = active or connecting
 	address.editable = not active and not connecting
@@ -122,12 +159,25 @@ func _process(_delta: float) -> void:
 	back_button.disabled = sector.client_only and not active
 
 
+func connect_from_menu() -> void:
+	port_field.apply()
+	join(address.text.strip_edges(), int(port_field.value))
+
+
 func host(port: int = PORT) -> Error:
 	if active or connecting:
 		return ERR_ALREADY_IN_USE
+	if sector.dedicated_server:
+		store = PilotStore.new()
+		if not store.open(OS.get_environment("DORBIT_DATA_DIR")):
+			status = store.error
+			store.close()
+			return ERR_FILE_CANT_OPEN
 	var peer := ENetMultiplayerPeer.new()
 	var error := peer.create_server(port, MAX_PLAYERS if sector.dedicated_server else MAX_PLAYERS - 1)
 	if error != OK:
+		if store != null:
+			store.close()
 		status = "Cannot host: UDP port %d may already be in use." % port
 		return error
 	multiplayer.server_relay = false
@@ -145,20 +195,107 @@ func host(port: int = PORT) -> Error:
 func join(host_address: String, port: int = PORT) -> Error:
 	if active or connecting:
 		return ERR_ALREADY_IN_USE
+	host_address = host_address.strip_edges()
+	attempted_address = host_address
+	attempted_port = port
+	address.text = host_address
+	port_field.value = port
 	if host_address.is_empty():
-		status = "Enter the host address first."
+		status = "Enter a server address first."
 		return ERR_INVALID_PARAMETER
+	if credential_token.is_empty():
+		var credential_path := OS.get_environment("DORBIT_PILOT_FILE")
+		if not credential_path.is_empty() and FileAccess.file_exists(credential_path):
+			var json := JSON.new()
+			var credential: Variant = json.data if json.parse(FileAccess.get_file_as_string(credential_path)) == OK else null
+			if credential is Dictionary and credential.get("id") is String and credential.get("token") is String:
+				credential_id = credential["id"]
+				credential_token = credential["token"]
+	if sector.client_only and (not PilotStore.valid_id(credential_id) or not PilotStore.valid_hex(credential_token)):
+		status = "Set DORBIT_PILOT_FILE to the pilot credential file supplied by the server operator."
+		return ERR_UNAUTHORIZED
 	var peer := ENetMultiplayerPeer.new()
 	var error := peer.create_client(host_address, port)
 	if error != OK:
-		status = "Could not connect to that address."
+		status = "Could not start the connection: %s. Check the address and UDP port." % error_string(error)
 		return error
 	multiplayer.multiplayer_peer = peer
 	connecting = true
+	auth_proof_sent = false
 	connect_clock = 0.0
 	sector.set_paused(true)
-	status = "Connecting to %s..." % host_address
+	status = "Connecting..."
+	leave_button.disabled = false
+	leave_button.grab_focus()
 	return OK
+
+
+func begin_authentication(id: int) -> void:
+	if not multiplayer.is_server():
+		return
+	var nonce := Crypto.new().generate_random_bytes(32) if sector.dedicated_server else PackedByteArray([0])
+	challenges[id] = nonce
+	multiplayer.send_auth(id, nonce)
+
+
+func authenticate(id: int, data: PackedByteArray) -> void:
+	if not multiplayer.is_server():
+		if id == 1 and auth_proof_sent and data == PackedByteArray([1]):
+			multiplayer.complete_auth(id)
+			return
+		if id != 1 or (data.size() != 32 and (sector.client_only or data != PackedByteArray([0]))):
+			multiplayer.disconnect_peer(id)
+			return
+		var proof := Crypto.new().hmac_digest(HashingContext.HASH_SHA256, credential_token.sha256_buffer(), data)
+		multiplayer.send_auth(id, JSON.stringify({"id": credential_id, "proof": proof.hex_encode()}).to_utf8_buffer())
+		auth_proof_sent = true
+		return
+	if not challenges.has(id):
+		return
+	var nonce := challenges[id]
+	challenges.erase(id) # Each connection gets exactly one attempt with a fresh challenge.
+	if sector.dedicated_server:
+		var json := JSON.new()
+		var response: Variant = json.data if data.size() <= 256 and json.parse(data.get_string_from_utf8()) == OK else null
+		if not response is Dictionary or not response.get("id") is String or not response.get("proof") is String:
+			multiplayer.disconnect_peer(id)
+			return
+		var pilot: String = response["id"]
+		var proof: String = response["proof"]
+		if pilot in pilot_ids.values() or not PilotStore.valid_hex(proof) or not store.verifies(pilot, nonce, proof.hex_decode()):
+			multiplayer.disconnect_peer(id)
+			return
+		pilot_ids[id] = pilot
+	multiplayer.send_auth(id, PackedByteArray([1]))
+	multiplayer.complete_auth(id)
+
+
+func authentication_failed(id: int) -> void:
+	challenges.erase(id)
+	pilot_ids.erase(id)
+	if not multiplayer.is_server():
+		disconnect_session.call_deferred("Authentication failed. Check credentials, matching builds, or an existing pilot login.")
+
+
+# Called only by server combat, before applying any visible reward or charge.
+func save_balances(balances: Dictionary[int, int]) -> bool:
+	if not sector.dedicated_server:
+		return true
+	if store.failed:
+		return false
+	var wallets: Dictionary = {}
+	for id: int in balances:
+		if not pilot_ids.has(id):
+			store.fail("Wallet update without an authenticated pilot.")
+			break
+		wallets[pilot_ids[id]] = balances[id]
+	if not store.failed and store.commit(wallets):
+		return true
+	printerr("Persistence stopped the server: " + store.error)
+	# Stop simulation immediately; close peers outside any active combat callback.
+	sector.set_physics_process(false)
+	get_tree().quit(1)
+	return false
 
 
 func start_flight() -> void:
@@ -179,8 +316,10 @@ func start_flight() -> void:
 
 
 func connected() -> void:
+	if sector.client_only:
+		preferences.remember(attempted_address, attempted_port)
 	start_flight()
-	status = "Connected. Waiting for the host's sector..."
+	status = "Connected. Waiting for the server's sector..."
 	ready_for_flight.rpc_id(1)
 
 
@@ -189,6 +328,8 @@ func ready_for_flight() -> void:
 	if not active or not multiplayer.is_server():
 		return
 	var id := multiplayer.get_remote_sender_id()
+	if sector.dedicated_server and not pilot_ids.has(id):
+		return
 	if ships.has(id) or ships.size() >= MAX_PLAYERS:
 		return
 	for existing: int in ships:
@@ -238,6 +379,8 @@ func spawn(id: int, location: Vector3) -> void:
 
 
 func peer_left(id: int) -> void:
+	pilot_ids.erase(id)
+	challenges.erase(id)
 	if active and multiplayer.is_server():
 		despawn(id)
 		announce_departure.call_deferred(id)
@@ -271,7 +414,7 @@ func tick(delta: float) -> void:
 	if connecting:
 		connect_clock += delta
 		if connect_clock >= CONNECT_TIMEOUT:
-			disconnect_session("Connection timed out. Check the server address and UDP port.")
+			disconnect_session("No connection after %d seconds. Check the address and UDP port, then try again." % int(CONNECT_TIMEOUT))
 		return
 	if not active:
 		return
@@ -303,7 +446,7 @@ func tick(delta: float) -> void:
 		if not received_snapshot:
 			connect_clock += delta
 			if connect_clock >= CONNECT_TIMEOUT:
-				disconnect_session("The server did not send a sector. Use matching client and server builds.")
+				disconnect_session("Connected, but no sector arrived. Check that client and server builds match, then try again.")
 			return
 		if sector.player.alive:
 			sector.player.fly_command(delta, movement, boost)
@@ -400,6 +543,10 @@ func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int) -> void
 func disconnect_session(message: String) -> void:
 	active = false
 	connecting = false
+	pilot_ids.clear()
+	challenges.clear()
+	if store != null:
+		store.close()
 	combat.finish()
 	multiplayer.multiplayer_peer.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
@@ -422,8 +569,12 @@ func disconnect_session(message: String) -> void:
 	sector.set_paused(true)
 	status = message
 	menu.show()
+	join_button.disabled = false
+	join_button.grab_focus()
 
 
 func _exit_tree() -> void:
+	if store != null:
+		store.close()
 	if active or connecting:
 		multiplayer.multiplayer_peer.close()
