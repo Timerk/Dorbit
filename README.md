@@ -81,7 +81,7 @@ Distribute the new file and restart. The old token no longer works. To revoke ac
 
 The ledger is `DORBIT_DATA_DIR/pilots.json`, schema version 1. Every reward, repair charge and rescue fee is committed before the server confirms the balance. All contributors' shares use one commit. Writes go to a sibling temporary file, flush and verify its contents, then rename over the destination. `pilots.json.bak` keeps the previous complete ledger. A save failure stops simulation and exits the server with code 1 before granting the pending transaction.
 
-Only one server or provisioning tool may own the directory. `pilots.json.lock` is an exclusive directory lock. Clean shutdown removes it. A crash or forced termination can leave it behind. Missing, malformed, unsupported or out-of-range data fails closed. The server does not replace an invalid ledger with zero balances, and it detects primary-file edits made while running.
+Only one server or provisioning tool may own the directory. `pilots.json.lock` is an exclusive directory lock. Clean shutdown removes it. On Linux, use `tools/server.sh run`: its launcher translates SIGTERM and Ctrl+C into a scene-tree shutdown, allowing the server to release the lock. Signaling Godot directly bypasses this launcher. A crash, SIGKILL, power loss or shutdown timeout can still leave the lock behind and requires operator recovery. Missing, malformed, unsupported or out-of-range data fails closed. The server does not replace an invalid ledger with zero balances, and it detects primary-file edits made while running.
 
 Recovery is an operator action:
 
@@ -159,7 +159,7 @@ rtk proxy .tools/godot/Godot_v4.7.2-stable_win64_console.exe --path . --script r
 
 The replay opens a 2560 x 1440 window, disables VSync for measurement, and saves screenshots under `build/validation`. Keep its window focused while it runs. These changes apply only to the replay. The normal game uses VSync.
 
-GitHub Actions runs the Windows checks, exports the Windows client, and tests the dedicated server on Linux for each pull request. `bash tools/server.sh check` covers ten authenticated clients, combat, reconnects, restart recovery, duplicate logins, malformed credentials, corrupted saves and write failures. Tests provision isolated disposable data directories under Godot's user-data directory; they do not read production credentials or saves.
+GitHub Actions runs the Windows checks, exports the Windows client, and tests the dedicated server on Linux for each pull request. `bash tools/server.sh check` covers ten authenticated clients, combat, reconnects, restart recovery, duplicate logins, malformed credentials, corrupted saves and write failures. It also starts separate Linux processes to test SIGTERM, Ctrl+C, repeated restart, concurrent-server exclusion, crashes and shutdown timeout. Tests provision isolated disposable data directories under Godot's user-data directory or the system temporary directory; they do not read production credentials or saves.
 
 For a two-client Windows-to-Linux replay, provision two fresh test pilots and run the server on port 24684 with a disposable data directory. Set a different `DORBIT_PILOT_FILE` for each Windows Godot process, then launch with `--path . --script res://tests/dedicated_client_playthrough.gd -- --address=YOUR_WSL_IP --label=a`, using `--label=b` for the other. Start both within ten seconds. Each replays the hunt and repair loop; rendered runs save screenshots under `build/validation`.
 

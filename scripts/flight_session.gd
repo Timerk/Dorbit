@@ -41,9 +41,12 @@ var challenges: Dictionary[int, PackedByteArray] = {}
 var credential_id: String = ""
 var credential_token: String = ""
 var auth_proof_sent: bool = false
+var shutdown_file: String = ""
 
 
 func _ready() -> void:
+	if sector.dedicated_server:
+		shutdown_file = OS.get_environment("DORBIT_SHUTDOWN_FILE")
 	combat = SessionCombat.new()
 	combat.name = "Combat"
 	combat.session = self
@@ -142,6 +145,9 @@ func open_menu() -> void:
 
 func _process(_delta: float) -> void:
 	if sector.dedicated_server:
+		if not shutdown_file.is_empty() and FileAccess.file_exists(shutdown_file):
+			print("Server shutdown requested; closing pilot store.")
+			get_tree().quit()
 		return
 	status_label.text = status
 	if not attempted_address.is_empty():

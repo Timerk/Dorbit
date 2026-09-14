@@ -86,21 +86,34 @@ and `ss` shows its UDP socket. `Type=simple` being active alone does not prove
 readiness. Startup includes the project's import step. Logs go to journald;
 retention and survival across reboots follow the host's journald configuration.
 
-systemd restarts crashes after five seconds, with a limit of five starts per
+systemd attempts to restart crashes after five seconds, with a limit of five starts per
 minute. An explicit stop stays stopped. After fixing a repeated startup failure,
 run `sudo systemctl reset-failed dorbit` and `sudo systemctl start dorbit`.
 
-Persistence limits automatic recovery: forced termination can leave
+The Linux launcher converts SIGTERM and Ctrl+C into a graceful game shutdown,
+which releases the save lock. `KillMode=mixed` sends the initial systemd stop
+signal to that launcher so Godot can finish cleanup. The launcher allows 20
+seconds, then forces termination with a failed exit status; systemd's 30-second
+timeout also kills remaining processes if the launcher itself hangs. Install
+the updated unit and run `daemon-reload` when upgrading an existing deployment.
+
+Persistence still limits crash recovery: forced termination can leave
 `pilots.json.lock` or an interrupted write behind. The server then refuses to
 start. Follow the stopped-server recovery procedure in README.md; the service
 does not automatically delete locks or replace saves. Verify stop/restart and
-reboot behavior on the deployed engine before treating unattended recovery as
-working. An enabled service alone does not establish recovery after a crash.
+reboot behavior on the deployed engine and unit before treating routine
+unattended restarts as working. An enabled service alone does not establish
+recovery after a crash or power loss.
 
 ## Update and roll back
 
 Prepare the next commit as above while the old release is running. Keep the old
 release and matching client build until the new one passes a connection check.
+Stop the service and retain a dated off-machine copy of the entire data directory
+before switching releases. On the first upgrade from the old launcher, its stop
+can leave a lock: confirm all old processes have exited and follow the recovery
+procedure before starting the new release. Install the new `dorbit.service` and
+run `sudo systemctl daemon-reload` to activate `KillMode=mixed`.
 Then, with `revision` and `release` set to the new prepared release:
 
 ```bash
@@ -171,9 +184,12 @@ same lock in isolated WSL tests. The operator recovery procedure restored servic
 without changing the ledger, after preserving a stopped-server copy on the VPS
 and on the operator's PC. Journals from the previous boot remained available.
 
-Unattended restart/reboot recovery is blocked by this persistence shutdown
-behavior. Do not assume `systemctl restart` works unattended, or work around it
-by blindly deleting locks in the unit. Updates and rollback still need that
-recovery issue resolved and a real two-release rehearsal. Sustained load with the
-friend group and private VPN setup remain pending. No game, authentication,
-network protocol or save-format changes were made for this deployment.
+The shutdown follow-up adds a Linux launcher and cooperative game shutdown to
+address this observed failure. Real-process WSL tests cover SIGTERM, Ctrl+C and
+repeated restart with a nonzero saved wallet, plus concurrent-server rejection,
+crash handling and preservation of invalid/interrupted saves. Crashes and forced
+termination still require the documented recovery; locks are never blindly deleted.
+The updated unit still needs deployment and stop/restart/reboot verification on
+the VPS. Updates and rollback require a real two-release rehearsal there.
+Sustained load with the friend group and private VPN setup remain pending.
+Authentication, network protocol and save format are unchanged.
