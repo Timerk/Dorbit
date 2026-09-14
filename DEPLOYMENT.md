@@ -70,6 +70,62 @@ Pilot authentication is required, but ENet traffic is unencrypted and the client
 does not authenticate the server. Use a private VPN for ordinary group play, as
 described in README.md. Restrict direct public-IP testing to the intended testers.
 
+## Private group access with Tailscale
+
+Tailscale is the chosen private network. The operator's Windows desktop already
+runs it; the VPS must join the same network before this replaces public-IP tests.
+Use the existing netcup console to bootstrap access if this computer has no SSH
+key installed on the VPS. On the Ubuntu VPS, follow the official
+[Linux installation instructions](https://tailscale.com/download/linux).
+After installation, run from the VPS console:
+
+```bash
+sudo tailscale up --ssh
+tailscale ip -4
+tailscale status
+```
+
+Open the login URL on the operator's computer and authorize the VPS in the
+existing Tailscale account. Do not store login URLs, auth keys or credentials in
+the repository. `--ssh` enables Tailscale SSH on the private address; access is
+controlled by the network policy and still requires an existing Linux login.
+It does not install a Windows SSH key or change public OpenSSH authentication.
+
+Before adding friends, configure and test the access policy in the Tailscale
+admin console. Give the VPS a `tag:dorbit` tag owned by administrators, define
+an operator group and a pilot group with the actual account email addresses,
+and allow these connections:
+
+| Source | Destination | Access |
+| --- | --- | --- |
+| Operators | `tag:dorbit` | TCP 22 for administration; UDP 24567 for play |
+| Pilots | `tag:dorbit` | UDP 24567 only |
+
+Use the configured game port if different. Add a Tailscale SSH rule granting
+only operators access to the existing administrative Linux username, preferably
+with reauthentication (`check`). Game access does not require shell access.
+Review existing broad allow rules: a restrictive grant does not cancel another
+grant that already permits all traffic. Preserve unrelated network access.
+Use policy tests to confirm a pilot can reach the game port and cannot reach
+SSH or unrelated services. See the official
+[grants](https://tailscale.com/docs/features/access-control/grants) and
+[Tailscale SSH](https://tailscale.com/docs/features/tailscale-ssh) documentation.
+
+On Windows, verify `tailscale status`, then connect with
+`ssh ADMIN_USERNAME@SERVER_TAILSCALE_IP`. Use that same server address in Dorbit,
+with the matching client build and existing pilot credential. Check the saved
+credits after connecting, disconnecting and reconnecting. Test from an external
+network too. Tailscale's own packet-filter rules mean host UFW rules alone are
+not a substitute for the Tailscale access policy.
+
+Once private administration and gameplay work, inspect the VPS and provider
+firewall rules and remove the temporary public UDP game-port opening. Keep the
+netcup console available while validating access. Invite friends individually,
+check the account plan supports the intended group size, have them install and
+sign in to Tailscale, and provision one private pilot credential per person.
+The server needs neither a subnet router nor an exit node. Check the server's
+device-key expiry policy so unattended hosting does not unexpectedly lose access.
+
 ## Run and inspect
 
 ```bash
