@@ -16,6 +16,8 @@ EnvironmentFile=-/etc/dorbit/server.env
 ExecStart=/usr/bin/bash /opt/dorbit/current/tools/server.sh run --port=${DORBIT_PORT}
 Restart=on-failure
 RestartSec=5
+# Signal the launcher first; kill the whole cgroup only if graceful stop times out.
+KillMode=mixed
 TimeoutStopSec=30
 StateDirectory=dorbit
 StateDirectoryMode=0700
