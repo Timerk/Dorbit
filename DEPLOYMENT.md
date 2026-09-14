@@ -249,3 +249,15 @@ The updated unit still needs deployment and stop/restart/reboot verification on
 the VPS. Updates and rollback require a real two-release rehearsal there.
 Sustained load with the friend group and private VPN setup remain pending.
 Authentication, network protocol and save format are unchanged.
+
+On 2026-09-14, a local WSL rehearsal prepared committed releases `5c08d13` and
+`519ff70` with `tools/deploy-server.sh`; both passed all 44 dedicated-server,
+37 persistence and five process-shutdown tests. Using a disposable data directory
+outside the releases, the rehearsal atomically switched A -> B -> A and launched
+each through `tools/server.sh run`. A separate matching headless client
+authenticated on every start and received the same 137-credit wallet. Each
+SIGTERM stop exited successfully and removed the lock; the ledger remained
+byte-for-byte unchanged. These revisions differ only in documentation, so this
+validates release switching and compatible-client reconnects, not a future save
+migration. It did not install a local service or alter any firewall, and does not
+replace the pending systemd/reboot and real VPS rehearsal.
