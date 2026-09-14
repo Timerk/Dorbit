@@ -137,7 +137,7 @@ stay outside releases. If a future release changes the unit, explicitly install
 that unit and run `daemon-reload` before restarting; retain the previous unit and
 environment file if changing them so they can be restored too.
 
-## Validation boundaries
+## Validation and current limitation
 
 WSL supports release preparation, the existing server checks, foreground startup,
 custom-port UDP binding and `systemd-analyze verify`. Validate there without
@@ -151,8 +151,29 @@ symlink as an unprivileged user on UDP 24791. Bash syntax and unit-file validati
 passed. Missing arguments, invalid revisions and existing releases were rejected;
 a simulated download failure left no release or staging directory.
 
-On the real VPS, verify service installation under `dorbit`, automatic crash
-restart, startup after a reboot, journal retention, and update/rollback with
-matching clients. Cross-network UDP connectivity and resource use with the friend
-group need that host and external clients. Neither VPS selection nor those checks
-block preparing releases locally.
+On 2026-09-14, release `0a6c29389fb6402bf8a768d1826f46115353fe47` passed 44
+dedicated-server checks and 37 persistence checks in WSL and on the netcup nano
+G11s. The installed OS reports Ubuntu 24.04.5 LTS; the panel's chosen image was
+labelled Ubuntu 24.04.4 UEFI amd64. The service ran as `dorbit`, with saves outside
+the release, key-only SSH administration and a host firewall restricted to the
+operator's current public IP. No development-machine firewall or services changed.
+
+Two automated Windows clients connected over the internet to a separate test
+ledger on the VPS, fought, received 38/37 credits, repaired and disconnected with
+zero failures. The operator's real pilot then joined, disconnected and rejoined
+the main service. The temporary replay service and its firewall opening were
+removed from active use. A matching Windows client and private launcher were
+prepared locally; credentials were not committed.
+
+The reboot test failed game readiness. systemd launched the service, but the
+leftover `pilots.json.lock` prevented startup. SIGTERM and SIGINT both left the
+same lock in isolated WSL tests. The operator recovery procedure restored service
+without changing the ledger, after preserving a stopped-server copy on the VPS
+and on the operator's PC. Journals from the previous boot remained available.
+
+Unattended restart/reboot recovery is blocked by this persistence shutdown
+behavior. Do not assume `systemctl restart` works unattended, or work around it
+by blindly deleting locks in the unit. Updates and rollback still need that
+recovery issue resolved and a real two-release rehearsal. Sustained load with the
+friend group and private VPN setup remain pending. No game, authentication,
+network protocol or save-format changes were made for this deployment.
