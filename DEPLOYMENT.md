@@ -3,8 +3,8 @@
 Use Ubuntu 24.04 LTS on x86-64 with systemd. This runs the current server from
 source using the checksum-pinned Godot runtime in `tools/server.sh`. No export
 templates or deployment framework are needed. Use matching client and server
-revisions. Local and LAN play work; dedicated-server cross-network testing and
-VPS selection are still pending.
+revisions. The current server requires provisioned pilot credentials and a save
+directory. The first VPS is a netcup nano G11s in Nuremberg.
 
 ## Prepare a release
 
@@ -43,6 +43,9 @@ target="/opt/dorbit/releases/$revision"
 sudo test ! -e "$target" && sudo cp -a "$release" "$target"
 sudo chown -R dorbit:dorbit "$target"
 sudo ln -s "releases/$revision" /opt/dorbit/current
+sudo install -d -o dorbit -g dorbit -m 0700 /var/lib/dorbit /var/lib/dorbit/data /var/lib/dorbit/credentials
+# Replace tim with the first pilot's stable ID. Use --init only on a new server.
+sudo -u dorbit python3 "$target/tools/pilots.py" /var/lib/dorbit/data tim /var/lib/dorbit/credentials/tim.json --init
 sudo install -m 0644 "$target/deploy/dorbit.service" /etc/systemd/system/dorbit.service
 printf 'DORBIT_PORT=24567\n' | sudo tee /etc/dorbit/server.env
 sudo systemd-analyze verify /etc/systemd/system/dorbit.service
@@ -53,15 +56,19 @@ sudo systemctl enable --now dorbit
 Stop if a command fails. If the user or release already exists, inspect it instead
 of repeating creation or copying over it. The `dorbit` account has no login shell
 or sudo access. It owns releases because the existing helper imports on startup
-and Godot writes its import cache. systemd creates `/var/lib/dorbit` as its home.
-This directory is not a save or backup contract; persistence is separate work.
+and Godot writes its import cache. `/var/lib/dorbit` is its home, with saves in
+`/var/lib/dorbit/data`, outside release directories. Give the pilot only their
+credential file through a private channel and set `DORBIT_PILOT_FILE` when
+launching their matching Windows client. See README.md for provisioning, token
+rotation and the existing save recovery procedure. Never commit credentials.
 
 Edit `/etc/dorbit/server.env` with `sudoedit` to set `DORBIT_PORT` to an unused UDP
 port from 1024 through 65535, then run `sudo systemctl restart dorbit`. Use the
 same port in clients. A reachable VPS must allow that UDP port through its
 provider and host firewalls. These scripts do not configure either firewall.
-The current server has no private-group authentication; restrict network access
-to the intended testers when selecting the host's network rules.
+Pilot authentication is required, but ENet traffic is unencrypted and the client
+does not authenticate the server. Use a private VPN for ordinary group play, as
+described in README.md. Restrict direct public-IP testing to the intended testers.
 
 ## Run and inspect
 
@@ -83,6 +90,13 @@ systemd restarts crashes after five seconds, with a limit of five starts per
 minute. An explicit stop stays stopped. After fixing a repeated startup failure,
 run `sudo systemctl reset-failed dorbit` and `sudo systemctl start dorbit`.
 
+Persistence limits automatic recovery: forced termination can leave
+`pilots.json.lock` or an interrupted write behind. The server then refuses to
+start. Follow the stopped-server recovery procedure in README.md; the service
+does not automatically delete locks or replace saves. Verify stop/restart and
+reboot behavior on the deployed engine before treating unattended recovery as
+working. An enabled service alone does not establish recovery after a crash.
+
 ## Update and roll back
 
 Prepare the next commit as above while the old release is running. Keep the old
@@ -102,7 +116,8 @@ sudo journalctl -u dorbit -n 100 --no-pager
 
 Record `previous` before switching. Run updates one at a time and stop on errors;
 an existing `current.next` needs inspection. Switching the symlink is atomic.
-Restarting disconnects players and resets the current session's progression.
+Restarting disconnects players. Saved credits stay in the shared data directory;
+position, health and encounter objectives reset.
 Check the UDP socket and connect with a matching Windows client. If startup or
 the connection check fails, restore the recorded link and matching clients:
 
@@ -114,7 +129,10 @@ sudo systemctl restart dorbit
 ```
 
 This rolls back application files only. It does not copy, migrate or restore
-saves. Revisit this procedure when persistence lands. Service and port settings
+saves. Only switch between releases compatible with the current save schema.
+Follow README.md's stopped-server copy procedure before updates and retain the
+copy off the VPS. Do not roll back to a build from before pilot persistence.
+Service and port settings
 stay outside releases. If a future release changes the unit, explicitly install
 that unit and run `daemon-reload` before restarting; retain the previous unit and
 environment file if changing them so they can be restored too.
