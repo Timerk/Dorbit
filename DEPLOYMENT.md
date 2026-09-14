@@ -70,6 +70,62 @@ Pilot authentication is required, but ENet traffic is unencrypted and the client
 does not authenticate the server. Use a private VPN for ordinary group play, as
 described in README.md. Restrict direct public-IP testing to the intended testers.
 
+## Private group access with Tailscale
+
+Tailscale is the chosen private network. The operator's Windows desktop already
+runs it; the VPS must join the same network before this replaces public-IP tests.
+Use the existing netcup console to bootstrap access if this computer has no SSH
+key installed on the VPS. On the Ubuntu VPS, follow the official
+[Linux installation instructions](https://tailscale.com/download/linux).
+After installation, run from the VPS console:
+
+```bash
+sudo tailscale up --ssh
+tailscale ip -4
+tailscale status
+```
+
+Open the login URL on the operator's computer and authorize the VPS in the
+existing Tailscale account. Do not store login URLs, auth keys or credentials in
+the repository. `--ssh` enables Tailscale SSH on the private address; access is
+controlled by the network policy and still requires an existing Linux login.
+It does not install a Windows SSH key or change public OpenSSH authentication.
+
+Before adding friends, configure and test the access policy in the Tailscale
+admin console. Give the VPS a `tag:dorbit` tag owned by administrators, define
+an operator group and a pilot group with the actual account email addresses,
+and allow these connections:
+
+| Source | Destination | Access |
+| --- | --- | --- |
+| Operators | `tag:dorbit` | TCP 22 for administration; UDP 24567 for play |
+| Pilots | `tag:dorbit` | UDP 24567 only |
+
+Use the configured game port if different. Add a Tailscale SSH rule granting
+only operators access to the existing administrative Linux username, preferably
+with reauthentication (`check`). Game access does not require shell access.
+Review existing broad allow rules: a restrictive grant does not cancel another
+grant that already permits all traffic. Preserve unrelated network access.
+Use policy tests to confirm a pilot can reach the game port and cannot reach
+SSH or unrelated services. See the official
+[grants](https://tailscale.com/docs/features/access-control/grants) and
+[Tailscale SSH](https://tailscale.com/docs/features/tailscale-ssh) documentation.
+
+On Windows, verify `tailscale status`, then connect with
+`ssh ADMIN_USERNAME@SERVER_TAILSCALE_IP`. Use that same server address in Dorbit,
+with the matching client build and existing pilot credential. Check the saved
+credits after connecting, disconnecting and reconnecting. Test from an external
+network too. Tailscale's own packet-filter rules mean host UFW rules alone are
+not a substitute for the Tailscale access policy.
+
+Once private administration and gameplay work, inspect the VPS and provider
+firewall rules and remove the temporary public UDP game-port opening. Keep the
+netcup console available while validating access. Invite friends individually,
+check the account plan supports the intended group size, have them install and
+sign in to Tailscale, and provision one private pilot credential per person.
+The server needs neither a subnet router nor an exit node. Check the server's
+device-key expiry policy so unattended hosting does not unexpectedly lose access.
+
 ## Run and inspect
 
 ```bash
@@ -86,21 +142,34 @@ and `ss` shows its UDP socket. `Type=simple` being active alone does not prove
 readiness. Startup includes the project's import step. Logs go to journald;
 retention and survival across reboots follow the host's journald configuration.
 
-systemd restarts crashes after five seconds, with a limit of five starts per
+systemd attempts to restart crashes after five seconds, with a limit of five starts per
 minute. An explicit stop stays stopped. After fixing a repeated startup failure,
 run `sudo systemctl reset-failed dorbit` and `sudo systemctl start dorbit`.
 
-Persistence limits automatic recovery: forced termination can leave
+The Linux launcher converts SIGTERM and Ctrl+C into a graceful game shutdown,
+which releases the save lock. `KillMode=mixed` sends the initial systemd stop
+signal to that launcher so Godot can finish cleanup. The launcher allows 20
+seconds, then forces termination with a failed exit status; systemd's 30-second
+timeout also kills remaining processes if the launcher itself hangs. Install
+the updated unit and run `daemon-reload` when upgrading an existing deployment.
+
+Persistence still limits crash recovery: forced termination can leave
 `pilots.json.lock` or an interrupted write behind. The server then refuses to
 start. Follow the stopped-server recovery procedure in README.md; the service
 does not automatically delete locks or replace saves. Verify stop/restart and
-reboot behavior on the deployed engine before treating unattended recovery as
-working. An enabled service alone does not establish recovery after a crash.
+reboot behavior on the deployed engine and unit before treating routine
+unattended restarts as working. An enabled service alone does not establish
+recovery after a crash or power loss.
 
 ## Update and roll back
 
 Prepare the next commit as above while the old release is running. Keep the old
 release and matching client build until the new one passes a connection check.
+Stop the service and retain a dated off-machine copy of the entire data directory
+before switching releases. On the first upgrade from the old launcher, its stop
+can leave a lock: confirm all old processes have exited and follow the recovery
+procedure before starting the new release. Install the new `dorbit.service` and
+run `sudo systemctl daemon-reload` to activate `KillMode=mixed`.
 Then, with `revision` and `release` set to the new prepared release:
 
 ```bash
@@ -171,9 +240,24 @@ same lock in isolated WSL tests. The operator recovery procedure restored servic
 without changing the ledger, after preserving a stopped-server copy on the VPS
 and on the operator's PC. Journals from the previous boot remained available.
 
-Unattended restart/reboot recovery is blocked by this persistence shutdown
-behavior. Do not assume `systemctl restart` works unattended, or work around it
-by blindly deleting locks in the unit. Updates and rollback still need that
-recovery issue resolved and a real two-release rehearsal. Sustained load with the
-friend group and private VPN setup remain pending. No game, authentication,
-network protocol or save-format changes were made for this deployment.
+The shutdown follow-up adds a Linux launcher and cooperative game shutdown to
+address this observed failure. Real-process WSL tests cover SIGTERM, Ctrl+C and
+repeated restart with a nonzero saved wallet, plus concurrent-server rejection,
+crash handling and preservation of invalid/interrupted saves. Crashes and forced
+termination still require the documented recovery; locks are never blindly deleted.
+The updated unit still needs deployment and stop/restart/reboot verification on
+the VPS. Updates and rollback require a real two-release rehearsal there.
+Sustained load with the friend group and private VPN setup remain pending.
+Authentication, network protocol and save format are unchanged.
+
+On 2026-09-14, a local WSL rehearsal prepared committed releases `5c08d13` and
+`519ff70` with `tools/deploy-server.sh`; both passed all 44 dedicated-server,
+37 persistence and five process-shutdown tests. Using a disposable data directory
+outside the releases, the rehearsal atomically switched A -> B -> A and launched
+each through `tools/server.sh run`. A separate matching headless client
+authenticated on every start and received the same 137-credit wallet. Each
+SIGTERM stop exited successfully and removed the lock; the ledger remained
+byte-for-byte unchanged. These revisions differ only in documentation, so this
+validates release switching and compatible-client reconnects, not a future save
+migration. It did not install a local service or alter any firewall, and does not
+replace the pending systemd/reboot and real VPS rehearsal.
