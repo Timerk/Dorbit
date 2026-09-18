@@ -118,7 +118,8 @@ func run() -> void:
 	check(is_equal_approx(health_before - server.alien.shield - server.alien.hull, 22), "Actual combat applies both lasers")
 	await replicate(server)
 	await screenshot(client, "equipment-combat")
-	for frame in range(60):
+	# Allow the heavier flight acceleration to reach the upgraded cruise speed.
+	for frame in range(120):
 		ship.fly_command(1.0 / 60.0, Vector3(1, 0, 0), false)
 		client.player.fly_command(1.0 / 60.0, Vector3(1, 0, 0), false)
 		await physics_frame
