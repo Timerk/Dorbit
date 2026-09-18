@@ -12,51 +12,19 @@ var sector: Sector
 var font: Font = ThemeDB.fallback_font
 var background: StyleBoxFlat
 var marker_labels: Array[Rect2] = []
-var audio_controls: VBoxContainer
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background = panel_style()
-	build_audio_controls()
-
-
-func build_audio_controls() -> void:
-	audio_controls = VBoxContainer.new()
-	audio_controls.position = Vector2(32, 220)
-	audio_controls.custom_minimum_size.x = 155
-	add_child(audio_controls)
-	for setting in ["master", "effects"]:
-		var label := Label.new()
-		label.text = setting.capitalize() + " volume"
-		audio_controls.add_child(label)
-		var slider := HSlider.new()
-		slider.max_value = 1.0
-		slider.step = 0.05
-		slider.value = sector.audio.get(setting)
-		slider.value_changed.connect(func(value: float) -> void:
-			sector.audio.set(setting, value)
-			sector.audio.save_preferences())
-		audio_controls.add_child(slider)
-	var mute := CheckButton.new()
-	mute.text = "Mute"
-	mute.button_pressed = sector.audio.muted
-	mute.toggled.connect(func(value: bool) -> void:
-		sector.audio.muted = value
-		sector.audio.save_preferences())
-	audio_controls.add_child(mute)
-
-
-func _process(_delta: float) -> void:
-	audio_controls.visible = sector.paused and not sector.session.menu.visible
 
 
 func fire_feedback() -> String:
 	if not is_instance_valid(sector.target) or not sector.target.alive:
 		return "NO TARGET"
 	if not sector.auto_fire:
-		return "AUTO FIRE OFF / SPACE TO ENGAGE"
+		return "AUTO FIRE OFF / %s TO ENGAGE" % GameSettings.binding_text("fire")
 	if sector.weapon_status == "TURN TOWARD TARGET":
 		return "OUTSIDE FIRING ARC"
 	return sector.weapon_status if not sector.weapon_status.is_empty() else "AUTO FIRE ACTIVE"
@@ -106,10 +74,10 @@ func _draw() -> void:
 	text_at(Vector2(width - 200, 60), connection, 11, MUTED)
 	draw_line(Vector2(32, 82), Vector2(width - 32, 82), Color(0.3, 0.5, 0.65, 0.25), 1.0)
 	var objective: String = [
-		"Leave the outpost. W to fly forward.",
-		"Find the alien. Tab or click to select.",
-		"Space to fire. Keep the alien ahead and within 170 m.",
-		"Return to Outpost 01. Slow down and press R to repair.",
+		"Leave the outpost. %s to fly forward." % GameSettings.binding_text("forward"),
+		"Find the alien. %s or %s to select." % [GameSettings.binding_text("cycle_target"), GameSettings.binding_text("select_target")],
+		"%s to fire. Keep the alien ahead and within 170 m." % GameSettings.binding_text("fire"),
+		"Return to Outpost 01. Slow down and press %s to repair." % GameSettings.binding_text("repair"),
 		"Encounter complete. Keep exploring or hunt another alien.",
 	][sector.objective_stage]
 	text_at(Vector2(33, 113), "OBJECTIVE", 11, GREEN)
@@ -137,15 +105,15 @@ func _draw() -> void:
 	draw_target_panel(width, height)
 	var distance := player.global_position.distance_to(Sector.STATION_POSITION)
 	if distance <= Sector.REPAIR_RADIUS and player.alive:
-		var label := "R  REPAIR / %d CR" % sector.repair_cost()
+		var label := "%s  REPAIR / %d CR" % [GameSettings.binding_text("repair"), sector.repair_cost()]
 		if player.velocity.length() > 8.0:
 			label = "SLOW DOWN TO REPAIR"
 		elif player.time_since_hit < 5.0:
 			label = "REPAIRS AVAILABLE IN %d s" % ceili(5.0 - player.time_since_hit)
 		text_at(Vector2(width - 310, height - 256), label, 14, GREEN)
-	var controls := "WASD  Move    Q/E  Rise / descend    RMB  Steer    Tab  Target    Space  Fire    Shift  Boost    R  Repair    Esc  Pause"
-	if shared:
-		controls = "WASD  Move    Q/E  Rise / descend    RMB  Steer    Tab  Target    Space  Fire    Shift  Boost    R  Repair    F7  Session"
+	var controls := "%s Steer    %s Target    %s Fire    %s Boost    %s Repair    Esc Menu / controls" % [
+		GameSettings.binding_text("steer"), GameSettings.binding_text("cycle_target"),
+		GameSettings.binding_text("fire"), GameSettings.binding_text("boost"), GameSettings.binding_text("repair")]
 	text_at(Vector2(33, height - 28), controls, 11 if compact else 13, MUTED)
 	if sector.show_performance:
 		var fps := Engine.get_frames_per_second()
@@ -157,21 +125,6 @@ func _draw() -> void:
 		text_at(center + Vector2(-150, 15), "Returning to the outpost in %d..." % ceili(sector.player_respawn), 17)
 	if sector.paused:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.006, 0.012, 0.025, 0.88))
-		if sector.session.menu.visible:
-			return
-		panel(Rect2(center - Vector2(280, 160), Vector2(560, 400)))
-		text_at(center + Vector2(-248, -103), "FLIGHT MENU" if shared else "FLIGHT PAUSED", 29)
-		text_at(center + Vector2(-248, -62), "Esc        Resume flight", 18, CYAN)
-		text_at(center + Vector2(-248, -23), "F11        Toggle fullscreen", 17)
-		text_at(center + Vector2(-248, 16), "F3          Performance overlay", 17)
-		text_at(center + Vector2(-248, 55), "F4          Antialiasing: " + ("Off" if sector.low_quality else "4x MSAA"), 17)
-		var pixels := DisplayServer.window_get_size()
-		text_at(center + Vector2(-248, 94), "F5 / F6  Window resolution: %d x %d" % [pixels.x, pixels.y], 17)
-		text_at(center + Vector2(-248, 120), "Changing resolution switches to windowed mode.", 13, MUTED)
-		text_at(center + Vector2(-248, 156), "F7          Multiplayer session", 17)
-		text_at(center + Vector2(-248, 189), "F10        Quit to desktop", 17, MUTED)
-		if shared:
-			text_at(center + Vector2(-248, 218), "The shared world keeps running while this menu is open.", 13, CYAN)
 
 
 func draw_target_panel(width: float, height: float) -> void:
@@ -179,7 +132,7 @@ func draw_target_panel(width: float, height: float) -> void:
 	var origin := Vector2(width - 304, height - 218)
 	if not is_instance_valid(sector.target) or not sector.target.alive:
 		text_at(origin, "NO TARGET", 13, MUTED)
-		text_at(origin + Vector2(0, 34), "Tab or click an alien to lock", 15)
+		text_at(origin + Vector2(0, 34), "%s or %s to lock" % [GameSettings.binding_text("cycle_target"), GameSettings.binding_text("select_target")], 15)
 		text_at(origin + Vector2(0, 64), "%02d  ALIENS DESTROYED" % sector.kills, 12, MUTED)
 		if sector.alien_respawn > 0.0:
 			text_at(origin + Vector2(0, 104), "New contact in %d s" % ceili(sector.alien_respawn), 13, CYAN)

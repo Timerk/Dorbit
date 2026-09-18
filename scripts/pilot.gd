@@ -42,8 +42,8 @@ func reset_health() -> void:
 
 
 func handle_mouse(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT:
-		steering = event.pressed
+	if event.is_action("steer"):
+		steering = event.is_action_pressed("steer")
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if steering else Input.MOUSE_MODE_VISIBLE
 	if event is InputEventMouseMotion and steering:
 		# Screen-relative motion is unaffected by viewport stretch or resolution.
