@@ -2,7 +2,7 @@
 
 A space game inspired by DarkOrbit, built with Godot. Windows players connect to a dedicated Linux server to fly, hunt aliens, earn rewards and repair together. Playing alone uses the same server encounter.
 
-Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated server with provisioned pilot identities and persistent credits. The sector supports independent Scout, Sentinel and Heavy hunts. Purchases and hunting contracts follow. Ships, scenery and effects use procedural placeholder art.
+Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated server with provisioned pilot identities, persistent credits and hunting contracts. The sector supports independent Scout, Sentinel and Heavy hunts. Equipment purchases follow. Ships, scenery and effects use procedural placeholder art.
 
 - [Game requirements and development plan](GAME_PLAN.md)
 - [Development workflow](AGENTS.md)
@@ -190,6 +190,8 @@ On 18 September, alien variety was integrated with the merged feedback changes. 
 Purchases follow on the equipment branch. Its successful server confirmation must trigger `SessionCombat.message(peer_id, text, "purchase")`; failed purchases and wallet snapshots must not trigger it. Clients and server must use matching builds.
 
 `tests/hunting_contracts_test.gd` checks authenticated contract actions, shared kill progress, restart recovery, abandonment, repeatability and failed saves. Both check helpers run it. For a rendered accept/hunt/claim replay, run Godot with `--path . --script res://tests/contracts_playthrough.gd`. It provisions a disposable pilot and server on UDP 24690, flies three Scout hunts, claims through the station controls, and saves frames under `build/validation/contracts-*.png`.
+
+The 18 September integration with combat feedback passed the full Windows check command, including 38 contract assertions, and the rendered three-Scout contract replay finished with 180 credits. The contract board hides pause-menu audio controls and retains the active hunt in the flight HUD. Equipment integration follows in PR #15, stacked on this branch.
 
 ## Code layout
 

@@ -51,6 +51,7 @@ func run() -> void:
 	sector.set_paused(false)
 	await press(KEY_C)
 	check(sector.hud.contract_panel.visible, "C opens station contract board")
+	check(not sector.hud.audio_controls.visible, "Station contracts hide pause-menu audio controls")
 	await snapshot("contracts-01-offers")
 	sector.hud.contract_offers[0].pressed.emit()
 	await create_timer(0.4).timeout
