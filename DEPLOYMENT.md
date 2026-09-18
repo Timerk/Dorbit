@@ -243,8 +243,8 @@ address this observed failure. Real-process WSL tests cover SIGTERM, Ctrl+C and
 repeated restart with a nonzero saved wallet, plus concurrent-server rejection,
 crash handling and preservation of invalid/interrupted saves. Crashes and forced
 termination still require the documented recovery; locks are never blindly deleted.
-The updated unit still needs installation on the live service and an actual VPS
-reboot check. Abrupt crashes and power loss still require operator recovery.
+The updated unit has passed live stop/start and VPS reboot/reconnect checks.
+Abrupt crashes and power loss still require operator recovery.
 Sustained load with the friend group and restricted friend-group VPN grants
 remain pending.
 Authentication, network protocol and save format are unchanged.
@@ -278,3 +278,17 @@ OpenSSH with a separate authorized key per PC. SSH and game reconnect checks
 passed over Tailscale, and the public-IP UFW allowances for TCP 22 and UDP 24567
 were removed. Restrict the Tailscale access policy before inviting friends;
 operator connectivity alone does not verify separation of operator/pilot access.
+
+After the operator approved deployment, release `9065041` and its unit were
+installed on the live service. The old service was stopped, all old Godot
+processes were confirmed gone, and the entire data directory and previous unit
+were preserved on the VPS and copied to the operator PC. The old launcher's
+empty stale lock was removed once using the documented operator recovery checks.
+Subsequent stops released the lock through normal game cleanup.
+
+A live stop/start and a full VPS reboot both restored readiness. The boot ID
+changed, Tailscale and Dorbit started automatically, and a Windows client joined,
+disconnected and rejoined with the same 150-credit pilot wallet. The ledger stayed
+byte-for-byte unchanged. The previous boot's journal recorded the cooperative
+shutdown and successful service stop. This verifies orderly reboot recovery;
+it does not establish recovery after a power cut, SIGKILL or interrupted write.
