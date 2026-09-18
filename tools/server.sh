@@ -53,6 +53,10 @@ PY
     checked --headless --path . --script res://tests/dedicated_server_test.gd
     checked --headless --path . --script res://tests/pilot_persistence_test.gd
     python3 tests/server_shutdown_test.py "$engine"
+    checked --headless --path . --script res://tests/alien_sector_test.gd
+    checked --headless --path . --script res://tests/hunting_contracts_test.gd
+    checked --headless --path . --script res://tests/equipment_test.gd
+    python3 tests/pilots_test.py
     ;;
   *)
     echo "Usage: bash tools/server.sh {setup|run|check} [--port=24567]" >&2

@@ -4,36 +4,39 @@ extends Node
 
 var session: FlightSession
 var records: Dictionary[int, Dictionary] = {}
-var contributors: Array[int] = []
-var encounter: int = 0
-var alien_respawn: float = 0.0
 var solo: Dictionary = {}
-var alien_goal: Dictionary = {}
+var inventory: Dictionary = {}
+var station_pending: bool = false
+var station_message: String = ""
 
 
 func begin() -> void:
 	var sector := session.sector
+	sector.active_contract = {}
 	solo = {"credits": sector.credits, "kills": sector.kills, "stage": sector.objective_stage}
 	records.clear()
-	contributors.clear()
-	encounter = 0
-	alien_respawn = 0.0
-	alien_goal.clear()
 	sector.credits = 0
 	sector.kills = 0
 	sector.objective_stage = 0
 	sector.player_respawn = 0.0
-	sector.alien_respawn = 0.0
 	if not sector.dedicated_server:
 		sector.player.simulation_authority = multiplayer.is_server()
-	sector.alien.simulation_authority = multiplayer.is_server()
-	sector.alien.position = sector.alien.home_position
-	sector.alien.patrol_time = 0.0
-	sector.alien.reset_health()
-	sector.alien.set_meta("feedback_health_received", false)
-	if not sector.alien.damaged.is_connected(record_damage):
-		sector.alien.damaged.connect(record_damage)
-	sector.notify("Shared encounter. Select the Sentinel and hunt together. F7 opens the session menu.")
+	for alien: Alien in sector.aliens.values():
+		alien.simulation_authority = multiplayer.is_server()
+		alien.position = alien.home_position
+		alien.patrol_time = 0.0
+		alien.life = 0
+		alien.respawn = 0.0
+		alien.returning = false
+		alien.engaged = false
+		alien.contributors.clear()
+		alien.snapshot_goal.clear()
+		alien.reset_health()
+		alien.set_meta("feedback_health_received", false)
+		alien.visible = multiplayer.is_server()
+		if not alien.damaged.is_connected(record_damage):
+			alien.damaged.connect(record_damage)
+	sector.notify("Scouts near the approach. Sentinels ahead. Heavy on the right flank.")
 
 
 func add_player(id: int, location: Vector3) -> void:
@@ -43,25 +46,35 @@ func add_player(id: int, location: Vector3) -> void:
 	ship.set_meta("feedback_health_received", false)
 	if multiplayer.is_server():
 		records[id] = {"credits": 0, "kills": 0, "stage": 0, "respawn": 0.0, "life": 0, "spawn": location}
+		records[id]["contract"] = {}
 		if session.sector.dedicated_server:
 			records[id]["credits"] = session.store.pilots[session.pilot_ids[id]]["credits"]
+			records[id]["contract"] = session.store.pilots[session.pilot_ids[id]]["contract"].duplicate()
+			Equipment.apply_stats(ship, Equipment.stats(session.store.pilots[session.pilot_ids[id]]["equipment"]))
+			ship.reset_health() # Initial spawn, not a fitting change.
 
 
 func remove_player(id: int) -> void:
 	records.erase(id)
-	contributors.erase(id)
+	for alien: Alien in session.sector.aliens.values():
+		alien.contributors.erase(id)
 
 
-func record_damage(_ship: SpaceShip, attacker: SpaceShip) -> void:
+func record_damage(ship: SpaceShip, attacker: SpaceShip) -> void:
 	if not session.active or not multiplayer.is_server():
 		return
 	var id: Variant = session.ships.find_key(attacker)
-	if id != null and id not in contributors:
-		contributors.append(id)
+	var alien := ship as Alien
+	if id != null and id not in alien.contributors:
+		alien.contributors.append(id)
 
 
 func tick(delta: float) -> void:
 	var sector := session.sector
+	for alien: Alien in sector.aliens.values():
+		alien.check_retreat(choose_target(alien))
+		if sector.target == alien and not alien.available():
+			sector.select_target(null)
 	for id: int in records:
 		var ship := session.ships[id]
 		ship.tick_combat(delta)
@@ -78,37 +91,42 @@ func tick(delta: float) -> void:
 			continue
 		if ship.position.distance_to(Sector.STATION_POSITION) > 75.0:
 			records[id]["stage"] = maxi(records[id]["stage"], 1)
-		var firing := sector.auto_fire and sector.target == sector.alien and not sector.paused if id == 1 else remote_firing(id)
-		if firing:
+		var enemy: Alien = sector.target as Alien if id == 1 else remote_target(id)
+		var firing := sector.auto_fire and not sector.paused if id == 1 else remote_firing(id)
+		if firing and is_instance_valid(enemy) and enemy.available():
 			records[id]["stage"] = maxi(records[id]["stage"], 2)
-			ship.try_fire(sector.alien)
-	sector.alien.tick_combat(delta)
-	if sector.alien.alive:
-		sector.alien.fly(delta, choose_target(), Sector.STATION_POSITION)
-	else:
-		alien_respawn = maxf(0.0, alien_respawn - delta)
-		if alien_respawn <= 0.0:
-			encounter += 1
-			contributors.clear()
-			sector.alien.position = sector.alien.home_position
-			sector.alien.reset_health()
+			ship.try_fire(enemy)
+	for alien: Alien in sector.aliens.values():
+		alien.tick_combat(delta)
+		if alien.alive:
+			alien.fly(delta, choose_target(alien), Sector.STATION_POSITION)
+		else:
+			alien.respawn = maxf(0.0, alien.respawn - delta)
+			if alien.respawn <= 0.0:
+				alien.position = alien.home_position
+				alien.returning = false
+				alien.reset_encounter()
 	if records.has(1):
 		update_local(records[1])
-	sector.alien_respawn = alien_respawn
+
+
+func remote_target(id: int) -> Alien:
+	return session.sector.aliens.get(session.commands.get(id, {}).get("target", -1))
 
 
 func remote_firing(id: int) -> bool:
 	var command: Dictionary = session.commands.get(id, {})
-	return not command.is_empty() and command.get("fire", false) and command.get("encounter", -1) == encounter and Time.get_ticks_msec() - command["time"] < FlightSession.COMMAND_TIMEOUT * 1000
+	var alien := remote_target(id)
+	return is_instance_valid(alien) and alien.available() and command.get("fire", false) and command.get("encounter", -1) == alien.life and Time.get_ticks_msec() - command["time"] < FlightSession.COMMAND_TIMEOUT * 1000
 
 
-func choose_target() -> Pilot:
+func choose_target(alien: Alien) -> Pilot:
 	var target: Pilot = null
-	var nearest := 260.0
+	var nearest: float = alien.tuning()["detection"]
 	for ship: Pilot in session.ships.values():
 		if not ship.alive or ship.position.distance_to(Sector.STATION_POSITION) <= 75.0:
 			continue
-		var distance := ship.position.distance_to(session.sector.alien.position)
+		var distance := ship.position.distance_to(alien.position)
 		if distance < nearest:
 			target = ship
 			nearest = distance
@@ -119,27 +137,35 @@ func destroyed(ship: SpaceShip) -> void:
 	if not multiplayer.is_server():
 		return
 	show_explosion.rpc(ship.position)
-	if ship == session.sector.alien:
-		# Integer credits: conserve the 75-credit pool and distribute the remainder in peer-ID order.
+	if ship is Alien:
+		var alien := ship as Alien
+		var contributors := alien.contributors
+		var pool: int = alien.tuning()["reward"]
+		# Conserve each pool; distribute integer remainders in peer-ID order.
 		contributors.sort()
 		var balances: Dictionary[int, int] = {}
+		var contracts: Dictionary[int, Dictionary] = {}
 		for index in range(contributors.size()):
 			var id := contributors[index]
-			var reward := int(Sector.KILL_REWARD / contributors.size()) + (1 if index < Sector.KILL_REWARD % contributors.size() else 0)
+			var reward := int(pool / contributors.size()) + (1 if index < pool % contributors.size() else 0)
 			balances[id] = mini(PilotStore.MAX_CREDITS, records[id]["credits"] + reward)
-		if not balances.is_empty() and not session.save_balances(balances):
+			contracts[id] = HuntingContracts.after_kill(records[id]["contract"], alien.kind.to_lower())
+		if not balances.is_empty() and not session.save_balances(balances, contracts):
 			return
 		for id: int in balances:
 			var reward: int = balances[id] - records[id]["credits"]
 			records[id]["credits"] = balances[id]
+			records[id]["contract"] = contracts[id]
 			records[id]["kills"] += 1
 			records[id]["stage"] = maxi(records[id]["stage"], 3)
 			message(id, "Alien destroyed. Your share: +%d credits. Return to repair." % reward)
 		contributors.clear()
-		alien_respawn = 12.0
-		session.sector.select_target(null)
+		alien.respawn = alien.tuning()["respawn"]
+		if session.sector.target == alien:
+			session.sector.select_target(null)
 		for id: int in session.commands:
-			session.commands[id]["fire"] = false
+			if session.commands[id].get("target", -1) == alien.alien_id:
+				session.commands[id]["fire"] = false
 	else:
 		var id: int = session.ships.find_key(ship)
 		var fee := mini(records[id]["credits"], Sector.RESPAWN_FEE)
@@ -162,6 +188,67 @@ func request_repair() -> bool:
 		return repair(1, records[1]["life"])
 	repair_request.rpc_id(1, int(session.sector.player.get_meta("life", 0)))
 	return false # Host confirms the result asynchronously.
+
+
+func request_contract(action: String, offer: String = "") -> void:
+	if not session.active or session.sector.dedicated_server:
+		return
+	var current := session.sector.active_contract
+	var run: String = current.get("run", "")
+	var life := int(session.sector.player.get_meta("life", 0))
+	if multiplayer.is_server():
+		contract_action(1, life, action, offer, run)
+	else:
+		contract_request.rpc_id(1, life, action, offer, run)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func contract_request(life: int, action: String, offer: String, run: String) -> void:
+	if session.active and multiplayer.is_server():
+		contract_action(multiplayer.get_remote_sender_id(), life, action, offer, run)
+
+
+# A run ID prevents old claim/abandon requests from affecting a repeated trip.
+func contract_action(id: int, life: int, action: String, offer: String, run: String) -> bool:
+	if not multiplayer.is_server() or not records.has(id) or records[id]["life"] != life:
+		return false
+	var blocker := session.sector.repair_blocker(session.ships[id])
+	if not blocker.is_empty():
+		message(id, blocker)
+		return false
+	var current: Dictionary = records[id]["contract"]
+	var next: Dictionary = {}
+	var balance: int = records[id]["credits"]
+	var notice: String
+	match action:
+		"accept":
+			if not current.is_empty() or not run.is_empty() or not HuntingContracts.OFFERS.has(offer):
+				return false
+			next = HuntingContracts.accept(offer)
+			notice = "Contract accepted. " + HuntingContracts.objective(next)
+		"claim":
+			if not HuntingContracts.ready(current) or current["run"] != run:
+				return false
+			if balance > PilotStore.MAX_CREDITS - current["reward"]:
+				message(id, "Spend credits before claiming this reward. Your contract is still ready.")
+				return false
+			balance += current["reward"]
+			notice = "Contract claimed: +%d credits. Choose another hunt at the station." % current["reward"]
+		"abandon":
+			if current.is_empty() or current["run"] != run:
+				return false
+			notice = "Contract abandoned. No credits charged."
+		_:
+			return false
+	if not session.save_balances({id: balance}, {id: next}):
+		return false
+	records[id]["credits"] = balance
+	records[id]["contract"] = next
+	session.commands.erase(id)
+	message(id, notice)
+	if id == 1:
+		update_local(records[id])
+	return true
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -200,12 +287,15 @@ func health(ship: SpaceShip) -> Dictionary:
 func pack_player(id: int) -> Dictionary:
 	var data := health(session.ships[id])
 	data.merge(records[id])
+	var ship := session.ships[id]
+	# Replicate combat and movement stats without exposing the owner's full inventory.
+	data["stats"] = Vector4(ship.laser_damage, ship.max_shield, ship.cruise_speed, ship.boost_speed)
 	return data
 
 
-func pack_alien() -> Dictionary:
-	var data := health(session.sector.alien)
-	data.merge({"position": session.sector.alien.position, "rotation": session.sector.alien.rotation, "respawn": alien_respawn, "encounter": encounter})
+func pack_alien(alien: Alien) -> Dictionary:
+	var data := health(alien)
+	data.merge({"id": alien.alien_id, "kind": alien.kind, "position": alien.position, "rotation": alien.rotation, "respawn": alien.respawn, "encounter": alien.life, "returning": alien.returning, "engaged": alien.engaged})
 	return data
 
 
@@ -228,6 +318,8 @@ func apply_player(id: int, data: Dictionary) -> bool:
 	var ship := session.ships[id]
 	var reset: bool = int(ship.get_meta("life", 0)) != data["life"] or ship.alive != data["alive"]
 	ship.set_meta("life", data["life"])
+	var stats: Vector4 = data["stats"]
+	Equipment.apply_stats(ship, {"damage": stats.x, "shield": stats.y, "speed": stats.z, "boost": stats.w})
 	apply_health(ship, data)
 	if ship == session.sector.player:
 		update_local(data)
@@ -238,6 +330,7 @@ func apply_player(id: int, data: Dictionary) -> bool:
 
 
 func update_local(data: Dictionary) -> void:
+	session.sector.active_contract = data.get("contract", {}).duplicate()
 	session.sector.credits = data["credits"]
 	session.sector.kills = data["kills"]
 	session.sector.objective_stage = maxi(session.sector.objective_stage, data["stage"])
@@ -245,26 +338,31 @@ func update_local(data: Dictionary) -> void:
 
 
 func apply_alien(data: Dictionary) -> void:
-	var alien := session.sector.alien
-	if encounter != data["encounter"] or not data["alive"]:
+	var alien: Alien = session.sector.aliens.get(data["id"])
+	if alien == null or alien.kind != data["kind"]:
+		return
+	var reset: bool = alien.life != data["encounter"] or alien.alive != data["alive"]
+	if session.sector.target == alien and (reset or data["returning"]):
 		session.sector.select_target(null)
-	if encounter != data["encounter"] or alien.alive != data["alive"] or alien_goal.is_empty():
+	if reset or alien.snapshot_goal.is_empty() or alien.returning != data["returning"]:
 		alien.position = data["position"]
 		alien.rotation = data["rotation"]
-	encounter = data["encounter"]
+	alien.life = data["encounter"]
+	alien.returning = data["returning"]
+	alien.engaged = data["engaged"]
+	alien.respawn = data["respawn"]
 	apply_health(alien, data)
-	alien_goal = data
-	session.sector.alien_respawn = data["respawn"]
+	alien.snapshot_goal = data
 
 
 func interpolate(delta: float) -> void:
-	if alien_goal.is_empty():
-		return
-	var alien := session.sector.alien
-	alien.position = alien.position.lerp(alien_goal["position"], minf(1.0, delta * 15.0))
-	var angles: Vector3 = alien_goal["rotation"]
-	for axis in range(3):
-		alien.rotation[axis] = lerp_angle(alien.rotation[axis], angles[axis], minf(1.0, delta * 15.0))
+	for alien: Alien in session.sector.aliens.values():
+		if alien.snapshot_goal.is_empty():
+			continue
+		alien.position = alien.position.lerp(alien.snapshot_goal["position"], minf(1.0, delta * 15.0))
+		var angles: Vector3 = alien.snapshot_goal["rotation"]
+		for axis in range(3):
+			alien.rotation[axis] = lerp_angle(alien.rotation[axis], angles[axis], minf(1.0, delta * 15.0))
 
 
 func message(id: int, text: String, sound_cue: String = "") -> void:
@@ -295,14 +393,68 @@ func show_explosion(location: Vector3) -> void:
 
 
 func finish() -> void:
+	session.sector.active_contract = {}
+	inventory.clear()
+	station_pending = false
+	station_message = ""
 	if not solo.is_empty():
 		session.sector.credits = solo["credits"]
 		session.sector.kills = solo["kills"]
 		session.sector.objective_stage = solo["stage"]
 	solo.clear()
 	records.clear()
-	contributors.clear()
-	alien_goal.clear()
+	for alien: Alien in session.sector.aliens.values():
+		alien.contributors.clear()
+		alien.snapshot_goal.clear()
+		alien.simulation_authority = true
 	if not session.sector.dedicated_server:
 		session.sector.player.simulation_authority = true
-	session.sector.alien.simulation_authority = true
+		Equipment.apply_stats(session.sector.player, Equipment.stats(Equipment.starter()))
+
+
+func request_station(action: String, subject: String, ship: String = "", slot: String = "") -> void:
+	if station_pending or inventory.is_empty() or not session.active:
+		return
+	station_pending = true
+	station_message = "Waiting for server..."
+	station_request.rpc_id(1, int(inventory["revision"]) + 1, action, subject, ship, slot, int(session.sector.player.get_meta("life", 0)))
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func station_request(sequence: int, action: String, subject: String, ship: String, slot: String, life: int) -> void:
+	if not session.active or not multiplayer.is_server() or not session.sector.dedicated_server:
+		return
+	var id := multiplayer.get_remote_sender_id()
+	if not records.has(id) or not session.pilot_ids.has(id):
+		return
+	var blocker := session.sector.repair_blocker(session.ships[id])
+	if records[id]["life"] != life:
+		blocker = "Ship changed. Review your fitting after rescue."
+	if not blocker.is_empty():
+		publish_inventory(id, blocker)
+		return
+	var pilot_id := session.pilot_ids[id]
+	var previous_revision: int = session.store.pilots[pilot_id]["equipment"]["revision"]
+	var result := session.store.transact(pilot_id, sequence, action, subject, ship, slot)
+	if session.store.failed:
+		session.stop_for_save_failure()
+		return
+	var pilot: Dictionary = session.store.pilots[pilot_id]
+	records[id]["credits"] = pilot["credits"]
+	Equipment.apply_stats(session.ships[id], Equipment.stats(pilot["equipment"]))
+	publish_inventory(id, result)
+	if action == "buy" and pilot["equipment"]["revision"] > previous_revision:
+		message(id, result, "purchase")
+
+
+func publish_inventory(id: int, result: String = "") -> void:
+	if session.sector.dedicated_server:
+		station_result.rpc_id(id, session.store.pilots[session.pilot_ids[id]]["equipment"], result)
+
+
+@rpc("authority", "call_remote", "reliable")
+func station_result(data: Dictionary, result: String) -> void:
+	if session.active:
+		inventory = data
+		station_pending = false
+		station_message = result

@@ -13,6 +13,11 @@ var font: Font = ThemeDB.fallback_font
 var background: StyleBoxFlat
 var marker_labels: Array[Rect2] = []
 var audio_controls: VBoxContainer
+var contract_panel: PanelContainer
+var contract_status: Label
+var contract_offers: Array[Button] = []
+var contract_claim: Button
+var contract_abandon: Button
 
 
 func _ready() -> void:
@@ -20,6 +25,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background = panel_style()
 	build_audio_controls()
+	build_contract_panel()
 
 
 func build_audio_controls() -> void:
@@ -49,7 +55,7 @@ func build_audio_controls() -> void:
 
 
 func _process(_delta: float) -> void:
-	audio_controls.visible = sector.paused and not sector.session.menu.visible
+	audio_controls.visible = sector.paused and not sector.session.menu.visible and not contract_panel.visible and not sector.shop.visible
 
 
 func fire_feedback() -> String:
@@ -60,6 +66,88 @@ func fire_feedback() -> String:
 	if sector.weapon_status == "TURN TOWARD TARGET":
 		return "OUTSIDE FIRING ARC"
 	return sector.weapon_status if not sector.weapon_status.is_empty() else "AUTO FIRE ACTIVE"
+
+
+func build_contract_panel() -> void:
+	contract_panel = PanelContainer.new()
+	contract_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	contract_panel.position = Vector2(-300, -195)
+	contract_panel.size = Vector2(600, 390)
+	contract_panel.add_theme_stylebox_override("panel", panel_style())
+	add_child(contract_panel)
+	var margin := MarginContainer.new()
+	for side in ["left", "top", "right", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 24)
+	contract_panel.add_child(margin)
+	var rows := VBoxContainer.new()
+	rows.add_theme_constant_override("separation", 12)
+	margin.add_child(rows)
+	var title := Label.new()
+	title.text = "OUTPOST 01 / HUNTING CONTRACTS"
+	title.add_theme_color_override("font_color", CYAN)
+	rows.add_child(title)
+	contract_status = Label.new()
+	contract_status.custom_minimum_size = Vector2(550, 80)
+	contract_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rows.add_child(contract_status)
+	for offer: String in HuntingContracts.OFFERS:
+		var terms: Dictionary = HuntingContracts.OFFERS[offer]
+		var button := Button.new()
+		button.text = "Hunt %d %s%s / %d CR" % [terms["required"], offer.capitalize(), "s" if terms["required"] > 1 else "", terms["reward"]]
+		button.pressed.connect(func(): sector.session.combat.request_contract("accept", offer))
+		rows.add_child(button)
+		contract_offers.append(button)
+	contract_claim = Button.new()
+	contract_claim.text = "Claim reward"
+	contract_claim.pressed.connect(func(): sector.session.combat.request_contract("claim"))
+	rows.add_child(contract_claim)
+	contract_abandon = Button.new()
+	contract_abandon.text = "Abandon contract / no penalty"
+	contract_abandon.pressed.connect(func(): sector.session.combat.request_contract("abandon"))
+	rows.add_child(contract_abandon)
+	var close := Button.new()
+	close.text = "Return to flight / C or Esc"
+	close.pressed.connect(toggle_contracts)
+	rows.add_child(close)
+	contract_panel.hide()
+
+
+func toggle_contracts() -> void:
+	if contract_panel.visible:
+		contract_panel.hide()
+		sector.set_paused(false)
+		return
+	var blocker := sector.repair_blocker()
+	if not blocker.is_empty():
+		sector.notify(blocker)
+		return
+	sector.session.menu.hide()
+	sector.shop.hide()
+	sector.set_paused(true)
+	contract_panel.show()
+	update_contract_panel()
+
+
+func update_contract_panel() -> void:
+	if not contract_panel.visible:
+		return
+	if not sector.session.active:
+		contract_panel.hide()
+		return
+	var contract := sector.active_contract
+	var blocker := sector.repair_blocker()
+	contract_status.text = "Choose one repeatable hunt. Return here to claim its reward."
+	if not contract.is_empty():
+		contract_status.text = HuntingContracts.objective(contract) + "\nReturn to this station to claim. Death keeps your progress."
+	if not blocker.is_empty():
+		contract_status.text += "\n" + blocker
+	for button in contract_offers:
+		button.visible = contract.is_empty()
+		button.disabled = not blocker.is_empty()
+	contract_claim.visible = not contract.is_empty()
+	contract_claim.disabled = not blocker.is_empty() or not HuntingContracts.ready(contract)
+	contract_abandon.visible = not contract.is_empty()
+	contract_abandon.disabled = not blocker.is_empty()
 
 
 func text_at(point: Vector2, text: String, size_px: int = 16, color: Color = INK) -> void:
@@ -85,7 +173,7 @@ func meter(point: Vector2, title: String, value: float, maximum: float, color: C
 	text_at(point + Vector2(218, 0), "%03d" % ceili(value), 14, color)
 	var bar := Rect2(point + Vector2(0, 10), Vector2(250, 5))
 	draw_rect(bar, Color(0.18, 0.26, 0.34, 0.6))
-	bar.size.x *= clampf(value / maximum, 0.0, 1.0)
+	bar.size.x *= clampf(value / maxf(maximum, 1.0), 0.0, 1.0)
 	draw_rect(bar, color)
 
 
@@ -94,6 +182,7 @@ func _draw() -> void:
 	if not is_instance_valid(sector.player):
 		return
 	var width := size.x
+	update_contract_panel()
 	var height := size.y
 	var player := sector.player
 	var shared := is_instance_valid(sector.session) and sector.session.active
@@ -112,13 +201,18 @@ func _draw() -> void:
 		"Return to Outpost 01. Slow down and press R to repair.",
 		"Encounter complete. Keep exploring or hunt another alien.",
 	][sector.objective_stage]
-	text_at(Vector2(33, 113), "OBJECTIVE", 11, GREEN)
+	if shared:
+		objective = "C  Choose a hunting contract at Outpost 01." if sector.active_contract.is_empty() else HuntingContracts.objective(sector.active_contract)
+	text_at(Vector2(33, 113), "HUNTING CONTRACT" if shared else "OBJECTIVE", 11, GREEN)
 	text_at(Vector2(33, 137), objective, 14 if compact else 17)
 	if sector.toast_time > 0.0:
 		text_at(Vector2(33, 169), sector.toast, 12 if compact else 14, CYAN)
 	marker(Sector.STATION_POSITION, "[+] OUTPOST 01", GREEN, false)
-	if sector.alien.alive:
-		marker(sector.alien.global_position, "HOSTILE SENTINEL", RED, sector.target == sector.alien)
+	if is_instance_valid(sector.target):
+		alien_marker(sector.target as Alien)
+	for enemy: Alien in sector.aliens.values():
+		if enemy != sector.target and enemy.alive and enemy.visible:
+			alien_marker(enemy)
 	if shared:
 		for ship: Pilot in sector.session.ships.values():
 			if ship != player and ship.alive:
@@ -137,12 +231,15 @@ func _draw() -> void:
 	draw_target_panel(width, height)
 	var distance := player.global_position.distance_to(Sector.STATION_POSITION)
 	if distance <= Sector.REPAIR_RADIUS and player.alive:
+		if shared:
+			text_at(Vector2(width - 310, height - 280), "C  HUNTING CONTRACTS", 14, GREEN)
 		var label := "R  REPAIR / %d CR" % sector.repair_cost()
 		if player.velocity.length() > 8.0:
 			label = "SLOW DOWN TO REPAIR"
 		elif player.time_since_hit < 5.0:
 			label = "REPAIRS AVAILABLE IN %d s" % ceili(5.0 - player.time_since_hit)
 		text_at(Vector2(width - 310, height - 256), label, 14, GREEN)
+		text_at(Vector2(width - 310, height - 304), "B  EQUIPMENT SHOP / FITTING", 14, CYAN)
 	var controls := "WASD  Move    Q/E  Rise / descend    RMB  Steer    Tab  Target    Space  Fire    Shift  Boost    R  Repair    Esc  Pause"
 	if shared:
 		controls = "WASD  Move    Q/E  Rise / descend    RMB  Steer    Tab  Target    Space  Fire    Shift  Boost    R  Repair    F7  Session"
@@ -157,7 +254,7 @@ func _draw() -> void:
 		text_at(center + Vector2(-150, 15), "Returning to the outpost in %d..." % ceili(sector.player_respawn), 17)
 	if sector.paused:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.006, 0.012, 0.025, 0.88))
-		if sector.session.menu.visible:
+		if sector.session.menu.visible or contract_panel.visible or sector.shop.visible:
 			return
 		panel(Rect2(center - Vector2(280, 160), Vector2(560, 400)))
 		text_at(center + Vector2(-248, -103), "FLIGHT MENU" if shared else "FLIGHT PAUSED", 29)
@@ -181,24 +278,27 @@ func draw_target_panel(width: float, height: float) -> void:
 		text_at(origin, "NO TARGET", 13, MUTED)
 		text_at(origin + Vector2(0, 34), "Tab or click an alien to lock", 15)
 		text_at(origin + Vector2(0, 64), "%02d  ALIENS DESTROYED" % sector.kills, 12, MUTED)
-		if sector.alien_respawn > 0.0:
-			text_at(origin + Vector2(0, 104), "New contact in %d s" % ceili(sector.alien_respawn), 13, CYAN)
+		text_at(origin + Vector2(0, 104), "Scouts near the station approach", 13, CYAN)
 		return
-	var enemy := sector.target
-	text_at(origin, "SELECTED SENTINEL / %d m" % sector.player.global_position.distance_to(enemy.global_position), 12, RED)
+	var enemy := sector.target as Alien
+	text_at(origin, "%s %d / %d m" % [enemy.kind.to_upper(), enemy.alien_id + 1, sector.player.global_position.distance_to(enemy.global_position)], 12, enemy.tuning()["color"])
 	meter(origin + Vector2(0, 28), "SHIELD", enemy.shield, enemy.max_shield, CYAN)
 	meter(origin + Vector2(0, 72), "HULL", enemy.hull, enemy.max_hull, RED)
 	text_at(origin + Vector2(0, 128), fire_feedback(), 12, RED if sector.auto_fire and not sector.weapon_status.is_empty() else GREEN)
 
 
-func marker(location: Vector3, label: String, color: Color, selected: bool, teammate: Pilot = null) -> void:
+func alien_marker(enemy: Alien) -> void:
+	marker(enemy.global_position, "HOSTILE %s %d%s" % [enemy.kind.to_upper(), enemy.alien_id + 1, " / RETURNING" if enemy.returning else ""], enemy.tuning()["color"], sector.target == enemy, null, sector.target == enemy)
+
+
+func marker(location: Vector3, label: String, color: Color, selected: bool, teammate: Pilot = null, priority: bool = true) -> void:
 	var camera := sector.player.camera
 	var point := camera.unproject_position(location)
 	var behind := camera.is_position_behind(location)
 	var bounds := Rect2(38, 205, size.x - 76, size.y - 480)
 	var distance := sector.player.global_position.distance_to(location)
 	if behind or not bounds.has_point(point):
-		if teammate != null:
+		if teammate != null or not priority:
 			return
 		var direction := point - size * 0.5
 		if behind:
@@ -220,7 +320,7 @@ func marker(location: Vector3, label: String, color: Color, selected: bool, team
 		var start: Vector2 = point + corner * radius
 		draw_line(start, start - Vector2(corner.x * 8, 0), color, 2.0)
 		draw_line(start, start - Vector2(0, corner.y * 8), color, 2.0)
-	marker_caption(point + Vector2(0, radius + 20), "%s%s / %d m" % ["LOCK / " if selected else "", label, distance], color, teammate == null)
+	marker_caption(point + Vector2(0, radius + 20), "%s%s / %d m" % ["LOCK / " if selected else "", label, distance], color, priority and teammate == null)
 
 
 func marker_caption(point: Vector2, caption: String, color: Color, priority: bool) -> void:

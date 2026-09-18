@@ -10,7 +10,6 @@ var rendered: bool
 var shield_captured: bool = false
 var hull_captured: bool = false
 var flight_replay_running: bool = false
-var scripted_firing: bool = false
 
 
 func _initialize() -> void:
@@ -22,8 +21,6 @@ func _process(delta: float) -> bool:
 	# Only the automated replay ignores focus loss caused by capture tools or other test windows.
 	if flight_replay_running and is_instance_valid(sector):
 		sector.set_paused(false)
-		if scripted_firing and is_instance_valid(sector.target) and sector.target.alive:
-			sector.auto_fire = true
 	if sampling:
 		frame_times.append(delta * 1000.0)
 	return false
@@ -44,6 +41,7 @@ func press(code: Key) -> void:
 	event = event.duplicate()
 	event.pressed = false
 	Input.parse_input_event(event)
+	await process_frame
 
 
 func snapshot(label: String) -> void:
@@ -70,34 +68,20 @@ func run() -> void:
 	sector.show_performance = true
 	await snapshot("01-departure")
 	await feedback_checks()
-	sector.alien.damaged.connect(capture_impact)
+	for enemy: Alien in sector.aliens.values():
+		enemy.damaged.connect(capture_impact)
 	flight_replay_running = true
 	sampling = true
 	await press(KEY_TAB)
+	var expected_reward: int = (sector.target as Alien).tuning()["reward"]
 	await press(KEY_SPACE)
-	scripted_firing = true
-	Input.action_press("forward")
-	await create_timer(3.4).timeout
-	Input.action_release("forward")
-	await create_timer(0.6).timeout
+	await hunt_selected()
 	await snapshot("02-combat")
-	var deadline := Time.get_ticks_msec() + 25000
-	while sector.kills == 0 and Time.get_ticks_msec() < deadline and sector.player.alive:
-		await physics_frame
 	check(sector.kills == 1, "Pilot can kill the first alien with target-lock lasers")
 	check(sector.player.alive, "First encounter is survivable without upgrades")
-	check(sector.credits == Sector.KILL_REWARD, "Combat reward arrives through the live encounter")
-	scripted_firing = false
+	check(sector.credits == expected_reward, "Combat reward matches the selected alien in the live encounter")
 	await snapshot("03-reward")
-	Input.action_press("backward")
-	deadline = Time.get_ticks_msec() + 10000
-	while sector.player.position.z < 30.0 and Time.get_ticks_msec() < deadline:
-		await physics_frame
-	Input.action_release("backward")
-	await create_timer(1.0).timeout
-	deadline = Time.get_ticks_msec() + 6000
-	while sector.player.time_since_hit < 5.0 and Time.get_ticks_msec() < deadline:
-		await physics_frame
+	await return_to_station()
 	await press(KEY_R)
 	await create_timer(0.1).timeout
 	check(sector.objective_stage == 4, "Pilot returns to the station and completes repairs")
@@ -122,6 +106,10 @@ func run() -> void:
 func feedback_checks() -> void:
 	# Arrange geometry, then use the same physics query and input path as live combat.
 	sector.set_physics_process(false)
+	var start := sector.player.position
+	sector.player.position = Vector3(200, 100, 50)
+	sector.alien.position = sector.player.position + Vector3(0, 0, -250)
+	await create_timer(0.1).timeout
 	check(sector.hud.fire_feedback() == "NO TARGET", "Missing target has its own feedback")
 	if rendered:
 		var click := InputEventMouseButton.new()
@@ -136,6 +124,8 @@ func feedback_checks() -> void:
 		check(sector.target == sector.alien, "Click selects the visible alien")
 		sector.select_target(null)
 	await press(KEY_TAB)
+	check(is_instance_valid(sector.target), "Tab selects an available alien")
+	sector.select_target(sector.alien)
 	sector.weapon_status = sector.player.firing_blocker(sector.target)
 	check(sector.hud.fire_feedback().begins_with("AUTO FIRE OFF"), "Disabled fire does not report an obstruction")
 	await snapshot("feedback-auto-off")
@@ -163,6 +153,7 @@ func feedback_checks() -> void:
 	sector.weapon_status = sector.player.firing_blocker(sector.target)
 	check(sector.hud.fire_feedback() == "AUTO FIRE ACTIVE", "Clear shot becomes active")
 	sector.alien.position = sector.alien.home_position
+	sector.player.position = start
 	sector.select_target(null)
 	sector.set_physics_process(true)
 
@@ -174,3 +165,33 @@ func capture_impact(ship: SpaceShip, _attacker: SpaceShip) -> void:
 	if not hull_captured and ship.hull < ship.max_hull - sector.player.laser_damage:
 		hull_captured = true
 		await snapshot("feedback-hull-impact")
+
+
+func hunt_selected() -> void:
+	var enemy := sector.target as Alien
+	var deadline := Time.get_ticks_msec() + 30000
+	while is_instance_valid(enemy) and enemy.alive and sector.player.alive and Time.get_ticks_msec() < deadline:
+		sector.player.look_at(enemy.global_position, Vector3.UP)
+		if sector.player.position.distance_to(enemy.position) > 85.0 or sector.player.position.distance_to(Sector.STATION_POSITION) < 85.0:
+			Input.action_press("forward")
+		else:
+			Input.action_release("forward")
+		if enemy.available() and sector.target != enemy:
+			sector.select_target(enemy)
+		sector.auto_fire = enemy.available()
+		await physics_frame
+	Input.action_release("forward")
+	sector.auto_fire = false
+
+
+func return_to_station() -> void:
+	var deadline := Time.get_ticks_msec() + 15000
+	while sector.player.alive and sector.player.position.distance_to(Sector.STATION_POSITION) > 45.0 and Time.get_ticks_msec() < deadline:
+		sector.player.look_at(Sector.STATION_POSITION, Vector3.UP)
+		Input.action_press("forward")
+		await physics_frame
+	Input.action_release("forward")
+	await create_timer(1.0).timeout
+	deadline = Time.get_ticks_msec() + 6000
+	while sector.player.time_since_hit < 5.0 and Time.get_ticks_msec() < deadline:
+		await physics_frame

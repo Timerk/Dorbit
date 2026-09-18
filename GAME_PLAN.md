@@ -68,17 +68,43 @@ Weapon ranges, firing arcs, damage, shield recovery, and alien behavior need pla
 
 ### Combat feedback and station navigation
 
-Implemented for the current Sentinel encounter during Milestone 3:
+Implemented for Scout, Sentinel and Heavy encounters during Milestone 3:
 
-- The selected target has larger lock brackets, a text label, distance, shield and hull readouts. Friendly contacts say FRIEND with their peer ID; the enemy says HOSTILE SENTINEL. Background plates and overlapping-label suppression keep the flight area readable. Off-screen friendly labels and duplicate 3D labels are omitted.
+- The selected target has larger lock brackets, its type and slot number, distance, shield and hull readouts. Friendly contacts say FRIEND with their peer ID; enemies say HOSTILE with their type and slot number. Station and selected-target captions are placed first. Secondary enemy and friendly captions are suppressed when they overlap; their off-screen labels and duplicate 3D labels are omitted.
 - Automatic fire distinguishes no target, disabled fire, active fire, out of range, outside the firing arc and blocked line of sight. Feedback consumes the existing `SpaceShip.firing_blocker` result used by shot validation. A client's interpolated geometry can briefly differ from the server under latency; the server still decides whether a shot fires.
 - Shield damage produces a thin expanding ring; hull damage produces crossed sparks; destruction produces a larger expanding burst. Clients observe authoritative health decreases without replaying damage. The existing reward message reports the local pilot's actual awarded share.
 - Outpost 01 retains its distance marker, with a labeled edge arrow when outside the view. Station and target captions take priority over friendly captions.
 - Original procedural laser, shield, hull, destruction and confirmed station-service sounds use a six-voice pool, distance attenuation and repetition limits. Esc opens master/effects sliders and mute, saved locally in `user://audio.cfg`. Dedicated servers create no audio node and no impact meshes. Presentation never changes damage, prices or rewards.
 
-Integration follow-ups depend on the unmerged `feat/sector-alien-variety` and `feat/station-equipment` branches. Use the enemy branch's `Alien.kind` and sector roster for Scout/Sentinel/Heavy captions and limit secondary enemy labels, keeping the selected target and station visible. Keep its reward-share calculation. Trigger the purchase cue only from the equipment branch's successful server confirmation, using the optional sound cue on `SessionCombat.message`. Do not infer purchases from wallet changes. Repeat the busy visual check with its actual multi-alien fights after integration. Ship models are not a dependency.
+Alien feedback integration retains the per-alien reward-share calculation and has passed a rendered ten-client run with all five aliens fighting and dying. Equipment purchase sounds use the server-confirmed transaction revision: failed and duplicate requests do not trigger a cue, and wallet snapshots never infer purchases. Ship models are not a dependency.
 
 The rendered replay covers click/Tab selection, fire-state reasons using real collision geometry, shield/hull hits, rewards and return/repair. Two processes verify 38/37-credit cooperative shares. A ten-pilot presentation fixture checks bounded effects and crowded labels; it is not a multi-alien or network capacity benchmark. See [README.md](README.md#feedback-validation) for evidence and limits.
+
+### Huntable sector and initial enemy variety
+
+Milestone 3 now includes multiple simultaneous aliens in the current sector. This slice precedes equipment and hunting contracts. It adds no connected sectors, bosses, loot tables, missions or art pipeline.
+
+- Five fixed spawn slots support independent encounters. Every alien owns its identity, movement, target choice, health, contribution list, life number, death and respawn timer. The server controls these and all rewards, including when no pilots are connected.
+- Scouts are starter encounters near the station approach. Sentinels keep the reference combat stats farther ahead. The Heavy occupies the outer right flank and is intended for upgraded pilots or a small group. Upgrades are outside this slice.
+- Each kill splits that type's credit pool equally among connected pilots who damaged that alien in its current life. Contributors awaiting rescue remain eligible; disconnected pilots are removed. Integer remainders go in ascending peer-ID order. Persistence commits the shares before clients see them.
+- Killing or resetting one alien must leave other encounters, contributions and active fire intact. Player rescue also leaves encounters independent.
+- Station protection remains a 75 m sphere. Aliens cannot attack protected pilots. Protected pilots cannot damage aliens.
+- Exceeding the home leash, or losing all eligible targets after engagement, starts a return. Health and contributions reset and the life number advances. Returning aliens reject damage and cannot attack until they reach home. If direct flight is blocked, a 30-second server timeout places them at home so a rock cannot strand an invulnerable slot. Old fire commands cannot cross a reset or respawn.
+- Joining clients receive every alien's current identity, transform, health, life, engagement/return state and respawn countdown. Snapshot ordering is tracked per entity.
+- Left click selects the visible alien intersected by the camera ray. Tab starts with the nearest available alien within 550 m, then cycles fixed slot order to avoid reordering as enemies move. Death, return, life changes and leaving selection range clear that target and fire.
+- Names and numbered markers distinguish contacts. Scouts have smaller amber-accented hulls, Sentinels retain the reference shape with red accents, and Heavies use larger purple-accented hulls with an extra armor block.
+
+Provisional tuning lives in `Alien.TYPES` and `Sector.ALIEN_SPAWNS`. These values need human balance playtesting.
+
+| Type | Count | Hull / shield | Speed | Laser damage / interval | Weapon range | Detection | Home leash | Credits | Respawn |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Scout | 2 | 60 / 20 | 29 m/s | 6 / 0.85 s | 120 m | 155 m | 170 m | 30 | 10 s |
+| Sentinel | 2 | 130 / 50 | 18 m/s | 10 / 0.75 s | 155 m | 180 m | 230 m | 75 | 12 s |
+| Heavy | 1 | 340 / 140 | 12 m/s | 23 / 0.9 s | 165 m | 220 m | 180 m | 180 | 18 s |
+
+Home coordinates are relative to sector origin. Slot 0 is Sentinel at `(0, 8, -440)`; slots 1 and 2 are Scouts at `(-85, 8, -150)` and `(85, -12, -175)`; slot 3 is Sentinel at `(-230, 35, -430)`; slot 4 is Heavy at `(320, 15, -390)`. Patrols stay within 18 m horizontally and 8 m vertically of home before engagement. Fixed slots respawn in place; timers never create extra nodes.
+
+Hunting contracts will stack on this work and use `Alien.kind` plus each kill's contribution eligibility. Merge alien variety first, hunting contracts second. The existing `SessionCombat.destroyed()` reward path holds the eligible contributor list until rewards are committed and applied.
 
 ### Death and recovery
 
@@ -120,6 +146,33 @@ Proposed progression principles:
 - Avoid extreme grind and paid power advantages.
 
 Exact prices, ship roles, upgrade limits, rewards, and sector unlocks remain open.
+
+### First station equipment shop and fitting
+
+This Milestone 3 slice adds equipment for the Pathfinder starter. The second playable ship is a separate feature.
+
+- Each equipment item is individually owned, either in storage or installed in exactly one slot on one owned ship. Players may buy multiple copies of each model.
+- Ships own their fittings. Installing, removing and transferring items between owned ships is free at the station. Switching ships will not move equipment automatically.
+- The starter has two laser slots and two shared generator slots. A generator slot accepts either a shield generator or an engine.
+- Lasers add damage, shield generators add shield capacity, and engines add speed. Bonuses stack by addition. Hull and base movement belong to the ship; empty slots never prevent flight.
+- New pilots receive one laser, one shield generator and one engine installed. Existing saves receive the same starter fitting exactly once, retaining credits and unrelated progression fields.
+- Press B near the station to open the shop and fitting panel. It uses the repair checks: alive, within 60 m, speed at most 8 m/s, and at least five seconds since damage. The server checks every action again.
+- The panel shows credits, prices, individually owned items, slot contents, and current and proposed damage, shield capacity, cruise and boost speeds. Unavailable purchases and fitting actions explain why.
+- Fitting changes never repair hull, refill shields or boost energy, or reset weapon cooldowns. Added shield capacity starts empty and recovers through the normal shield regeneration rules. Removing capacity discards excess charge.
+- The server commits a purchase's credit deduction, new item and request sequence together. Successful requests cannot run again, even after restart. A new intentional purchase uses the next sequence. Inventory and fittings survive death, reconnects and server restarts.
+- No selling, trading, materials, rarity, equipment leveling or further tiers are included.
+
+Provisional equipment values:
+
+| Model | Price | Bonus per installed item |
+| --- | --- | --- |
+| Pulse laser | 3,000 CR | +11 damage per shot |
+| Shield generator | 2,400 CR | +70 shield capacity |
+| Ion engine | 2,400 CR | +8 m/s cruise and boost speed |
+
+The unequipped Pathfinder has 120 hull, no laser damage or shield capacity, 28 m/s cruise and 70 m/s boost. One of each starter item preserves the previous 11 damage, 70 shield, 36 m/s cruise and 78 m/s boost. Acceleration stays 40 m/s² and laser interval stays 0.42 seconds. A second laser fills the empty laser slot; a second shield or engine requires giving up the other generator type.
+
+These prices target a first useful purchase in roughly 15–30 minutes for solo or two-player hunting. The Sentinel has 180 combined health and awards a shared pool of 75 CR. Ideal solo firing takes about seven seconds, followed by a 12-second respawn; movement, aiming, shield recovery and occasional station returns extend that cycle. Budgeting 22–30 seconds per solo kill and an average 2–8 CR for repairs or rescue gives roughly 135–200 net CR/minute, or 15–22 minutes for the second laser. Two contributors split the pool into 37/38 CR; a 17–20 second cycle with roughly 1–3 CR of upkeep per pilot gives about 104–130 net CR/minute, or 23–29 minutes. These are tuning assumptions, not measured progression sessions. Highly efficient hunting can be faster. More contributors divide the same pool and can take substantially longer, so the ten-player economy needs additional content and playtesting. Contract rewards are not included in these estimates and should trigger a pricing review when integrated.
 
 ## Multiplayer and hosting
 
@@ -219,6 +272,24 @@ Completion criteria:
 - Progress survives restarting the server.
 - Repeated sessions support frequent small upgrades and longer-term goals.
 - Group reward rules and death penalties can be evaluated through playtesting.
+
+### First station hunting contracts
+
+Each pilot can accept one repeatable hunting contract at Outpost 01. Press C at the station to choose a hunt, claim a completed reward, or abandon the active contract. These actions use the repair restrictions: alive, within 60 m, at most 8 m/s, and five seconds since the last hit. Opening the board stops local controls while the shared world continues.
+
+| Alien | Required kills | Fixed contract reward |
+| --- | --- | --- |
+| Scout | 3 | 90 credits |
+| Sentinel | 2 | 150 credits |
+| Heavy | 1 | 200 credits |
+
+Counts and rewards are provisional values for short hunting trips. Accepted contracts retain their original terms if later updates tune the offers.
+
+Only qualifying kills after acceptance count. The existing encounter contribution rules decide eligibility, including connected contributors awaiting rescue. Every eligible pilot with a matching contract earns one full kill of progress, independently of the split kill-credit pool. Death preserves the contract and progress. Completion caps progress and leaves the contract active until claimed or abandoned.
+
+Claiming at the station grants the fixed reward once and clears the contract. A full wallet keeps the completed contract until it can receive the entire reward. Abandonment clears progress without charging credits. Either action allows another contract, including the same offer. The server validates all actions and saves kill progress together with the corresponding credit shares. Active and completed contracts survive reconnects and server restarts. Claims save the reward and cleared contract together, and stale requests identify their original accepted run.
+
+This slice depends on persistent pilots and the multiple-alien sector. It adds no timers, daily limits, chains, party missions, multiple active contracts, or mission scripting framework. Equipment and ship purchases remain separate feature work.
 
 ### Milestone 4: Expansion and polish
 

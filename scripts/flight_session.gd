@@ -19,7 +19,7 @@ var connect_clock: float = 0.0
 var received_snapshot: bool = false
 var snapshot_sequence: int = 0
 var player_sequences: Dictionary[int, int] = {}
-var alien_sequence: int = -1
+var alien_sequences: Dictionary[int, int] = {}
 var host_port: int = PORT
 var menu: PanelContainer
 var address: LineEdit
@@ -284,24 +284,34 @@ func authentication_failed(id: int) -> void:
 
 
 # Called only by server combat, before applying any visible reward or charge.
-func save_balances(balances: Dictionary[int, int]) -> bool:
+func save_balances(balances: Dictionary[int, int], contracts: Dictionary[int, Dictionary] = {}) -> bool:
 	if not sector.dedicated_server:
 		return true
 	if store.failed:
 		return false
 	var wallets: Dictionary = {}
+	var saved_contracts: Dictionary = {}
 	for id: int in balances:
 		if not pilot_ids.has(id):
 			store.fail("Wallet update without an authenticated pilot.")
 			break
 		wallets[pilot_ids[id]] = balances[id]
-	if not store.failed and store.commit(wallets):
+	for id: int in contracts:
+		if not pilot_ids.has(id):
+			store.fail("Contract update without an authenticated pilot.")
+			break
+		saved_contracts[pilot_ids[id]] = contracts[id]
+	if not store.failed and store.commit(wallets, saved_contracts):
 		return true
+	stop_for_save_failure()
+	return false
+
+
+func stop_for_save_failure() -> void:
 	printerr("Persistence stopped the server: " + store.error)
 	# Stop simulation immediately; close peers outside any active combat callback.
 	sector.set_physics_process(false)
 	get_tree().quit(1)
-	return false
 
 
 func start_flight() -> void:
@@ -349,6 +359,7 @@ func ready_for_flight() -> void:
 	var location := Vector3(-24 + (slot % 5) * 6, int(slot / 5) * 6, 33)
 	spawn.rpc(id, location)
 	ships[id].set_meta("spawn_slot", slot)
+	combat.publish_inventory(id)
 	status = "Server on UDP %d. Players: %d/%d" % [host_port, ships.size(), MAX_PLAYERS]
 	if sector.dedicated_server:
 		print(status)
@@ -419,6 +430,7 @@ func tick(delta: float) -> void:
 		return
 	sector.toast_time = maxf(0.0, sector.toast_time - delta)
 	if not sector.dedicated_server:
+		sector.validate_target()
 		sector.weapon_status = sector.player.firing_blocker(sector.target)
 	var movement := Vector3.ZERO if sector.dedicated_server or sector.paused else sector.player.read_movement()
 	var boost := not sector.dedicated_server and not sector.paused and Input.is_action_pressed("boost")
@@ -452,7 +464,8 @@ func tick(delta: float) -> void:
 		bound_ship(sector.player)
 		if send_clock >= 0.05:
 			send_clock = 0.0
-			command_flight.rpc_id(1, movement, sector.player.rotation, boost, sector.auto_fire and sector.target == sector.alien and not sector.paused, int(sector.player.get_meta("life", 0)), combat.encounter)
+			var enemy := sector.target as Alien
+			command_flight.rpc_id(1, movement, sector.player.rotation, boost, sector.auto_fire and enemy != null and not sector.paused, int(sector.player.get_meta("life", 0)), enemy.life if enemy != null else -1, enemy.alien_id if enemy != null else -1)
 		combat.interpolate(delta)
 		for id: int in goals:
 			if not ships.has(id):
@@ -470,18 +483,15 @@ func tick(delta: float) -> void:
 func send_snapshot() -> void:
 	if multiplayer.get_peers().is_empty():
 		return
-	# Keep each datagram below the ENet MTU even at the ten-player limit.
-	var state: Dictionary = {}
+	# One player per packet leaves room for equipment stats and a full accepted contract.
 	snapshot_sequence += 1
 	for id: int in ships:
 		var ship := ships[id]
-		state[id] = {"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}
+		var state := {id: {"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}}
 		state[id].merge(combat.pack_player(id))
-		if state.size() == 2:
-			snapshot.rpc(state, combat.pack_alien(), snapshot_sequence)
-			state = {}
-	if not state.is_empty():
-		snapshot.rpc(state, combat.pack_alien(), snapshot_sequence)
+		snapshot.rpc(state, {}, snapshot_sequence)
+	for enemy: Alien in sector.aliens.values():
+		snapshot.rpc({}, combat.pack_alien(enemy), snapshot_sequence)
 
 
 func bound_ship(ship: Pilot) -> void:
@@ -491,7 +501,7 @@ func bound_ship(ship: Pilot) -> void:
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered", 1)
-func command_flight(movement: Vector3, angles: Vector3, boost: bool, fire: bool = false, life: int = 0, encounter: int = 0) -> void:
+func command_flight(movement: Vector3, angles: Vector3, boost: bool, fire: bool = false, life: int = 0, encounter: int = 0, target_id: int = -1) -> void:
 	if not active or not multiplayer.is_server():
 		return
 	var id := multiplayer.get_remote_sender_id()
@@ -503,7 +513,7 @@ func command_flight(movement: Vector3, angles: Vector3, boost: bool, fire: bool 
 		"movement": movement.limit_length(),
 		"rotation": Vector3(clampf(angles.x, -1.48, 1.48), wrapf(angles.y, -PI, PI), 0),
 		"boost": boost, "time": Time.get_ticks_msec(),
-		"fire": fire, "encounter": encounter,
+		"fire": fire, "encounter": encounter, "target": target_id,
 	}
 
 
@@ -512,9 +522,11 @@ func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int) -> void
 	if not active:
 		return
 	# Chunks may arrive out of order. Reject stale state per entity, not per whole packet.
-	if sequence > alien_sequence:
-		combat.apply_alien(alien_state)
-		alien_sequence = sequence
+	if not alien_state.is_empty():
+		var alien_id: int = alien_state["id"]
+		if sequence > alien_sequences.get(alien_id, -1):
+			combat.apply_alien(alien_state)
+			alien_sequences[alien_id] = sequence
 	for id: int in state:
 		if not ships.has(id) or sequence <= player_sequences.get(id, -1):
 			continue
@@ -558,7 +570,7 @@ func disconnect_session(message: String) -> void:
 	received_snapshot = false
 	snapshot_sequence = 0
 	player_sequences.clear()
-	alien_sequence = -1
+	alien_sequences.clear()
 	send_clock = 0.0
 	if sector.dedicated_server:
 		status = message
