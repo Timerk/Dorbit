@@ -6,6 +6,7 @@ const SETTINGS := "user://audio.cfg"
 var master: float = 0.7
 var effects: float = 0.7
 var muted: bool = false
+var save_failed: bool = false
 var voices: Array[AudioStreamPlayer] = []
 var clips: Dictionary[String, AudioStreamWAV] = {}
 var last_played: Dictionary[String, int] = {}
@@ -31,7 +32,8 @@ func save_preferences() -> void:
 	config.set_value("audio", "master", master)
 	config.set_value("audio", "effects", effects)
 	config.set_value("audio", "muted", muted)
-	if config.save(SETTINGS) != OK:
+	save_failed = config.save(SETTINGS) != OK
+	if save_failed:
 		push_warning("Could not save audio preferences.")
 	for voice in voices:
 		voice.volume_linear = 0.0 if muted else master * effects
