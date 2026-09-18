@@ -47,7 +47,9 @@ The following controls are agreed as the starting layout. Check comfort and usab
 | Space | Toggle automatic laser fire |
 | Shift | Boost using rechargeable energy |
 
-Full 3D movement does not require realistic spacecraft physics. Acceleration, braking, turning speed, camera behavior, and boost values remain tuning decisions.
+Flight should have noticeable weight and inertia while staying responsive and arcade-like. Ships retain momentum through turns, build speed gradually, and use assisted braking on release plus stronger counter-thrust when reversing. Mouse steering eases over a few frames. There is no unlimited coasting or manual braking requirement.
+
+Initial tuning for playtesting: 36 m/s cruise, 78 m/s boost, 40 m/s² acceleration, 60 m/s² braking, 80 m/s² counter-thrust, and a 65 ms mouse-steering response time constant. From cruise, release stops the ship in about 0.6 seconds; mouse steering completes about 95% of a turn command within 0.2 seconds. These values remain tuning decisions.
 
 ## Combat
 

@@ -152,6 +152,38 @@ func run() -> void:
 	for frame in range(50):
 		player.fly(1.0 / 60.0)
 	check(player.velocity.is_zero_approx(), "Releasing movement brakes the ship")
+	# Acceleration, momentum, and assisted braking apply equally on every flight axis.
+	player.position = Vector3(0, 200, 0)
+	for direction: Vector3 in [Vector3.FORWARD, Vector3.BACK, Vector3.LEFT, Vector3.RIGHT, Vector3.UP, Vector3.DOWN]:
+		player.velocity = Vector3.ZERO
+		player.fly_command(0.1, direction, false)
+		check(player.velocity.dot(direction) > 0.0 and player.velocity.length() < player.cruise_speed * 0.25, "Movement starts promptly without jumping to cruise speed")
+		for frame in range(60):
+			player.fly_command(1.0 / 60.0, direction, false)
+		check(is_equal_approx(player.velocity.length(), player.cruise_speed), "Sustained input reaches cruise speed on every axis")
+		player.fly_command(0.1, Vector3.ZERO, false)
+		check(player.velocity.dot(direction) > 0.0 and player.velocity.length() < player.cruise_speed, "Release preserves a short braking drift")
+		for frame in range(36):
+			player.fly_command(1.0 / 60.0, Vector3.ZERO, false)
+		check(player.velocity.is_zero_approx(), "Assisted braking settles at rest")
+	player.velocity = Vector3.FORWARD * player.cruise_speed
+	player.fly_command(0.1, Vector3.BACK, false)
+	check(player.velocity.z < 0.0, "Reversing cannot instantly flip momentum")
+	for frame in range(24):
+		player.fly_command(1.0 / 60.0, Vector3.BACK, false)
+	check(player.velocity.z > 0.0, "Counter-thrust starts reversing within half a second")
+	player.velocity = Vector3.FORWARD * player.cruise_speed
+	player.rotation.y = PI / 2.0
+	player.fly_command(0.1, Vector3.FORWARD, false)
+	check(player.velocity.z < -20.0 and player.velocity.x < 0.0, "Turning redirects thrust while retaining world-space momentum")
+	player.rotation = Vector3.ZERO
+	player.velocity = Vector3.ZERO
+	for frame in range(120):
+		player.fly_command(1.0 / 60.0, Vector3.ONE, true)
+	check(is_equal_approx(player.velocity.length(), player.boost_speed), "Diagonal boost respects the shared speed cap")
+	player.fly_command(0.1, Vector3.ONE, false)
+	check(player.velocity.length() > player.cruise_speed and player.velocity.length() < player.boost_speed, "Boost release eases back toward cruise speed")
+	player.velocity = Vector3.ZERO
 	Input.action_press("move_up")
 	Input.action_press("boost")
 	player.fly(0.1)
@@ -166,18 +198,29 @@ func run() -> void:
 	mouse_motion.relative = Vector2(100, -50)
 	mouse_motion.screen_relative = Vector2(100, -50)
 	player.handle_mouse(mouse_motion)
+	check(player.rotation.is_zero_approx(), "Mouse motion waits for flight simulation instead of snapping the ship")
+	player.fly_command(1.0 / 60.0, Vector3.ZERO, false)
 	check(player.rotation.y < 0.0 and player.rotation.x > 0.0, "Right-mouse steering changes yaw and pitch")
+	check(absf(player.rotation.y) < 0.3, "The first steering frame preserves some turning inertia")
+	for frame in range(59):
+		player.fly_command(1.0 / 60.0, Vector3.ZERO, false)
 	var first_rotation := player.rotation
 	player.rotation = Vector3.ZERO
 	mouse_motion.relative = Vector2(50, -25)
 	player.handle_mouse(mouse_motion)
+	for frame in range(30):
+		player.fly_command(1.0 / 30.0, Vector3.ZERO, false)
 	check(player.rotation.is_equal_approx(first_rotation), "Viewport scaling does not change mouse steering sensitivity")
 	mouse_motion.relative = Vector2(0, -10000)
 	mouse_motion.screen_relative = Vector2(0, -10000)
 	player.handle_mouse(mouse_motion)
+	for frame in range(60):
+		player.fly_command(1.0 / 60.0, Vector3.ZERO, false)
 	check(player.rotation.x <= 1.481, "Camera pitch stays within comfortable limits")
+	player.handle_mouse(mouse_motion)
 	sector.set_paused(true)
 	check(not player.steering and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE, "Pause releases mouse capture")
+	check(player.pending_look.is_zero_approx(), "Pause clears queued steering")
 	var paused_position := player.position
 	sector._physics_process(1.0)
 	check(player.position == paused_position, "Pause freezes simulation")
