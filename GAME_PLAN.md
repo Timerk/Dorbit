@@ -68,17 +68,43 @@ Weapon ranges, firing arcs, damage, shield recovery, and alien behavior need pla
 
 ### Combat feedback and station navigation
 
-Implemented for the current Sentinel encounter during Milestone 3:
+Implemented for Scout, Sentinel and Heavy encounters during Milestone 3:
 
-- The selected target has larger lock brackets, a text label, distance, shield and hull readouts. Friendly contacts say FRIEND with their peer ID; the enemy says HOSTILE SENTINEL. Background plates and overlapping-label suppression keep the flight area readable. Off-screen friendly labels and duplicate 3D labels are omitted.
+- The selected target has larger lock brackets, its type and slot number, distance, shield and hull readouts. Friendly contacts say FRIEND with their peer ID; enemies say HOSTILE with their type and slot number. Station and selected-target captions are placed first. Secondary enemy and friendly captions are suppressed when they overlap; their off-screen labels and duplicate 3D labels are omitted.
 - Automatic fire distinguishes no target, disabled fire, active fire, out of range, outside the firing arc and blocked line of sight. Feedback consumes the existing `SpaceShip.firing_blocker` result used by shot validation. A client's interpolated geometry can briefly differ from the server under latency; the server still decides whether a shot fires.
 - Shield damage produces a thin expanding ring; hull damage produces crossed sparks; destruction produces a larger expanding burst. Clients observe authoritative health decreases without replaying damage. The existing reward message reports the local pilot's actual awarded share.
 - Outpost 01 retains its distance marker, with a labeled edge arrow when outside the view. Station and target captions take priority over friendly captions.
 - Original procedural laser, shield, hull, destruction and confirmed station-service sounds use a six-voice pool, distance attenuation and repetition limits. Esc opens master/effects sliders and mute, saved locally in `user://audio.cfg`. Dedicated servers create no audio node and no impact meshes. Presentation never changes damage, prices or rewards.
 
-Integration follow-ups depend on the unmerged `feat/sector-alien-variety` and `feat/station-equipment` branches. Use the enemy branch's `Alien.kind` and sector roster for Scout/Sentinel/Heavy captions and limit secondary enemy labels, keeping the selected target and station visible. Keep its reward-share calculation. Trigger the purchase cue only from the equipment branch's successful server confirmation, using the optional sound cue on `SessionCombat.message`. Do not infer purchases from wallet changes. Repeat the busy visual check with its actual multi-alien fights after integration. Ship models are not a dependency.
+Alien feedback integration retains the per-alien reward-share calculation and has passed a rendered ten-client run with all five aliens fighting and dying. The equipment branch must trigger the purchase cue only from a successful server confirmation, using the optional sound cue on `SessionCombat.message`. Do not infer purchases from wallet changes. Ship models are not a dependency.
 
 The rendered replay covers click/Tab selection, fire-state reasons using real collision geometry, shield/hull hits, rewards and return/repair. Two processes verify 38/37-credit cooperative shares. A ten-pilot presentation fixture checks bounded effects and crowded labels; it is not a multi-alien or network capacity benchmark. See [README.md](README.md#feedback-validation) for evidence and limits.
+
+### Huntable sector and initial enemy variety
+
+Milestone 3 now includes multiple simultaneous aliens in the current sector. This slice precedes equipment and hunting contracts. It adds no connected sectors, bosses, loot tables, missions or art pipeline.
+
+- Five fixed spawn slots support independent encounters. Every alien owns its identity, movement, target choice, health, contribution list, life number, death and respawn timer. The server controls these and all rewards, including when no pilots are connected.
+- Scouts are starter encounters near the station approach. Sentinels keep the reference combat stats farther ahead. The Heavy occupies the outer right flank and is intended for upgraded pilots or a small group. Upgrades are outside this slice.
+- Each kill splits that type's credit pool equally among connected pilots who damaged that alien in its current life. Contributors awaiting rescue remain eligible; disconnected pilots are removed. Integer remainders go in ascending peer-ID order. Persistence commits the shares before clients see them.
+- Killing or resetting one alien must leave other encounters, contributions and active fire intact. Player rescue also leaves encounters independent.
+- Station protection remains a 75 m sphere. Aliens cannot attack protected pilots. Protected pilots cannot damage aliens.
+- Exceeding the home leash, or losing all eligible targets after engagement, starts a return. Health and contributions reset and the life number advances. Returning aliens reject damage and cannot attack until they reach home. If direct flight is blocked, a 30-second server timeout places them at home so a rock cannot strand an invulnerable slot. Old fire commands cannot cross a reset or respawn.
+- Joining clients receive every alien's current identity, transform, health, life, engagement/return state and respawn countdown. Snapshot ordering is tracked per entity.
+- Left click selects the visible alien intersected by the camera ray. Tab starts with the nearest available alien within 550 m, then cycles fixed slot order to avoid reordering as enemies move. Death, return, life changes and leaving selection range clear that target and fire.
+- Names and numbered markers distinguish contacts. Scouts have smaller amber-accented hulls, Sentinels retain the reference shape with red accents, and Heavies use larger purple-accented hulls with an extra armor block.
+
+Provisional tuning lives in `Alien.TYPES` and `Sector.ALIEN_SPAWNS`. These values need human balance playtesting.
+
+| Type | Count | Hull / shield | Speed | Laser damage / interval | Weapon range | Detection | Home leash | Credits | Respawn |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Scout | 2 | 60 / 20 | 29 m/s | 6 / 0.85 s | 120 m | 155 m | 170 m | 30 | 10 s |
+| Sentinel | 2 | 130 / 50 | 18 m/s | 10 / 0.75 s | 155 m | 180 m | 230 m | 75 | 12 s |
+| Heavy | 1 | 340 / 140 | 12 m/s | 23 / 0.9 s | 165 m | 220 m | 180 m | 180 | 18 s |
+
+Home coordinates are relative to sector origin. Slot 0 is Sentinel at `(0, 8, -440)`; slots 1 and 2 are Scouts at `(-85, 8, -150)` and `(85, -12, -175)`; slot 3 is Sentinel at `(-230, 35, -430)`; slot 4 is Heavy at `(320, 15, -390)`. Patrols stay within 18 m horizontally and 8 m vertically of home before engagement. Fixed slots respawn in place; timers never create extra nodes.
+
+Hunting contracts will stack on this work and use `Alien.kind` plus each kill's contribution eligibility. Merge alien variety first, hunting contracts second. The existing `SessionCombat.destroyed()` reward path holds the eligible contributor list until rewards are committed and applied.
 
 ### Death and recovery
 
