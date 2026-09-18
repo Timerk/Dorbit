@@ -68,15 +68,15 @@ Weapon ranges, firing arcs, damage, shield recovery, and alien behavior need pla
 
 ### Combat feedback and station navigation
 
-Implemented for the current Sentinel encounter during Milestone 3:
+Implemented for Scout, Sentinel and Heavy encounters during Milestone 3:
 
-- The selected target has larger lock brackets, a text label, distance, shield and hull readouts. Friendly contacts say FRIEND with their peer ID; the enemy says HOSTILE SENTINEL. Background plates and overlapping-label suppression keep the flight area readable. Off-screen friendly labels and duplicate 3D labels are omitted.
+- The selected target has larger lock brackets, its type and slot number, distance, shield and hull readouts. Friendly contacts say FRIEND with their peer ID; enemies say HOSTILE with their type and slot number. Station and selected-target captions are placed first. Secondary enemy and friendly captions are suppressed when they overlap; their off-screen labels and duplicate 3D labels are omitted.
 - Automatic fire distinguishes no target, disabled fire, active fire, out of range, outside the firing arc and blocked line of sight. Feedback consumes the existing `SpaceShip.firing_blocker` result used by shot validation. A client's interpolated geometry can briefly differ from the server under latency; the server still decides whether a shot fires.
 - Shield damage produces a thin expanding ring; hull damage produces crossed sparks; destruction produces a larger expanding burst. Clients observe authoritative health decreases without replaying damage. The existing reward message reports the local pilot's actual awarded share.
 - Outpost 01 retains its distance marker, with a labeled edge arrow when outside the view. Station and target captions take priority over friendly captions.
 - Original procedural laser, shield, hull, destruction and confirmed station-service sounds use a six-voice pool, distance attenuation and repetition limits. Esc opens master/effects sliders and mute, saved locally in `user://audio.cfg`. Dedicated servers create no audio node and no impact meshes. Presentation never changes damage, prices or rewards.
 
-Integration follow-ups depend on the unmerged `feat/sector-alien-variety` and `feat/station-equipment` branches. Use the enemy branch's `Alien.kind` and sector roster for Scout/Sentinel/Heavy captions and limit secondary enemy labels, keeping the selected target and station visible. Keep its reward-share calculation. Trigger the purchase cue only from the equipment branch's successful server confirmation, using the optional sound cue on `SessionCombat.message`. Do not infer purchases from wallet changes. Repeat the busy visual check with its actual multi-alien fights after integration. Ship models are not a dependency.
+Alien feedback integration retains the per-alien reward-share calculation and has passed a rendered ten-client run with all five aliens fighting and dying. The equipment branch must trigger the purchase cue only from a successful server confirmation, using the optional sound cue on `SessionCombat.message`. Do not infer purchases from wallet changes. Ship models are not a dependency.
 
 The rendered replay covers click/Tab selection, fire-state reasons using real collision geometry, shield/hull hits, rewards and return/repair. Two processes verify 38/37-credit cooperative shares. A ten-pilot presentation fixture checks bounded effects and crowded labels; it is not a multi-alien or network capacity benchmark. See [README.md](README.md#feedback-validation) for evidence and limits.
 
