@@ -1,7 +1,7 @@
 {
   "Aegis": {
-    "mesh_components": 228,
-    "base_faces": 20770,
+    "mesh_components": 475,
+    "base_faces": 31722,
     "draft": false,
     "views": [
       "perspective",
@@ -12,8 +12,8 @@
     ]
   },
   "Goliath": {
-    "mesh_components": 221,
-    "base_faces": 11490,
+    "mesh_components": 333,
+    "base_faces": 15764,
     "draft": false,
     "views": [
       "perspective",
@@ -24,8 +24,8 @@
     ]
   },
   "Bigboy": {
-    "mesh_components": 270,
-    "base_faces": 15864,
+    "mesh_components": 412,
+    "base_faces": 18568,
     "draft": false,
     "views": [
       "perspective",
@@ -36,8 +36,8 @@
     ]
   },
   "Defcom": {
-    "mesh_components": 220,
-    "base_faces": 10428,
+    "mesh_components": 334,
+    "base_faces": 11502,
     "draft": false,
     "views": [
       "perspective",
@@ -48,8 +48,8 @@
     ]
   },
   "Leonov": {
-    "mesh_components": 240,
-    "base_faces": 10440,
+    "mesh_components": 356,
+    "base_faces": 13072,
     "draft": false,
     "views": [
       "perspective",
@@ -60,8 +60,8 @@
     ]
   },
   "Liberator": {
-    "mesh_components": 197,
-    "base_faces": 10022,
+    "mesh_components": 292,
+    "base_faces": 7948,
     "draft": false,
     "views": [
       "perspective",
@@ -72,8 +72,8 @@
     ]
   },
   "Nostromo": {
-    "mesh_components": 234,
-    "base_faces": 10424,
+    "mesh_components": 338,
+    "base_faces": 11398,
     "draft": false,
     "views": [
       "perspective",
@@ -84,8 +84,8 @@
     ]
   },
   "Phoenix": {
-    "mesh_components": 196,
-    "base_faces": 15326,
+    "mesh_components": 278,
+    "base_faces": 17282,
     "draft": false,
     "views": [
       "perspective",
@@ -96,8 +96,8 @@
     ]
   },
   "Piranha": {
-    "mesh_components": 191,
-    "base_faces": 10130,
+    "mesh_components": 319,
+    "base_faces": 11354,
     "draft": false,
     "views": [
       "perspective",
@@ -108,8 +108,8 @@
     ]
   },
   "Spearhead": {
-    "mesh_components": 209,
-    "base_faces": 7942,
+    "mesh_components": 286,
+    "base_faces": 9032,
     "draft": false,
     "views": [
       "perspective",
@@ -120,8 +120,8 @@
     ]
   },
   "Vengeance": {
-    "mesh_components": 318,
-    "base_faces": 19332,
+    "mesh_components": 498,
+    "base_faces": 21028,
     "draft": false,
     "views": [
       "perspective",
@@ -132,8 +132,8 @@
     ]
   },
   "Yamato": {
-    "mesh_components": 291,
-    "base_faces": 22148,
+    "mesh_components": 457,
+    "base_faces": 23630,
     "draft": false,
     "views": [
       "perspective",
