@@ -483,17 +483,12 @@ func tick(delta: float) -> void:
 func send_snapshot() -> void:
 	if multiplayer.get_peers().is_empty():
 		return
-	# Keep each datagram below the ENet MTU even at the ten-player limit.
-	var state: Dictionary = {}
+	# One player per packet leaves room for equipment stats and a full accepted contract.
 	snapshot_sequence += 1
 	for id: int in ships:
 		var ship := ships[id]
-		state[id] = {"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}
+		var state := {id: {"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}}
 		state[id].merge(combat.pack_player(id))
-		if state.size() == 2:
-			snapshot.rpc(state, {}, snapshot_sequence)
-			state = {}
-	if not state.is_empty():
 		snapshot.rpc(state, {}, snapshot_sequence)
 	for enemy: Alien in sector.aliens.values():
 		snapshot.rpc({}, combat.pack_alien(enemy), snapshot_sequence)

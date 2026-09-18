@@ -7,6 +7,14 @@ func request(client: Sector, sequence: int, action: String, subject: String, shi
 	await settle(0.1)
 
 
+func press(client: Sector, key: Key) -> void:
+	var event := InputEventKey.new()
+	event.keycode = key
+	event.pressed = true
+	client._unhandled_input(event)
+	await settle()
+
+
 func screenshot(client: Sector, label: String) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
@@ -37,8 +45,10 @@ func run() -> void:
 	var combat := client.session.combat
 	check(combat.inventory["items"].size() == 3 and client.credits == 12000, "Only authenticated inventory and wallet reach the client")
 	check(ship.laser_damage == 11 and ship.max_shield == 70 and ship.cruise_speed == 36 and ship.boost_speed == 78, "Starter performance is preserved")
-	var chunk := {id: client.session.goals[id], 2: client.session.goals[id]}
-	check(var_to_bytes([chunk, server.session.combat.pack_alien(), 1]).size() < 1200, "Two-player snapshot with equipment stats leaves room below the ENet MTU")
+	var snapshot: Dictionary = client.session.goals[id].duplicate(true)
+	snapshot["contract"] = HuntingContracts.accept("sentinel")
+	check(var_to_bytes([{id: snapshot}, {}, 1]).size() < 1200, "Player snapshot with equipment and an active contract leaves room below the ENet MTU")
+	print("Snapshot payload: one player=%d bytes; two players=%d bytes" % [var_to_bytes([{id: snapshot}, {}, 1]).size(), var_to_bytes([{id: snapshot, 2: snapshot}, {}, 1]).size()])
 	client.get_viewport().size = Vector2i(960, 600)
 	client.get_viewport().render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	if DisplayServer.get_name() != "headless":
@@ -49,13 +59,30 @@ func run() -> void:
 	client.shop.open()
 	await settle()
 	check(client.shop.visible and client.paused, "Station shop opens and stops flight commands")
+	check(not client.hud.audio_controls.visible, "Equipment panel hides pause-menu audio controls")
+	await press(client, KEY_C)
+	check(client.hud.contract_panel.visible and not client.shop.visible and client.paused and not client.hud.audio_controls.visible, "C switches from equipment to contracts while flight stays paused")
+	await press(client, KEY_B)
+	check(client.shop.visible and not client.hud.contract_panel.visible and client.paused and not client.hud.audio_controls.visible, "B switches back to equipment without overlapping panels")
+	await press(client, KEY_F7)
+	check(client.session.menu.visible and not client.shop.visible and not client.hud.contract_panel.visible, "Session menu closes both station panels")
+	await press(client, KEY_ESCAPE)
+	check(not client.paused and not client.session.menu.visible, "Esc resumes flight after the session menu")
+	await press(client, KEY_B)
 	await screenshot(client, "equipment-starter")
+	client.audio.muted = false
+	client.audio.master = 1.0
+	client.audio.effects = 1.0
+	client.audio.last_played.clear()
 	client.shop.buys["laser"].pressed.emit()
 	await settle()
 	await replicate(server)
 	check(client.credits == 9000 and combat.inventory["items"].has("purchase-1"), "Shop buy grants a distinct stored item and deducts its price")
+	check(client.audio.last_played.has("purchase"), "Successful server-confirmed purchase plays its sound")
+	client.audio.last_played.erase("purchase")
 	await request(client, 1, "buy", "laser")
 	check(store.pilots["pilot0"]["credits"] == 9000 and combat.inventory["items"].size() == 4, "Duplicate purchase changes neither credits nor inventory")
+	check(not client.audio.last_played.has("purchase"), "Duplicate purchase does not replay the success sound")
 	await request(client, 2, "buy", "laser")
 	check(combat.inventory["items"].size() == 5, "Separate intentional purchase of the same model succeeds")
 	await request(client, 3, "fit", "purchase-1", "starter", "generator1")
@@ -100,15 +127,17 @@ func run() -> void:
 	await replicate(server)
 	check(ship.cruise_speed == 44 and client.player.cruise_speed == 44 and client.player.boost_speed == 86, "Two engines add speed to server and client prediction")
 	await request(client, 9, "buy", "laser")
+	client.audio.last_played.erase("purchase")
 	await request(client, 10, "buy", "laser")
 	check(combat.station_message.contains("Insufficient") and combat.inventory["revision"] == 9 and store.pilots["pilot0"]["credits"] == 600, "Insufficient funds grant no item and leave the sequence unchanged")
+	check(not client.audio.last_played.has("purchase"), "Failed purchase does not play a success sound")
 	await replicate(server)
 	await screenshot(client, "equipment-insufficient")
 	client.shop.close()
-	ship.position = Vector3(0, 60, 0)
+	ship.position = server.alien.home_position + Vector3(0, 0, 100)
 	ship.rotation = Vector3.ZERO
 	ship.velocity = Vector3.ZERO
-	server.alien.position = Vector3(0, 60, -100)
+	server.alien.position = server.alien.home_position
 	await physics_frame
 	await replicate(server)
 	client.select_target(client.alien)
@@ -171,7 +200,9 @@ func run() -> void:
 	check(store.failed and store.pilots["pilot0"]["equipment"] == saved["equipment"] and store.pilots["pilot0"]["credits"] == 5000 and FileAccess.get_file_as_string(path) == disk_before, "Failed purchase persists neither deduction nor item and latches failure")
 	var migration_dir := store.path.get_base_dir().path_join("migration")
 	DirAccess.make_dir_absolute(migration_dir)
-	var legacy := {"verifier": test_token(0).sha256_text(), "credits": 4345, "contract": {"id": "test", "progress": 2}}
+	var legacy_contract := HuntingContracts.accept("scout")
+	legacy_contract["progress"] = 2
+	var legacy := {"verifier": test_token(0).sha256_text(), "credits": 4345, "contract": legacy_contract}
 	var legacy_path := migration_dir.path_join("pilots.json")
 	var file := FileAccess.open(legacy_path, FileAccess.WRITE)
 	file.store_string(JSON.stringify({"version": 1, "pilots": {"pilot0": legacy}}))
@@ -179,7 +210,7 @@ func run() -> void:
 	var migration := PilotStore.new()
 	check(migration.open(migration_dir) and migration.pilots["pilot0"]["credits"] == 4345, "Migration preserves a nonzero wallet")
 	migration.transact("pilot0", 1, "buy", "laser", "", "")
-	check(migration.pilots["pilot0"]["contract"]["id"] == "test" and migration.pilots["pilot0"]["contract"]["progress"] == 2, "Migration and equipment saves preserve unrelated contract fields")
+	check(migration.pilots["pilot0"]["contract"] == legacy_contract, "Migration and equipment saves preserve the accepted contract and progress")
 	migration.close()
 	check(migration.open(migration_dir) and migration.pilots["pilot0"]["equipment"]["items"].size() == 4, "Repeated startup grants no additional starter equipment")
 	migration.close()

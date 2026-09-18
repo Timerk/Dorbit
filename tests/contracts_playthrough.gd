@@ -1,5 +1,5 @@
 extends "res://tests/flight_playthrough.gd"
-## Render a real client accepting, hunting three Scouts and claiming from a disposable server.
+## Render a contract hunt, claim, purchase and fitting, then verify server restart recovery.
 
 var server: Sector
 var flying := false
@@ -24,7 +24,8 @@ func run() -> void:
 	DirAccess.make_dir_recursive_absolute(directory)
 	var token := "contract-replay".sha256_text()
 	var file := FileAccess.open(directory.path_join("pilots.json"), FileAccess.WRITE)
-	file.store_string(JSON.stringify({"version": 1, "pilots": {"replay": {"verifier": token.sha256_text(), "credits": 0}}}))
+	# Seed an upgrade budget; the replay checks the loop, not time-to-first-purchase balance.
+	file.store_string(JSON.stringify({"version": 1, "pilots": {"replay": {"verifier": token.sha256_text(), "credits": 3000}}}))
 	file.close()
 	OS.set_environment("DORBIT_DATA_DIR", directory)
 	var world := SubViewport.new()
@@ -103,6 +104,25 @@ func run() -> void:
 		root.size = Vector2i(960, 600)
 		await create_timer(0.4).timeout
 		await snapshot("contracts-07-small-window")
+	await press(KEY_B)
+	check(sector.shop.visible and not sector.hud.contract_panel.visible and not sector.hud.audio_controls.visible, "B switches from the contract board to equipment")
+	sector.shop.buys["laser"].pressed.emit()
+	await create_timer(0.4).timeout
+	check(sector.session.combat.inventory["items"].has("purchase-1") and sector.credits == 180, "Contract and kill rewards remain after buying the laser")
+	sector.shop.items.select(sector.shop.item_ids.find("purchase-1"))
+	sector.shop.destination.select(1)
+	await process_frame
+	sector.shop.fit_button.pressed.emit()
+	await create_timer(0.4).timeout
+	check(sector.player.laser_damage == 22, "Purchased laser fits through station controls")
+	await snapshot("contracts-08-equipped")
+	sector.session.disconnect_session("Progression restart")
+	server.session.disconnect_session("Progression restart")
+	await create_timer(0.3).timeout
+	check(server.session.host(24690) == OK, "Server restarts with the combined progression ledger")
+	sector.session.join("127.0.0.1", 24690)
+	await create_timer(0.7).timeout
+	check(sector.session.received_snapshot and sector.credits == 180 and sector.active_contract.is_empty() and sector.player.laser_damage == 22 and sector.session.combat.inventory.get("revision") == 2, "Restart preserves rewards, cleared contract and purchased fitting together")
 	await finish_replay()
 
 

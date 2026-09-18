@@ -239,7 +239,7 @@ func _draw() -> void:
 		elif player.time_since_hit < 5.0:
 			label = "REPAIRS AVAILABLE IN %d s" % ceili(5.0 - player.time_since_hit)
 		text_at(Vector2(width - 310, height - 256), label, 14, GREEN)
-		text_at(Vector2(width - 310, height - 279), "B  EQUIPMENT SHOP / FITTING", 14, CYAN)
+		text_at(Vector2(width - 310, height - 304), "B  EQUIPMENT SHOP / FITTING", 14, CYAN)
 	var controls := "WASD  Move    Q/E  Rise / descend    RMB  Steer    Tab  Target    Space  Fire    Shift  Boost    R  Repair    Esc  Pause"
 	if shared:
 		controls = "WASD  Move    Q/E  Rise / descend    RMB  Steer    Tab  Target    Space  Fire    Shift  Boost    R  Repair    F7  Session"

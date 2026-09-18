@@ -288,7 +288,7 @@ func pack_player(id: int) -> Dictionary:
 	var data := health(session.ships[id])
 	data.merge(records[id])
 	var ship := session.ships[id]
-	# Fixed four-number wire format keeps two-player snapshot chunks below the MTU.
+	# Replicate combat and movement stats without exposing the owner's full inventory.
 	data["stats"] = Vector4(ship.laser_damage, ship.max_shield, ship.cruise_speed, ship.boost_speed)
 	return data
 
@@ -434,6 +434,7 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 		publish_inventory(id, blocker)
 		return
 	var pilot_id := session.pilot_ids[id]
+	var previous_revision: int = session.store.pilots[pilot_id]["equipment"]["revision"]
 	var result := session.store.transact(pilot_id, sequence, action, subject, ship, slot)
 	if session.store.failed:
 		session.stop_for_save_failure()
@@ -442,6 +443,8 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 	records[id]["credits"] = pilot["credits"]
 	Equipment.apply_stats(session.ships[id], Equipment.stats(pilot["equipment"]))
 	publish_inventory(id, result)
+	if action == "buy" and pilot["equipment"]["revision"] > previous_revision:
+		message(id, result, "purchase")
 
 
 func publish_inventory(id: int, result: String = "") -> void:
