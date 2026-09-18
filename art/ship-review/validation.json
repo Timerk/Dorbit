@@ -1,8 +1,8 @@
 {
-  "ships": 2,
+  "ships": 12,
   "checks": [
-    "Only Aegis and Goliath models remain",
-    "Both saved files reopen in Blender",
+    "All twelve requested base hulls are present, with no extra models",
+    "All saved files reopen in Blender",
     "Mesh components parented to the ship root",
     "Nonempty mesh geometry with materials",
     "Finite base and evaluated vertex coordinates",
@@ -28,6 +28,96 @@
       "packed_references": 2,
       "cameras": 5,
       "bytes": 405946
+    },
+    {
+      "name": "Bigboy",
+      "mesh_components": 270,
+      "base_faces": 15864,
+      "evaluated_faces": 36703,
+      "packed_references": 1,
+      "cameras": 5,
+      "bytes": 367884
+    },
+    {
+      "name": "Defcom",
+      "mesh_components": 220,
+      "base_faces": 10428,
+      "evaluated_faces": 27057,
+      "packed_references": 1,
+      "cameras": 5,
+      "bytes": 272438
+    },
+    {
+      "name": "Leonov",
+      "mesh_components": 240,
+      "base_faces": 10440,
+      "evaluated_faces": 29869,
+      "packed_references": 1,
+      "cameras": 5,
+      "bytes": 291300
+    },
+    {
+      "name": "Liberator",
+      "mesh_components": 197,
+      "base_faces": 10022,
+      "evaluated_faces": 24296,
+      "packed_references": 1,
+      "cameras": 5,
+      "bytes": 268811
+    },
+    {
+      "name": "Nostromo",
+      "mesh_components": 234,
+      "base_faces": 10424,
+      "evaluated_faces": 28788,
+      "packed_references": 1,
+      "cameras": 5,
+      "bytes": 300765
+    },
+    {
+      "name": "Phoenix",
+      "mesh_components": 196,
+      "base_faces": 15326,
+      "evaluated_faces": 26732,
+      "packed_references": 1,
+      "cameras": 5,
+      "bytes": 333905
+    },
+    {
+      "name": "Piranha",
+      "mesh_components": 191,
+      "base_faces": 10130,
+      "evaluated_faces": 23282,
+      "packed_references": 1,
+      "cameras": 5,
+      "bytes": 287301
+    },
+    {
+      "name": "Spearhead",
+      "mesh_components": 209,
+      "base_faces": 7942,
+      "evaluated_faces": 24402,
+      "packed_references": 1,
+      "cameras": 5,
+      "bytes": 306587
+    },
+    {
+      "name": "Vengeance",
+      "mesh_components": 318,
+      "base_faces": 19332,
+      "evaluated_faces": 40576,
+      "packed_references": 1,
+      "cameras": 5,
+      "bytes": 347795
+    },
+    {
+      "name": "Yamato",
+      "mesh_components": 291,
+      "base_faces": 22148,
+      "evaluated_faces": 40648,
+      "packed_references": 1,
+      "cameras": 5,
+      "bytes": 328670
     }
   ]
 }

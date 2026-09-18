@@ -11,6 +11,8 @@ CARD=(29,35,42)
 WHITE=(228,233,238)
 MUTED=(153,167,179)
 FONT=Path('C:/Windows/Fonts/segoeui.ttf')
+NAMES=['Aegis','Goliath','Bigboy','Defcom','Leonov','Liberator','Nostromo',
+       'Phoenix','Piranha','Spearhead','Vengeance','Yamato']
 
 
 def font(size):
@@ -34,7 +36,7 @@ def put(im,path,rect,trim=False):
     im.paste(image,(x+(w-image.width)//2,y+(h-image.height)//2),image)
 
 
-for name in ['Aegis','Goliath']:
+for name in NAMES:
     if len(sys.argv)>1 and name not in sys.argv[1:]:
         continue
     slug=name.lower()
@@ -56,9 +58,15 @@ for name in ['Aegis','Goliath']:
     if name=='Aegis':
         label(im,(54,670),'ADDITIONAL GEOMETRY VIEW',20,MUTED)
         put(im,HERE/'references/aegis-engineering-browser-crop.png',(54,710,552,260))
-    else:
+    elif name=='Goliath':
         label(im,(54,670),'SUPPLEMENTARY ANGLE',20,MUTED)
         put(im,HERE/'references/goliath-secondary.webp',(126,720,380,240))
+    else:
+        label(im,(54,700),'REFERENCE LIMITS',20,MUTED)
+        for j,line in enumerate(['Base catalogue render guides shape and paint.',
+                                 'Small details and unseen surfaces are inferred.',
+                                 'Source image is packed into the Blender file.']):
+            label(im,(54,752+j*42),line,19,MUTED)
     label(im,(678,155),'NEW MODEL / RENDERED IN BLENDER',20,MUTED)
     put(im,HERE/'previews'/(slug+'.png'),(675,210,1070,735),trim=True)
     label(im,(44,1025),'Angles are approximate. Unseen surfaces and small mechanical details are reconstructed.',21,MUTED)
@@ -82,3 +90,21 @@ for name in ['Aegis','Goliath']:
     label(im,(42,1220),'Reference study. Underside, internal joints and exact panel depths are inferred.',21,MUTED)
     im.save(HERE/'previews'/(slug+'-views.jpg'),quality=94)
     print('SHEETS',name)
+
+if len(sys.argv)==1:
+    im=Image.new('RGB',(2000,1470),BG)
+    d=ImageDraw.Draw(im)
+    label(im,(36,22),'Ten additional base ships / Blender model review',36)
+    label(im,(38,79),'Same modeling style as the approved Aegis and Goliath | Individual files in models/',22,MUTED)
+    for i,name in enumerate(NAMES[2:]):
+        x=20+(i%5)*396
+        y=140+(i//5)*640
+        d.rounded_rectangle((x,y,x+376,y+610),radius=14,fill=CARD)
+        label(im,(x+18,y+18),name,28)
+        label(im,(x+18,y+67),'SOURCE',17,MUTED)
+        put(im,HERE/'references'/(name.lower()+'-base.png'),(x+22,y+100,332,195),trim=True)
+        label(im,(x+18,y+318),'MODEL',17,MUTED)
+        put(im,HERE/'previews'/(name.lower()+'.png'),(x+12,y+348,352,242),trim=True)
+    label(im,(38,1430),'Sources enlarged for review. Fine details and hidden surfaces are reconstructed. Ships are not shown to a common scale.',21,MUTED)
+    im.save(HERE/'previews/additional-ships-overview.jpg',quality=94)
+    print('OVERVIEW ten additional ships')
