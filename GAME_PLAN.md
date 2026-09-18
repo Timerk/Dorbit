@@ -141,7 +141,7 @@ Develop an original name, ship and alien designs, interface, and audio for any e
 
 The precise visual style and detailed asset pipeline remain open. Improve models, lighting, effects, and sound progressively after the core gameplay works.
 
-The user requested a separate Blender review collection of recognizable DarkOrbit ships. Following review, the broad first collection was removed and the scope narrowed to detailed base Aegis and Goliath models using the supplied image catalogue, before attempting further ships or designs. This reference-based art study lives in `art/ship-review`, outside Godot's imported assets. It does not add ships to gameplay or change the current progression milestone. Final production art remains subject to review.
+The user requested a separate Blender review collection of recognizable DarkOrbit ships. Following review, the broad first collection was removed and replaced with detailed base Aegis and Goliath models using the supplied image catalogue. The user approved that style and requested ten additional base hulls: Bigboy, Defcom, Leonov, Liberator, Nostromo, Phoenix, Piranha, Spearhead, Vengeance and Yamato. This reference-based art study lives in `art/ship-review`, outside Godot's imported assets. It does not add ships to gameplay or change the current progression milestone. Final production art remains subject to review.
 
 ## Development milestones
 

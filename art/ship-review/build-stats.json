@@ -22,5 +22,125 @@
       "side",
       "front"
     ]
+  },
+  "Bigboy": {
+    "mesh_components": 270,
+    "base_faces": 15864,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Defcom": {
+    "mesh_components": 220,
+    "base_faces": 10428,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Leonov": {
+    "mesh_components": 240,
+    "base_faces": 10440,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Liberator": {
+    "mesh_components": 197,
+    "base_faces": 10022,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Nostromo": {
+    "mesh_components": 234,
+    "base_faces": 10424,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Phoenix": {
+    "mesh_components": 196,
+    "base_faces": 15326,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Piranha": {
+    "mesh_components": 191,
+    "base_faces": 10130,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Spearhead": {
+    "mesh_components": 209,
+    "base_faces": 7942,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Vengeance": {
+    "mesh_components": 318,
+    "base_faces": 19332,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Yamato": {
+    "mesh_components": 291,
+    "base_faces": 22148,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
   }
 }

@@ -1,4 +1,4 @@
-"""Reopen and validate the two saved review models using Blender."""
+"""Reopen and validate the saved review models using Blender."""
 import bpy
 import json
 import math
@@ -6,10 +6,12 @@ import struct
 from pathlib import Path
 
 HERE=Path(__file__).resolve().parent
-expected={'aegis.blend','goliath.blend'}
+names=['Aegis','Goliath','Bigboy','Defcom','Leonov','Liberator','Nostromo',
+       'Phoenix','Piranha','Spearhead','Vengeance','Yamato']
+expected={name.lower()+'.blend' for name in names}
 assert {p.name for p in (HERE/'models').glob('*.blend')}==expected
 report=[]
-for name in ['Aegis','Goliath']:
+for name in names:
     path=HERE/'models'/(name.lower()+'.blend')
     bpy.ops.wm.open_mainfile(filepath=str(path))
     root=bpy.data.objects.get(name)
@@ -42,9 +44,9 @@ for name in ['Aegis','Goliath']:
         'evaluated_faces':evaluated_faces,'packed_references':len(references),
         'cameras':len(cameras),'bytes':path.stat().st_size})
     print('VERIFIED',report[-1],flush=True)
-(HERE/'validation.json').write_text(json.dumps({'ships':2,'checks':[
-    'Only Aegis and Goliath models remain',
-    'Both saved files reopen in Blender',
+(HERE/'validation.json').write_text(json.dumps({'ships':len(names),'checks':[
+    'All twelve requested base hulls are present, with no extra models',
+    'All saved files reopen in Blender',
     'Mesh components parented to the ship root',
     'Nonempty mesh geometry with materials',
     'Finite base and evaluated vertex coordinates',
