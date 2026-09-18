@@ -87,6 +87,10 @@ func run() -> void:
 	for client in [partner, spectator]:
 		station(server, client)
 		await action(server, client, "accept", "scout")
+	for peer in [id, partner.multiplayer.get_unique_id()]:
+		var packet := {peer: combat.pack_player(peer)}
+		packet[peer].merge({"position": Vector3.ZERO, "rotation": Vector3.ZERO, "velocity": Vector3.ZERO, "energy": 100.0})
+		check(var_to_bytes([packet, {}, 1]).size() < 1200, "Active-contract player record leaves room for RPC and ENet headers")
 	await kill(server, "Sentinel", [pilot, partner])
 	check(pilot.active_contracts["sentinel"]["progress"] == 1 and pilot.active_contracts["scout"]["progress"] == 0, "Only the matching hunt progresses")
 	var before := pilot.credits + partner.credits

@@ -89,6 +89,8 @@ Distribute the new file and restart. The old token no longer works. To revoke ac
 
 Press **B** within 60 m of Outpost 01 while moving at most 8 m/s and five seconds clear of damage. Buy equipment into storage, select an owned item and a compatible empty slot, then install it. Move installed items to storage for free. The Pathfinder has two laser slots and two generator slots shared by shields and engines. The panel previews the resulting stats and explains blocked actions. The server keeps running while it is open.
 
+B and C switch between equipment and contracts. Only one station panel is visible at a time; Esc resumes flight and F7 opens the session menu. Pause-menu volume controls stay hidden while either station panel is open.
+
 New pilots start with one of each item installed. A second laser costs 3,000 CR; shields and engines cost 2,400 CR each. All values are provisional, with economy assumptions in [GAME_PLAN.md](GAME_PLAN.md). Fitting changes do not repair or refill your ship. Inventory and fittings survive rescue, reconnects and restart. Equipment purchases require the persistent dedicated server; the offline development fixture retains its original stats.
 
 ### Saves, backups and recovery
@@ -197,11 +199,11 @@ Esc opens master and effects volume controls and mute. Preferences stay on this 
 
 On 18 September, alien variety was integrated with the merged feedback changes. Enemy captions use type and slot number; the station and selected target take priority over secondary contacts. The Windows gameplay/network/persistence checks passed, as did the rendered 2560 x 1440 Scout hunt and feedback replay. A separate 60-second run with one rendered client, nine headless clients and a dedicated server kept ten pilots connected: all five aliens fought and died, with overlapping encounters on 33.8% of ticks. The capped 1440 x 900 client averaged 59.97 FPS with 16.82 ms p95 frame time on the RTX A500 Laptop GPU. This is a local integration check, not an internet or reference-hardware benchmark. The busy encounter capture above now shows that run.
 
-Purchases follow on the equipment branch. Its successful server confirmation must trigger `SessionCombat.message(peer_id, text, "purchase")`; failed purchases and wallet snapshots must not trigger it. Clients and server must use matching builds.
+Purchases play a confirmation cue only after the server commits a new transaction. Failed and duplicate purchases stay silent. Clients and server must use matching builds.
 
 `tests/hunting_contracts_test.gd` checks authenticated concurrent contracts, shared kill progress, automatic payouts, restart recovery, abandonment, repeatability, legacy migration and failed saves. Both check helpers run it. For a rendered replay, run Godot with `--path . --script res://tests/contracts_playthrough.gd`. It provisions a disposable pilot and server on UDP 24690, accepts all three hunts, completes the Scout hunt with automatic payment in flight, and saves frames under `build/validation/contracts-*.png`.
 
-The contract board hides pause-menu audio controls. Equipment integration follows in PR #15 and needs to incorporate the concurrent contract collection and automatic payouts.
+The contract board hides pause-menu audio controls. Equipment purchases and fitting share the version-2 persistence path with concurrent contracts and automatic payouts. The replay starts with a 3,000-credit purchase budget, buys and installs a second laser after the Scout hunt, and checks that credits, all accepted contracts and fitting survive a server restart. Inventory uses an owner-only reliable channel; world snapshots send one player per packet with equipment stats and active contracts.
 
 On 2 October 2026, the full Windows check command passed after the concurrent-hunt update, and the expanded contract checks passed 43 assertions. The rendered replay accepted all three hunts, paid the Scout reward in flight for 180 total credits, kept the other hunts active, and repeated the Scout offer at the station. The board was inspected at 960 x 600.
 
