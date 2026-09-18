@@ -41,6 +41,7 @@ func press(code: Key) -> void:
 	event = event.duplicate()
 	event.pressed = false
 	Input.parse_input_event(event)
+	await process_frame
 
 
 func snapshot(label: String) -> void:
@@ -107,7 +108,7 @@ func feedback_checks() -> void:
 	var start := sector.player.position
 	sector.player.position = Vector3(200, 100, 50)
 	sector.alien.position = sector.player.position + Vector3(0, 0, -250)
-	await physics_frame
+	await create_timer(0.1).timeout
 	check(sector.hud.fire_feedback() == "NO TARGET", "Missing target has its own feedback")
 	if rendered:
 		var click := InputEventMouseButton.new()
