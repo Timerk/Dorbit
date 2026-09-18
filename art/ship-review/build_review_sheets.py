@@ -25,8 +25,10 @@ def label(im,xy,text,size=22,fill=WHITE):
 
 def put(im,path,rect,trim=False):
     image=Image.open(path).convert('RGBA')
-    if trim and image.getbbox():
-        image=image.crop(image.getbbox())
+    if trim:
+        bounds=image.getchannel('A').point(lambda a:255 if a>40 else 0).getbbox()
+        if bounds:
+            image=image.crop(bounds)
     x,y,w,h=rect
     image.thumbnail((w,h),Image.Resampling.LANCZOS)
     # A deliberate enlargement for small references, labeled on the sheet.
@@ -52,7 +54,7 @@ for name in NAMES:
     d.rounded_rectangle((30,135,630,1000),radius=16,fill=CARD)
     d.rounded_rectangle((650,135,1770,1000),radius=16,fill=CARD)
     label(im,(54,155),'SUPPLIED BASE IMAGE',20,MUTED)
-    put(im,HERE/'references'/(slug+'-base.png'),(75,190,510,415))
+    put(im,HERE/'references'/(slug+'-base.png'),(75,190,510,415),trim=True)
     source=Image.open(HERE/'references'/(slug+'-base.png'))
     label(im,(54,610),f'{source.width} x {source.height} source, enlarged for comparison',19,MUTED)
     if name=='Aegis':
@@ -98,7 +100,7 @@ if len(sys.argv)==1:
     im=Image.new('RGB',(2000,2110),BG)
     d=ImageDraw.Draw(im)
     label(im,(36,22),'Twelve base ships / revised Blender model review',36)
-    label(im,(38,79),'Liberator rebuilt | Reference-led detail pass on all ships | Individual files in models/',22,MUTED)
+    label(im,(38,79),'Aegis retained as benchmark | Revised geometry, colors and assemblies on the other eleven ships',22,MUTED)
     for i,name in enumerate(NAMES):
         x=20+(i%4)*495
         y=140+(i//4)*640
