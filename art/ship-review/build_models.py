@@ -552,6 +552,8 @@ def armored_hull(label, stations, paint='silver'):
             x,y,z,w,h=ends[0]
             if w>.22:
                 bolt((x+side*w*.46,y+.025,z+h+.031),radius=.018)
+                PARTS[-2].name=label+' fastener seat'
+                PARTS[-1].name=label+' fastener socket'
 
 
 def wing(label, outline, paint='silver', thickness=.07):
@@ -563,6 +565,8 @@ def wing(label, outline, paint='silver', thickness=.07):
     pipe(label+' leading edge',outline[:3],.018,'steel')
     for p in inset[1:-1]:
         bolt(Vector(p)+Vector((0,0,.022)),radius=.018)
+        PARTS[-2].name=label+' fastener seat'
+        PARTS[-1].name=label+' fastener socket'
 
 
 def vents(label, x,y,z, count=6, width=.26, step=.075, slope=0):
@@ -591,6 +595,8 @@ def engine_pod(label,x,y,z,radius=.3,length=1.05,paint='steel',front=False):
         box(label+' casing rail',(x+side*radius*.68,y,z+radius*.69),(.055,length*.71,.05),'gunmetal',.009)
         for dy in [-length*.27,length*.27]:
             bolt((x+side*radius*.4,y+dy,z+radius*.92),radius=.02)
+            PARTS[-2].name=label+' fastener seat'
+            PARTS[-1].name=label+' fastener socket'
     # Interrupted curved cowl tiles and exposed seams replace a plain cylinder.
     for j in range(3):
         lo=y-length*.43+j*length*.29
@@ -614,7 +620,37 @@ def engine_pod(label,x,y,z,radius=.3,length=1.05,paint='steel',front=False):
             (radius*.52,length*.026,.028),'steel',.004)
 
 
-def rounded_hull(label, stations, paint='silver', canopy=False):
+def stepped_drive(label,x,y,z,radius,length,paint='sage',front_light=False):
+    """Short bell intake, exposed ribbed waist and separate rear drive canister."""
+    tube(label+' dark core',(x,y-length*.48,z),(x,y+length*.55,z),radius*.66,'dark')
+    for lo,hi,r1,r2,mat in [(-.52,-.35,.73,1,paint),(-.35,-.06,1,.89,paint),
+            (-.04,.18,.69,.69,'dark'),(.20,.43,.85,.78,paint),(.45,.61,.61,.55,'gunmetal')]:
+        tube(label+' stepped casing',(x,y+length*lo,z),(x,y+length*hi,z),
+             radius*r1,mat,r2=radius*r2,bevel=.013)
+    for dy in [-.36,-.07,.22,.43]:
+        ring(label+' casing collar',(x,y+length*dy,z),radius*(.96 if dy<0 else .78),
+             .015,'steel',(0,1,0))
+    # Intake is a dark bore with a narrow lip, not a flat luminous disk.
+    mouth=y-length*.53
+    ring(label+' intake rim',(x,mouth,z),radius*.67,.029,'steel',(0,1,0))
+    tube(label+' intake shadow',(x,mouth-.012,z),(x,mouth-.018,z),radius*.59,'recess',bevel=0)
+    tube(label+' recessed intake lens',(x,mouth-.02,z),(x,mouth-.022,z),
+         radius*.32,'light' if front_light else 'dark',bevel=0)
+    for i in range(10):
+        a=i*math.tau/10
+        xx=x+radius*.71*math.cos(a);zz=z+radius*.71*math.sin(a)
+        tube(label+' exposed waist rib',(xx,y-length*.02,zz),(xx,y+length*.21,zz),
+             radius*.06,'steel',vertices=8,bevel=.003)
+    for side in [-1,1]:
+        panel(label+' shoulder armor',[(x+side*radius*.46,y-length*.26,z+radius*.88),
+            (x+side*radius*.70,y-length*.08,z+radius*.73),
+            (x+side*radius*.56,y+length*.29,z+radius*.73),
+            (x+side*radius*.22,y+length*.23,z+radius*.92)],.026,paint,.009)
+    nozzle(label+' aft',(x,y+length*.66,z),(0,1,0),radius*.45,.12,True)
+
+
+def rounded_hull(label, stations, paint='silver', canopy=False, glass_mat='blueglass',
+                 core_inset=0, canopy_trim=None):
     """Elliptical longitudinal sections, split into fitted curved armor strips."""
     def sample(j,t):
         neighbors=[stations[min(max(k,0),len(stations)-1)] for k in [j-1,j,j+1,j+2]]
@@ -622,7 +658,8 @@ def rounded_hull(label, stations, paint='silver', canopy=False):
                      for a,b,c,d in zip(*neighbors))
     sections=[sample(j,t/6) for j in range(len(stations)-1) for t in range(6)]+[stations[-1]]
     segments=64
-    verts=[(x+w*math.cos(i*math.tau/segments),y,z+h*math.sin(i*math.tau/segments))
+    verts=[(x+max(.006,w-core_inset)*math.cos(i*math.tau/segments),y,
+            z+max(.006,h-core_inset)*math.sin(i*math.tau/segments))
            for x,y,z,w,h in sections for i in range(segments)]
     faces=[tuple(reversed(range(segments)))]
     for j in range(len(sections)-1):
@@ -642,11 +679,39 @@ def rounded_hull(label, stations, paint='silver', canopy=False):
                         # Preserve the upper shoulder shell above a narrow open bay.
                         angle=(.40+q/8*.37) if k==0 else (math.pi-.77+q/8*.37)
                     patch.append((x+(w+.018)*math.cos(angle),y,z+(h+.018)*math.sin(angle)))
-            glass=canopy and j in [1,2,3] and k in [1,2]
+            glass=canopy and j in ([1,2,3] if canopy is True else canopy) and k in [1,2]
             faces=[(r*9+i,r*9+i+1,(r+1)*9+i+1,(r+1)*9+i) for r in range(6) for i in range(8)]
             obj=mesh(label+(' canopy glazing' if glass else ' curved armor'),patch,faces,
-                     'blueglass' if glass else paint,0,True)
+                     glass_mat if glass else paint,0,True)
             solid=obj.modifiers.new('Armor thickness','SOLIDIFY'); solid.thickness=.025
+    if canopy_trim:
+        # Wide metal strips follow the same surface as the glazing and armor.
+        glazed=[1,2,3] if canopy is True else canopy
+        for side in [-1,1]:
+            for j in glazed:
+                verts=[]
+                for row in range(13):
+                    x,y,z,w,h=sample(j,row/12)
+                    for q in range(5):
+                        angle=math.pi/4-.17+q*.22/4
+                        verts.append((x+side*(w+.032)*math.cos(angle),y,
+                                      z+(h+.032)*math.sin(angle)))
+                obj=mesh(label+' broad canopy trim',verts,
+                    [(r*5+i,r*5+i+1,(r+1)*5+i+1,(r+1)*5+i)
+                     for r in range(12) for i in range(4)],canopy_trim,0,True)
+                mod=obj.modifiers.new('Trim thickness','SOLIDIFY');mod.thickness=.015
+    if canopy and canopy is not True:
+        for angle in [math.pi/4,3*math.pi/4]:
+            pts=[]
+            for j in canopy:
+                for q in range(13):
+                    x,y,z,w,h=sample(j,q/12)
+                    pts.append((x+(w+.028)*math.cos(angle),y,z+(h+.028)*math.sin(angle)))
+            pipe(label+' fitted glazing rim',pts,.017,'steel')
+        for j in [min(canopy),max(canopy)+1]:
+            x,y,z,w,h=stations[j]
+            pipe(label+' glazing end frame',[(x+(w+.028)*math.cos(a),y,z+(h+.028)*math.sin(a))
+                for a in [math.pi/4+i*math.pi/48 for i in range(25)]],.017,'steel')
 
 
 def build_bigboy():
@@ -680,20 +745,16 @@ def build_bigboy():
 
 def build_defcom():
     group('Defcom | compact green fuselage')
-    armored_hull('Central carapace',[(0,-.78,.06,.23,.12),(0,-.24,.23,.49,.27),
-        (0,.65,.25,.51,.26),(0,1.16,.13,.30,.14)],'forest')
-    loft('Long dark canopy',[(0,-.66,.25,.14,.025),(0,-.11,.52,.28,.035),
-        (0,.50,.55,.25,.028),(0,.79,.43,.17,.025)],'glass')
-    for s in [-1,1]:
-        pipe('Canopy frame',[(s*.16,-.69,.29),(s*.30,-.1,.57),(s*.27,.5,.59),(s*.18,.82,.45)],.025,'sage')
+    rounded_hull('Central carapace',[(0,-.78,.06,.23,.12),(0,-.24,.23,.49,.27),
+        (0,.65,.25,.51,.26),(0,1.16,.13,.30,.14)],'forest',canopy=(0,1),glass_mat='glass')
     group('Defcom | curved scythe wings')
     for s in [-1,1]:
-        stations=[(s*.48,.63,.15,.16,.16),(s*.90,.44,.13,.28,.18),
-            (s*1.25,.10,.04,.30,.15),(s*1.53,-.37,-.06,.22,.11),
-            (s*1.64,-.91,-.17,.12,.07),(s*1.54,-1.40,-.25,.025,.025)]
-        armored_hull('Scythe wing',stations,'forest')
-        pipe('Scythe leading polished rim',[(s*.80,.44,.29),(s*1.15,.1,.20),
-            (s*1.44,-.37,.07),(s*1.59,-.91,-.1),(s*1.54,-1.40,-.22)],.022,'sage')
+        stations=[(s*.48,.63,.15,.16,.12),(s*.90,.44,.13,.28,.13),
+            (s*1.25,.10,.04,.30,.10),(s*1.53,-.37,-.06,.22,.075),
+            (s*1.64,-.91,-.17,.12,.045),(s*1.54,-1.40,-.25,.012,.012)]
+        rounded_hull('Scythe wing',stations,'forest')
+        pipe('Scythe leading polished rim',[(s*.80,.44,.255),(s*1.15,.1,.145),
+            (s*1.44,-.37,.015),(s*1.59,-.91,-.125),(s*1.54,-1.40,-.24)],.014,'sage')
         for i in range(4):
             y=.47-i*.14
             box('Wing root radiator',(s*.66,y,.33),(.21,.035,.025),'gunmetal',.005)
@@ -818,7 +879,7 @@ def build_phoenix():
     # Upright egg profile is deliberately taller than it is wide.
     rounded_hull('Red capsule',[(0,-.91,-.32,.15,.22),(0,-.69,-.08,.38,.53),
         (0,-.18,.21,.52,.83),(0,.36,.30,.48,.99),(0,.69,.21,.27,.72),
-        (0,.82,.05,.08,.23)],'red',canopy=True)
+        (0,.82,.05,.08,.23)],'red',canopy=True,core_inset=.035,canopy_trim='sage')
     group('Phoenix | large wraparound canopy')
     # Glazing replaces shell panels, so red armor cannot intersect the canopy.
     for s in [-1,1]:
@@ -913,10 +974,10 @@ def build_vengeance():
         tube('Cheek recessed bore',(s*.35,-1.68,-.11),(s*.35,-1.81,-.11),.066,'recess')
     group('Vengeance | four outboard turbine blocks')
     for s in [-1,1]:
-        armored_hull('Tall engine shoulder',[(s*.78,-.22,.31,.25,.31),
-            (s*.88,.34,.40,.32,.45),(s*.86,.93,.36,.28,.37)],'gunmetal')
-        engine_pod('Upper outboard turbine',s*1.00,.47,.77,.32,1.06,'sage')
-        engine_pod('Lower outboard turbine',s*1.05,.67,-.13,.28,.93,'sage')
+        armored_hull('Tall engine shoulder',[(s*.78,.15,.31,.25,.24),
+            (s*.88,.47,.40,.32,.37),(s*.86,.93,.36,.28,.31)],'gunmetal')
+        stepped_drive('Upper outboard turbine',s*1.00,.47,.77,.32,.95,'sage')
+        stepped_drive('Lower outboard turbine',s*1.05,.67,-.13,.28,.82,'sage')
         panel('Vertical turbine brace',[(s*1.27,.0,-.10),(s*1.32,.0,.71),
             (s*1.30,.77,.82),(s*1.28,1.08,-.09)],.07,'steel',.02,(s,0,0))
         for z in [.07,.21,.35,.49]:
@@ -939,10 +1000,10 @@ def build_yamato():
         pipe('Stepped cockpit rim',[(s*.23,-1.02,.36),(s*.27,-.49,.65),(s*.24,-.12,.74)],.028,'steel')
         wing('Upper engine mounting yoke',[(s*.26,.04,.39),(s*.91,.30,.50),
             (s*1.10,.78,.48),(s*.32,.98,.39)],'gunmetal',.17)
-        engine_pod('Large upper drive pod',s*.92,.58,.70,.35,1.04,'sage',True)
+        stepped_drive('Large upper drive pod',s*.92,.58,.70,.32,.87,'sage',True)
         ring('Blue upper drive band',(s*.92,.62,.70),.354,.028,'cobalt',(0,1,0))
         tube('Lower pod support',(s*.21,-.41,-.14),(s*.60,-.28,-.32),.095,'gunmetal')
-        engine_pod('Small low drive pod',s*.62,-.08,-.35,.19,.51,'sage',True)
+        stepped_drive('Small low drive pod',s*.62,-.08,-.35,.16,.42,'sage',True)
         ring('Small drive blue band',(s*.62,-.01,-.35),.194,.016,'cobalt',(0,1,0))
         vents('Long aft radiator',s*.13,.43,.63,7,.12,.10,slope=-.16)
         for y,z in [(-1.20,.22),(-.67,.48),(.18,.70)]:
@@ -1178,6 +1239,262 @@ BUILDERS = dict(zip(NAMES,[build_aegis,build_goliath,build_bigboy,build_defcom,
     build_spearhead,build_vengeance,build_yamato]))
 
 
+def reshape(prefixes, transform):
+    """Move an assembly and all its fitted detail together in ship coordinates."""
+    bpy.context.view_layer.update()
+    for obj in PARTS:
+        if prefixes is None or obj.name.startswith(prefixes):
+            matrix=obj.matrix_world.copy(); inverse=matrix.inverted()
+            for vertex in obj.data.vertices:
+                vertex.co=inverse @ Vector(transform(matrix @ vertex.co))
+
+
+def remove_parts(prefixes):
+    for obj in list(PARTS):
+        if obj.name.startswith(prefixes):
+            PARTS.remove(obj)
+            bpy.data.objects.remove(obj,do_unlink=True)
+
+
+def arched_canopy(label,stations,glass='glass',frame='steel'):
+    """Curved fitted glazing, with separate panes and continuous edge framing.
+
+    Each station gives y, sill height, half width, and crown rise.
+    """
+    loft(label+' mounting',[(0,y,z-.025,w+.022,.035) for y,z,w,h in stations],'dark',.012)
+    for a,b in zip(stations,stations[1:]):
+        verts=[]
+        for t in [.018,.982]:
+            y,z,w,h=[a[i]+(b[i]-a[i])*t for i in range(4)]
+            verts.extend((w*math.cos(i*math.pi/16),y,z+h*math.sin(i*math.pi/16)) for i in range(17))
+        obj=mesh(label+' glass pane',verts,[(i,i+1,i+18,i+17) for i in range(16)],glass,0,True)
+        mod=obj.modifiers.new('Glazing thickness','SOLIDIFY');mod.thickness=.012
+    for side in [-1,1]:
+        pipe(label+' sill rim',[(side*w,y,z) for y,z,w,h in stations],.016,frame)
+    for y,z,w,h in stations:
+        pipe(label+' hoop frame',[(w*math.cos(i*math.pi/24),y,z+h*math.sin(i*math.pi/24))
+            for i in range(25)],.013,frame)
+
+
+def refine_reference_shapes(name):
+    """Proportion and material corrections from the per-ship reference review."""
+    if name=='Aegis':
+        return
+    group(name+' | silhouette and fitted reference fittings')
+    if name=='Goliath':
+        # The reference has thin blades, a small bridge, and a low aft spine.
+        reshape(('Continuous curved arm','Sculpted silver arm','Inner arm conduit','Arm ',
+                 'Fine arm armor','Layered arm edge'),lambda p:(p.x,p.y,p.z*.78))
+        reshape(('Raised swept dorsal fin','Dorsal fin inset','Dorsal fin leading'),
+                lambda p:(p.x,.80+(p.y-.80)*.85,.36+(p.z-.36)*.80))
+        for s in [-1,1]:
+            for j in range(6):
+                y=.28+j*.155
+                panel('Shoulder segmented silver scale',[(s*.33,y,.43),(s*.49,y+.025,.44),
+                    (s*.48,y+.11,.44),(s*.32,y+.105,.46)],.018,'silver',.005)
+            for start,end in [(1.12,2.03),(2.28,3.25),(3.51,4.49),(4.78,5.70),(6.01,6.80)]:
+                verts=[]
+                for j in range(17):
+                    t=start+(end-start)*j/16;x,y,z,w,h=arm_station(t)
+                    p=arm_station(t-.002);q=arm_station(t+.002)
+                    tangent=Vector((q[0]-p[0],q[1]-p[1],0)).normalized()
+                    across=Vector((-tangent.y,tangent.x,0))
+                    for u in [-.39,.24]:
+                        crown=1.07-(u+.47)*.09/.82
+                        verts.append((s*(x+across.x*w*u),y+across.y*w*u,(z+h*crown)*.78+.008))
+                mesh('Fitted dark arm crown inset',verts,[(j*2,j*2+1,j*2+3,j*2+2) for j in range(16)],'gunmetal',0,True)
+    elif name=='Bigboy':
+        remove_parts(('Olive cockpit glazing','Bridge metal rim','Bridge rear instrument',
+                      'Bridge aft instrument','Raised bridge','Rear raised equipment deck','Aft deck grille'))
+        # The bridge is a small raised command unit, not a broad windshield.
+        rounded_hull('Compact command pedestal',[(0,-.32,.73,.22,.07),(0,.08,.95,.24,.21),
+            (0,.39,1.04,.23,.18),(0,.63,.91,.19,.11)],'gunmetal')
+        arched_canopy('Small olive bridge',[(-.34,.78,.14,.05),(-.08,1.10,.17,.09),
+            (.28,1.19,.15,.09),(.46,1.10,.12,.06)],'oliveglass')
+        armored_hull('Aft command overhang',[(0,.57,1.13,.33,.08),(0,.95,1.21,.48,.12),
+            (0,1.48,1.17,.43,.13),(0,1.63,1.08,.29,.08)],'bluegrey')
+        for s in [-1,1]:
+            # Main center equipment lies along the curved nose crown.
+            points=[(s*.13,-1.74,.51),(s*.13,-1.40,.68),(s*.13,-1.06,.78),
+                    (s*.13,-.69,.83),(s*.13,-.39,.86)]
+            pipe('Nose long inset channel',points,.030,'recess')
+            for y,z in [(-1.40,.70),(-1.06,.79),(-.69,.84),(-.39,.87)]:
+                box('Nose inset longitudinal module',(s*.13,y,z),(.067,.08,.018),'gunmetal',.004)
+            service_bay('Aft command flank',s,.40,1.20,1.16,.48,.12)
+            tube('Bridge side hydraulic',(s*.22,-.18,.83),(s*.24,.24,1.14),.019,'steel')
+        reshape(('Upper rear engine',),lambda p:(p.x,1.30+(p.y-1.30)*.76,p.z-.05))
+    elif name=='Defcom':
+        remove_parts(('Scythe internal seam','Scythe lower edge','Overlapping shoulder scute'))
+        for s in [-1,1]:
+            rounded_hull('Raised curved shoulder',[(s*.48,.23,.32,.13,.045),
+                (s*.61,.54,.35,.20,.10),(s*.53,.90,.29,.19,.075)],'forest')
+            for j in range(5):
+                panel('Shoulder dark inset segment',[(s*.60,.30+j*.1,.418),(s*.77,.33+j*.1,.405),
+                    (s*.72,.375+j*.1,.408),(s*.58,.35+j*.1,.43)],.012,'dark',.003)
+            pipe('Shoulder green trim',[(s*.38,.22,.42),(s*.44,.54,.47),(s*.36,.86,.40)],.017,'sage')
+        reshape(('Rear shoulder fin',),lambda p:(p.x,.60+(p.y-.60)*.62,.21+(p.z-.21)*.45))
+    elif name=='Leonov':
+        reshape(('Central spine',),lambda p:(p.x*(.40 if p.y<-.55 else .67),p.y,p.z*.85))
+        remove_parts(('Bridge plinth','Blue black cockpit','Bridge antenna','Bridge instrument pack'))
+        rounded_hull('Rounded bridge shell',[(0,-.35,.35,.18,.07),(0,-.05,.48,.23,.20),
+            (0,.33,.52,.22,.19),(0,.56,.39,.17,.09)],'silver',canopy=(0,1),glass_mat='glass')
+        for s in [-1,1]:
+            panel('Forward fork black recess',[(s*.40,-1.79,.018),(s*.48,-1.48,.079),
+                (s*.64,-.91,.126),(s*.58,-.76,.145),(s*.44,-1.34,.06)],.012,'recess',.003)
+            panel('Outer shoulder angular inset',[(s*.82,-.40,.156),(s*.98,-.23,.15),
+                (s*.90,.31,.17),(s*.75,.40,.18)],.022,'dark',.005)
+            tube('Bridge side sensor',(s*.21,.28,.55),(s*.24,.28,.55),.065,'gunmetal')
+            # Small open boxes on the two aft rails, visible in the catalogue.
+            for y in [1.10,1.36]:
+                box('Aft rail equipment well',(s*.84,y,.284),(.15,.14,.022),'recess',.005)
+                for dx in [-.085,.085]:
+                    box('Aft rail well rim',(s*.84+dx,y,.31),(.019,.18,.045),'steel',.004)
+    elif name=='Liberator':
+        remove_parts(('Inset central glazing','Glazing fitted rim','Central aft cooling'))
+        # Bulged cockpit fairing with a narrow window, blue shell around it.
+        rounded_hull('Central blue cockpit fairing',[(0,-1.04,.14,.12,.06),
+            (0,-.42,.31,.25,.19),(0,.37,.40,.27,.22),(0,1.07,.28,.16,.11)],
+            'bluegrey',canopy=(0,1,2),glass_mat='blueglass')
+        reshape(('Exposed channel crossmember',),lambda p:(p.x,p.y,p.z-.032))
+        # Break the ladder appearance with fitted dark equipment beds and orange tips.
+        for s in [-1,1]:
+            for j in range(5):
+                y=.05+j*.24;z=.108+(y+.32)*.081
+                box('Channel recessed equipment cell',(s*.86,y,z),(.21,.15,.057),'graphite',.009)
+                box('Channel cell inset face',(s*.86,y-.014,z+.033),(.13,.105,.012),'dark',.003)
+            panel('Channel forward copper marking',[(s*.73,-.47,.083),(s*.94,-.47,.083),
+                (s*.94,-.37,.093),(s*.73,-.37,.093)],.012,'copper',.003)
+            for j in range(3):
+                panel('Pod dark radial armor break',[(s*(1.43+j*.08),-.82+j*.13,.073),
+                    (s*(1.69+j*.015),-.77+j*.13,.05),(s*(1.68+j*.015),-.73+j*.13,.05),
+                    (s*(1.42+j*.08),-.78+j*.13,.075)],.015,'dark',.003)
+    elif name=='Nostromo':
+        # Embed short turbines in the rear deck instead of mounting them on stalks.
+        reshape(('Large upper turbine',),lambda p:(p.x,.76+(p.y-.72)*.76,.67+(p.z-.94)*.90))
+        remove_parts(('Engine support shoulder','Engine support feed'))
+        reshape(('Long smoked cockpit',),lambda p:(p.x*.66,-.60+(p.y+.60)*.78,p.z+.025))
+        for s in [-1,1]:
+            panel('Nostromo dark cheek opening',[(s*.38,-1.77,-.06),(s*.72,-1.28,.07),
+                (s*.90,-.68,.17),(s*.88,-.31,.18),(s*.69,-.60,-.05),
+                (s*.39,-1.53,-.15)],.026,'recess',.011,(s,0,.3))
+            pipe('Nostromo cheek raised perimeter',[(s*.35,-1.84,-.03),(s*.69,-1.35,.13),
+                (s*.87,-.65,.23),(s*.88,-.26,.24)],.018,'gunmetal')
+            for j in range(6):
+                y=-1.24+j*.14
+                tube('Cheek slanted exposed rib',(s*(.75+j*.026),y,.09+j*.02),
+                    (s*(.65+j*.035),y+.11,-.05+j*.015),.017,'steel',vertices=8)
+            panel('Low wing blue vent recess',[(s*1.05,.40,.005),(s*1.27,.67,-.02),
+                (s*1.43,.95,-.06),(s*1.17,.83,-.05)],.018,'recess',.006)
+    elif name=='Phoenix':
+        remove_parts(('Thick canopy frame','Canopy central crown seam','Crown service port'))
+        for s in [-1,1]:
+            for j in range(3):
+                y=-.42+j*.18
+                box('Capsule small side access cover',(s*.49,y,.16+j*.09),(.032,.09,.14),'red',.012)
+        reshape(None,lambda p:(p.x*1.12,p.y,(p.z+.30)*.87-.30))
+    elif name=='Piranha':
+        remove_parts(('Dark inset canopy','Canopy edging'))
+        arched_canopy('Small Piranha bridge',[(-.45,.325,.115,.018),(-.07,.377,.15,.07),
+            (.38,.373,.12,.055),(.59,.34,.07,.02)])
+        reshape(('Raised tail fin',),lambda p:(p.x,p.y,.23+(p.z-.23)*.56))
+        for s in [-1,1]:
+            pipe('Piranha long blue fairing',[(s*.22,-.74,.24),(s*.32,-.11,.32),
+                (s*.29,.69,.34),(s*.22,1.26,.22)],.036,'bluegrey')
+            for j in range(7):
+                y=-1.02+j*.32
+                box('Piranha longitudinal flank break',(s*.37,y,.20),(.045,.11,.025),'dark',.004)
+    elif name=='Spearhead':
+        remove_parts(('Black forward canopy','Inclined tower','Tower front stepped instruments'))
+        arched_canopy('Spearhead narrow bridge',[(-1.78,.02,.047,.01),(-1.06,.27,.12,.025),
+            (-.36,.405,.12,.025),(-.15,.43,.068,.014)],'glass','gunmetal')
+        # A slender exposed structure supports the high pod; avoid a broad solid slab.
+        loft('Narrow dark tower spine',[(0,.15,.39,.11,.11),(0,.38,.90,.13,.23),
+            (0,.65,1.25,.15,.31),(0,1.06,1.27,.14,.27)],'dark',.012)
+        for s in [-1,1]:
+            for j in range(6):
+                y=.41+j*.095; z=.68+j*.12
+                box('Tower stacked instrument',(s*.19,y,z),(.13,.16,.105),'gunmetal',.013)
+                tube('Instrument connector',(s*.26,y-.025,z),(s*.31,y-.025,z),.021,'copper',vertices=12)
+            pipe('Cobalt nose spine strip',[(s*.06,-1.51,.135),(s*.14,-1.04,.293),
+                (s*.16,-.39,.415),(s*.10,-.10,.449)],.022,'cobalt')
+        reshape(('Long fine outrigger',),lambda p:(p.x,.20+(p.y-.20)*.55,p.z))
+        remove_parts(('Outrigger thin joint line',))
+    elif name=='Vengeance':
+        remove_parts(('Faceted teal cockpit','Heavy cockpit frame','Canopy crossbar','Vertical turbine brace',
+                      'Outer brace cooling gap','Vertical engine shoulder rack','Cockpit flanking slots',
+                      'Cockpit flanking equipment mount','Cheek recessed bore'))
+        arched_canopy('Compact Vengeance canopy',[(-1.11,.35,.14,.025),(-.43,.67,.23,.10),
+            (.04,.80,.20,.07),(.30,.73,.13,.025)],'glass')
+        for s in [-1,1]:
+            panel('Cockpit angular side window',[(s*.35,-.50,.60),(s*.47,-.23,.61),
+                (s*.43,.02,.72),(s*.29,-.08,.79)],.018,'glass',.005,(s,0,.5))
+            pipe('Stepped engine vertical frame',[(s*1.26,-.01,-.08),(s*1.31,.09,.21),
+                (s*1.29,.06,.48),(s*1.23,-.03,.74)],.054,'sage')
+            for z in [.16,.39,.61]:
+                box('Engine shoulder square unit',(s*1.10,.43,z),(.40,.23,.13),'dark',.023)
+                box('Engine shoulder unit cap',(s*1.32,.43,z),(.031,.17,.09),'sage',.012)
+            # Reference cheek apertures run lengthwise and read as dark slots.
+            slot=[(s*.914,-.40,.13),(s*.922,-.33,.30),(s*.909,.34,.31),(s*.904,.42,.15)]
+            panel('Long cheek aperture',slot,.02,'recess',.012,(s,0,0))
+            pipe('Cheek aperture silver rim',slot+[slot[0]],.017,'steel')
+        # Compact heavy fighter proportions in the catalogue.
+        reshape(None,lambda p:(p.x,p.y*.80,p.z))
+    elif name=='Yamato':
+        remove_parts(('Stepped dark cockpit','Stepped cockpit rim','Blue upper drive band','Small drive blue band'))
+        for i,(ya,yb,za,zb,w) in enumerate([(-1.23,-.94,.27,.38,.20),
+                (-.87,-.53,.43,.64,.23),(-.44,-.12,.68,.77,.215)]):
+            floor_a,floor_b=[(.22,.34),(.38,.54),(.55,.60)][i]
+            loft('Stepped cockpit mounting',[(0,ya,(za+floor_a)/2,w,(za-floor_a)/2),
+                (0,yb,(zb+floor_b)/2,w,(zb-floor_b)/2)],'gunmetal',.01)
+            panel('Separate stepped cockpit pane',[(-w,ya,za),(w,ya,za),(w,yb,zb),(-w,yb,zb)],
+                .028,'glass',.012)
+            pipe('Stepped window surround',[(-w,ya,za+.02),(w,ya,za+.02),
+                (w,yb,zb+.02),(-w,yb,zb+.02),(-w,ya,za+.02)],.018,'gunmetal')
+        for s in [-1,1]:
+            for yy,rr in [(.29,.324),(.81,.262)]:
+                ring('Upper blue cowl band',(s*.92,yy,.70),rr,.037,'cobalt',(0,1,0))
+            ring('Small cobalt drive band',(s*.62,-.10,-.35),.16,.017,'cobalt',(0,1,0))
+            panel('Nose dark angular front',[(s*.04,-1.575,-.24),(s*.22,-1.575,-.18),
+                (s*.20,-1.575,.04),(s*.05,-1.575,-.015)],.016,'dark',.006,(0,-1,0))
+            pipe('Long cobalt upper rail',[(s*.23,.22,.70),(s*.25,.69,.64),
+                (s*.18,1.25,.49)],.028,'bluegrey')
+
+
+def reference_palette(name):
+    """Keep Aegis's approved finish; distinguish the other ships' source colors."""
+    if name=='Aegis':
+        return
+    palettes={
+        'steel':((.095,.115,.13),.58,.42),'silver':((.19,.21,.23),.61,.39),
+        'pale':((.25,.28,.29),.52,.40),'gunmetal':((.043,.052,.063),.50,.43),
+        'dark':((.012,.019,.024),.38,.46),'graphite':((.026,.034,.043),.43,.45),
+        'bluegrey':((.03,.055,.115),.58,.43),'sage':((.040,.090,.063),.55,.43),
+        'glass':((.008,.025,.029),.20,.32),'blueglass':((.024,.07,.15),.25,.30),
+        'oliveglass':((.075,.084,.031),.34,.27),'red':((.23,.009,.015),.30,.41),
+        'cobalt':((.013,.041,.22),.42,.37)}
+    if name=='Goliath':
+        palettes.update(steel=((.15,.17,.18),.65,.39),silver=((.26,.28,.30),.62,.40),
+                        glass=((.07,.035,.013),.32,.26))
+    elif name=='Defcom':
+        palettes.update(forest=((.025,.080,.032),.41,.39),sage=((.12,.22,.13),.50,.39))
+    elif name=='Phoenix':
+        palettes.update(sage=((.15,.22,.19),.63,.33),steel=((.16,.23,.21),.61,.36),
+                        blueglass=((.13,.17,.22),.50,.32))
+    elif name=='Nostromo':
+        palettes.update(steel=((.057,.068,.079),.48,.43),silver=((.10,.12,.14),.50,.44))
+    for key,(color,metal,rough) in palettes.items():
+        mat=M[key];mat.diffuse_color=(*color,1)
+        bs=mat.node_tree.nodes.get('Principled BSDF')
+        bs.inputs['Base Color'].default_value=(*color,1)
+        bs.inputs['Metallic'].default_value=metal;bs.inputs['Roughness'].default_value=rough
+        for node in mat.node_tree.nodes:
+            if node.type=='BUMP':
+                node.inputs['Strength'].default_value=.055
+                node.inputs['Distance'].default_value=.004
+    bs=M['light'].node_tree.nodes.get('Principled BSDF')
+    bs.inputs['Emission Strength'].default_value=.65
+
+
 def point_at(obj, target):
     obj.rotation_euler=(Vector(target)-obj.location).to_track_quat('-Z','Y').to_euler()
 
@@ -1208,6 +1525,7 @@ def setup(name, draft=False):
         ('glass','Dark sensor glass',(.095,.04,.016) if name=='Goliath' else (.018,.055,.068),.62,.21,0),
         ('light','Green reactor lens' if name=='Aegis' else 'Ion blue',
          (.13,.72,.025) if name=='Aegis' else (.10,.39,.72),.35,.22,1.7) ]}
+    reference_palette(name)
     BUILDERS[name]()
     reference_details(name)
     if name not in {'Aegis','Goliath','Phoenix'}:
@@ -1230,6 +1548,7 @@ def setup(name, draft=False):
                         verts.append(tuple(p))
                     mesh(obj.name+' mounting recess',verts,
                          [tuple(p.vertices) for p in obj.data.polygons],'recess',.006)
+    refine_reference_shapes(name)
     root=bpy.data.objects.new(name,None)
     scene.collection.objects.link(root)
     root['forward_axis']='-Y, Z up'
@@ -1267,7 +1586,7 @@ def setup(name, draft=False):
     scene.view_settings.look='AgX - Medium High Contrast'
     group('Studio | cameras and lights')
     cameras={}
-    views={'perspective':(7,-10,10) if name=='Aegis' else ((10,-6,7) if name=='Goliath' else (7,-10,7)),
+    views={'perspective':(7,-10,10) if name=='Aegis' else ((10,-6,7) if name=='Goliath' else (10,-7,6)),
            'rear':(-7,10,5),'top':(0,0,15),'side':(15,0,0),'front':(0,-15,0)}
     for view,offset in views.items():
         data=bpy.data.cameras.new(name+' '+view)
