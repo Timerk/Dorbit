@@ -72,24 +72,24 @@ described in README.md. Restrict direct public-IP testing to the intended tester
 
 ## Private group access with Tailscale
 
-Tailscale is the chosen private network. The operator's Windows desktop already
-runs it; the VPS must join the same network before this replaces public-IP tests.
-Use the existing netcup console to bootstrap access if this computer has no SSH
-key installed on the VPS. On the Ubuntu VPS, follow the official
+Tailscale is the chosen private network. The VPS and both operator PCs have joined
+the same network. For a new server, use the netcup console to bootstrap access
+and authorize each operator PC's public SSH key. Keep private keys on their PCs.
+On the Ubuntu VPS, follow the official
 [Linux installation instructions](https://tailscale.com/download/linux).
 After installation, run from the VPS console:
 
 ```bash
-sudo tailscale up --ssh
+sudo tailscale up
 tailscale ip -4
 tailscale status
 ```
 
 Open the login URL on the operator's computer and authorize the VPS in the
 existing Tailscale account. Do not store login URLs, auth keys or credentials in
-the repository. `--ssh` enables Tailscale SSH on the private address; access is
-controlled by the network policy and still requires an existing Linux login.
-It does not install a Windows SSH key or change public OpenSSH authentication.
+the repository. Use ordinary OpenSSH through the Tailscale address, with
+authorized keys for the administrative Linux user. Keep password and root SSH
+login disabled. Tailscale SSH (`--ssh`) is not needed for this setup.
 
 Before adding friends, configure and test the access policy in the Tailscale
 admin console. Give the VPS a `tag:dorbit` tag owned by administrators, define
@@ -101,15 +101,13 @@ and allow these connections:
 | Operators | `tag:dorbit` | TCP 22 for administration; UDP 24567 for play |
 | Pilots | `tag:dorbit` | UDP 24567 only |
 
-Use the configured game port if different. Add a Tailscale SSH rule granting
-only operators access to the existing administrative Linux username, preferably
-with reauthentication (`check`). Game access does not require shell access.
+Use the configured game port if different. Game access does not require a Linux
+account or an authorized SSH key.
 Review existing broad allow rules: a restrictive grant does not cancel another
 grant that already permits all traffic. Preserve unrelated network access.
 Use policy tests to confirm a pilot can reach the game port and cannot reach
 SSH or unrelated services. See the official
-[grants](https://tailscale.com/docs/features/access-control/grants) and
-[Tailscale SSH](https://tailscale.com/docs/features/tailscale-ssh) documentation.
+[grants](https://tailscale.com/docs/features/access-control/grants) documentation.
 
 On Windows, verify `tailscale status`, then connect with
 `ssh ADMIN_USERNAME@SERVER_TAILSCALE_IP`. Use that same server address in Dorbit,
@@ -245,9 +243,10 @@ address this observed failure. Real-process WSL tests cover SIGTERM, Ctrl+C and
 repeated restart with a nonzero saved wallet, plus concurrent-server rejection,
 crash handling and preservation of invalid/interrupted saves. Crashes and forced
 termination still require the documented recovery; locks are never blindly deleted.
-The updated unit still needs deployment and stop/restart/reboot verification on
-the VPS. Updates and rollback require a real two-release rehearsal there.
-Sustained load with the friend group and private VPN setup remain pending.
+The updated unit still needs installation on the live service and an actual VPS
+reboot check. Abrupt crashes and power loss still require operator recovery.
+Sustained load with the friend group and restricted friend-group VPN grants
+remain pending.
 Authentication, network protocol and save format are unchanged.
 
 On 2026-09-14, a local WSL rehearsal prepared committed releases `5c08d13` and
@@ -260,4 +259,22 @@ SIGTERM stop exited successfully and removed the lock; the ledger remained
 byte-for-byte unchanged. These revisions differ only in documentation, so this
 validates release switching and compatible-client reconnects, not a future save
 migration. It did not install a local service or alter any firewall, and does not
-replace the pending systemd/reboot and real VPS rehearsal.
+replace the actual VPS checks below.
+
+On 2026-09-18, the original raw-Godot SIGTERM/SIGINT failure was reproduced in
+WSL. The shutdown branch passed 44 dedicated-server, 37 persistence and five
+process-shutdown tests there. Committed releases `519ff70` and `9065041` were
+then prepared on the VPS with `tools/deploy-server.sh`; both passed the same
+checks. A separate systemd service used the shipped unit settings, its own data
+directory and UDP port 24689. A Windows client authenticated, disconnected and
+reconnected after initial startup, systemd restart, update from A to B and
+rollback from B to A. Its wallet stayed at 137 credits, the ledger remained
+byte-for-byte unchanged, and each explicit stop removed the lock. The releases
+differ only in documentation. The temporary service and credentials were removed;
+the running production service and its saves were not touched by the rehearsal.
+
+Tailscale now connects the VPS and both operator PCs. Administration uses
+OpenSSH with a separate authorized key per PC. SSH and game reconnect checks
+passed over Tailscale, and the public-IP UFW allowances for TCP 22 and UDP 24567
+were removed. Restrict the Tailscale access policy before inviting friends;
+operator connectivity alone does not verify separation of operator/pilot access.
