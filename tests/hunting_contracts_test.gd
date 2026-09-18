@@ -88,11 +88,10 @@ func run() -> void:
 	for client in [partner, spectator]:
 		station(server, client)
 		await action(server, client, "accept", "scout")
-	var packet: Dictionary = {}
 	for peer in [id, partner.multiplayer.get_unique_id()]:
-		packet[peer] = combat.pack_player(peer)
+		var packet := {peer: combat.pack_player(peer)}
 		packet[peer].merge({"position": Vector3.ZERO, "rotation": Vector3.ZERO, "velocity": Vector3.ZERO, "energy": 100.0})
-	check(var_to_bytes([packet, {}, 1]).size() < 1300, "Two active-contract player records leave room for RPC and ENet headers")
+		check(var_to_bytes([packet, {}, 1]).size() < 1200, "Active-contract player record leaves room for RPC and ENet headers")
 	await kill(server, "Sentinel", [pilot, partner])
 	check(pilot.active_contract["progress"] == 0 and partner.active_contract["progress"] == 0, "Nonmatching kills still award credits but no contract progress")
 	var credits_before := pilot.credits + partner.credits
