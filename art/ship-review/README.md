@@ -1,8 +1,8 @@
 # DarkOrbit ship model review
 
-Twelve editable base-ship Blender models built around the supplied DarkOrbit image catalogue. This revision rebuilds Liberator and adds reference-led mechanical and surface detail to all twelve ships, including Aegis and Goliath. The previous 82-model collection remains removed. Nothing is connected to gameplay.
+Twelve editable base-ship Blender models built around the supplied DarkOrbit image catalogue. Aegis is the user's accepted quality benchmark and its model and renders are preserved. This revision corrects the other eleven ships' proportions, colors, glazing and assemblies after a close comparison with each supplied base image. Nothing is connected to gameplay.
 
-[Overview of all twelve revised ships and their source pictures](previews/additional-ships-overview.jpg)
+[Overview of all twelve ships and their source pictures](previews/additional-ships-overview.jpg)
 
 | Ship | Blender file | Reference comparison | Five-view sheet |
 | --- | --- | --- | --- |
@@ -25,28 +25,28 @@ The Outliner separates armor and mechanical assemblies. Five named cameras provi
 
 ## What changed
 
-Liberator now has a narrower pointed fuselage, broad sculpted forward pods with circular mechanical wells, and two open longitudinal channels with exposed actuators. The tall central fins and flat swept wings were replaced with small outboard rear stabilizers and layered pod shells. The supplied base picture controls the shape; a supplementary hangar picture confirms the arrangement.
+The review used Aegis's separation of painted armor, dark structure and exposed mechanisms as the finish benchmark. It also identified larger discrepancies that adding fasteners could not fix. The following table records the visible reference cues and resulting changes.
 
-The detail pass follows the visible assemblies in each reference:
-
-| Ship | Revised details |
+| Ship | Reference comparison and correction |
 | --- | --- |
-| Aegis | Exposed neck control blocks and hydraulic lines, engineering shell seams and access caps, emitter pins, lower service pods, green manipulator tips |
-| Goliath | Ports along the curved arm flanks, fitted double edge strips, shoulder equipment racks and rear spine machinery |
-| Bigboy | Open armor breaks along the flanks, exposed modules, dorsal equipment, articulated outrigger clamps and pistons |
-| Defcom | Overlapping shoulder armor, radiator banks, curved wing seams and lower edges, aft mechanics |
-| Leonov | Double fork rails, open-channel crossmembers, shoulder hatches and bridge instruments |
-| Liberator | Rebuilt pod-and-channel arrangement, circular bearings and radial mechanisms, fitted shell seams, actuator sleeves and rear bridges |
-| Nostromo | Layered nose cheeks, lateral equipment bays, segmented shoulder panels and turbine feeds |
-| Phoenix | Capsule seams and silver-green framing, side radiator slots, sensor bezel and small pale hull markings |
-| Piranha | Long shoulder rails, fine nose ribs, cockpit flank channels, wing-root vanes and aft supply cables |
-| Spearhead | Exposed tower rack, braces, front instruments, copper feed pipes and upper service hatches |
-| Vengeance | Vertical engine racks, stepped cheek details, cockpit-side ventilation and lower turbine plumbing |
-| Yamato | Stepped cheek insets, aft flank machinery, engine yoke couplings and supply lines |
+| Aegis | Accepted benchmark. The saved model, materials and all five renders remain unchanged. |
+| Goliath | The arms read as thinner blades with darker inset crowns. Reduced arm thickness and fin height; added curved, fitted crown insets while retaining silver edges and flank ports. |
+| Bigboy | The olive bridge is a small raised command unit under an aft overhang. Replaced the large flat windshield with a compact curved bridge, reshaped the overhang, shortened the aft drives, and deepened the blue paint. |
+| Defcom | The green wings and central shell are curved. Rebuilt the scythes and carapace as curved shells with fitted glazing, rounded shoulders and shorter rear fins. |
+| Leonov | The two forks dominate the front silhouette around a narrow center. Narrowed the central spine, replaced the tall block cockpit with a small curved bridge, and added open equipment wells on the aft rails. |
+| Liberator | The central blue cockpit is raised and curved above the needle nose. Added a fitted fairing and glazing, dark equipment cells inside the engine channels, copper markings and pod armor divisions. |
+| Nostromo | The turbines sit low against the dark aft body. Lowered and shortened them, removed the tall supports, narrowed the smoked cockpit and darkened the hull and exposed metal. |
+| Phoenix | The capsule is broader, with silver-green canopy trim. Widened and lowered the body, fitted broad metal strips to the glazing, revised the red paint and silvery canopy, and inset the underlying chassis to prevent it breaking through the curved armor. |
+| Piranha | The bridge and tail fins are small relative to the long nose rails. Replaced the large windshield with a narrow curved bridge, lowered the fins and added blue longitudinal fairings. |
+| Spearhead | The upper blue pod rests on exposed dark machinery. Replaced the broad tower slab with a narrow spine and instruments, reduced the cockpit and outriggers, and added the blue nose strips. |
+| Vengeance | A compact heavy fighter with stepped engine blocks and dark cheek apertures. Shortened the hull, rebuilt all four drives with bell intakes and exposed waists, reduced the canopy and replaced the broad engine braces. |
+| Yamato | The cockpit is visibly stepped and the drives have separate blue-banded sections. Replaced the long windshield with three mounted panes and rebuilt both sizes of drive pod. |
 
-Each model separates editable hull plates, engine parts, cockpit frames and mechanical details. Curved shells use fitted mesh panels. Turbines now have interrupted curved cowl tiles, exposed joints, rear casing ties and top radiator ribs as well as hollow mouths, recessed wells and inner vanes. These details continue the existing modeling style; the small catalogue pictures do not establish every fastener or internal assembly.
+Painted blue and green surfaces now have separate darker palettes instead of sharing the same bright metal finish. Glass is less reflective, metal grain is finer, and engine lenses are less luminous. Studio lighting is retained for inspection; it does not reproduce the source images' lighting. Most comparison cameras show more of the side to approach the catalogue angle. Aegis's camera remains unchanged.
 
-Aegis now has a tall U-shaped engineering body with a closed upper deck, green armor, a separate top emitter assembly, a sloped graphite nose, an exposed inclined neck, small articulated forward tools and swept rear fins. Goliath has curved arms with changing width, thickness and elevation, individual silver armor shells, a recessed central beak, raised dorsal fins, swept winglets and separate aft engines. Fine channels, fasteners, cooling slots and service parts are modeled geometry. Materials add only subtle procedural metal grain.
+Each model separates editable hull plates, engine parts, cockpit frames and mechanical details. Curved shells use fitted mesh panels. Vengeance and Yamato use short stepped drive assemblies; the other cylindrical engines retain their segmented cowls and radiator ribs. Glazing replaces selected curved shell panels on Defcom, Leonov and Liberator, avoiding overlapping glass and armor. Fasteners in reshaped assemblies move with their parent geometry.
+
+Aegis retains its U-shaped engineering body, green armor, top emitter, sloped graphite nose, exposed inclined neck, articulated forward tools and swept rear fins. Its layered construction is the benchmark for this collection. Fine channels, fasteners, cooling slots and service parts are modeled geometry. Materials add only subtle procedural metal grain.
 
 These are individually authored reconstructions for visual review. The source pictures establish the visible silhouettes and major assemblies. They do not resolve exact panel depths, the underside, internal joints or many small details; those parts are inferred. The images also differ in era, paint and camera angle. These models are reconstructions, not extracted game assets or exact replicas. There are no cosmetic variants, rigs, collision meshes, LODs or game exports in this pass.
 
@@ -61,7 +61,7 @@ The user's catalogue and downloaded family folders remain at `D:\Ship images`. C
 - Liberator also uses the 276 x 264 hangar image on [DarkOrbit Wiki](https://darkorbit.fandom.com/wiki/Liberator), preserved as the browser-delivered WebP. It confirms the broad forward pods and open channels. The ship itself occupies only a small part of that image, so it does not establish fine mechanical construction.
 - The ten additional ships use their supplied base catalogue PNGs from `D:\Ship images\<ship family>`. Copies are packed into each model and stored as `<ship>-base.png` under `references`. The provenance file records source galleries, local paths, native dimensions and SHA-256 hashes. Base hulls are modeled here; cosmetic designs and Plus variants are outside this request.
 
-The unrelated black/orange spaceship in the catalogue's fan-made Goliath viewer is excluded. The small historical GIFs do not establish rotating views. Displaying a catalogue image larger on a comparison sheet does not recover detail. Comparison cameras approximate the source angles; the sheets are visual reviews, not calibrated overlays.
+The unrelated black/orange spaceship in the catalogue's fan-made Goliath viewer is excluded. The small historical GIFs do not establish rotating views. Comparison sheets crop nearly transparent margins before enlarging the reference, so the ship fills its panel. This makes comparison easier but does not recover detail. Comparison cameras approximate the source angles; the sheets are visual reviews, not calibrated overlays.
 
 ## Rebuilding and checks
 
@@ -72,7 +72,7 @@ rtk proxy D:/Blender/blender.exe --background --factory-startup --python art/shi
 rtk proxy D:/Blender/blender.exe --background --factory-startup --python art/ship-review/validate_models.py
 ```
 
-Append `-- Bigboy` to rebuild one ship, or list several names after `--`. Names are case-sensitive as listed in the table. With no names the builder regenerates all twelve, including the approved pair. Add `--draft` after `--` for smaller, quicker perspective and top renders. Draft builds overwrite that ship's model and previews; rebuild without `--draft` before delivery. `--gpu` enables OptiX rendering on a supported NVIDIA GPU. The sheet builder uses Pillow:
+Append `-- Bigboy` to rebuild one ship, or list several names after `--`. Names are case-sensitive as listed in the table. With no names the builder regenerates all twelve, including Aegis; list the other names explicitly to preserve its accepted files. Add `--draft` after `--` for smaller, quicker perspective and top renders. Draft builds overwrite that ship's model and previews; rebuild without `--draft` before delivery. `--gpu` enables OptiX rendering on a supported NVIDIA GPU. The sheet builder uses Pillow:
 
 ```powershell
 rtk proxy C:/Users/TBerk/AppData/Local/Python/bin/python.exe art/ship-review/build_review_sheets.py
