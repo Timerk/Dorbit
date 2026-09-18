@@ -120,6 +120,7 @@ func build_menu() -> void:
 	status_label.custom_minimum_size.x = 540
 	rows.add_child(status_label)
 	back_button = add_button(rows, "Back to flight", func(): menu.hide(); sector.set_paused(false))
+	add_button(rows, "Settings", func(): sector.settings_menu.open(true))
 	add_button(rows, "Quit to desktop", func(): get_tree().quit())
 	menu.hide()
 
@@ -134,6 +135,8 @@ func add_button(parent: Node, title: String, action: Callable) -> Button:
 
 func open_menu() -> void:
 	sector.set_paused(true)
+	if is_instance_valid(sector.settings_menu):
+		sector.settings_menu.dismiss()
 	menu.show()
 	if active:
 		back_button.grab_focus()
@@ -565,11 +568,9 @@ func disconnect_session(message: String) -> void:
 		return
 	sector.player.collision_mask = 3
 	sector.respawn_player()
-	sector.set_paused(true)
 	status = message
-	menu.show()
 	join_button.disabled = false
-	join_button.grab_focus()
+	open_menu()
 
 
 func _exit_tree() -> void:
