@@ -65,6 +65,126 @@
         135
       ],
       "sha256": "9ad3b9d7a4bcadcd31adc595c927e5cf47de0b12cc9f43d4d431e17a4c034453"
+    },
+    {
+      "file": "bigboy-base.png",
+      "local_source": "D:\\Ship images\\Bigboy\\00 - Base - BigBoy.png",
+      "source_page": "https://darkorbitwiki.com/ships/bigboy/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        254,
+        206
+      ],
+      "sha256": "578ae5463ba71a0e3b19cf74ffe56ba4def8de93680174778642b931e6b8f2c6",
+      "image_url": "https://darkorbitwiki.com/images/bigboy.png"
+    },
+    {
+      "file": "defcom-base.png",
+      "local_source": "D:\\Ship images\\Defcom\\00 - Base - Defcom.png",
+      "source_page": "https://darkorbitwiki.com/ships/defcom/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        252,
+        200
+      ],
+      "sha256": "8c566f3ddd76068505027f54a6b9cc59ec92fdfbbd72317ab8148774d105e283",
+      "image_url": "https://darkorbitwiki.com/images/defcom.png"
+    },
+    {
+      "file": "leonov-base.png",
+      "local_source": "D:\\Ship images\\Leonov\\00 - Base - Leonov.png",
+      "source_page": "https://darkorbitwiki.com/ships/leonov/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        256,
+        208
+      ],
+      "sha256": "9c466ec2d85fba7904ca2dbb88fcd64291d899f96e6596a4c172d361f22f2921",
+      "image_url": "https://darkorbitwiki.com/images/leonov.png"
+    },
+    {
+      "file": "liberator-base.png",
+      "local_source": "D:\\Ship images\\Liberator\\00 - Base - Liberator.png",
+      "source_page": "https://darkorbitwiki.com/ships/liberator/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        252,
+        200
+      ],
+      "sha256": "6fdb12fc5d667da7448a95b257ab9b637081af0d12661011b54200a5047b602b",
+      "image_url": "https://darkorbitwiki.com/images/liberator.png"
+    },
+    {
+      "file": "nostromo-base.png",
+      "local_source": "D:\\Ship images\\Nostromo\\00 - Base - Nostromo.png",
+      "source_page": "https://darkorbitwiki.com/ships/nostromo/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        254,
+        206
+      ],
+      "sha256": "8d1123743f8c8394ba1bd9b82d3673cf0d974e62ef7f7eb08cbb72db00f91e88",
+      "image_url": "https://darkorbitwiki.com/images/nostromo.png"
+    },
+    {
+      "file": "phoenix-base.png",
+      "local_source": "D:\\Ship images\\Phoenix\\00 - Base - Phoenix.png",
+      "source_page": "https://darkorbitwiki.com/ships/phoenix/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        252,
+        200
+      ],
+      "sha256": "d72d71cb0863dde926dbcc073f29f4f64b16156f99bee85dabca13a59fa967cf",
+      "image_url": "https://darkorbitwiki.com/images/phoenix.png"
+    },
+    {
+      "file": "piranha-base.png",
+      "local_source": "D:\\Ship images\\Piranha\\00 - Base - Piranha.png",
+      "source_page": "https://darkorbitwiki.com/ships/piranha/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        254,
+        206
+      ],
+      "sha256": "4e486a59cb550e52cadda21eb54a632851f91c64913f49c455de3815c47ea63b",
+      "image_url": "https://darkorbitwiki.com/images/piranha.png"
+    },
+    {
+      "file": "spearhead-base.png",
+      "local_source": "D:\\Ship images\\Spearhead\\00 - Base - Spearhead.png",
+      "source_page": "https://darkorbitwiki.com/ships/spearhead/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        256,
+        208
+      ],
+      "sha256": "06d8a569a4298dcfd3907ec21b75015cd9204b6a1b71b2a59465328ae1d9075c",
+      "image_url": "https://darkorbitwiki.com/images/spearhead.png"
+    },
+    {
+      "file": "vengeance-base.png",
+      "local_source": "D:\\Ship images\\Vengeance\\00 - Base - Vengeance.png",
+      "source_page": "https://darkorbitwiki.com/ships/vengeance/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        256,
+        208
+      ],
+      "sha256": "0edbd1161f43ee757691d2bdda82ae81156d375051f0a73ca4cd1cd29690203c",
+      "image_url": "https://darkorbitwiki.com/images/vengeance.png"
+    },
+    {
+      "file": "yamato-base.png",
+      "local_source": "D:\\Ship images\\Yamato\\00 - Base - Yamato.png",
+      "source_page": "https://darkorbitwiki.com/ships/yamato/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        252,
+        200
+      ],
+      "sha256": "b1e3b41e9f4a275419d40a1e23131e04b12ab0a65edc790a3ceb6b9601cf6342",
+      "image_url": "https://darkorbitwiki.com/images/yamato.png"
     }
   ],
   "excluded_reference": {
