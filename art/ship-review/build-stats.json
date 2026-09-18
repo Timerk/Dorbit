@@ -1,0 +1,146 @@
+{
+  "Aegis": {
+    "mesh_components": 475,
+    "base_faces": 31722,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Goliath": {
+    "mesh_components": 355,
+    "base_faces": 15996,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Bigboy": {
+    "mesh_components": 453,
+    "base_faces": 22224,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Defcom": {
+    "mesh_components": 398,
+    "base_faces": 24652,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Leonov": {
+    "mesh_components": 384,
+    "base_faces": 16342,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Liberator": {
+    "mesh_components": 336,
+    "base_faces": 11508,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Nostromo": {
+    "mesh_components": 320,
+    "base_faces": 11258,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Phoenix": {
+    "mesh_components": 286,
+    "base_faces": 16710,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Piranha": {
+    "mesh_components": 341,
+    "base_faces": 12612,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Spearhead": {
+    "mesh_components": 306,
+    "base_faces": 10358,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Vengeance": {
+    "mesh_components": 310,
+    "base_faces": 23494,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  },
+  "Yamato": {
+    "mesh_components": 312,
+    "base_faces": 27126,
+    "draft": false,
+    "views": [
+      "perspective",
+      "rear",
+      "top",
+      "side",
+      "front"
+    ]
+  }
+}

@@ -1,0 +1,212 @@
+{
+  "catalogue": "D:\\Ship images\\darkorbit_ship_and_design_references.md",
+  "date": "2026-09-13",
+  "references": [
+    {
+      "file": "aegis-base.png",
+      "local_source": "D:\\Ship images\\Aegis\\00 - Base - Aegis.png",
+      "source_page": "https://darkorbitwiki.com/ships/aegis/",
+      "image_url": "https://darkorbitwiki.com/images/aegis.png",
+      "use": "Primary green base paint and silhouette reference",
+      "dimensions": [
+        256,
+        208
+      ],
+      "sha256": "7fd1ba9fc90ac12d7be6924ab565fefe1d4d6fbea74164122285e97dd62ac183"
+    },
+    {
+      "file": "goliath-base.png",
+      "local_source": "D:\\Ship images\\Goliath\\00 - Base - Goliath.png",
+      "source_page": "https://darkorbitwiki.com/ships/goliath/",
+      "image_url": "https://darkorbitwiki.com/images/goliath.png",
+      "use": "Primary silver base paint and silhouette reference",
+      "dimensions": [
+        256,
+        208
+      ],
+      "sha256": "332f3f4068237c6112e0264b8f67d28117870c2e2b3e33a830112865ce402838"
+    },
+    {
+      "file": "aegis-engineering-browser-crop.png",
+      "source_page": "https://darkorbit.fandom.com/de/wiki/Aegis",
+      "image_url": "https://static.wikia.nocookie.net/darkorbit/images/0/02/Fbf4677022f5efc62a54e01bc7e060e64f2002a1.jpg/revision/latest?cb=20120608154843&path-prefix=de",
+      "capture": "Crop of the visibly rendered browser lightbox, not a native download",
+      "dimensions": [
+        950,
+        444
+      ],
+      "observed_source_dimensions": [
+        960,
+        450
+      ],
+      "use": "Two angles establish engineering deck, front tools and rear fins; blue paint is not copied",
+      "sha256": "b603259c278486b215fec8b3fba7c614a56e27bd2bb83b8e8f32b92882cc9075"
+    },
+    {
+      "file": "aegis-engineering-thumbnail.webp",
+      "source_page": "https://darkorbit.fandom.com/de/wiki/Aegis",
+      "image_url": "https://static.wikia.nocookie.net/darkorbit/images/0/02/Fbf4677022f5efc62a54e01bc7e060e64f2002a1.jpg/revision/latest/scale-to-width-down/248?cb=20120608154843&path-prefix=de",
+      "capture": "Downloaded observed page asset, preserved as returned WebP",
+      "use": "Small companion thumbnail of the engineering sheet",
+      "dimensions": [
+        248,
+        116
+      ],
+      "sha256": "b29846f33241987271cb52f3bc5a3e0af13c2b901623606a1ceff0796a101d4b"
+    },
+    {
+      "file": "goliath-secondary.webp",
+      "source_page": "https://darkorbit.fandom.com/de/wiki/Goliath",
+      "image_url": "https://static.wikia.nocookie.net/darkorbit/images/3/3b/10_Goliath.jpg/revision/latest/scale-to-width-down/180?cb=20111127100039&path-prefix=de",
+      "capture": "Downloaded observed page asset, preserved as returned WebP",
+      "use": "Small supplementary angle; does not establish fine surface detail",
+      "dimensions": [
+        180,
+        135
+      ],
+      "sha256": "9ad3b9d7a4bcadcd31adc595c927e5cf47de0b12cc9f43d4d431e17a4c034453"
+    },
+    {
+      "file": "bigboy-base.png",
+      "local_source": "D:\\Ship images\\Bigboy\\00 - Base - BigBoy.png",
+      "source_page": "https://darkorbitwiki.com/ships/bigboy/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        254,
+        206
+      ],
+      "sha256": "578ae5463ba71a0e3b19cf74ffe56ba4def8de93680174778642b931e6b8f2c6",
+      "image_url": "https://darkorbitwiki.com/images/bigboy.png"
+    },
+    {
+      "file": "defcom-base.png",
+      "local_source": "D:\\Ship images\\Defcom\\00 - Base - Defcom.png",
+      "source_page": "https://darkorbitwiki.com/ships/defcom/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        252,
+        200
+      ],
+      "sha256": "8c566f3ddd76068505027f54a6b9cc59ec92fdfbbd72317ab8148774d105e283",
+      "image_url": "https://darkorbitwiki.com/images/defcom.png"
+    },
+    {
+      "file": "leonov-base.png",
+      "local_source": "D:\\Ship images\\Leonov\\00 - Base - Leonov.png",
+      "source_page": "https://darkorbitwiki.com/ships/leonov/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        256,
+        208
+      ],
+      "sha256": "9c466ec2d85fba7904ca2dbb88fcd64291d899f96e6596a4c172d361f22f2921",
+      "image_url": "https://darkorbitwiki.com/images/leonov.png"
+    },
+    {
+      "file": "liberator-base.png",
+      "local_source": "D:\\Ship images\\Liberator\\00 - Base - Liberator.png",
+      "source_page": "https://darkorbitwiki.com/ships/liberator/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        252,
+        200
+      ],
+      "sha256": "6fdb12fc5d667da7448a95b257ab9b637081af0d12661011b54200a5047b602b",
+      "image_url": "https://darkorbitwiki.com/images/liberator.png"
+    },
+    {
+      "file": "nostromo-base.png",
+      "local_source": "D:\\Ship images\\Nostromo\\00 - Base - Nostromo.png",
+      "source_page": "https://darkorbitwiki.com/ships/nostromo/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        254,
+        206
+      ],
+      "sha256": "8d1123743f8c8394ba1bd9b82d3673cf0d974e62ef7f7eb08cbb72db00f91e88",
+      "image_url": "https://darkorbitwiki.com/images/nostromo.png"
+    },
+    {
+      "file": "phoenix-base.png",
+      "local_source": "D:\\Ship images\\Phoenix\\00 - Base - Phoenix.png",
+      "source_page": "https://darkorbitwiki.com/ships/phoenix/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        252,
+        200
+      ],
+      "sha256": "d72d71cb0863dde926dbcc073f29f4f64b16156f99bee85dabca13a59fa967cf",
+      "image_url": "https://darkorbitwiki.com/images/phoenix.png"
+    },
+    {
+      "file": "piranha-base.png",
+      "local_source": "D:\\Ship images\\Piranha\\00 - Base - Piranha.png",
+      "source_page": "https://darkorbitwiki.com/ships/piranha/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        254,
+        206
+      ],
+      "sha256": "4e486a59cb550e52cadda21eb54a632851f91c64913f49c455de3815c47ea63b",
+      "image_url": "https://darkorbitwiki.com/images/piranha.png"
+    },
+    {
+      "file": "spearhead-base.png",
+      "local_source": "D:\\Ship images\\Spearhead\\00 - Base - Spearhead.png",
+      "source_page": "https://darkorbitwiki.com/ships/spearhead/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        256,
+        208
+      ],
+      "sha256": "06d8a569a4298dcfd3907ec21b75015cd9204b6a1b71b2a59465328ae1d9075c",
+      "image_url": "https://darkorbitwiki.com/images/spearhead.png"
+    },
+    {
+      "file": "vengeance-base.png",
+      "local_source": "D:\\Ship images\\Vengeance\\00 - Base - Vengeance.png",
+      "source_page": "https://darkorbitwiki.com/ships/vengeance/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        256,
+        208
+      ],
+      "sha256": "0edbd1161f43ee757691d2bdda82ae81156d375051f0a73ca4cd1cd29690203c",
+      "image_url": "https://darkorbitwiki.com/images/vengeance.png"
+    },
+    {
+      "file": "yamato-base.png",
+      "local_source": "D:\\Ship images\\Yamato\\00 - Base - Yamato.png",
+      "source_page": "https://darkorbitwiki.com/ships/yamato/",
+      "use": "Primary base silhouette and paint; small details and hidden surfaces reconstructed",
+      "dimensions": [
+        252,
+        200
+      ],
+      "sha256": "b1e3b41e9f4a275419d40a1e23131e04b12ab0a65edc790a3ceb6b9601cf6342",
+      "image_url": "https://darkorbitwiki.com/images/yamato.png"
+    },
+    {
+      "file": "liberator-secondary.webp",
+      "source_page": "https://darkorbit.fandom.com/wiki/Liberator",
+      "image_url": "https://static.wikia.nocookie.net/darkorbit/images/0/07/Liberator.png/revision/latest?cb=20130528183401",
+      "capture": "Observed browser page asset, preserved as delivered WebP",
+      "dimensions": [
+        276,
+        264
+      ],
+      "sha256": "d9672b8f59d18ecf1fd4be8b8511f79fc55adafa6fe8b4caeeaafb41363b3959",
+      "use": "Supplementary hangar view confirms forward outer pods and open longitudinal channels; fine construction remains inferred"
+    }
+  ],
+  "excluded_reference": {
+    "url": "https://sketchfab.com/3d-models/space-ship-goliath-42ef0fb091db4981a03a387dd1e6ba5e",
+    "reason": "Preview depicts an unrelated black/orange spaceship; rejected after visual inspection"
+  },
+  "inferred": [
+    "Unseen undersides",
+    "Exact thicknesses and panel depths",
+    "Internal joints",
+    "Small fasteners and cooling details"
+  ]
+}
