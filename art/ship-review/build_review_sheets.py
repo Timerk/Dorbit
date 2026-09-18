@@ -61,6 +61,9 @@ for name in NAMES:
     elif name=='Goliath':
         label(im,(54,670),'SUPPLEMENTARY ANGLE',20,MUTED)
         put(im,HERE/'references/goliath-secondary.webp',(126,720,380,240))
+    elif name=='Liberator':
+        label(im,(54,670),'SUPPLEMENTARY HANGAR VIEW',20,MUTED)
+        put(im,HERE/'references/liberator-secondary.webp',(170,706,300,278))
     else:
         label(im,(54,700),'REFERENCE LIMITS',20,MUTED)
         for j,line in enumerate(['Base catalogue render guides shape and paint.',
@@ -92,19 +95,19 @@ for name in NAMES:
     print('SHEETS',name)
 
 if len(sys.argv)==1:
-    im=Image.new('RGB',(2000,1470),BG)
+    im=Image.new('RGB',(2000,2110),BG)
     d=ImageDraw.Draw(im)
-    label(im,(36,22),'Ten additional base ships / Blender model review',36)
-    label(im,(38,79),'Same modeling style as the approved Aegis and Goliath | Individual files in models/',22,MUTED)
-    for i,name in enumerate(NAMES[2:]):
-        x=20+(i%5)*396
-        y=140+(i//5)*640
-        d.rounded_rectangle((x,y,x+376,y+610),radius=14,fill=CARD)
+    label(im,(36,22),'Twelve base ships / revised Blender model review',36)
+    label(im,(38,79),'Liberator rebuilt | Reference-led detail pass on all ships | Individual files in models/',22,MUTED)
+    for i,name in enumerate(NAMES):
+        x=20+(i%4)*495
+        y=140+(i//4)*640
+        d.rounded_rectangle((x,y,x+475,y+610),radius=14,fill=CARD)
         label(im,(x+18,y+18),name,28)
         label(im,(x+18,y+67),'SOURCE',17,MUTED)
-        put(im,HERE/'references'/(name.lower()+'-base.png'),(x+22,y+100,332,195),trim=True)
+        put(im,HERE/'references'/(name.lower()+'-base.png'),(x+22,y+100,431,195),trim=True)
         label(im,(x+18,y+318),'MODEL',17,MUTED)
-        put(im,HERE/'previews'/(name.lower()+'.png'),(x+12,y+348,352,242),trim=True)
-    label(im,(38,1430),'Sources enlarged for review. Fine details and hidden surfaces are reconstructed. Ships are not shown to a common scale.',21,MUTED)
+        put(im,HERE/'previews'/(name.lower()+'.png'),(x+12,y+348,451,242),trim=True)
+    label(im,(38,2070),'Sources enlarged for review. Fine details and hidden surfaces are reconstructed. Ships are not shown to a common scale.',21,MUTED)
     im.save(HERE/'previews/additional-ships-overview.jpg',quality=94)
-    print('OVERVIEW ten additional ships')
+    print('OVERVIEW all twelve ships')
