@@ -53,8 +53,8 @@ def require(condition, message):
         raise RuntimeError(message)
 
 
-def run(*args):
-    return subprocess.run(args, check=True, capture_output=True, text=True).stdout.strip()
+def run(*args, check=True):
+    return subprocess.run(args, check=check, capture_output=True, text=True).stdout.strip()
 
 
 def digest(path):
@@ -292,7 +292,9 @@ def activate(state, receipt):
     save(transaction / "transaction.json", state)
     save(STATE / "pending.json", state)
     try:
-        run("systemctl", "reset-failed", SERVICE)
+        # systemd may unload an inactive unit before its first start. In that case
+        # there is no failed state to reset; start and readiness must still succeed.
+        run("systemctl", "reset-failed", SERVICE, check=False)
         run("systemctl", "start", SERVICE)
         ready()
     except Exception:
