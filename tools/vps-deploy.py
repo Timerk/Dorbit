@@ -28,6 +28,24 @@ UNIT = Path("/etc/systemd/system/dorbit.service")
 ENV = Path("/etc/dorbit/server.env")
 RECIPIENT = Path("/etc/dorbit/backup-recipient.txt")
 SERVICE = "dorbit.service"
+USER = "dorbit"
+PREVIEW = False
+SEED = Path("/etc/dorbit-preview/seed")
+
+
+def preview_profile():
+    # Selected by the root-owned executable name, never by SSH input or environment.
+    global STATE, RELEASES, CURRENT, DATA, UNIT, ENV, RECIPIENT, SERVICE, USER, PREVIEW
+    PREVIEW = True
+    USER = "dorbit-preview"
+    SERVICE = "dorbit-preview.service"
+    STATE = Path("/var/lib/dorbit-preview-deploy")
+    RELEASES = Path("/opt/dorbit-preview/releases")
+    CURRENT = Path("/opt/dorbit-preview/current")
+    DATA = Path("/var/lib/dorbit-preview/data")
+    UNIT = Path("/etc/systemd/system/dorbit-preview.service")
+    ENV = Path("/etc/dorbit-preview/server.env")
+    RECIPIENT = Path("/etc/dorbit-preview/backup-recipient.txt")
 
 
 def require(condition, message):
@@ -59,10 +77,13 @@ def save(path, value):
 
 
 def active_commit():
+    if PREVIEW and not os.path.lexists(CURRENT):
+        return "none"
     target = CURRENT.resolve(strict=True)
-    require(target.parent == RELEASES and re.fullmatch(r"[0-9a-f]{40}", target.name),
+    pattern = r"[0-9a-f]{40}-[0-9a-f]{32}" if PREVIEW else r"[0-9a-f]{40}"
+    require(target.parent == RELEASES and re.fullmatch(pattern, target.name),
             "Current release is not a commit directory")
-    return target.name
+    return target.name[:40]
 
 
 def unpack(archive, destination):
@@ -88,22 +109,34 @@ def unpack(archive, destination):
 def stopped():
     require(run("systemctl", "show", SERVICE, "--property=MainPID", "--value") == "0",
             "Service still has a main process")
-    processes = subprocess.run(["pgrep", "-u", "dorbit"], capture_output=True)
+    processes = subprocess.run(["pgrep", "-u", USER], capture_output=True)
     require(processes.returncode == 1, "Dorbit processes remain; operator recovery required")
 
 
-def clean_data():
+def clean_data(directory=None):
+    directory = DATA if directory is None else directory
     for name in ("pilots.json.lock", "pilots.json.tmp", "pilots.json.bak.tmp"):
-        require(not (DATA / name).exists(), "Save lock or interrupted write requires operator recovery")
-    require((DATA / "pilots.json").is_file(), "Missing pilot ledger")
+        require(not os.path.lexists(directory / name), "Save lock or interrupted write requires operator recovery")
+    require((directory / "pilots.json").is_file(), "Missing pilot ledger")
 
 
-def prepare(sha, previous, checksum):
+def prepare(sha, previous, checksum, preview=None):
     require(not (STATE / "pending.json").exists(), "Pending deployment requires operator recovery")
     require(active_commit() == previous, "Current commit differs from expected_current")
-    require(not (RELEASES / sha).exists(), "Target release already exists; inspect it manually")
+    require(PREVIEW or not (RELEASES / sha).exists(), "Target release already exists; inspect it manually")
     require(not os.path.lexists(CURRENT.with_name("current.next")), "current.next requires inspection")
-    require(run("systemctl", "is-active", SERVICE) == "active", "Service must initially be running")
+    if not PREVIEW:
+        require(run("systemctl", "is-active", SERVICE) == "active", "Service must initially be running")
+    else:
+        require(preview is not None, "Missing preview selection")
+        require(not os.path.lexists(DATA) or DATA.is_symlink(), "Unexpected preview data path")
+        require(not os.path.lexists(DATA.with_name("data.next")), "data.next requires inspection")
+        clean_data(SEED)
+        require(run("systemctl", "show", SERVICE, "--property=User", "--value") == USER,
+                "Unexpected preview service user")
+        # A disabled service stays off after reboot. Refuse an accidentally enabled unit.
+        require(run("systemctl", "show", SERVICE, "--property=UnitFileState", "--value") == "static",
+                "Preview unit must have no boot enablement")
     require(run("systemctl", "show", SERVICE, "--property=DropInPaths", "--value") == "",
             "Unit overrides require operator review")
     require(run("systemctl", "show", SERVICE, "--property=FragmentPath", "--value") == str(UNIT),
@@ -127,11 +160,15 @@ def prepare(sha, previous, checksum):
     unpack(archive, staged)
     require((staged / "REVISION").read_text().strip() == sha, "Server revision mismatch")
     # CI may deploy game code as dorbit, but must not supply a root-capable unit.
-    require((staged / "deploy/dorbit.service").read_bytes() == UNIT.read_bytes(),
-            "Unit changed; an operator must review and install it first")
+    if not PREVIEW:
+        require((staged / "deploy/dorbit.service").read_bytes() == UNIT.read_bytes(),
+                "Unit changed; an operator must review and install it first")
     state = {"id": transaction.name, "commit": sha, "previous": previous,
              "created_at": datetime.now(timezone.utc).isoformat(),
-             "previous_link": os.readlink(CURRENT), "phase": "stopping"}
+             "previous_link": os.readlink(CURRENT) if CURRENT.is_symlink() else None, "phase": "stopping"}
+    if PREVIEW:
+        state.update(preview)
+        state["previous_data"] = os.readlink(DATA) if DATA.is_symlink() else None
     save(transaction / "transaction.json", state)
     save(STATE / "pending.json", state)
     # From here, any failure leaves the transaction pending for the operator.
@@ -139,7 +176,22 @@ def prepare(sha, previous, checksum):
     stopped()
     backup = transaction / "backup.tar"
     with tarfile.open(backup, "w") as output:
-        output.add(DATA, arcname="data")
+        if PREVIEW:
+            # Per-PR paths have root-owned parents; dereference only this controlled link.
+            saves = DATA.parent / "saves"
+            if DATA.is_symlink():
+                active_data = DATA.resolve(strict=True)
+                require(active_data.parent == saves and re.fullmatch(r"pr-[1-9][0-9]*", active_data.name),
+                        "Unexpected preview data link")
+                output.add(active_data, arcname="previous-data")
+            selected_data = saves / f"pr-{state['pr']}"
+            require(not selected_data.is_symlink(), "Preview save directory must not be a symlink")
+            if selected_data.exists():
+                output.add(selected_data, arcname="selected-data")
+            if (STATE / "active.json").exists():
+                output.add(STATE / "active.json", arcname="previous-preview.json")
+        else:
+            output.add(DATA, arcname="data")
         output.add(UNIT, arcname="dorbit.service")
         output.add(ENV, arcname="server.env")
         output.add(transaction / "transaction.json", arcname="transaction.json")
@@ -151,6 +203,33 @@ def prepare(sha, previous, checksum):
     save(STATE / "pending.json", state)
     # Transfer the backup even if stop left a lock. Activation will refuse it.
     print(json.dumps(state))
+
+
+def preview_data(state):
+    """Switch only stopped preview data; fresh saves archive the complete old directory."""
+    selected = DATA.parent / "saves" / f"pr-{state['pr']}"
+    require(not selected.is_symlink(), "Preview save directory must not be a symlink")
+    if selected.exists() and state["fresh"]:
+        selected.rename(STATE / state["id"] / "archived-data")
+    if not selected.exists():
+        shutil.copytree(SEED, selected)
+        account = pwd.getpwnam(USER)
+        os.chown(selected, account.pw_uid, account.pw_gid)
+        for path in selected.iterdir():
+            require(path.is_file() and not path.is_symlink(), "Seed must contain regular files only")
+            os.chown(path, account.pw_uid, account.pw_gid)
+    clean_data(selected)
+    next_link = DATA.with_name("data.next")
+    next_link.symlink_to(f"saves/pr-{state['pr']}")
+    next_link.replace(DATA)
+
+
+def stop_preview():
+    require(PREVIEW, "Stop is only available for preview")
+    run("systemctl", "stop", SERVICE)
+    stopped()
+    # Preserve any pending transaction and save lock for inspection.
+    print("Preview stopped; no preview processes remain. Saves retained.")
 
 
 def ready(timeout=120, stable_seconds=10):
@@ -190,20 +269,24 @@ def activate(state, receipt):
             "Expected verified off-machine backup receipt")
     require(active_commit() == state["previous"], "Current release changed during deployment")
     stopped()
-    clean_data()
+    if PREVIEW:
+        preview_data(state)
+    else:
+        clean_data()
     transaction = STATE / state["id"]
     staged = transaction / "release"
-    account = pwd.getpwnam("dorbit")
+    account = pwd.getpwnam(USER)
     # Extraction rejects links. Grant the game only its own release tree.
     for directory, dirs, files in os.walk(staged):
         for name in dirs + files:
             os.chown(Path(directory) / name, account.pw_uid, account.pw_gid)
     os.chown(staged, account.pw_uid, account.pw_gid)
-    target = RELEASES / state["commit"]
+    name = f"{state['commit']}-{state['id']}" if PREVIEW else state["commit"]
+    target = RELEASES / name
     require(not target.exists(), "Target release appeared during deployment")
     staged.rename(target)
     next_link = CURRENT.with_name("current.next")
-    next_link.symlink_to(f"releases/{state['commit']}")
+    next_link.symlink_to(f"releases/{name}")
     next_link.replace(CURRENT)
     state["phase"] = "starting"
     save(transaction / "transaction.json", state)
@@ -217,6 +300,8 @@ def activate(state, receipt):
         raise
     state["phase"] = "ready"
     save(transaction / "transaction.json", state)
+    if PREVIEW:
+        save(STATE / "active.json", state)
     (STATE / "pending.json").unlink()
     print(f"Game ready: {state['commit']}; previous release retained: {state['previous']}")
 
@@ -230,7 +315,17 @@ def main(command):
     STATE.mkdir(mode=0o700, exist_ok=True)
     with (STATE / "lock").open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        if PREVIEW and command == "stop":
+            stop_preview()
+            return
+        if PREVIEW and (match := re.fullmatch(
+                r"prepare-preview ([0-9a-f]{40}) ([1-9][0-9]{0,8}) (keep|fresh) ([0-9a-f]{64}) ([1-9][0-9]{0,19}) ([1-9][0-9]{0,8})", command)):
+            sha, pr, mode, checksum, build_run, attempt = match.groups()
+            prepare(sha, active_commit(), checksum, {"pr": int(pr), "fresh": mode == "fresh",
+                    "build_run": int(build_run), "attempt": int(attempt)})
+            return
         if match := re.fullmatch(r"prepare ([0-9a-f]{40}) ([0-9a-f]{40}) ([0-9a-f]{64})", command):
+            require(not PREVIEW, "Production command not allowed for preview")
             prepare(*match.groups())
             return
         match = re.fullmatch(r"(backup|activate) ([0-9a-f]{32})(?: ([0-9a-f]{64}))?", command)
@@ -248,6 +343,8 @@ def main(command):
 
 if __name__ == "__main__":
     try:
+        if Path(sys.argv[0]).name == "dorbit-preview-deploy":
+            preview_profile()
         require(len(sys.argv) == 2, "Expected a single forced-command argument")
         main(sys.argv[1])
     except Exception as error:
