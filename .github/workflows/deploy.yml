@@ -1,0 +1,70 @@
+name: Deploy server
+run-name: Deploy ${{ inputs.release }} (currently ${{ inputs.expected_current }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Tested release tag: build- followed by the full commit SHA (see Releases)'
+        required: true
+        type: string
+      expected_current:
+        description: 'Full commit currently running on the VPS; deployment refuses a mismatch'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: dorbit-production-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: dorbit-production
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE: ${{ inputs.release }}
+      EXPECTED_CURRENT: ${{ inputs.expected_current }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Verify tested release and preserve matching rollback client
+        run: python3 tools/ci-deploy.py select
+      - name: Join private deployment network
+        uses: tailscale/github-action@6cae46e2d796f265265cfcf628b72a32b4d7cade # v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:dorbit-ci
+      - name: Configure pinned SSH identity
+        env:
+          DEPLOY_KEY: ${{ secrets.DORBIT_DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ vars.DORBIT_KNOWN_HOSTS }}
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/dorbit_ci
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/dorbit_hosts
+          test "$(ssh-keygen -lf ~/.ssh/dorbit_hosts | awk '{print $2}')" = 'SHA256:P+Lvr8RDA46ECqUdkvNtiP8t/HOejVCmtJVqqsdE7io'
+      - name: Stage release, stop cleanly and encrypt recovery copy
+        run: python3 tools/ci-deploy.py prepare
+      - name: Preserve recovery copy off the VPS before activation
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dorbit-recovery-${{ github.run_id }}-${{ github.run_attempt }}
+          path: recovery/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Activate and check game readiness
+        run: python3 tools/ci-deploy.py activate
+      - name: Report result
+        if: always()
+        run: python3 tools/ci-deploy.py report
+      - name: Remove runner SSH credentials
+        if: always()
+        run: rm -f ~/.ssh/dorbit_ci ~/.ssh/dorbit_hosts
