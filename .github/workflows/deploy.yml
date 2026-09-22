@@ -32,6 +32,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       RELEASE: ${{ inputs.release }}
       EXPECTED_CURRENT: ${{ inputs.expected_current }}
+      LEGACY_CLIENT_SHA256: ${{ vars.DORBIT_LEGACY_CLIENT_SHA256 }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:

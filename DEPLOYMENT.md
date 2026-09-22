@@ -147,6 +147,12 @@ The local alias is not available inside GitHub Actions.
    `build-90650412c9027500f2e2e82d800a62e8af63b45c`, targeting that commit, with notes
    explaining it is the archived pre-CI rollback client. If you cannot verify the
    original client's revision, rebuild it from that exact commit using `tools/dev.ps1`.
+   Before uploading, run `Get-FileHash .\windows.zip -Algorithm SHA256` on that
+   trusted local archive. Store its lowercase hash as environment variable
+   `DORBIT_LEGACY_CLIENT_SHA256` in `dorbit-production`. Do not derive this trusted
+   value from an existing downloadable release asset or its manifest. The first
+   deployment refuses a missing or mismatched legacy checksum. Later rollback
+   clients require the same signed build provenance as new deployments.
    This legacy release has no tested manifest, so the Action cannot deploy it as
    a new CI release. It can preserve its client for manual rollback. Later releases
    and their paired clients are published automatically.
