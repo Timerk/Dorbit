@@ -6,7 +6,256 @@ templates or deployment framework are needed. Use matching client and server
 revisions. The current server requires provisioned pilot credentials and a save
 directory. The first VPS is a netcup nano G11s in Nuremberg.
 
-## Prepare a release
+## GitHub releases and manual deployment
+
+Merges to `main` run the existing Linux and Windows checks. When both pass,
+GitHub publishes `build-<full commit SHA>` under **Releases** with `server.tar.gz`,
+`windows.zip` and `manifest.json`. The manifest identifies the exact commit,
+validation run and SHA-256 hashes. Both builds use that commit. The Linux archive
+contains the checked source and pinned runtime; it excludes import caches, test
+output and downloaded ZIP files. Neither build contains real pilot credentials.
+
+Publishing does not contact the VPS. Only **Actions > Deploy server > Run workflow**
+deploys. No test-server deployment is included. Release assets remain available
+after ordinary Actions artifacts expire. Do not delete or replace a release used
+by the VPS, especially its previous client. Protect `main`, review workflow changes,
+and restrict modification/deletion of `build-*` tags with a repository ruleset.
+Repository administrators and people who can modify these workflows remain trusted.
+
+### One-time operator setup
+
+These are instructions for the operator, not steps already performed by this PR.
+They do not require a game restart. Keep the netcup console available while
+configuring access. Use `ssh dorbit-vps` as `dorbit-admin` for VPS administration.
+The local alias is not available inside GitHub Actions.
+
+1. Create an **age** recovery key on your own computer with `age-keygen -o dorbit-recovery.key`.
+   Keep the private key outside Git and GitHub, with a second secure copy. The command
+   prints an `age1...` public recipient. Only that public recipient goes on the VPS.
+   Install age using its [official installation instructions](https://github.com/FiloSottile/age#installation).
+   Decryption does not require a paid service. Losing this key makes encrypted backups unusable.
+2. Create a new SSH key used only by this workflow, for example
+   `ssh-keygen -t ed25519 -f dorbit-ci -C dorbit-github-deploy`. Leave its passphrase
+   empty for unattended use. Do not reuse either PC's personal administrative key.
+3. Copy the reviewed `tools/vps-deploy.py` from this PR to the VPS administrative
+   account. On the VPS, install dependencies and the restricted helper:
+
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y age python3 procps iproute2
+   sudo useradd --system --user-group --no-create-home \
+     --home-dir /var/lib/dorbit-deploy-login --shell /bin/sh dorbit-deploy
+   sudo install -d -o root -g root -m 0755 /var/lib/dorbit-deploy-login
+   sudo install -d -o root -g root -m 0755 /var/lib/dorbit-deploy-login/.ssh
+   sudo install -d -o root -g root -m 0700 /var/lib/dorbit-deploy
+   sudo install -o root -g root -m 0755 vps-deploy.py /usr/local/sbin/dorbit-deploy
+   ```
+
+   Stop and inspect if the account or files already exist. Use `sudoedit` to create
+   `/etc/dorbit/backup-recipient.txt` containing only your `age1...` public recipient.
+   Make it root-owned and mode 0644. Create `/usr/local/sbin/dorbit-ci-command`:
+
+   ```sh
+   #!/bin/sh
+   exec sudo -n /usr/local/sbin/dorbit-deploy "$SSH_ORIGINAL_COMMAND"
+   ```
+
+   Make that wrapper root-owned and mode 0755. Create
+   `/var/lib/dorbit-deploy-login/.ssh/authorized_keys`, root-owned and mode 0644,
+   containing this single line, replacing the example public key with `dorbit-ci.pub`:
+
+   ```text
+   restrict,command="/usr/local/sbin/dorbit-ci-command" ssh-ed25519 YOUR_NEW_PUBLIC_KEY dorbit-github-deploy
+   ```
+
+   Run `sudo visudo -f /etc/sudoers.d/dorbit-deploy` and enter:
+
+   ```sudoers
+   dorbit-deploy ALL=(root) NOPASSWD: /usr/local/sbin/dorbit-deploy *
+   ```
+
+   Run `sudo visudo -c`. This account has no general sudo, shell, SCP, SFTP,
+   forwarding or PTY through its key. Its only commands upload a release, fetch
+   an encrypted backup and activate that transaction. The root-owned Python
+   helper validates the arguments and archive; it runs no uploaded code as root.
+   Uploaded game code runs as `dorbit` and therefore can access its saves. Treat
+   deployment access as privileged game access. CI cannot replace the helper or
+   install a different systemd unit. If a future release changes the unit, an
+   operator must review and install it separately, preserving its predecessor.
+   The current unit matches the reviewed repository unit byte for byte.
+4. In the Tailscale admin console, add `tag:dorbit-ci`, owned by administrators.
+   Create an OAuth client with **auth_keys write** permission limited to this tag.
+   Save its client ID and secret for GitHub. The Action creates an ephemeral tagged
+   machine and removes it at job cleanup. It uses ordinary OpenSSH, not Tailscale SSH.
+   Add this grant to your existing policy:
+
+   ```json
+   {
+     "src": ["tag:dorbit-ci"],
+     "dst": ["100.86.199.82"],
+     "ip": ["tcp:22"]
+   }
+   ```
+
+   Add `"tag:dorbit-ci": ["autogroup:admin"]` to `tagOwners`. Remove any broad
+   grants that would also allow CI access elsewhere. Grants add access; this rule
+   cannot override an existing allow-all rule. Preserve the operator and pilot
+   rules described below. Add a policy test for source `tag:dorbit-ci` accepting
+   `100.86.199.82:22` and denying `100.86.199.82:24567` and other tailnet devices.
+   Use the console's policy preview to confirm TCP 22 is the only permitted service.
+   CI does not need game-port access; readiness checks run on the VPS over SSH.
+5. In GitHub **Settings > Environments**, create `dorbit-production`. Allow deployment
+   only from `main`. If your repository plan supports required reviewers, add yourself
+   and prevent self-review where practical. The manual trigger is always required;
+   do not add a push trigger to the deployment workflow. Under this environment add:
+
+   | Kind | Name | Value |
+   | --- | --- | --- |
+   | Secret | `TS_OAUTH_CLIENT_ID` | Tailscale OAuth client ID |
+   | Secret | `TS_OAUTH_SECRET` | Tailscale OAuth client secret |
+   | Secret | `DORBIT_DEPLOY_SSH_KEY` | Entire new `dorbit-ci` private key |
+   | Variable | `DORBIT_KNOWN_HOSTS` | `100.86.199.82 ssh-ed25519 AAAA...` using the verified VPS public host key |
+
+   Get the host public key with `sudo cat /etc/ssh/ssh_host_ed25519_key.pub` over
+   your already verified administrative connection. Independently confirm with
+   `sudo ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` that its fingerprint is
+   `SHA256:P+Lvr8RDA46ECqUdkvNtiP8t/HOejVCmtJVqqsdE7io`. Copy only its key type and
+   base64 key after `100.86.199.82`. The workflow checks this fingerprint and enables
+   strict SSH host checking. Do not accept an unverified `ssh-keyscan` result.
+   No pilot login, personal SSH key, recovery private key or VPS sudo password belongs
+   in GitHub. Permit Actions to create Releases in repository settings if disabled.
+6. Before the first deployment, preserve the matching client for the current
+   pre-CI release, `90650412c9027500f2e2e82d800a62e8af63b45c`. Confirm the live commit
+   again with `ssh dorbit-vps 'readlink /opt/dorbit/current'`. Create a clean
+   `windows.zip` containing its matching exported client, license notices and a
+   UTF-8 `REVISION` file containing that full SHA. Exclude private launchers,
+   profiles, credentials and saves. Upload it to a GitHub Release named
+   `build-90650412c9027500f2e2e82d800a62e8af63b45c`, targeting that commit, with notes
+   explaining it is the archived pre-CI rollback client. If you cannot verify the
+   original client's revision, rebuild it from that exact commit using `tools/dev.ps1`.
+   This legacy release has no tested manifest, so the Action cannot deploy it as
+   a new CI release. It can preserve its client for manual rollback. Later releases
+   and their paired clients are published automatically.
+
+### Click Deploy
+
+1. Open **Releases** and choose a `build-...` release. Follow its checks link and
+   confirm the run finished successfully. Download `windows.zip` for players.
+   Its `REVISION` identifies the matching server commit. Players still use their
+   existing private pilot credential and Tailscale connection.
+2. Read the current commit using `ssh dorbit-vps 'readlink /opt/dorbit/current'`.
+   Warn players that the restart will disconnect them.
+3. Open **Actions > Deploy server > Run workflow**, select branch `main`, paste
+   the complete release tag and the full current commit into `expected_current`,
+   then click **Run workflow**. Approve the environment job if configured.
+4. Read the job summary. Success means a fresh game-listening log and a UDP socket
+   owned by that service invocation remained ready for ten seconds. A restart loop,
+   startup error or inactive game socket fails the job. This is stronger than
+   systemd's `active` status; it is not an authenticated player or performance test.
+   Join with the matching Windows client and check your saved credits.
+5. Download the run's `dorbit-recovery-...` artifact and keep it privately off the
+   VPS. GitHub retains it for 90 days or the repository's shorter retention limit.
+   It contains `backup.tar.age`, public transaction metadata and the previous
+   Windows client. It never contains plaintext saves or credentials. Retain both
+   GitHub Releases until you no longer need rollback.
+
+Before touching the service, the Action verifies the selected release's hashes,
+successful `main` validation run and matching previous client. The VPS checks the
+actual current commit again. It stops Dorbit, confirms no `dorbit` processes remain,
+then encrypts the entire data directory, unit, port environment and previous-link
+record. It downloads and uploads that recovery copy before activation. Failure to
+preserve it off-machine prevents the switch. A stale lock or interrupted write
+also prevents activation. The previous release directory is never deleted.
+
+GitHub queues deployments without cancelling a running one. A VPS file lock and
+durable `pending.json` block concurrent requests and retries after interrupted
+transactions. Operators must also avoid manual updates while a deployment runs.
+Cancellation, network loss or power loss can leave the server stopped or switched
+but unverified. Recovery is deliberately manual.
+
+### Failure and rollback
+
+Do not repeatedly click Run. Read the failed step and the summary, then connect
+as `dorbit-admin`. Do not print saves or full journals into GitHub logs.
+
+```bash
+sudo cat /var/lib/dorbit-deploy/pending.json
+readlink /opt/dorbit/current
+sudo systemctl status dorbit --no-pager
+sudo journalctl -u dorbit -n 100 --no-pager
+```
+
+If there is no pending transaction and failure was before service stop, the
+original service was not changed. Correct the release, credentials, network or
+preflight issue. Failed staging directories consume disk; inspect and remove only
+the specific unused directory, never a release or backup still needed for recovery.
+
+If a transaction is pending, record its `id`, `previous`, `previous_link` and phase.
+Its files are in `/var/lib/dorbit-deploy/<id>/`, readable only by root. If the runner
+lost contact before uploading the recovery artifact, copy `backup.tar.age` from
+that directory using your administrative account and keep it off-machine before
+proceeding. If encryption or stop failed, a complete encrypted backup may not exist.
+Keep the service stopped and follow README.md's stopped-server copy procedure first.
+Never remove the lock just to make deployment proceed.
+
+On your own computer, decrypt the downloaded recovery copy into a private directory:
+
+```bash
+age --decrypt -i dorbit-recovery.key -o backup.tar backup.tar.age
+tar -tf backup.tar
+```
+
+It contains `data/`, `dorbit.service`, `server.env` and `transaction.json`.
+Keep decrypted files private. Do not upload them to GitHub. A rollback requires a
+decision about save compatibility. Restoring the old application does not undo a
+save migration. For these current schema-v1 releases, use the old application with
+current valid saves only after confirming compatibility. Otherwise preserve the
+failed release's entire stopped data directory, inspect both copies and follow
+README.md's recovery steps. Restoring an earlier ledger loses later progress and
+credential rotations; make that decision explicitly, not in a script.
+
+For a compatible application rollback, after stopping the service and confirming
+no `dorbit` processes remain, use the recorded previous link. Replace the example
+values with those from the transaction; inspect any existing `current.next` first:
+
+```bash
+sudo systemctl stop dorbit
+pgrep -u dorbit                    # Must report no processes before continuing.
+previous=releases/PREVIOUS_FULL_COMMIT
+sudo test -d "/opt/dorbit/$previous"
+sudo ln -s "$previous" /opt/dorbit/current.next
+sudo mv -Tf /opt/dorbit/current.next /opt/dorbit/current
+sudo systemctl reset-failed dorbit
+sudo systemctl start dorbit
+```
+
+The CI helper refuses unit changes, so the unit and port settings normally remain
+unchanged. If an operator changed them, restore the reviewed saved `dorbit.service`
+and `server.env` to their original paths, run `sudo systemctl daemon-reload`, and
+then start Dorbit. Check the new invocation's listening log and UDP socket, and
+connect with the previous Windows client from the recovery artifact or old Release.
+Verify credits after reconnect. Only after successful recovery, archive the resolved
+`pending.json` into its transaction directory. Do not delete the recovery directory.
+If a failed deployment installed the selected commit's directory, inspect it before
+reusing or removing it; the helper refuses to overwrite existing releases.
+
+### CI deployment validation
+
+The deployment tests use temporary directories and simulated systemd commands.
+They cover traversal/link archives, unit changes, mismatched current commits, stale
+locks, backup receipts, pending transactions, preservation of saves/previous releases,
+failed readiness and an active systemd service without game readiness. The ordinary
+Linux checks still exercise real Godot processes and disposable saves.
+
+The existing VPS was inspected read-only on 2026-09-22. It still ran `9065041`,
+owned UDP 24567, used the expected unit without overrides and matched the pinned
+SSH fingerprint. This implementation has not installed its account/helper on the
+VPS, configured GitHub/Tailscale credentials or interrupted the live game. The
+first complete private CI deployment, encrypted recovery restore and player login
+remain operator checks after setup and explicit approval. No gameplay, protocol,
+authentication, save schema, local firewall or local service changes are included.
+
+## Prepare a release manually
 
 Run these commands on the Linux host as your normal administrative user, in a
 checkout of this repository. Preparing a release does not touch a running server.
