@@ -97,6 +97,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: dorbit-preview
+    permissions:
+      contents: read
+      actions: read
     env:
       DEPLOY_TARGET: preview
       PREVIEW_SHA: ${{ needs.select.outputs.sha }}
@@ -107,14 +110,10 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: Preview-Linux-${{ needs.select.outputs.sha }}-${{ github.run_attempt }}
-          path: dist
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: Preview-Windows-${{ needs.select.outputs.sha }}-${{ github.run_attempt }}
-          path: dist
+      - name: Download packages without extracting artifact paths
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/ci-deploy.py preview-download
       - uses: tailscale/github-action@6cae46e2d796f265265cfcf628b72a32b4d7cade # v3
         with:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}

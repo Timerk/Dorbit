@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import tarfile
 import tempfile
@@ -289,6 +290,18 @@ class ReleaseSelectionTest(unittest.TestCase):
         with zipfile.ZipFile(self.client, "w") as client:
             client.writestr("REVISION", NEW)
         self.files = {"server.tar.gz": b"disposable server artifact", "windows.zip": self.client.getvalue()}
+        self.signed_files = dict(self.files)
+
+    def manifest(self, files):
+        return json.dumps({"commit": NEW, "run_id": 123, "run_attempt": 1,
+            "files": {key: hashlib.sha256(value).hexdigest() for key, value in files.items()}}).encode()
+
+    def provenance(self, path, sha):
+        self.assertEqual(sha, NEW)
+        expected = (self.manifest(self.signed_files) if Path(path).name == "manifest.json"
+                    else self.signed_files[Path(path).name])
+        if Path(path).read_bytes() != expected:
+            raise subprocess.CalledProcessError(1, "gh attestation verify")
 
     def download(self, tag, name, directory):
         target = Path(directory) / name
@@ -296,8 +309,7 @@ class ReleaseSelectionTest(unittest.TestCase):
             with zipfile.ZipFile(target, "w") as client:
                 client.writestr("REVISION", OLD)
         elif name == "manifest.json":
-            target.write_text(json.dumps({"commit": NEW, "run_id": 123,
-                "files": {key: hashlib.sha256(value).hexdigest() for key, value in self.files.items()}}))
+            target.write_bytes(self.manifest(self.files))
         else:
             target.write_bytes(self.files[name])
 
@@ -305,6 +317,7 @@ class ReleaseSelectionTest(unittest.TestCase):
         with patch.dict(os.environ, RELEASE=f"build-{NEW}", EXPECTED_CURRENT=OLD,
                         GITHUB_REPOSITORY="test/dorbit"), \
              patch.object(ci, "api", side_effect=[{"draft": False, "prerelease": False}, self.build, {"id": 42}]), \
+             patch.object(ci, "verify_provenance", side_effect=self.provenance), \
              patch.object(ci, "download", side_effect=self.download), patch("builtins.print"):
             ci.select()
 
@@ -328,6 +341,24 @@ class ReleaseSelectionTest(unittest.TestCase):
                     self.select()
                 self.assertFalse(Path("selection.json").exists())
 
+    def test_replaced_release_and_matching_manifest_cannot_borrow_successful_run(self):
+        self.files["server.tar.gz"] = b"attacker replacement with matching mutable checksum"
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.select()
+        self.assertFalse(Path("selection.json").exists())
+        self.assertFalse(Path("dist/server.tar.gz").exists())
+
+    def test_missing_package_attestation_refuses_deployment(self):
+        original = self.provenance
+        def missing(path, sha):
+            if Path(path).name == "windows.zip":
+                raise subprocess.CalledProcessError(1, "gh attestation verify")
+            original(path, sha)
+        with patch.object(self, "provenance", side_effect=missing):
+            with self.assertRaises(subprocess.CalledProcessError):
+                self.select()
+        self.assertFalse(Path("selection.json").exists())
+
     def test_preview_pins_open_same_repository_pr_head(self):
         with patch.dict(os.environ, PR_NUMBER="15", GITHUB_REPOSITORY="test/dorbit",
                         GITHUB_OUTPUT="output", GITHUB_STEP_SUMMARY="summary"), \
@@ -344,6 +375,79 @@ class ReleaseSelectionTest(unittest.TestCase):
                  patch.object(ci, "api", return_value={"state": state, "head": {"repo": repository, "sha": NEW}}):
                 with self.assertRaisesRegex(ValueError, "open PRs"):
                     ci.preview_select()
+
+
+class ArtifactBoundaryTest(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        (self.root / "dist").mkdir()
+        (self.root / "tools").mkdir()
+        self.trusted = self.root / "tools/ci-deploy.py"
+        self.trusted.write_bytes(b"trusted deployment code")
+        self.target = self.root / "dist/server.tar.gz"
+
+    def archive(self, members):
+        output = io.BytesIO()
+        with zipfile.ZipFile(output, "w") as archive:
+            for name in members:
+                archive.writestr(name, b"untrusted artifact bytes")
+        output.seek(0)
+        return output
+
+    def test_copies_only_expected_file_without_extracting_nested_content(self):
+        ci.artifact_file(self.archive(["server.tar.gz"]), "server.tar.gz", self.target)
+        self.assertEqual(self.target.read_bytes(), b"untrusted artifact bytes")
+        self.assertEqual(self.trusted.read_bytes(), b"trusted deployment code")
+
+    def test_rejects_traversal_absolute_paths_extra_members_and_links(self):
+        link = zipfile.ZipInfo("server.tar.gz")
+        link.create_system = 3
+        link.external_attr = (stat.S_IFLNK | 0o777) << 16
+        for names in (["../tools/ci-deploy.py"], ["../../tools/ci-deploy.py"],
+                      [str(self.trusted)], ["..\\tools\\ci-deploy.py"],
+                      ["C:/tools/ci-deploy.py"], ["server.tar.gz", "../tools/ci-deploy.py"],
+                      ["server.tar.gz/"], [link]):
+            with self.subTest(names=names), self.assertRaises(ValueError):
+                ci.artifact_file(self.archive(names), "server.tar.gz", self.target)
+            self.assertFalse(self.target.exists())
+            self.assertEqual(self.trusted.read_bytes(), b"trusted deployment code")
+
+    def test_refuses_preexisting_symlink_target(self):
+        self.target.symlink_to(self.trusted)
+        with self.assertRaises(FileExistsError):
+            ci.artifact_file(self.archive(["server.tar.gz"]), "server.tar.gz", self.target)
+        self.assertEqual(self.trusted.read_bytes(), b"trusted deployment code")
+
+    def test_downloads_raw_artifacts_from_exact_run_attempt(self):
+        self.addCleanup(os.chdir, Path.cwd())
+        (self.root / "dist").rmdir()
+        os.chdir(self.root)
+        def listing(path):
+            self.assertIn("/actions/runs/123/artifacts?name=Preview-", path)
+            self.assertTrue(path.endswith(f"-{NEW}-2"))
+            name = path.split("?name=")[1]
+            return {"total_count": 1, "artifacts": [{"id": 456, "name": name, "expired": False}]}
+        def raw_download(*args, stdout):
+            self.assertEqual(args, ("gh", "api", "repos/test/dorbit/actions/artifacts/456/zip"))
+            filename = "windows.zip" if Path("dist/server.tar.gz").exists() else "server.tar.gz"
+            stdout.write(self.archive([filename]).getvalue())
+        with patch.dict(os.environ, PREVIEW_SHA=NEW, GITHUB_REPOSITORY="test/dorbit",
+                        GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="2"), \
+             patch.object(ci, "api", side_effect=listing), patch.object(ci, "run", side_effect=raw_download):
+            ci.download_builds(preview=True)
+        self.assertTrue(Path("dist/server.tar.gz").is_file())
+        self.assertTrue(Path("dist/windows.zip").is_file())
+
+    def test_provenance_verifier_pins_workflow_ref_source_and_signer(self):
+        with patch.dict(os.environ, GITHUB_REPOSITORY="test/dorbit"), patch.object(ci, "run") as run:
+            ci.verify_provenance("dist/manifest.json", NEW)
+        run.assert_called_once_with("gh", "attestation", "verify", "dist/manifest.json",
+            "--repo", "test/dorbit", "--cert-identity",
+            "https://github.com/test/dorbit/.github/workflows/validate.yml@refs/heads/main",
+            "--source-ref", "refs/heads/main", "--source-digest", NEW,
+            "--signer-digest", NEW, "--deny-self-hosted-runners")
 
 
 if __name__ == "__main__":
