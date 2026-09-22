@@ -133,6 +133,22 @@ The persistence slice adds operator-provisioned stable pilot IDs and private cre
 
 A netcup Linux VPS has passed initial two-client internet testing. The graceful shutdown fix is deployed and has passed a live stop/start and full VPS reboot with unchanged saved credits. A separate VPS systemd service passed a two-release update/rollback rehearsal. Abrupt crashes and power loss still require operator recovery. Scheduled off-machine backups remain hosting work. Pilot provisioning, token rotation and save recovery are documented in README.md. ENet traffic remains unencrypted; the user chose Tailscale for private friend-group access. The VPS and both operator PCs are enrolled, with key-only OpenSSH and game access over Tailscale; restricted friend-group grants remain to be configured as described in DEPLOYMENT.md. No public account service or automatic matchmaking is included in the initial server.
 
+### PR playtesting on the existing VPS
+
+One manually deployed preview instance shares the current VPS with production.
+The operator chooses an open PR from this repository; Linux server and Windows
+client are checked and built from the same frozen head commit before preview
+deployment. Gameplay PRs can remain unmerged during playtesting, including stacked
+branches such as equipment and contracts. Fork PRs cannot deploy.
+
+Preview has its own service, Linux user, deployment key, UDP port, private test
+pilot and save directory per PR. An explicit fresh-save option archives old test
+data first. Production saves and pilot credentials are never copied into preview.
+The operator can stop preview before a production session with friends. Preview
+does not start at boot. No CPU or memory limits are needed for the current solo
+development phase; both instances share host resources. Production deployment
+remains a separate manual action. See DEPLOYMENT.md for setup and recovery.
+
 ## Performance
 
 Reference PC supplied by the user:

@@ -26,7 +26,7 @@ OLD = "a" * 40
 NEW = "b" * 40
 
 
-class DeploymentTest(unittest.TestCase):
+class DeploymentFixture:
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -97,6 +97,14 @@ class DeploymentTest(unittest.TestCase):
             deploy.prepare(NEW, previous, deploy.digest(archive))
         return json.loads((deploy.STATE / "pending.json").read_text())
 
+    def activate(self, state, failure=False):
+        self.start_patch("ready", side_effect=RuntimeError("unready") if failure else None)
+        with patch.object(deploy.pwd, "getpwnam", return_value=SimpleNamespace(pw_uid=1000, pw_gid=1000)), \
+             patch.object(deploy.os, "chown"), patch("builtins.print"):
+            deploy.activate(state, state["backup_sha256"])
+
+
+class DeploymentTest(DeploymentFixture, unittest.TestCase):
     def test_rejects_wrong_current_without_stopping(self):
         with self.assertRaisesRegex(RuntimeError, "expected_current"):
             self.prepare(previous="c" * 40)
@@ -137,12 +145,6 @@ class DeploymentTest(unittest.TestCase):
         self.assertEqual(deploy.active_commit(), OLD)
         self.assertFalse((deploy.RELEASES / NEW).exists())
         self.assertEqual((deploy.DATA / "pilots.json").read_text(), "private disposable pilot ledger")
-
-    def activate(self, state, failure=False):
-        self.start_patch("ready", side_effect=RuntimeError("unready") if failure else None)
-        with patch.object(deploy.pwd, "getpwnam", return_value=SimpleNamespace(pw_uid=1000, pw_gid=1000)), \
-             patch.object(deploy.os, "chown"), patch("builtins.print"):
-            deploy.activate(state, state["backup_sha256"])
 
     def test_success_keeps_previous_release_and_data(self):
         state = self.prepare()
@@ -189,6 +191,89 @@ class DeploymentTest(unittest.TestCase):
             self.assertEqual(backup.extractfile("dorbit.service").read(), b"fixed unit")
             self.assertEqual(backup.extractfile("server.env").read(), b"DORBIT_PORT=24567\n")
             self.assertEqual(json.load(backup.extractfile("transaction.json"))["previous"], OLD)
+
+
+class PreviewDeploymentTest(DeploymentFixture, unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        for name, value in (("PREVIEW", True), ("USER", "dorbit-preview"),
+                            ("SERVICE", "dorbit-preview.service"), ("SEED", Path(self.temp.name) / "seed")):
+            patcher = patch.object(deploy, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        deploy.CURRENT.unlink()
+        (deploy.DATA / "pilots.json").unlink()
+        deploy.DATA.rmdir()
+        (deploy.DATA.parent / "saves").mkdir()
+        deploy.SEED.mkdir()
+        (deploy.SEED / "pilots.json").write_text("private fresh preview seed")
+        self.production = Path(self.temp.name) / "production"
+        self.production.mkdir()
+        (self.production / "pilots.json").write_text("production must stay untouched")
+
+    def command(self, *args):
+        if "--property=User" in args:
+            return "dorbit-preview"
+        if "--property=UnitFileState" in args:
+            return "static"
+        return super().command(*args)
+
+    def prepare(self, pr=15, fresh=False):
+        archive = self.archive()
+        with patch.object(deploy.sys, "stdin", SimpleNamespace(buffer=io.BytesIO(archive.read_bytes()))), patch("builtins.print"):
+            deploy.prepare(NEW, deploy.active_commit(), deploy.digest(archive),
+                           {"pr": pr, "fresh": fresh, "build_run": 123, "attempt": 1})
+        return json.loads((deploy.STATE / "pending.json").read_text())
+
+    def test_first_start_stop_and_redeploy_same_commit(self):
+        self.activate(self.prepare())
+        first_release = deploy.CURRENT.resolve()
+        (deploy.DATA / "pilots.json").write_text("earned preview progress")
+        with patch("builtins.print"):
+            deploy.stop_preview()
+        self.activate(self.prepare())
+        self.assertNotEqual(deploy.CURRENT.resolve(), first_release)
+        self.assertTrue(first_release.exists())
+        self.assertEqual((deploy.DATA / "pilots.json").read_text(), "earned preview progress")
+        self.assertEqual((self.production / "pilots.json").read_text(), "production must stay untouched")
+        self.assertTrue(all("dorbit.service" not in args for args in self.calls))
+
+    def test_pr_switch_and_return_preserve_independent_saves(self):
+        self.activate(self.prepare(pr=15))
+        (deploy.DATA / "pilots.json").write_text("PR 15 progress")
+        self.activate(self.prepare(pr=17))
+        self.assertEqual((deploy.DATA / "pilots.json").read_text(), "private fresh preview seed")
+        (deploy.DATA / "pilots.json").write_text("PR 17 progress")
+        self.activate(self.prepare(pr=15))
+        self.assertEqual((deploy.DATA / "pilots.json").read_text(), "PR 15 progress")
+        self.assertEqual((deploy.DATA.parent / "saves/pr-17/pilots.json").read_text(), "PR 17 progress")
+
+    def test_fresh_saves_archive_old_directory_after_backup_receipt(self):
+        self.activate(self.prepare())
+        (deploy.DATA / "pilots.json").write_text("old preview progress")
+        state = self.prepare(fresh=True)
+        with self.assertRaisesRegex(RuntimeError, "receipt"):
+            deploy.activate(state, "wrong")
+        self.assertEqual((deploy.DATA / "pilots.json").read_text(), "old preview progress")
+        self.activate(state)
+        self.assertEqual((deploy.STATE / state["id"] / "archived-data/pilots.json").read_text(), "old preview progress")
+        self.assertEqual((deploy.DATA / "pilots.json").read_text(), "private fresh preview seed")
+
+    def test_failed_start_and_stop_preserve_pending_recovery(self):
+        state = self.prepare()
+        with self.assertRaisesRegex(RuntimeError, "unready"):
+            self.activate(state, failure=True)
+        with patch("builtins.print"):
+            deploy.stop_preview()
+        self.assertTrue((deploy.STATE / "pending.json").exists())
+        self.assertEqual(self.calls[-1], ("systemctl", "stop", "dorbit-preview.service"))
+        self.assertEqual((self.production / "pilots.json").read_text(), "production must stay untouched")
+
+    def test_symlink_cannot_select_production_saves(self):
+        (deploy.DATA.parent / "saves/pr-15").symlink_to(self.production)
+        with self.assertRaisesRegex(RuntimeError, "symlink"):
+            self.prepare()
+        self.assertEqual((self.production / "pilots.json").read_text(), "production must stay untouched")
 
 
 class ReleaseSelectionTest(unittest.TestCase):
@@ -242,6 +327,23 @@ class ReleaseSelectionTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "successful main push"):
                     self.select()
                 self.assertFalse(Path("selection.json").exists())
+
+    def test_preview_pins_open_same_repository_pr_head(self):
+        with patch.dict(os.environ, PR_NUMBER="15", GITHUB_REPOSITORY="test/dorbit",
+                        GITHUB_OUTPUT="output", GITHUB_STEP_SUMMARY="summary"), \
+             patch.object(ci, "api", return_value={"state": "open", "head": {
+                 "repo": {"full_name": "test/dorbit"}, "sha": NEW}}):
+            ci.preview_select()
+        self.assertEqual(Path("output").read_text(), f"sha={NEW}\npr=15\n")
+
+    def test_preview_rejects_closed_fork_and_deleted_branches(self):
+        for state, repository in (("closed", {"full_name": "test/dorbit"}),
+                                  ("open", {"full_name": "fork/dorbit"}), ("open", None)):
+            with self.subTest(state=state, repository=repository), \
+                 patch.dict(os.environ, PR_NUMBER="15", GITHUB_REPOSITORY="test/dorbit"), \
+                 patch.object(ci, "api", return_value={"state": state, "head": {"repo": repository, "sha": NEW}}):
+                with self.assertRaisesRegex(ValueError, "open PRs"):
+                    ci.preview_select()
 
 
 if __name__ == "__main__":

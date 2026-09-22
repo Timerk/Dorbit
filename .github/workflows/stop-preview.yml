@@ -1,0 +1,38 @@
+name: Stop preview
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dorbit-preview
+  cancel-in-progress: false
+
+jobs:
+  stop:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: dorbit-preview
+    env:
+      DEPLOY_TARGET: preview
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: tailscale/github-action@6cae46e2d796f265265cfcf628b72a32b4d7cade # v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:dorbit-preview-ci
+      - name: Configure pinned SSH identity
+        env:
+          DEPLOY_KEY: ${{ secrets.DORBIT_DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ vars.DORBIT_KNOWN_HOSTS }}
+        run: python3 tools/ci-deploy.py ssh-config
+      - name: Stop preview and verify no preview processes remain
+        run: python3 tools/ci-deploy.py preview-stop
+      - name: Remove runner SSH credentials
+        if: always()
+        run: rm -f ~/.ssh/dorbit_ci ~/.ssh/dorbit_hosts
