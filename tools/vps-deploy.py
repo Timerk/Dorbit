@@ -1,11 +1,12 @@
 #!/usr/bin/python3 -I
 """Root-owned forced-command helper. Install manually; CI cannot update this file.
 
-The deployment key can replace Dorbit code running as dorbit, never run arbitrary
-root commands, change the unit, read plaintext saves, or open an SSH shell.
+The deployment key can replace Dorbit code running as dorbit, which has save access.
+This helper offers no arbitrary root commands, unit edits, plaintext downloads or shell.
 """
 
 import fcntl
+from datetime import datetime, timezone
 import hashlib
 import json
 import os
@@ -129,6 +130,7 @@ def prepare(sha, previous, checksum):
     require((staged / "deploy/dorbit.service").read_bytes() == UNIT.read_bytes(),
             "Unit changed; an operator must review and install it first")
     state = {"id": transaction.name, "commit": sha, "previous": previous,
+             "created_at": datetime.now(timezone.utc).isoformat(),
              "previous_link": os.readlink(CURRENT), "phase": "stopping"}
     save(transaction / "transaction.json", state)
     save(STATE / "pending.json", state)

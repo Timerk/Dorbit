@@ -1,8 +1,10 @@
 """Deployment transactions against disposable files and simulated systemd only."""
 
 import importlib.util
+import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -11,11 +13,15 @@ import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("deploy", ROOT / "tools/vps-deploy.py")
 deploy = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(deploy)
+ci_spec = importlib.util.spec_from_file_location("ci", ROOT / "tools/ci-deploy.py")
+ci = importlib.util.module_from_spec(ci_spec)
+ci_spec.loader.exec_module(ci)
 OLD = "a" * 40
 NEW = "b" * 40
 
@@ -183,6 +189,59 @@ class DeploymentTest(unittest.TestCase):
             self.assertEqual(backup.extractfile("dorbit.service").read(), b"fixed unit")
             self.assertEqual(backup.extractfile("server.env").read(), b"DORBIT_PORT=24567\n")
             self.assertEqual(json.load(backup.extractfile("transaction.json"))["previous"], OLD)
+
+
+class ReleaseSelectionTest(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.addCleanup(os.chdir, Path.cwd())
+        os.chdir(self.temp.name)
+        self.build = {"head_sha": NEW, "head_repository": {"full_name": "test/dorbit"},
+                      "workflow_id": 42, "event": "push", "head_branch": "main",
+                      "status": "completed", "conclusion": "success"}
+        self.client = io.BytesIO()
+        with zipfile.ZipFile(self.client, "w") as client:
+            client.writestr("REVISION", NEW)
+        self.files = {"server.tar.gz": b"disposable server artifact", "windows.zip": self.client.getvalue()}
+
+    def download(self, tag, name, directory):
+        target = Path(directory) / name
+        if tag == f"build-{OLD}":
+            with zipfile.ZipFile(target, "w") as client:
+                client.writestr("REVISION", OLD)
+        elif name == "manifest.json":
+            target.write_text(json.dumps({"commit": NEW, "run_id": 123,
+                "files": {key: hashlib.sha256(value).hexdigest() for key, value in self.files.items()}}))
+        else:
+            target.write_bytes(self.files[name])
+
+    def select(self):
+        with patch.dict(os.environ, RELEASE=f"build-{NEW}", EXPECTED_CURRENT=OLD,
+                        GITHUB_REPOSITORY="test/dorbit"), \
+             patch.object(ci, "api", side_effect=[{"draft": False, "prerelease": False}, self.build, {"id": 42}]), \
+             patch.object(ci, "download", side_effect=self.download), patch("builtins.print"):
+            ci.select()
+
+    def test_selects_tested_pair_and_preserves_old_client(self):
+        self.select()
+        self.assertEqual(json.loads(Path("selection.json").read_text())["commit"], NEW)
+        with zipfile.ZipFile("recovery/windows.zip") as previous:
+            self.assertEqual(previous.read("REVISION"), OLD.encode())
+
+    def test_rejects_unqualified_validation_runs(self):
+        for index, (field, value) in enumerate([
+            ("head_sha", OLD), ("head_repository", {"full_name": "fork/dorbit"}),
+            ("workflow_id", 99), ("event", "pull_request"), ("head_branch", "feature"),
+            ("status", "in_progress"), ("conclusion", "failure"),
+        ]):
+            with self.subTest(field=field), patch.dict(self.build, {field: value}):
+                workspace = Path(self.temp.name) / str(index)
+                workspace.mkdir()
+                os.chdir(workspace)
+                with self.assertRaisesRegex(ValueError, "successful main push"):
+                    self.select()
+                self.assertFalse(Path("selection.json").exists())
 
 
 if __name__ == "__main__":
