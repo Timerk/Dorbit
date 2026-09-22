@@ -6,8 +6,11 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
+import stat
 import subprocess
 import sys
+import tempfile
 import zipfile
 
 
@@ -32,6 +35,52 @@ def commit(value):
 
 def download(tag, name, directory):
     run("gh", "release", "download", tag, "--pattern", name, "--dir", str(directory))
+
+
+def artifact_file(archive, name, target):
+    """Read one allowlisted regular file; never extract archive-controlled paths."""
+    with zipfile.ZipFile(archive) as source:
+        members = source.infolist()
+        if len(members) != 1 or members[0].filename != name:
+            raise ValueError("Artifact must contain exactly the expected file")
+        member = members[0]
+        if (member.orig_filename != name or member.is_dir() or
+                stat.S_IFMT(member.external_attr >> 16) not in (0, stat.S_IFREG) or
+                member.file_size > 512 * 1024**2):
+            raise ValueError("Artifact member must be a bounded regular file")
+        # Exclusive creation also refuses a pre-existing symlink at the fixed target.
+        with source.open(member) as data, Path(target).open("xb") as output:
+            shutil.copyfileobj(data, output)
+
+
+def download_builds(preview=False):
+    sha = commit(os.environ["PREVIEW_SHA" if preview else "GITHUB_SHA"])
+    repo = os.environ["GITHUB_REPOSITORY"]
+    run_id, attempt = os.environ["GITHUB_RUN_ID"], os.environ["GITHUB_RUN_ATTEMPT"]
+    if not all(re.fullmatch(r"[1-9][0-9]*", value) for value in (run_id, attempt)):
+        raise ValueError("Invalid build run")
+    Path("dist").mkdir()
+    for platform, filename in (("Linux", "server.tar.gz"), ("Windows", "windows.zip")):
+        name = f"{'Preview' if preview else 'Dorbit'}-{platform}-{sha}-{attempt}"
+        listing = api(f"repos/{repo}/actions/runs/{run_id}/artifacts?name={name}")
+        if listing["total_count"] != 1 or len(listing["artifacts"]) != 1:
+            raise ValueError("Expected exactly one artifact from this build attempt")
+        artifact = listing["artifacts"][0]
+        if artifact["name"] != name or artifact["expired"]:
+            raise ValueError("Build artifact unavailable")
+        # gh api streams the raw ZIP. gh run download and download-artifact extract it.
+        with tempfile.TemporaryFile() as archive:
+            run("gh", "api", f"repos/{repo}/actions/artifacts/{int(artifact['id'])}/zip", stdout=archive)
+            archive.seek(0)
+            artifact_file(archive, filename, Path("dist") / filename)
+
+
+def verify_provenance(path, sha):
+    repo = os.environ["GITHUB_REPOSITORY"]
+    run("gh", "attestation", "verify", str(path), "--repo", repo,
+        "--cert-identity", f"https://github.com/{repo}/.github/workflows/validate.yml@refs/heads/main",
+        "--source-ref", "refs/heads/main", "--source-digest", sha,
+        "--signer-digest", sha, "--deny-self-hosted-runners")
 
 
 def ssh(command, **kwargs):
@@ -120,11 +169,18 @@ def preview_stop():
         output.write("Preview stopped. No preview processes remain; saves are retained. Deploy preview again to start it.\n")
 
 
-def publish():
+def release_manifest():
     sha = commit(os.environ["GITHUB_SHA"])
     manifest = {"commit": sha, "run_id": int(os.environ["GITHUB_RUN_ID"]),
+                "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
                 "files": {name: digest(Path("dist") / name) for name in ("server.tar.gz", "windows.zip")}}
     Path("dist/manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+
+
+def publish():
+    sha = commit(os.environ["GITHUB_SHA"])
+    # The manifest and packages have already been attested; do not rewrite them.
+    manifest = json.loads(Path("dist/manifest.json").read_text())
     repo = os.environ["GITHUB_REPOSITORY"]
     notes = (f"Commit: `{sha}`\n\nMatching Windows client: **windows.zip**. "
              f"Linux server: **server.tar.gz**. Both were checked from this exact commit.\n\n"
@@ -153,8 +209,10 @@ def select():
         raise ValueError("Choose a published tested release")
     Path("dist").mkdir()
     download(tag, "manifest.json", "dist")
+    # Authenticate the manifest before trusting its run ID or checksums.
+    verify_provenance("dist/manifest.json", sha)
     manifest = json.loads(Path("dist/manifest.json").read_text())
-    build = api(f"repos/{repo}/actions/runs/{int(manifest['run_id'])}")
+    build = api(f"repos/{repo}/actions/runs/{int(manifest['run_id'])}/attempts/{int(manifest['run_attempt'])}")
     workflow = api(f"repos/{repo}/actions/workflows/validate.yml")
     if not (manifest["commit"] == sha == build["head_sha"] and
             build["head_repository"]["full_name"] == repo and
@@ -166,6 +224,7 @@ def select():
         download(tag, name, "dist")
         if digest(Path("dist") / name) != manifest["files"][name]:
             raise ValueError("Release checksum mismatch")
+        verify_provenance(Path("dist") / name, sha)
     with zipfile.ZipFile("dist/windows.zip") as client:
         if client.read("REVISION").decode().strip() != sha:
             raise ValueError("Client revision mismatch")
@@ -227,7 +286,9 @@ def report():
 
 
 if __name__ == "__main__":
-    {"publish": publish, "select": select, "prepare": prepare,
+    {"publish": publish, "release-manifest": release_manifest,
+     "release-download": download_builds, "preview-download": lambda: download_builds(preview=True),
+     "select": select, "prepare": prepare,
      "activate": activate, "report": report, "ssh-config": ssh_config,
      "preview-select": preview_select, "preview-prepare": preview_prepare,
      "preview-report": preview_report, "preview-stop": preview_stop}[sys.argv[1]]()

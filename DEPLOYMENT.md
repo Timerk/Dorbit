@@ -11,7 +11,13 @@ directory. The first VPS is a netcup nano G11s in Nuremberg.
 Merges to `main` run the existing Linux and Windows checks. When both pass,
 GitHub publishes `build-<full commit SHA>` under **Releases** with `server.tar.gz`,
 `windows.zip` and `manifest.json`. The manifest identifies the exact commit,
-validation run and SHA-256 hashes. Both builds use that commit. The Linux archive
+validation run/attempt and SHA-256 hashes. GitHub signs build provenance for the
+manifest and both packages in the trusted `validate.yml` main-push release job.
+Deployment verifies those signatures against this repository, that workflow on
+`refs/heads/main`, and the selected source and workflow commit. It then checks that
+the signed run attempt completed successfully. Replacing a release asset and its
+manifest checksum cannot produce a valid signature. Missing attestations fail
+before any VPS connection. Both builds use that commit. The Linux archive
 contains the checked source and pinned runtime; it excludes import caches, test
 output and downloaded ZIP files. Neither build contains real pilot credentials.
 
@@ -22,6 +28,9 @@ after ordinary Actions artifacts expire. Do not delete or replace a release used
 by the VPS, especially its previous client. Protect `main`, review workflow changes,
 and restrict modification/deletion of `build-*` tags with a repository ruleset.
 Repository administrators and people who can modify these workflows remain trusted.
+Attestations are available for this public repository without a paid service.
+Only the main release job has `id-token: write` and `attestations: write`; PR builds
+and preview jobs have neither. Keep those permissions scoped to that job.
 
 ### One-time operator setup
 
@@ -125,6 +134,10 @@ The local alias is not available inside GitHub Actions.
    strict SSH host checking. Do not accept an unverified `ssh-keyscan` result.
    No pilot login, personal SSH key, recovery private key or VPS sudo password belongs
    in GitHub. Permit Actions to create Releases in repository settings if disabled.
+   Also permit the pinned `actions/attest-build-provenance` action if an Actions
+   allowlist is configured. GitHub's hosted Ubuntu runner supplies `gh attestation
+   verify`; a failed or unavailable verifier prevents deployment. The first merged
+   main build must publish its attestations successfully before Deploy server works.
 6. Before the first deployment, preserve the matching client for the current
    pre-CI release, `90650412c9027500f2e2e82d800a62e8af63b45c`. Confirm the live commit
    again with `ssh dorbit-vps 'readlink /opt/dorbit/current'`. Create a clean
@@ -285,6 +298,13 @@ out the trusted workflow commit and handles the archives without executing PR co
 Only manually dispatched workflows from `main` can use the preview environment.
 Keep preview deployment secrets in that environment, never as repository secrets.
 Do not use `pull_request_target` to execute PR code with secrets.
+The trusted deployment job downloads raw artifact ZIPs through the GitHub API.
+Each must contain exactly one expected regular file, `server.tar.gz` or
+`windows.zip`. It copies that member to a fixed new file without extracting ZIP
+paths. Extra entries, traversal paths, links and existing output files are rejected
+before Tailscale or SSH credentials are used. Release publication uses the same
+downloader. Artifact names include the run attempt; start a new full run instead
+of rerunning only some failed jobs.
 
 When the job finishes, open its summary and download
 `Preview-Windows-<commit>-<attempt>` from the linked run's artifacts. Extract that
@@ -352,11 +372,23 @@ users to the `dorbit` or administrative groups.
 
 Use `sudoedit /etc/dorbit-preview/server.env` to enter `DORBIT_PORT=24568`.
 Create `/etc/dorbit-preview/backup-recipient.txt` with your `age1...` public recovery
-recipient. Both files must be root-owned and mode 0644. Create a fresh seed ledger
-and private test credential with the existing deployed provisioning tool:
+recipient. Both files must be root-owned and mode 0644. Use `tools/pilots.py` from
+the reviewed checkout on your PC to create a fresh seed ledger. Do not run or copy
+the deployed `/opt/dorbit/current/tools/pilots.py` as an administrator: the game
+account can modify deployed release files. From that reviewed local checkout:
+
+```powershell
+ssh dorbit-vps 'mkdir -m 0700 /home/dorbit-admin/dorbit-preview-setup'
+scp tools/pilots.py dorbit-vps:/home/dorbit-admin/dorbit-preview-setup/pilots.py
+```
+
+Stop if that directory already exists and inspect its owner and contents first.
+The directory and uploaded script must belong to `dorbit-admin`, with no game-user
+write access. On the VPS as `dorbit-admin`, use Python isolated mode so the current
+directory and user site packages cannot replace standard-library imports:
 
 ```bash
-python3 /opt/dorbit/current/tools/pilots.py /home/dorbit-admin/dorbit-preview-seed preview /home/dorbit-admin/dorbit-preview-pilot.json --init
+python3 -I /home/dorbit-admin/dorbit-preview-setup/pilots.py /home/dorbit-admin/dorbit-preview-seed preview /home/dorbit-admin/dorbit-preview-pilot.json --init
 sudo install -d -o root -g root -m 0700 /etc/dorbit-preview/seed
 sudo install -o root -g root -m 0600 /home/dorbit-admin/dorbit-preview-seed/pilots.json /etc/dorbit-preview/seed/pilots.json
 ```
@@ -365,7 +397,7 @@ This creates a new test pilot; it does not read or modify production saves. Copy
 `dorbit-preview-pilot.json` privately to your PC using `scp dorbit-vps:dorbit-preview-pilot.json .`
 from a private directory outside Git. The seed contains only its authentication
 verifier and initial progress. Each new PR gets a copy and the same preview login.
-The current deployed tool produces schema v1; PR #15's normal server migration
+The reviewed provisioning tool produces schema v1; PR #15's normal server migration
 accepts it. A future branch that drops that migration needs a separately prepared
 compatible seed; it must never fall back to production data.
 
