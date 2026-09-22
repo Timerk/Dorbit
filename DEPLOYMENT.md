@@ -16,7 +16,8 @@ contains the checked source and pinned runtime; it excludes import caches, test
 output and downloaded ZIP files. Neither build contains real pilot credentials.
 
 Publishing does not contact the VPS. Only **Actions > Deploy server > Run workflow**
-deploys. No test-server deployment is included. Release assets remain available
+deploys production. The separate preview actions below support PR playtesting.
+Release assets remain available
 after ordinary Actions artifacts expire. Do not delete or replace a release used
 by the VPS, especially its previous client. Protect `main`, review workflow changes,
 and restrict modification/deletion of `build-*` tags with a repository ruleset.
@@ -268,6 +269,207 @@ VPS, configured GitHub/Tailscale credentials or interrupted the live game. The
 first complete private CI deployment, encrypted recovery restore and player login
 remain operator checks after setup and explicit approval. No gameplay, protocol,
 authentication, save schema, local firewall or local service changes are included.
+
+## Preview a PR before merging
+
+After this infrastructure PR is merged, use **Actions > Deploy preview > Run
+workflow** on `main` and enter a PR number, such as `15`. Leave **fresh_saves**
+unchecked to keep that PR's progress. A stacked PR includes the code from its
+prerequisite branches; they do not need to merge before you test the combined build.
+
+The Action records the open PR's exact head commit, then checks and builds Linux
+and Windows from it. A later push does not change that selection. Only PR branches
+in this repository are accepted. Builds have no deployment secrets, do not retain
+checkout credentials, and run separately from the deployment job. That job checks
+out the trusted workflow commit and handles the archives without executing PR code.
+Only manually dispatched workflows from `main` can use the preview environment.
+Keep preview deployment secrets in that environment, never as repository secrets.
+Do not use `pull_request_target` to execute PR code with secrets.
+
+When the job finishes, open its summary and download
+`Preview-Windows-<commit>-<attempt>` from the linked run's artifacts. Extract that
+download, then extract `windows.zip` and run `Dorbit.exe`. Its `REVISION` file must
+match the summary's commit. Use your private preview pilot credential and connect
+through Tailscale to `100.86.199.82`, port `24568`. Your production credential is
+not the preview credential. No credential or private launcher is in the download.
+On PowerShell, after extracting the client, for example:
+
+```powershell
+$env:DORBIT_PILOT_FILE = 'C:\private\dorbit-preview-pilot.json'
+.\Dorbit.exe
+```
+
+Enter the preview address and port in the game's connection menu. Keep this
+PowerShell session separate from your production launcher. A successful job means
+the new game's listening log and service-owned UDP socket stayed ready for ten
+seconds. It still needs your human playtest. Run Deploy preview again after fixes.
+Use a new workflow run rather than rerunning only failed jobs: artifact names
+include the attempt number, so partial reruns cannot mix old and new builds.
+
+Open **Actions > Stop preview > Run workflow** when finished or before a production
+session with friends. It stops only `dorbit-preview.service` and verifies that no
+processes owned by `dorbit-preview` remain. Saves and release files stay on disk.
+Deploy preview again to start it. Preview has no systemd boot enablement and stays
+off after a VPS reboot. Both actions share one concurrency group and cannot overlap.
+GitHub can replace an older pending run when another is submitted, so avoid
+submitting multiple pending actions. If a deployment is running, Stop preview waits for it; an administrator can stop the
+service directly if immediate intervention is needed.
+
+One preview runs at a time, with no CPU/memory limits. It shares the VPS's resources
+and kernel with production. A separate account and unit isolate file access and
+service control; this is for the operator's own code, not arbitrary outside code.
+
+### Preview setup on the VPS
+
+These steps are prepared for operator approval. They have not been run against
+the VPS during implementation. They create no paid infrastructure and do not
+require stopping production. Port 24568 was free during the read-only check;
+check it again with `sudo ss -lunp 'sport = :24568'` before installing.
+
+Use the age recovery key and verified SSH host key described above. Generate a
+different deployment SSH key, `dorbit-preview-ci`, for preview. Copy this PR's
+reviewed `tools/vps-deploy.py` and `deploy/dorbit-preview.service` to your VPS
+administrative account. As `dorbit-admin`, install:
+
+```bash
+sudo apt-get install -y age python3 procps iproute2
+sudo useradd --system --user-group --no-create-home --home-dir /var/lib/dorbit-preview/runtime --shell /usr/sbin/nologin dorbit-preview
+sudo useradd --system --user-group --no-create-home --home-dir /var/lib/dorbit-preview-login --shell /bin/sh dorbit-preview-deploy
+sudo install -d -o root -g root -m 0755 /opt/dorbit-preview /opt/dorbit-preview/releases /var/lib/dorbit-preview /var/lib/dorbit-preview/saves /etc/dorbit-preview
+sudo install -d -o dorbit-preview -g dorbit-preview -m 0700 /var/lib/dorbit-preview/runtime
+sudo install -d -o root -g root -m 0700 /var/lib/dorbit-preview-deploy
+sudo install -d -o root -g root -m 0755 /var/lib/dorbit-preview-login /var/lib/dorbit-preview-login/.ssh
+sudo install -o root -g root -m 0755 vps-deploy.py /usr/local/sbin/dorbit-preview-deploy
+sudo install -o root -g root -m 0644 dorbit-preview.service /etc/systemd/system/dorbit-preview.service
+```
+
+The executable must have that exact installed name. It selects fixed preview
+paths and commands. SSH input cannot select production paths or its service.
+Keep all parent directories root-owned as above, so the game cannot redirect the
+active release/data links. The unit also hides production data/configuration and
+limits writes to preview releases, saves and runtime files. Do not add the preview
+users to the `dorbit` or administrative groups.
+
+Use `sudoedit /etc/dorbit-preview/server.env` to enter `DORBIT_PORT=24568`.
+Create `/etc/dorbit-preview/backup-recipient.txt` with your `age1...` public recovery
+recipient. Both files must be root-owned and mode 0644. Create a fresh seed ledger
+and private test credential with the existing deployed provisioning tool:
+
+```bash
+python3 /opt/dorbit/current/tools/pilots.py /home/dorbit-admin/dorbit-preview-seed preview /home/dorbit-admin/dorbit-preview-pilot.json --init
+sudo install -d -o root -g root -m 0700 /etc/dorbit-preview/seed
+sudo install -o root -g root -m 0600 /home/dorbit-admin/dorbit-preview-seed/pilots.json /etc/dorbit-preview/seed/pilots.json
+```
+
+This creates a new test pilot; it does not read or modify production saves. Copy
+`dorbit-preview-pilot.json` privately to your PC using `scp dorbit-vps:dorbit-preview-pilot.json .`
+from a private directory outside Git. The seed contains only its authentication
+verifier and initial progress. Each new PR gets a copy and the same preview login.
+The current deployed tool produces schema v1; PR #15's normal server migration
+accepts it. A future branch that drops that migration needs a separately prepared
+compatible seed; it must never fall back to production data.
+
+Create `/usr/local/sbin/dorbit-preview-ci-command`, root-owned and mode 0755:
+
+```sh
+#!/bin/sh
+exec sudo -n /usr/local/sbin/dorbit-preview-deploy "$SSH_ORIGINAL_COMMAND"
+```
+
+Create `/var/lib/dorbit-preview-login/.ssh/authorized_keys`, root-owned and mode
+0644, with only the new preview public key:
+
+```text
+restrict,command="/usr/local/sbin/dorbit-preview-ci-command" ssh-ed25519 YOUR_PREVIEW_PUBLIC_KEY dorbit-preview-ci
+```
+
+Use `sudo visudo -f /etc/sudoers.d/dorbit-preview-deploy` to add:
+
+```sudoers
+dorbit-preview-deploy ALL=(root) NOPASSWD: /usr/local/sbin/dorbit-preview-deploy *
+```
+
+Run `sudo visudo -c`, `sudo systemd-analyze verify /etc/systemd/system/dorbit-preview.service`
+and `sudo systemctl daemon-reload`. Do not enable the unit or start it manually
+before the first deployment has created its release/data links. Its unit-file
+state must be `static`; it deliberately has no `[Install]` section.
+
+### Preview GitHub and Tailscale setup
+
+Create a GitHub environment named `dorbit-preview`, restricted to `main`. Use the
+same secret names as production, with separate preview values:
+
+| Kind | Name | Preview value |
+| --- | --- | --- |
+| Secret | `DORBIT_DEPLOY_SSH_KEY` | Entire private `dorbit-preview-ci` SSH key |
+| Secret | `TS_OAUTH_CLIENT_ID` | Separate preview Tailscale OAuth client ID |
+| Secret | `TS_OAUTH_SECRET` | Its OAuth client secret |
+| Variable | `DORBIT_KNOWN_HOSTS` | Same verified `100.86.199.82 ssh-ed25519 AAAA...` line |
+
+The manual Run workflow click is your approval. A second environment approval is
+optional for this solo preview workflow. Keep protection on `main` and secure your
+GitHub account, since someone who can change trusted workflows can misuse secrets.
+
+Create `tag:dorbit-preview-ci`, owned by administrators, and an OAuth client with
+`auth_keys` write permission limited to that tag. Add this Tailscale grant:
+
+```json
+{"src": ["tag:dorbit-preview-ci"], "dst": ["100.86.199.82"], "ip": ["tcp:22"]}
+```
+
+Allow your existing operator group to reach `100.86.199.82` on `udp:24568` too.
+Friend/pilot access to production need not include preview. Check policy tests
+and remove broader grants that defeat these restrictions. Neither CI tag needs
+game-port access. Keep public SSH and game ports closed; no development-machine
+firewall or service changes are needed.
+
+### Preview failure and recovery
+
+No automatic action deletes locks, restores a ledger or rolls back a migration.
+The **fresh_saves** option archives that PR's whole old data directory only after
+the encrypted stopped-server backup has been uploaded off the VPS. It resets
+preview progress explicitly; other PR directories remain unchanged.
+
+The fixed preview locations are:
+
+| Purpose | Location |
+| --- | --- |
+| Service | `dorbit-preview.service` |
+| Release and data links | `/opt/dorbit-preview/current`, `/var/lib/dorbit-preview/data` |
+| Installed releases | `/opt/dorbit-preview/releases/<commit>-<transaction>` |
+| Per-PR saves | `/var/lib/dorbit-preview/saves/pr-<number>` |
+| Pending transaction | `/var/lib/dorbit-preview-deploy/pending.json` |
+| Recovery directories | `/var/lib/dorbit-preview-deploy/<transaction>/` |
+| Last successful preview | `/var/lib/dorbit-preview-deploy/active.json` |
+
+Stop preview, then inspect its pending transaction and journal privately as
+`dorbit-admin`. Stop preview also works when a recovery transaction is pending,
+but does not clear it. If the runner disconnected, retrieve `backup.tar.age` using
+the administrative copy procedure above, substituting the preview recovery path.
+Decrypt off the VPS. A preview backup contains `previous-data/` if a preview was
+selected, `selected-data/` if the target PR already had saves, the old unit/env,
+transaction metadata and the previous preview's build-run reference when present.
+The root-only `archived-data/` directory additionally retains a fresh reset's old
+data. Do not replace a valid ledger just because a deployment failed.
+
+For a rollback, stop preview and confirm `pgrep -u dorbit-preview` reports no
+processes. Preserve any current data first. Use `previous_link` and `previous_data`
+from the transaction to restore the preview release and data symlinks. Both must
+stay inside the preview directories. Decide save compatibility before restarting,
+following README.md's recovery procedure. A first deployment has no previous links;
+recover or explicitly reset its test data before trying again. After successful
+recovery, move `pending.json` into its transaction directory as `resolved-pending.json`.
+
+Artifacts are retained for 90 days or your repository's shorter limit. Keep the
+matching Windows client and encrypted recovery download privately if you need a
+longer rollback window. The run/attempt in `active.json` identifies the exact old
+client artifact. Old preview releases and backups are not automatically deleted;
+remove only inspected, unused preview directories when you need disk space.
+
+Local tests cover PR selection, isolated saves, explicit reset, repeated same-commit
+deployment and stopping after failures. The preview unit can be checked without
+installing a service. A full Tailscale/SSH preview deployment and human reconnect
+remain checks after operator setup and approval. Production has not been interrupted.
 
 ## Prepare a release manually
 
