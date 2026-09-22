@@ -194,7 +194,17 @@ If a transaction is pending, record its `id`, `previous`, `previous_link` and ph
 Its files are in `/var/lib/dorbit-deploy/<id>/`, readable only by root. If the runner
 lost contact before uploading the recovery artifact, copy `backup.tar.age` from
 that directory using your administrative account and keep it off-machine before
-proceeding. If encryption or stop failed, a complete encrypted backup may not exist.
+proceeding. For example, on the VPS, replace `TRANSACTION_ID` below:
+
+```bash
+sudo install -o dorbit-admin -g dorbit-admin -m 0600 \
+  /var/lib/dorbit-deploy/TRANSACTION_ID/backup.tar.age \
+  /home/dorbit-admin/dorbit-recovery-TRANSACTION_ID.tar.age
+```
+
+Then on your PC run
+`scp dorbit-vps:dorbit-recovery-TRANSACTION_ID.tar.age .`.
+If encryption or stop failed, a complete encrypted backup may not exist.
 Keep the service stopped and follow README.md's stopped-server copy procedure first.
 Never remove the lock just to make deployment proceed.
 
@@ -235,7 +245,9 @@ and `server.env` to their original paths, run `sudo systemctl daemon-reload`, an
 then start Dorbit. Check the new invocation's listening log and UDP socket, and
 connect with the previous Windows client from the recovery artifact or old Release.
 Verify credits after reconnect. Only after successful recovery, archive the resolved
-`pending.json` into its transaction directory. Do not delete the recovery directory.
+`pending.json` into its transaction directory with
+`sudo mv /var/lib/dorbit-deploy/pending.json /var/lib/dorbit-deploy/TRANSACTION_ID/resolved-pending.json`.
+Do not delete the recovery directory.
 If a failed deployment installed the selected commit's directory, inspect it before
 reusing or removing it; the helper refuses to overwrite existing releases.
 
@@ -246,6 +258,8 @@ They cover traversal/link archives, unit changes, mismatched current commits, st
 locks, backup receipts, pending transactions, preservation of saves/previous releases,
 failed readiness and an active systemd service without game readiness. The ordinary
 Linux checks still exercise real Godot processes and disposable saves.
+Release-selection tests also reject failed, incomplete, fork, PR and non-main
+validation runs and confirm that a successful selection preserves the old client.
 
 The existing VPS was inspected read-only on 2026-09-22. It still ran `9065041`,
 owned UDP 24567, used the expected unit without overrides and matched the pinned
