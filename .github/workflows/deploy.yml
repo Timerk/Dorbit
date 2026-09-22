@@ -16,6 +16,7 @@ on:
 permissions:
   contents: read
   actions: read
+  attestations: read
 
 concurrency:
   group: dorbit-production-deployment
@@ -33,6 +34,8 @@ jobs:
       EXPECTED_CURRENT: ${{ inputs.expected_current }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: Verify tested release and preserve matching rollback client
         run: python3 tools/ci-deploy.py select
       - name: Join private deployment network
