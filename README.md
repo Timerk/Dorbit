@@ -10,7 +10,7 @@ Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated ser
 
 ## Play
 
-Launch `build/windows/Dorbit.exe` after building, or download the `Dorbit-Windows` artifact from a successful GitHub Actions run. Extract the artifact before playing and keep the included third-party notices with the executable.
+Launch `build/windows/Dorbit.exe` after building, or download the `Dorbit-Windows-<commit>-<attempt>` artifact from a successful GitHub Actions run. Extract the artifact, then its `windows.zip`, before playing and keep the included third-party notices with the executable.
 
 Set `DORBIT_PILOT_FILE` to your private credential file as described below. Enter the server address and UDP port in the connection menu, then choose **Connect**. Use matching client and server builds.
 
