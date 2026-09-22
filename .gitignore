@@ -4,3 +4,4 @@ build/*
 !build/.gdignore
 *.log
 export_credentials.cfg
+__pycache__/
