@@ -63,7 +63,7 @@ class DeploymentFixture:
         self.addCleanup(patcher.stop)
         return result
 
-    def command(self, *args):
+    def command(self, *args, **kwargs):
         self.calls.append(args)
         if args[:2] == ("systemctl", "is-active"):
             return "active"
@@ -212,12 +212,14 @@ class PreviewDeploymentTest(DeploymentFixture, unittest.TestCase):
         self.production.mkdir()
         (self.production / "pilots.json").write_text("production must stay untouched")
 
-    def command(self, *args):
+    def command(self, *args, **kwargs):
         if "--property=User" in args:
             return "dorbit-preview"
         if "--property=UnitFileState" in args:
             return "static"
-        return super().command(*args)
+        if args[:2] == ("systemctl", "reset-failed") and kwargs.get("check", True):
+            raise subprocess.CalledProcessError(1, args, stderr="Unit not loaded")
+        return super().command(*args, **kwargs)
 
     def prepare(self, pr=15, fresh=False):
         archive = self.archive()
