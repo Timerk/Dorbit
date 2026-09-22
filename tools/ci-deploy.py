@@ -83,6 +83,17 @@ def verify_provenance(path, sha):
         "--signer-digest", sha, "--deny-self-hosted-runners")
 
 
+def verify_rollback_client(path, sha):
+    if sha == "90650412c9027500f2e2e82d800a62e8af63b45c":
+        # This pre-CI release has no attestation. Its independently archived checksum
+        # belongs in the protected environment, never in a mutable release asset.
+        expected = os.environ.get("LEGACY_CLIENT_SHA256", "")
+        if not re.fullmatch(r"[0-9a-f]{64}", expected) or digest(path) != expected:
+            raise ValueError("Pre-CI rollback client needs its trusted environment checksum")
+    else:
+        verify_provenance(path, sha)
+
+
 def ssh(command, **kwargs):
     user = "dorbit-preview-deploy" if os.environ.get("DEPLOY_TARGET") == "preview" else "dorbit-deploy"
     return run("ssh", "-F", "/dev/null", "-o", "BatchMode=yes", "-o", "IdentitiesOnly=yes",
@@ -228,9 +239,10 @@ def select():
     with zipfile.ZipFile("dist/windows.zip") as client:
         if client.read("REVISION").decode().strip() != sha:
             raise ValueError("Client revision mismatch")
-    # This also supports a manually archived pre-CI client with a REVISION file.
+    # Authenticate the rollback download too, before preserving it for the operator.
     Path("recovery").mkdir()
     download(f"build-{previous}", "windows.zip", "recovery")
+    verify_rollback_client("recovery/windows.zip", previous)
     with zipfile.ZipFile("recovery/windows.zip") as client:
         if client.read("REVISION").decode().strip() != previous:
             raise ValueError("Rollback client revision mismatch")

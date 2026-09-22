@@ -318,8 +318,10 @@ class ReleaseSelectionTest(unittest.TestCase):
                         GITHUB_REPOSITORY="test/dorbit"), \
              patch.object(ci, "api", side_effect=[{"draft": False, "prerelease": False}, self.build, {"id": 42}]), \
              patch.object(ci, "verify_provenance", side_effect=self.provenance), \
+             patch.object(ci, "verify_rollback_client") as rollback, \
              patch.object(ci, "download", side_effect=self.download), patch("builtins.print"):
             ci.select()
+        rollback.assert_called_once_with("recovery/windows.zip", OLD)
 
     def test_selects_tested_pair_and_preserves_old_client(self):
         self.select()
@@ -448,6 +450,18 @@ class ArtifactBoundaryTest(unittest.TestCase):
             "https://github.com/test/dorbit/.github/workflows/validate.yml@refs/heads/main",
             "--source-ref", "refs/heads/main", "--source-digest", NEW,
             "--signer-digest", NEW, "--deny-self-hosted-runners")
+
+    def test_rollback_requires_attestation_or_exact_legacy_checksum(self):
+        self.target.write_bytes(b"independently archived pre-CI client")
+        legacy = "90650412c9027500f2e2e82d800a62e8af63b45c"
+        with patch.object(ci, "verify_provenance") as verify:
+            ci.verify_rollback_client(self.target, OLD)
+        verify.assert_called_once_with(self.target, OLD)
+        for value in ("", "0" * 64):
+            with patch.dict(os.environ, LEGACY_CLIENT_SHA256=value), self.assertRaisesRegex(ValueError, "trusted environment"):
+                ci.verify_rollback_client(self.target, legacy)
+        with patch.dict(os.environ, LEGACY_CLIENT_SHA256=ci.digest(self.target)):
+            ci.verify_rollback_client(self.target, legacy)
 
 
 if __name__ == "__main__":
