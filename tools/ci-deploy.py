@@ -35,12 +35,89 @@ def download(tag, name, directory):
 
 
 def ssh(command, **kwargs):
+    user = "dorbit-preview-deploy" if os.environ.get("DEPLOY_TARGET") == "preview" else "dorbit-deploy"
     return run("ssh", "-F", "/dev/null", "-o", "BatchMode=yes", "-o", "IdentitiesOnly=yes",
                "-o", "StrictHostKeyChecking=yes", "-o", "HostKeyAlgorithms=ssh-ed25519",
                "-o", "UserKnownHostsFile=" + str(Path.home() / ".ssh/dorbit_hosts"),
                "-o", "ConnectTimeout=15", "-o", "ServerAliveInterval=15",
                "-o", "ServerAliveCountMax=3", "-i", str(Path.home() / ".ssh/dorbit_ci"),
-               "dorbit-deploy@100.86.199.82", command, **kwargs)
+               f"{user}@100.86.199.82", command, **kwargs)
+
+
+def ssh_config():
+    directory = Path.home() / ".ssh"
+    directory.mkdir(mode=0o700, exist_ok=True)
+    for name, variable in (("dorbit_ci", "DEPLOY_KEY"), ("dorbit_hosts", "KNOWN_HOSTS")):
+        path = directory / name
+        path.write_text(os.environ[variable].strip() + "\n")
+        path.chmod(0o600)
+    fingerprint = subprocess.check_output(["ssh-keygen", "-lf", str(directory / "dorbit_hosts")], text=True)
+    if len(fingerprint.splitlines()) != 1 or fingerprint.split()[1] != "SHA256:P+Lvr8RDA46ECqUdkvNtiP8t/HOejVCmtJVqqsdE7io":
+        raise ValueError("Unexpected VPS host key")
+
+
+def preview_select():
+    number = os.environ["PR_NUMBER"]
+    if not re.fullmatch(r"[1-9][0-9]{0,8}", number):
+        raise ValueError("Enter a PR number")
+    repo = os.environ["GITHUB_REPOSITORY"]
+    pr = api(f"repos/{repo}/pulls/{number}")
+    if pr["state"] != "open" or not pr["head"]["repo"] or pr["head"]["repo"]["full_name"] != repo:
+        raise ValueError("Preview accepts only open PRs with branches in this repository")
+    sha = commit(pr["head"]["sha"])
+    with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
+        output.write(f"sha={sha}\npr={number}\n")
+    with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as output:
+        output.write(f"Selected PR #{number}, exact head commit `{sha}`. Later pushes require another deployment.\n")
+
+
+def preview_prepare():
+    sha = commit(os.environ["PREVIEW_SHA"])
+    number = os.environ["PR_NUMBER"]
+    build_run = os.environ["GITHUB_RUN_ID"]
+    attempt = os.environ["GITHUB_RUN_ATTEMPT"]
+    if not all(re.fullmatch(r"[1-9][0-9]*", value) for value in (number, build_run, attempt)):
+        raise ValueError("Invalid preview metadata")
+    with zipfile.ZipFile("dist/windows.zip") as client:
+        if client.read("REVISION").decode().strip() != sha:
+            raise ValueError("Preview client revision mismatch")
+    mode = "fresh" if os.environ.get("FRESH_SAVES") == "true" else "keep"
+    checksum = digest("dist/server.tar.gz")
+    command = f"prepare-preview {sha} {number} {mode} {checksum} {build_run} {attempt}"
+    Path("recovery").mkdir()
+    with Path("dist/server.tar.gz").open("rb") as archive:
+        result = ssh(command, stdin=archive, stdout=subprocess.PIPE)
+    state = json.loads(result.stdout)
+    Path("recovery/transaction.json").write_text(json.dumps(state, indent=2))
+    with Path("recovery/backup.tar.age").open("wb") as backup:
+        ssh(f"backup {state['id']}", stdout=backup)
+    if digest("recovery/backup.tar.age") != state["backup_sha256"]:
+        raise ValueError("Preview recovery download checksum mismatch; activation refused")
+
+
+def preview_report():
+    repo = os.environ["GITHUB_REPOSITORY"]
+    run_id = os.environ["GITHUB_RUN_ID"]
+    message = "## Preview " + ("ready" if Path("activated").exists() else "did not complete") + "\n\n"
+    sha = os.environ.get("PREVIEW_SHA", "")
+    if re.fullmatch(r"[0-9a-f]{40}", sha):
+        message += f"Commit: `{sha}`. Connect through Tailscale to `100.86.199.82:24568` with your private preview pilot.\n\n"
+        message += f"[Matching Windows client and encrypted recovery copy](https://github.com/{repo}/actions/runs/{run_id}#artifacts). "
+        message += f"Download `Preview-Windows-{sha}-{os.environ['GITHUB_RUN_ATTEMPT']}`, then extract windows.zip.\n\n"
+    message += ("Use **Stop preview** when finished. Production has separate controls. "
+                "If deployment failed, preview may be stopped with a pending transaction. "
+                f"[Preview recovery instructions](https://github.com/{repo}/blob/main/DEPLOYMENT.md#preview-failure-and-recovery).\n")
+    if Path("recovery/transaction.json").exists():
+        state = json.loads(Path("recovery/transaction.json").read_text())
+        message += f"\nPR #{state['pr']}; recovery directory: `/var/lib/dorbit-preview-deploy/{state['id']}`.\n"
+    with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as output:
+        output.write(message)
+
+
+def preview_stop():
+    ssh("stop")
+    with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as output:
+        output.write("Preview stopped. No preview processes remain; saves are retained. Deploy preview again to start it.\n")
 
 
 def publish():
@@ -151,4 +228,6 @@ def report():
 
 if __name__ == "__main__":
     {"publish": publish, "select": select, "prepare": prepare,
-     "activate": activate, "report": report}[sys.argv[1]]()
+     "activate": activate, "report": report, "ssh-config": ssh_config,
+     "preview-select": preview_select, "preview-prepare": preview_prepare,
+     "preview-report": preview_report, "preview-stop": preview_stop}[sys.argv[1]]()

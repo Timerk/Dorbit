@@ -1,0 +1,32 @@
+[Unit]
+Description=Dorbit PR preview server
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=dorbit-preview
+Group=dorbit-preview
+WorkingDirectory=/opt/dorbit-preview/current
+Environment=HOME=/var/lib/dorbit-preview/runtime
+Environment=DORBIT_DATA_DIR=/var/lib/dorbit-preview/data
+Environment=DORBIT_PORT=24568
+EnvironmentFile=/etc/dorbit-preview/server.env
+ExecStart=/usr/bin/bash /opt/dorbit-preview/current/tools/server.sh run --port=${DORBIT_PORT}
+Restart=on-failure
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/dorbit-preview/releases /var/lib/dorbit-preview/saves /var/lib/dorbit-preview/runtime
+InaccessiblePaths=-/var/lib/dorbit -/var/lib/dorbit-deploy -/etc/dorbit
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dorbit-preview
+
+# Deliberately no [Install] section: preview does not start at boot.

@@ -1,0 +1,143 @@
+name: Deploy preview
+run-name: Preview PR ${{ inputs.pr }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Open PR number from a branch in this repository
+        type: string
+        required: true
+      fresh_saves:
+        description: Archive this PR's existing test saves and start fresh
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dorbit-preview
+  cancel-in-progress: false
+
+jobs:
+  select:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.select.outputs.sha }}
+      pr: ${{ steps.select.outputs.pr }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - id: select
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr }}
+        run: python3 tools/ci-deploy.py preview-select
+
+  linux:
+    needs: select
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.select.outputs.sha }}
+          path: source
+          persist-credentials: false
+      - name: Prepare checked PR release using the trusted packaging helper
+        env:
+          PREVIEW_SHA: ${{ needs.select.outputs.sha }}
+        run: |
+          # Copy only the packaging helper. The PR supplies its game and check scripts.
+          cp tools/deploy-server.sh source/tools/deploy-server.sh
+          bash source/tools/deploy-server.sh "$PREVIEW_SHA"
+          tar --exclude='./.godot' --exclude='./build' --exclude='*.zip' \
+            -czf server.tar.gz -C "source/build/server-releases/$PREVIEW_SHA" .
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Preview-Linux-${{ needs.select.outputs.sha }}-${{ github.run_attempt }}
+          path: server.tar.gz
+          if-no-files-found: error
+          retention-days: 90
+
+  windows:
+    needs: select
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.select.outputs.sha }}
+          persist-credentials: false
+      - name: Check and export the selected Windows client
+        shell: pwsh
+        env:
+          PREVIEW_SHA: ${{ needs.select.outputs.sha }}
+        run: |
+          ./tools/dev.ps1 setup
+          ./tools/dev.ps1 check
+          ./tools/dev.ps1 build
+          [IO.File]::WriteAllText("$PWD/build/windows/REVISION", "$env:PREVIEW_SHA`n")
+          Compress-Archive -Path build/windows/* -DestinationPath windows.zip
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Preview-Windows-${{ needs.select.outputs.sha }}-${{ github.run_attempt }}
+          path: windows.zip
+          if-no-files-found: error
+          retention-days: 90
+
+  deploy:
+    needs: [select, linux, windows]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: dorbit-preview
+    env:
+      DEPLOY_TARGET: preview
+      PREVIEW_SHA: ${{ needs.select.outputs.sha }}
+      PR_NUMBER: ${{ needs.select.outputs.pr }}
+      FRESH_SAVES: ${{ inputs.fresh_saves }}
+    steps:
+      # Fresh runner, trusted workflow commit. Never execute PR code in this job.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: Preview-Linux-${{ needs.select.outputs.sha }}-${{ github.run_attempt }}
+          path: dist
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: Preview-Windows-${{ needs.select.outputs.sha }}-${{ github.run_attempt }}
+          path: dist
+      - uses: tailscale/github-action@6cae46e2d796f265265cfcf628b72a32b4d7cade # v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:dorbit-preview-ci
+      - name: Configure pinned SSH identity
+        env:
+          DEPLOY_KEY: ${{ secrets.DORBIT_DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ vars.DORBIT_KNOWN_HOSTS }}
+        run: python3 tools/ci-deploy.py ssh-config
+      - name: Stage preview and preserve stopped test saves
+        run: python3 tools/ci-deploy.py preview-prepare
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: preview-recovery-${{ github.run_id }}-${{ github.run_attempt }}
+          path: recovery/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Activate and verify preview readiness
+        run: python3 tools/ci-deploy.py activate
+      - name: Report result and matching client
+        if: always()
+        run: python3 tools/ci-deploy.py preview-report
+      - name: Remove runner SSH credentials
+        if: always()
+        run: rm -f ~/.ssh/dorbit_ci ~/.ssh/dorbit_hosts
