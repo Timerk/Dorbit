@@ -33,12 +33,16 @@ var dedicated_server: bool = false
 var client_only: bool = true
 var server_port: int = FlightSession.PORT
 var audio: FeedbackAudio
+var settings := GameSettings.new()
+var settings_menu: SettingsMenu
 
 
 func _ready() -> void:
 	dedicated_server = dedicated_server or "--server" in OS.get_cmdline_user_args()
 	client_only = client_only and not "--offline" in OS.get_cmdline_user_args()
-	configure_input()
+	if not dedicated_server:
+		settings.load_from()
+	settings.configure_input()
 	SectorVisuals.environment(self, not dedicated_server)
 	SectorVisuals.station(self, STATION_POSITION, not dedicated_server)
 	if not dedicated_server:
@@ -47,6 +51,8 @@ func _ready() -> void:
 		player = Pilot.new()
 		player.position = SPAWN_POSITION
 		add_child(player)
+		player.mouse_sensitivity = settings.sensitivity
+		toast = "Welcome to Outpost 01. Hold %s to steer." % GameSettings.binding_text("steer")
 		player.destroyed.connect(on_destroyed)
 		player.fired.connect(on_laser)
 	alien = Alien.new()
@@ -65,6 +71,14 @@ func _ready() -> void:
 	session.name = "FlightSession"
 	session.sector = self
 	add_child(session)
+	if not dedicated_server:
+		apply_graphics()
+		var layer := CanvasLayer.new()
+		layer.layer = 6
+		add_child(layer)
+		settings_menu = SettingsMenu.new()
+		settings_menu.sector = self
+		layer.add_child(settings_menu)
 	if dedicated_server:
 		var port := server_port
 		for argument in OS.get_cmdline_user_args():
@@ -82,29 +96,6 @@ func _ready() -> void:
 		session.open_menu()
 
 
-func configure_input() -> void:
-	var bindings := {
-		"forward": KEY_W, "backward": KEY_S, "strafe_left": KEY_A,
-		"strafe_right": KEY_D, "move_down": KEY_Q, "move_up": KEY_E,
-		"boost": KEY_SHIFT, "cycle_target": KEY_TAB, "fire": KEY_SPACE,
-		"repair": KEY_R, "pause_game": KEY_ESCAPE, "fullscreen": KEY_F11,
-		"performance": KEY_F3, "quality": KEY_F4, "quit_game": KEY_F10,
-		"resolution_down": KEY_F5, "resolution_up": KEY_F6,
-		"multiplayer_menu": KEY_F7,
-	}
-	for action: String in bindings:
-		if InputMap.has_action(action):
-			continue
-		InputMap.add_action(action)
-		var key := InputEventKey.new()
-		key.physical_keycode = bindings[action]
-		InputMap.action_add_event(action, key)
-		# Remote and accessibility input may supply a logical key without a scancode.
-		var logical_key := InputEventKey.new()
-		logical_key.keycode = bindings[action]
-		InputMap.action_add_event(action, logical_key)
-
-
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_instance_valid(player):
 		set_paused(true)
@@ -113,6 +104,26 @@ func _notification(what: int) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if dedicated_server:
 		return
+	if event.is_echo():
+		return
+	if settings_menu.panel.visible:
+		return
+	if event.is_action_pressed("fullscreen"):
+		settings.fullscreen = DisplayServer.window_get_mode() != DisplayServer.WINDOW_MODE_FULLSCREEN
+		apply_graphics(false)
+		settings.save()
+	if event.is_action_pressed("performance"):
+		settings.show_performance = not show_performance
+		apply_graphics(false)
+		settings.save()
+	if event.is_action_pressed("quality"):
+		settings.low_quality = not low_quality
+		apply_graphics(false)
+		settings.save()
+	if paused and event.is_action_pressed("resolution_down"):
+		cycle_resolution(-1)
+	if paused and event.is_action_pressed("resolution_up"):
+		cycle_resolution(1)
 	if client_only and not session.active:
 		if event.is_action_pressed("quit_game"):
 			get_tree().quit()
@@ -123,38 +134,26 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause_game"):
 		session.menu.hide()
 		set_paused(not paused)
+		return
 	if event.is_action_pressed("quit_game") and paused:
 		get_tree().quit()
-	if event.is_action_pressed("fullscreen"):
-		var mode := DisplayServer.window_get_mode()
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if mode == DisplayServer.WINDOW_MODE_FULLSCREEN else DisplayServer.WINDOW_MODE_FULLSCREEN)
-	if event.is_action_pressed("performance"):
-		show_performance = not show_performance
-	if event.is_action_pressed("quality"):
-		low_quality = not low_quality
-		get_viewport().msaa_3d = Viewport.MSAA_DISABLED if low_quality else Viewport.MSAA_4X
-		notify("Graphics: %s" % ("low / antialiasing off" if low_quality else "high / 4x antialiasing"))
-	if paused and event.is_action_pressed("resolution_down"):
-		cycle_resolution(-1)
-	if paused and event.is_action_pressed("resolution_up"):
-		cycle_resolution(1)
 	if paused or not player.alive:
 		return
 	player.handle_mouse(event)
 	if event.is_action_pressed("cycle_target"):
 		select_target(alien if alien.alive else null)
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		pick_target(event.position)
+	if event.is_action_pressed("select_target"):
+		pick_target(get_viewport().get_mouse_position())
 	if event.is_action_pressed("fire"):
 		if is_instance_valid(target) and target.alive:
 			auto_fire = not auto_fire
 		else:
-			notify("Select an alien with Tab or left click first.")
+			notify("Select an alien with %s or %s first." % [GameSettings.binding_text("cycle_target"), GameSettings.binding_text("select_target")])
 	if event.is_action_pressed("repair"):
 		request_repair()
 
 
-func cycle_resolution(direction: int) -> void:
+func available_resolutions() -> Array[Vector2i]:
 	var available: Array[Vector2i] = []
 	var screen := DisplayServer.window_get_current_screen()
 	# Leave room for window borders and the desktop taskbar.
@@ -162,16 +161,38 @@ func cycle_resolution(direction: int) -> void:
 	for resolution in WINDOW_RESOLUTIONS:
 		if resolution.x <= usable.size.x - 32 and resolution.y <= usable.size.y - 64:
 			available.append(resolution)
+	return available
+
+
+func cycle_resolution(direction: int) -> void:
+	var available := available_resolutions()
 	if available.is_empty():
 		return
 	var current := DisplayServer.window_get_size()
 	var index := available.find(current)
 	if index < 0:
 		index = -1 if direction > 0 else 0
-	var next := available[posmod(index + direction, available.size())]
-	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-	DisplayServer.window_set_size(next)
-	DisplayServer.window_set_position(usable.position + (usable.size - next) / 2)
+	settings.resolution = available[posmod(index + direction, available.size())]
+	settings.fullscreen = false
+	apply_graphics()
+	settings.save()
+
+
+func apply_graphics(resize_window: bool = true) -> void:
+	low_quality = settings.low_quality
+	show_performance = settings.show_performance
+	get_viewport().msaa_3d = Viewport.MSAA_DISABLED if low_quality else Viewport.MSAA_4X
+	if DisplayServer.get_name() == "headless":
+		return
+	if settings.fullscreen:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		if resize_window:
+			var usable := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
+			var pixels := settings.resolution.min((usable.size - Vector2i(32, 64)).max(Vector2i(960, 600)))
+			DisplayServer.window_set_size(pixels)
+			DisplayServer.window_set_position(usable.position + (usable.size - pixels) / 2)
 
 
 func _physics_process(delta: float) -> void:
@@ -216,6 +237,8 @@ func _process(_delta: float) -> void:
 
 func set_paused(value: bool) -> void:
 	paused = value
+	if not paused and is_instance_valid(settings_menu):
+		settings_menu.dismiss()
 	if paused:
 		if is_instance_valid(player):
 			player.release_mouse()
