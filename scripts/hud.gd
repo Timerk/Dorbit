@@ -15,8 +15,26 @@ var marker_labels: Array[Rect2] = []
 var audio_controls: VBoxContainer
 var contract_panel: PanelContainer
 var contract_status: Label
-var contract_offers: Array[Button] = []
-var contract_abandon: Array[Button] = []
+var contract_choices: Dictionary[String, Button] = {}
+var contract_tabs: Array[Button] = []
+var contract_selected := "scout"
+var contract_active_only := false
+var contract_title: Label
+var contract_briefing: Label
+var contract_objective: Label
+var contract_progress: ProgressBar
+var contract_reward: Label
+var contract_slots: Label
+var contract_empty: Label
+var contract_accept: Button
+var contract_abandon: Button
+
+const CONTRACT_GOLD := Color("f4cf65")
+const CONTRACT_BRIEFINGS: Dictionary = {
+	"scout": "Scout patrols are closing in on the station approach. Clear these light contacts to keep the route to Outpost 01 open. A good first assignment for the Pathfinder.",
+	"sentinel": "Sentinels hold the deeper hunting grounds. Break their patrol to give our pilots room to operate. Expect stronger shields and sustained laser fire.",
+	"heavy": "A Heavy guards the outer flank. Bring upgraded equipment or fly with allies to take down this armored contact. Every contributing pilot advances their own hunt.",
+}
 
 
 func _ready() -> void:
@@ -69,44 +87,105 @@ func fire_feedback() -> String:
 
 func build_contract_panel() -> void:
 	contract_panel = PanelContainer.new()
-	contract_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	contract_panel.position = Vector2(-300, -195)
-	contract_panel.size = Vector2(600, 390)
-	contract_panel.add_theme_stylebox_override("panel", panel_style())
+	StationUi.frame(contract_panel, Vector2(880, 560))
 	add_child(contract_panel)
-	var margin := MarginContainer.new()
-	for side in ["left", "top", "right", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 24)
-	contract_panel.add_child(margin)
-	var rows := VBoxContainer.new()
-	rows.add_theme_constant_override("separation", 12)
-	margin.add_child(rows)
-	var title := Label.new()
-	title.text = "OUTPOST 01 / HUNTING CONTRACTS"
-	title.add_theme_color_override("font_color", CYAN)
-	rows.add_child(title)
-	contract_status = Label.new()
-	contract_status.custom_minimum_size = Vector2(550, 60)
-	contract_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	rows.add_child(contract_status)
+	var rows := StationUi.rows(contract_panel, 12)
+	var header := HBoxContainer.new()
+	rows.add_child(header)
+	var title := StationUi.text(header, "COMMUNICATION WINDOW / MISSION CONTROL", 19, INK)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	StationUi.button(header, "Close [C / Esc]", toggle_contracts)
+	var tabs := HBoxContainer.new()
+	rows.add_child(tabs)
+	for active_only: bool in [false, true]:
+		var tab := StationUi.button(tabs, "Active contracts" if active_only else "Hunting contracts", func(): filter_contracts(active_only))
+		tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tab.toggle_mode = true
+		tab.add_theme_stylebox_override("pressed", StationUi.style(Color("29516b"), CYAN))
+		contract_tabs.append(tab)
+	var body := HBoxContainer.new()
+	body.add_theme_constant_override("separation", 12)
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rows.add_child(body)
+	var sidebar := StationUi.card(body)
+	sidebar.custom_minimum_size.x = 280
+	var left := StationUi.rows(sidebar, 4)
+	var transmission := StationUi.card(left)
+	var signal_rows := StationUi.rows(transmission, 2)
+	StationUi.text(signal_rows, "OUTPOST 01 / SECURE UPLINK", 12, CYAN)
+	StationUi.art(signal_rows, "ship", Vector2(240, 96))
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	left.add_child(scroll)
+	var offers := VBoxContainer.new()
+	offers.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(offers)
 	for offer: String in HuntingContracts.OFFERS:
-		var button := Button.new()
-		button.pressed.connect(func(): sector.session.combat.request_contract("accept", offer))
-		var offer_row := HBoxContainer.new()
-		rows.add_child(offer_row)
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		offer_row.add_child(button)
-		contract_offers.append(button)
-		var abandon := Button.new()
-		abandon.text = "Abandon"
-		abandon.pressed.connect(func(): sector.session.combat.request_contract("abandon", offer))
-		offer_row.add_child(abandon)
-		contract_abandon.append(abandon)
-	var close := Button.new()
-	close.text = "Return to flight / C or Esc"
-	close.pressed.connect(toggle_contracts)
-	rows.add_child(close)
+		var button := StationUi.button(offers, "", func(): select_contract(offer))
+		button.custom_minimum_size.y = 52
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.toggle_mode = true
+		button.add_theme_color_override("font_pressed_color", CONTRACT_GOLD)
+		button.add_theme_stylebox_override("pressed", StationUi.style(Color("284553"), CYAN))
+		contract_choices[offer] = button
+	contract_empty = StationUi.text(offers, "No active contracts.\nChoose a hunt to get started.", 14, MUTED)
+	var detail := StationUi.card(body)
+	detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var right := StationUi.rows(detail, 8)
+	right.add_theme_constant_override("separation", 6)
+	contract_title = StationUi.text(right, "", 24, CONTRACT_GOLD)
+	contract_briefing = StationUi.text(right, "", 15)
+	contract_briefing.custom_minimum_size.y = 64
+	StationUi.text(right, "Overview", 17, CONTRACT_GOLD)
+	var overview := StationUi.card(right)
+	var objective_rows := StationUi.rows(overview, 4)
+	contract_objective = StationUi.text(objective_rows, "", 15)
+	contract_progress = ProgressBar.new()
+	contract_progress.custom_minimum_size.y = 8
+	contract_progress.show_percentage = false
+	contract_progress.add_theme_stylebox_override("background", StationUi.style(Color("172c40"), Color("263e53")))
+	contract_progress.add_theme_stylebox_override("fill", StationUi.style(CYAN, CYAN))
+	contract_progress.get_theme_stylebox("background").set_content_margin_all(0)
+	contract_progress.get_theme_stylebox("fill").set_content_margin_all(0)
+	objective_rows.add_child(contract_progress)
+	StationUi.text(right, "Reward", 17, CONTRACT_GOLD)
+	contract_reward = StationUi.text(StationUi.card(right), "", 18, CYAN)
+	StationUi.text(right, "Rewards pay automatically after the final kill.\nDeath keeps progress. Abandoning has no penalty.", 13, MUTED)
+	var space := Control.new()
+	space.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right.add_child(space)
+	var footer := StationUi.card(rows)
+	var footer_rows := VBoxContainer.new()
+	footer.add_child(footer_rows)
+	var actions := HBoxContainer.new()
+	footer_rows.add_child(actions)
+	contract_slots = StationUi.text(actions, "", 14, MUTED)
+	contract_slots.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	contract_accept = StationUi.button(actions, "Accept contract", func(): act_on_contract("accept"))
+	contract_accept.custom_minimum_size.x = 190
+	contract_accept.add_theme_stylebox_override("normal", StationUi.style(Color("2c5835"), Color("78b760")))
+	contract_accept.add_theme_stylebox_override("hover", StationUi.style(Color("3c7144"), GREEN))
+	contract_abandon = StationUi.button(actions, "Abandon contract", func(): act_on_contract("abandon"))
+	contract_abandon.custom_minimum_size.x = 190
+	contract_status = StationUi.text(footer_rows, "", 13, RED)
 	contract_panel.hide()
+
+
+func select_contract(offer: String) -> void:
+	contract_selected = offer
+	update_contract_panel()
+
+
+func filter_contracts(active_only: bool) -> void:
+	contract_active_only = active_only
+	update_contract_panel()
+
+
+func act_on_contract(action: String) -> void:
+	var button := contract_accept if action == "accept" else contract_abandon
+	if contract_panel.visible and button.visible and not button.disabled and not contract_selected.is_empty():
+		sector.session.combat.request_contract(action, contract_selected)
 
 
 func toggle_contracts() -> void:
@@ -133,19 +212,50 @@ func update_contract_panel() -> void:
 		contract_panel.hide()
 		return
 	var blocker := sector.repair_blocker()
-	contract_status.text = "Run one hunt of each type together. Rewards pay automatically.\nDeath keeps progress. Abandoning a hunt has no penalty."
-	if not blocker.is_empty():
-		contract_status.text += "\n" + blocker
-	var index := 0
+	contract_status.text = blocker.replace("to repair.", "to manage contracts.").replace("Repairs available", "Contract actions available")
+	contract_status.visible = not blocker.is_empty()
+	contract_slots.text = "%d contract slots remaining / %d active" % [HuntingContracts.OFFERS.size() - sector.active_contracts.size(), sector.active_contracts.size()]
+	contract_tabs[0].set_pressed_no_signal(not contract_active_only)
+	contract_tabs[1].set_pressed_no_signal(contract_active_only)
+	var visible_offers: Array[String] = []
 	for offer: String in HuntingContracts.OFFERS:
-		var terms: Dictionary = HuntingContracts.OFFERS[offer]
 		var current: Dictionary = sector.active_contracts.get(offer, {})
-		var button := contract_offers[index]
-		button.text = HuntingContracts.objective(current) if not current.is_empty() else "Accept: %d %s%s / %d CR" % [terms["required"], offer.capitalize(), "s" if terms["required"] > 1 else "", terms["reward"]]
-		button.disabled = not blocker.is_empty() or not current.is_empty()
-		contract_abandon[index].visible = not current.is_empty()
-		contract_abandon[index].disabled = not blocker.is_empty()
-		index += 1
+		var button := contract_choices[offer]
+		button.visible = not contract_active_only or not current.is_empty()
+		if button.visible:
+			visible_offers.append(offer)
+		var state := "Available"
+		if not current.is_empty():
+			state = "Reward pending" if HuntingContracts.ready(current) else "Active / %d of %d" % [current["progress"], current["required"]]
+		button.text = "%s hunt\n%s" % [offer.capitalize(), state]
+	if not visible_offers.has(contract_selected):
+		contract_selected = visible_offers[0] if not visible_offers.is_empty() else ""
+	for offer: String in contract_choices:
+		contract_choices[offer].set_pressed_no_signal(offer == contract_selected)
+	contract_empty.visible = visible_offers.is_empty()
+	contract_progress.visible = not contract_selected.is_empty()
+	if contract_selected.is_empty():
+		contract_accept.hide()
+		contract_abandon.hide()
+		contract_title.text = "No active contracts"
+		contract_briefing.text = "Mission Control is ready when you are. Open Hunting contracts to choose your next assignment."
+		contract_objective.text = "No hunt selected."
+		contract_reward.text = "Credits / --"
+		return
+	var current: Dictionary = sector.active_contracts.get(contract_selected, {})
+	var terms: Dictionary = current if not current.is_empty() else HuntingContracts.OFFERS[contract_selected]
+	contract_title.text = contract_selected.capitalize() + " hunt"
+	contract_briefing.text = CONTRACT_BRIEFINGS[contract_selected]
+	contract_objective.text = "Destroy %s%s    /    %d / %d" % [contract_selected.capitalize(), "s" if terms["required"] > 1 else "", terms.get("progress", 0), terms["required"]]
+	contract_progress.max_value = terms["required"]
+	contract_progress.value = terms.get("progress", 0)
+	contract_reward.text = "Credits    %d%s" % [terms["reward"], " / reward pending: wallet full" if HuntingContracts.ready(current) else ""]
+	contract_accept.visible = current.is_empty()
+	contract_abandon.visible = not current.is_empty()
+	contract_accept.disabled = not blocker.is_empty()
+	contract_abandon.disabled = not blocker.is_empty()
+	contract_accept.tooltip_text = contract_status.text
+	contract_abandon.tooltip_text = contract_status.text
 
 
 func text_at(point: Vector2, text: String, size_px: int = 16, color: Color = INK) -> void:
