@@ -1,5 +1,5 @@
 extends "res://tests/flight_playthrough.gd"
-## Render a real client accepting, hunting three Scouts and claiming from a disposable server.
+## Render concurrent contracts and automatic Scout payment from a disposable server.
 
 var server: Sector
 var flying := false
@@ -55,7 +55,10 @@ func run() -> void:
 	await snapshot("contracts-01-offers")
 	sector.hud.contract_offers[0].pressed.emit()
 	await create_timer(0.4).timeout
-	check(sector.active_contract.get("type") == "scout", "Scout button accepts through server RPC")
+	sector.hud.contract_offers[1].pressed.emit()
+	sector.hud.contract_offers[2].pressed.emit()
+	await create_timer(0.4).timeout
+	check(sector.active_contracts.size() == 3, "All three hunts accept through server RPC")
 	await snapshot("contracts-02-accepted")
 	await press(KEY_C)
 	flying = true
@@ -69,14 +72,15 @@ func run() -> void:
 	await create_timer(0.5).timeout
 	await snapshot("contracts-03-hunting")
 	deadline = Time.get_ticks_msec() + 80000
-	while not HuntingContracts.ready(sector.active_contract) and Time.get_ticks_msec() < deadline:
+	while sector.active_contracts.has("scout") and Time.get_ticks_msec() < deadline:
 		if not sector.player.alive:
 			break
 		await physics_frame
 	flying = false
 	hunt = null
 	sector.auto_fire = false
-	check(HuntingContracts.ready(sector.active_contract), "Three live Scout kills complete the contract")
+	check(not sector.active_contracts.has("scout") and sector.credits == 180, "Three live Scout kills pay automatically in flight")
+	check(sector.active_contracts.has("sentinel") and sector.active_contracts.has("heavy"), "Other hunts remain active")
 	await snapshot("contracts-04-complete")
 	if failures:
 		await finish_replay()
@@ -92,13 +96,11 @@ func run() -> void:
 	await create_timer(6.0).timeout
 	flying = false
 	await press(KEY_C)
-	check(sector.hud.contract_panel.visible and not sector.hud.contract_claim.disabled, "Returning pilot can claim at the station")
-	await snapshot("contracts-05-ready")
-	var balance := sector.credits
-	sector.hud.contract_claim.pressed.emit()
+	check(sector.hud.contract_panel.visible and not sector.hud.contract_offers[0].disabled, "Returning pilot can repeat the paid hunt")
+	sector.hud.contract_offers[0].pressed.emit()
 	await create_timer(0.4).timeout
-	check(sector.active_contract.is_empty() and sector.credits == balance + 90, "Claim button pays once and restores the offer selection")
-	await snapshot("contracts-06-claimed")
+	check(sector.active_contracts.size() == 3 and sector.credits == 180, "Repeating a hunt leaves the other contracts intact")
+	await snapshot("contracts-06-repeated")
 	if rendered:
 		root.size = Vector2i(960, 600)
 		await create_timer(0.4).timeout
@@ -109,7 +111,7 @@ func run() -> void:
 func finish_replay() -> void:
 	flying = false
 	Input.action_release("forward")
-	print("Contract playthrough: %d failures; credits=%d; contract=%s" % [failures, sector.credits, sector.active_contract])
+	print("Contract playthrough: %d failures; credits=%d; contract=%s" % [failures, sector.credits, sector.active_contracts])
 	sector.session.disconnect_session("Replay finished")
 	server.session.disconnect_session("Replay finished")
 	quit(0 if failures == 0 else 1)

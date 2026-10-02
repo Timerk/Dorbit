@@ -9,7 +9,7 @@ var solo: Dictionary = {}
 
 func begin() -> void:
 	var sector := session.sector
-	sector.active_contract = {}
+	sector.active_contracts = {}
 	solo = {"credits": sector.credits, "kills": sector.kills, "stage": sector.objective_stage}
 	records.clear()
 	sector.credits = 0
@@ -43,10 +43,10 @@ func add_player(id: int, location: Vector3) -> void:
 	ship.set_meta("feedback_health_received", false)
 	if multiplayer.is_server():
 		records[id] = {"credits": 0, "kills": 0, "stage": 0, "respawn": 0.0, "life": 0, "spawn": location}
-		records[id]["contract"] = {}
+		records[id]["contracts"] = {}
 		if session.sector.dedicated_server:
 			records[id]["credits"] = session.store.pilots[session.pilot_ids[id]]["credits"]
-			records[id]["contract"] = session.store.pilots[session.pilot_ids[id]]["contract"].duplicate()
+			records[id]["contracts"] = session.store.pilots[session.pilot_ids[id]]["contracts"].duplicate(true)
 
 
 func remove_player(id: int) -> void:
@@ -71,6 +71,7 @@ func tick(delta: float) -> void:
 		if sector.target == alien and not alien.available():
 			sector.select_target(null)
 	for id: int in records:
+		pay_pending_contracts(id)
 		var ship := session.ships[id]
 		ship.tick_combat(delta)
 		if not ship.alive:
@@ -140,20 +141,30 @@ func destroyed(ship: SpaceShip) -> void:
 		contributors.sort()
 		var balances: Dictionary[int, int] = {}
 		var contracts: Dictionary[int, Dictionary] = {}
+		var payouts: Dictionary[int, Dictionary] = {}
 		for index in range(contributors.size()):
 			var id := contributors[index]
 			var reward := int(pool / contributors.size()) + (1 if index < pool % contributors.size() else 0)
 			balances[id] = mini(PilotStore.MAX_CREDITS, records[id]["credits"] + reward)
-			contracts[id] = HuntingContracts.after_kill(records[id]["contract"], alien.kind.to_lower())
+			var next: Dictionary = records[id]["contracts"].duplicate(true)
+			var kind := alien.kind.to_lower()
+			if next.has(kind):
+				next[kind] = HuntingContracts.after_kill(next[kind], kind)
+			payouts[id] = HuntingContracts.settle(next, balances[id])
+			balances[id] = payouts[id]["credits"]
+			contracts[id] = payouts[id]["contracts"]
 		if not balances.is_empty() and not session.save_balances(balances, contracts):
 			return
 		for id: int in balances:
-			var reward: int = balances[id] - records[id]["credits"]
+			var reward: int = balances[id] - records[id]["credits"] - payouts[id]["reward"]
 			records[id]["credits"] = balances[id]
-			records[id]["contract"] = contracts[id]
+			records[id]["contracts"] = contracts[id]
 			records[id]["kills"] += 1
 			records[id]["stage"] = maxi(records[id]["stage"], 3)
-			message(id, "Alien destroyed. Your share: +%d credits. Return to repair." % reward)
+			var notice := "Alien destroyed. Your share: +%d credits." % reward
+			if payouts[id]["reward"] > 0:
+				notice += " %s hunt completed: +%d credits paid automatically." % [", ".join(payouts[id]["paid"]), payouts[id]["reward"]]
+			message(id, notice)
 		contributors.clear()
 		alien.respawn = alien.tuning()["respawn"]
 		if session.sector.target == alien:
@@ -185,10 +196,21 @@ func request_repair() -> bool:
 	return false # Host confirms the result asynchronously.
 
 
+func pay_pending_contracts(id: int) -> void:
+	var payout := HuntingContracts.settle(records[id]["contracts"], records[id]["credits"])
+	if payout["reward"] == 0:
+		return
+	if not session.save_balances({id: payout["credits"]}, {id: payout["contracts"]}):
+		return
+	records[id]["credits"] = payout["credits"]
+	records[id]["contracts"] = payout["contracts"]
+	message(id, "%s hunt completed: +%d credits paid automatically." % [", ".join(payout["paid"]), payout["reward"]])
+
+
 func request_contract(action: String, offer: String = "") -> void:
 	if not session.active or session.sector.dedicated_server:
 		return
-	var current := session.sector.active_contract
+	var current: Dictionary = session.sector.active_contracts.get(offer, {})
 	var run: String = current.get("run", "")
 	var life := int(session.sector.player.get_meta("life", 0))
 	if multiplayer.is_server():
@@ -203,7 +225,7 @@ func contract_request(life: int, action: String, offer: String, run: String) -> 
 		contract_action(multiplayer.get_remote_sender_id(), life, action, offer, run)
 
 
-# A run ID prevents old claim/abandon requests from affecting a repeated trip.
+# A run ID prevents old abandon requests from affecting a repeated hunt.
 func contract_action(id: int, life: int, action: String, offer: String, run: String) -> bool:
 	if not multiplayer.is_server() or not records.has(id) or records[id]["life"] != life:
 		return false
@@ -211,34 +233,27 @@ func contract_action(id: int, life: int, action: String, offer: String, run: Str
 	if not blocker.is_empty():
 		message(id, blocker)
 		return false
-	var current: Dictionary = records[id]["contract"]
-	var next: Dictionary = {}
+	var current: Dictionary = records[id]["contracts"]
+	var next := current.duplicate(true)
 	var balance: int = records[id]["credits"]
 	var notice: String
 	match action:
 		"accept":
-			if not current.is_empty() or not run.is_empty() or not HuntingContracts.OFFERS.has(offer):
+			if current.has(offer) or not run.is_empty() or not HuntingContracts.OFFERS.has(offer):
 				return false
-			next = HuntingContracts.accept(offer)
-			notice = "Contract accepted. " + HuntingContracts.objective(next)
-		"claim":
-			if not HuntingContracts.ready(current) or current["run"] != run:
-				return false
-			if balance > PilotStore.MAX_CREDITS - current["reward"]:
-				message(id, "Spend credits before claiming this reward. Your contract is still ready.")
-				return false
-			balance += current["reward"]
-			notice = "Contract claimed: +%d credits. Choose another hunt at the station." % current["reward"]
+			next[offer] = HuntingContracts.accept(offer)
+			notice = "Contract accepted. " + HuntingContracts.objective(next[offer])
 		"abandon":
-			if current.is_empty() or current["run"] != run:
+			if not current.has(offer) or current[offer]["run"] != run:
 				return false
+			next.erase(offer)
 			notice = "Contract abandoned. No credits charged."
 		_:
 			return false
 	if not session.save_balances({id: balance}, {id: next}):
 		return false
 	records[id]["credits"] = balance
-	records[id]["contract"] = next
+	records[id]["contracts"] = next
 	session.commands.erase(id)
 	message(id, notice)
 	if id == 1:
@@ -320,7 +335,7 @@ func apply_player(id: int, data: Dictionary) -> bool:
 
 
 func update_local(data: Dictionary) -> void:
-	session.sector.active_contract = data.get("contract", {}).duplicate()
+	session.sector.active_contracts = data.get("contracts", {}).duplicate(true)
 	session.sector.credits = data["credits"]
 	session.sector.kills = data["kills"]
 	session.sector.objective_stage = maxi(session.sector.objective_stage, data["stage"])
@@ -383,7 +398,7 @@ func show_explosion(location: Vector3) -> void:
 
 
 func finish() -> void:
-	session.sector.active_contract = {}
+	session.sector.active_contracts = {}
 	if not solo.is_empty():
 		session.sector.credits = solo["credits"]
 		session.sector.kills = solo["kills"]
