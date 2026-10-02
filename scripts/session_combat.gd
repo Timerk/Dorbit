@@ -6,6 +6,7 @@ var session: FlightSession
 var records: Dictionary[int, Dictionary] = {}
 var solo: Dictionary = {}
 var inventory: Dictionary = {}
+var cargo_holds: Dictionary[int, Dictionary] = {}
 var station_pending: bool = false
 var station_message: String = ""
 var preview_tools_available: bool = false
@@ -14,7 +15,10 @@ var preview_tools_available: bool = false
 func begin() -> void:
 	var sector := session.sector
 	sector.active_contracts = {}
-	solo = {"credits": sector.credits, "kills": sector.kills, "stage": sector.objective_stage}
+	solo = {"credits": sector.credits, "kills": sector.kills, "stage": sector.objective_stage, "cargo": sector.cargo.duplicate(true)}
+	sector.cargo = {}
+	sector.loot.clear()
+	cargo_holds.clear()
 	records.clear()
 	sector.credits = 0
 	sector.kills = 0
@@ -48,7 +52,9 @@ func add_player(id: int, location: Vector3) -> void:
 	if multiplayer.is_server():
 		records[id] = {"credits": 0, "kills": 0, "stage": 0, "respawn": 0.0, "life": 0, "spawn": location}
 		records[id]["contracts"] = {}
+		cargo_holds[id] = CargoResources.empty_holds(Equipment.starter())
 		if session.sector.dedicated_server:
+			cargo_holds[id] = session.store.pilots[session.pilot_ids[id]]["cargo"].duplicate(true)
 			records[id]["credits"] = session.store.pilots[session.pilot_ids[id]]["credits"]
 			records[id]["contracts"] = session.store.pilots[session.pilot_ids[id]]["contracts"].duplicate(true)
 			Equipment.apply_stats(ship, Equipment.stats(session.store.pilots[session.pilot_ids[id]]["equipment"]))
@@ -57,6 +63,7 @@ func add_player(id: int, location: Vector3) -> void:
 
 func remove_player(id: int) -> void:
 	records.erase(id)
+	cargo_holds.erase(id)
 	for alien: Alien in session.sector.aliens.values():
 		alien.contributors.erase(id)
 
@@ -113,6 +120,7 @@ func tick(delta: float) -> void:
 				alien.reset_encounter()
 	if records.has(1):
 		update_local(records[1])
+	sector.loot.tick(delta)
 
 
 func remote_target(id: int) -> Alien:
@@ -164,6 +172,7 @@ func destroyed(ship: SpaceShip) -> void:
 			contracts[id] = payouts[id]["contracts"]
 		if not balances.is_empty() and not session.save_balances(balances, contracts):
 			return
+		session.sector.loot.spawn_drop(alien)
 		for id: int in balances:
 			var reward: int = balances[id] - records[id]["credits"] - payouts[id]["reward"]
 			records[id]["credits"] = balances[id]
@@ -417,6 +426,9 @@ func show_explosion(location: Vector3) -> void:
 
 func finish() -> void:
 	session.sector.active_contracts = {}
+	session.sector.loot.clear()
+	cargo_holds.clear()
+	session.sector.cargo = {}
 	inventory.clear()
 	preview_tools_available = false
 	station_pending = false
@@ -425,6 +437,7 @@ func finish() -> void:
 		session.sector.credits = solo["credits"]
 		session.sector.kills = solo["kills"]
 		session.sector.objective_stage = solo["stage"]
+		session.sector.cargo = solo["cargo"]
 	solo.clear()
 	records.clear()
 	for alien: Alien in session.sector.aliens.values():
@@ -465,21 +478,96 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 		return
 	var pilot: Dictionary = session.store.pilots[pilot_id]
 	records[id]["credits"] = pilot["credits"]
+	cargo_holds[id] = pilot["cargo"].duplicate(true)
 	Equipment.apply_stats(session.ships[id], Equipment.stats(pilot["equipment"]))
 	publish_inventory(id, result)
-	if action == "buy" and pilot["equipment"]["revision"] > previous_revision:
+	if action in ["buy", "sell"] and pilot["equipment"]["revision"] > previous_revision:
 		message(id, result, "purchase")
 
 
 func publish_inventory(id: int, result: String = "") -> void:
 	if session.sector.dedicated_server:
-		station_result.rpc_id(id, session.store.pilots[session.pilot_ids[id]]["equipment"], result, session.can_grant_test_credits(id))
+		var pilot: Dictionary = session.store.pilots[session.pilot_ids[id]]
+		station_result.rpc_id(id, pilot["equipment"], result, session.can_grant_test_credits(id), pilot["cargo"], pilot["credits"])
 
 
 @rpc("authority", "call_remote", "reliable")
-func station_result(data: Dictionary, result: String, test_credits_allowed: bool = false) -> void:
+func station_result(data: Dictionary, result: String, test_credits_allowed: bool = false, holds: Dictionary = {}, credits: int = -1) -> void:
 	if session.active:
 		inventory = data
+		if not holds.is_empty():
+			session.sector.cargo = holds[data["active_ship"]].duplicate()
+			session.sector.cargo_capacity = CargoResources.capacity(data)
+		if credits >= 0:
+			session.sector.credits = credits
 		preview_tools_available = test_credits_allowed
 		station_pending = false
 		station_message = result
+
+func collect_loot() -> void:
+	if not multiplayer.is_server():
+		return
+	var next := cargo_holds.duplicate(true)
+	var changed: Dictionary[int, Dictionary] = {}
+	var notices: Dictionary[int, Dictionary] = {}
+	var saved: Dictionary = {}
+	for drop_id: int in session.sector.loot.drops:
+		var drop: Dictionary = session.sector.loot.drops[drop_id].duplicate(true)
+		var candidates: Array[int] = []
+		for id: int in records:
+			var ship := session.ships[id]
+			var equipment := session.store.pilots[session.pilot_ids[id]]["equipment"] as Dictionary if session.sector.dedicated_server else Equipment.starter()
+			if ship.alive and ship.position.distance_to(drop["position"]) <= ResourceLoot.PICKUP_RADIUS and CargoResources.units(next[id][equipment["active_ship"]]) < CargoResources.capacity(equipment):
+				candidates.append(id)
+		candidates.sort_custom(func(a: int, b: int) -> bool:
+			var da := session.ships[a].position.distance_squared_to(drop["position"])
+			var db := session.ships[b].position.distance_squared_to(drop["position"])
+			return a < b if is_equal_approx(da, db) else da < db)
+		for id: int in candidates:
+			var equipment := session.store.pilots[session.pilot_ids[id]]["equipment"] as Dictionary if session.sector.dedicated_server else Equipment.starter()
+			var taken := CargoResources.collect(next[id][equipment["active_ship"]], drop["resources"], CargoResources.capacity(equipment))
+			if taken.is_empty():
+				continue
+			changed[drop_id] = {} if drop["resources"].is_empty() else drop
+			if not notices.has(id):
+				notices[id] = {}
+			for resource: String in taken:
+				notices[id][resource] = int(notices[id].get(resource, 0)) + taken[resource]
+			if session.sector.dedicated_server:
+				saved[session.pilot_ids[id]] = next[id]
+	if notices.is_empty():
+		return
+	# All nearby pickups commit once, before removing a single unit from space.
+	if session.sector.dedicated_server and not session.store.commit({}, {}, saved):
+		session.stop_for_save_failure()
+		return
+	cargo_holds = next
+	for drop_id: int in changed:
+		session.sector.loot.change(drop_id, changed[drop_id])
+	for id: int in notices:
+		message(id, "Collected " + CargoResources.describe(notices[id]))
+		if session.sector.dedicated_server:
+			var equipment: Dictionary = session.store.pilots[session.pilot_ids[id]]["equipment"]
+			cargo_result.rpc_id(id, next[id][equipment["active_ship"]], CargoResources.capacity(equipment))
+		elif id == 1:
+			session.sector.cargo = next[id]["starter"].duplicate()
+		else:
+			cargo_result.rpc_id(id, next[id]["starter"])
+
+@rpc("authority", "call_remote", "reliable")
+func cargo_result(hold: Dictionary, capacity: int = 200) -> void:
+	if session.active:
+		session.sector.cargo = hold
+		session.sector.cargo_capacity = capacity
+
+@rpc("authority", "call_remote", "reliable")
+func loot_changed(id: int, data: Dictionary) -> void:
+	if session.active:
+		session.sector.loot.apply_drop(id, data)
+
+@rpc("authority", "call_remote", "reliable")
+func loot_state(drops: Dictionary) -> void:
+	if session.active:
+		session.sector.loot.clear()
+		for id: int in drops:
+			session.sector.loot.apply_drop(id, drops[id])

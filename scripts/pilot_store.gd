@@ -47,7 +47,7 @@ func open(directory: String) -> bool:
 	file.close()
 	var json := JSON.new()
 	var data: Variant = json.data if json.parse(saved_text) == OK else null
-	if not data is Dictionary or (data.get("version") != 1 and data.get("version") != 2) or not data.get("pilots") is Dictionary or data["pilots"].is_empty():
+	if not data is Dictionary or (data.get("version") != 1 and data.get("version") != 2 and data.get("version") != 3) or not data.get("pilots") is Dictionary or data["pilots"].is_empty():
 		return fail("Invalid pilots.json schema. Original file preserved.")
 	for id: Variant in data["pilots"]:
 		var pilot: Variant = data["pilots"][id]
@@ -81,8 +81,17 @@ func open(directory: String) -> bool:
 		elif not Equipment.valid(pilot.get("equipment")):
 			return fail("Invalid pilot equipment. Original file preserved.")
 		pilot["equipment"]["revision"] = int(pilot["equipment"]["revision"])
+		if data["version"] < 3:
+			if pilot.has("cargo"):
+				return fail("Unexpected cargo in legacy save. Original file preserved.")
+			pilot["cargo"] = CargoResources.empty_holds(pilot["equipment"])
+		elif not CargoResources.valid(pilot.get("cargo"), pilot["equipment"]):
+			return fail("Invalid pilot cargo. Original file preserved.")
+		for hold: Dictionary in pilot["cargo"].values():
+			for resource: String in hold:
+				hold[resource] = int(hold[resource])
 	pilots = data["pilots"]
-	return persist(pilots) if data["version"] == 1 else true
+	return persist(pilots) if data["version"] < 3 else true
 
 
 func verifies(id: String, nonce: PackedByteArray, proof: PackedByteArray) -> bool:
@@ -93,7 +102,7 @@ func verifies(id: String, nonce: PackedByteArray, proof: PackedByteArray) -> boo
 
 
 # Commit all shares of a kill together, before combat publishes the new balances.
-func commit(balances: Dictionary, contracts: Dictionary = {}) -> bool:
+func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}) -> bool:
 	if failed or not locked:
 		return false
 	var next := pilots.duplicate(true)
@@ -106,11 +115,15 @@ func commit(balances: Dictionary, contracts: Dictionary = {}) -> bool:
 		if not next.has(id) or not HuntingContracts.valid_collection(contracts[id]):
 			return fail("Invalid server contract update.")
 		next[id]["contracts"] = contracts[id].duplicate(true)
+	for id: String in cargo:
+		if not next.has(id) or not CargoResources.valid(cargo[id], next[id]["equipment"]):
+			return fail("Invalid server cargo update.")
+		next[id]["cargo"] = cargo[id].duplicate(true)
 	return persist(next)
 
 
 # The persisted sequence rejects every old request, including after a reconnect or restart.
-# Only successful changes advance it; distinct purchases use the next sequence.
+# Only successful changes advance it; distinct station actions use the next sequence.
 func transact(id: String, sequence: int, action: String, subject: String, ship: String, slot: String, allow_preview_credits: bool = false) -> String:
 	if failed or not locked or not pilots.has(id):
 		return "Persistence unavailable."
@@ -141,6 +154,19 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		if pilot["credits"] == MAX_CREDITS:
 			return "Credit limit reached."
 		pilot["credits"] = mini(MAX_CREDITS, pilot["credits"] + PREVIEW_CREDIT_GRANT)
+	elif action == "sell":
+		if not ship.is_empty() or not slot.is_empty() or (subject != "all" and not CargoResources.TYPES.has(subject)):
+			return "Unknown resource sale."
+		var hold: Dictionary = pilot["cargo"][equipment["active_ship"]]
+		var sold := hold.duplicate() if subject == "all" else ({subject: hold[subject]} if hold.has(subject) else {})
+		if sold.is_empty():
+			return "No resources to sell."
+		var proceeds := CargoResources.value(sold)
+		if proceeds > MAX_CREDITS - pilot["credits"]:
+			return "Sale exceeds the credit limit. Free wallet space first."
+		pilot["credits"] += proceeds
+		for resource: String in sold:
+			hold.erase(resource)
 	elif action == "fit":
 		var blocker := Equipment.fitting_blocker(equipment, subject, ship, slot)
 		if not blocker.is_empty():
@@ -154,6 +180,8 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		return "Persistence unavailable."
 	if action == "test_credits":
 		return "Preview: added %d test credits." % (pilot["credits"] - previous_credits)
+	if action == "sell":
+		return "Resources sold. +%d credits." % (pilot["credits"] - previous_credits)
 	return "Purchased. Item is in storage." if action == "buy" else "Fitting saved."
 
 
@@ -164,7 +192,7 @@ func persist(next: Dictionary) -> bool:
 	if current == null or current.get_as_text() != saved_text:
 		return fail("pilots.json changed or became unreadable while running. Save preserved; stop and recover.")
 	current.close()
-	var text := JSON.stringify({"version": 2, "pilots": next}, "\t") + "\n"
+	var text := JSON.stringify({"version": 3, "pilots": next}, "\t") + "\n"
 	if not replace_file(path + ".bak", saved_text) or not replace_file(path, text):
 		return false
 	pilots = next

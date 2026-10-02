@@ -59,6 +59,7 @@ PY
     checked --headless --path . --script res://tests/hunting_contracts_test.gd
     checked --headless --path . --script res://tests/equipment_test.gd
     checked --headless --path . --script res://tests/preview_credits_test.gd
+    checked --headless --path . --script res://tests/resources_test.gd
     python3 tests/pilots_test.py
     ;;
   *)

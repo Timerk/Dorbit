@@ -133,7 +133,7 @@ Initial balancing proposals:
 
 These are playtesting targets, not fixed timers or final economy values.
 
-The first progression implementation should use one currency, a small selection of equipment upgrades, and a second ship to work toward. A material system can be considered later.
+Progression uses credits, equipment upgrades and collectible resources sold at the station. A second ship remains separate feature work.
 
 Proposed progression principles:
 
@@ -168,7 +168,7 @@ This Milestone 3 slice adds equipment for the Pathfinder starter. The second pla
 - The panel shows credits, prices, individually owned items, slot contents, and current and proposed damage, shield capacity, cruise and boost speeds. Unavailable purchases and fitting actions explain why.
 - Fitting changes never repair hull, refill shields or boost energy, or reset weapon cooldowns. Added shield capacity starts empty and recovers through the normal shield regeneration rules. Removing capacity discards excess charge.
 - The server commits a purchase's credit deduction, new item and request sequence together. Successful requests cannot run again, even after restart. A new intentional purchase uses the next sequence. Inventory and fittings survive death, reconnects and server restarts.
-- No selling, trading, materials, rarity, equipment leveling or further tiers are included.
+- No equipment selling, trading, rarity, equipment leveling or further tiers are included. Resource cargo and sales are described below.
 
 Provisional equipment values:
 
@@ -181,6 +181,32 @@ Provisional equipment values:
 The unequipped Pathfinder has 120 hull, no laser damage or shield capacity, 28 m/s cruise and 70 m/s boost. One of each starter item preserves the previous 11 damage, 70 shield, 36 m/s cruise and 78 m/s boost. Acceleration stays 40 m/s² and laser interval stays 0.42 seconds. A second laser fills the empty laser slot; a second shield or engine requires giving up the other generator type.
 
 These prices target a first useful purchase in roughly 15–30 minutes for solo or two-player hunting. The Sentinel has 180 combined health and awards a shared pool of 75 CR. Ideal solo firing takes about seven seconds, followed by a 12-second respawn; movement, aiming, shield recovery and occasional station returns extend that cycle. Budgeting 22–30 seconds per solo kill and an average 2–8 CR for repairs or rescue gives roughly 135–200 net CR/minute, or 15–22 minutes for the second laser. Two contributors split the pool into 37/38 CR; a 17–20 second cycle with roughly 1–3 CR of upkeep per pilot gives about 104–130 net CR/minute, or 23–29 minutes. These are tuning assumptions, not measured progression sessions. Highly efficient hunting can be faster. More contributors divide the same pool and can take substantially longer, so the ten-player economy needs additional content and playtesting. Contract rewards are not included in these estimates and should trigger a pricing review when integrated.
+
+### Enemy resources, cargo and station sales
+
+This agreed Milestone 3 addition extends alien hunting with physical resource boxes, limited ship cargo and resource sales at Outpost 01. The seven resources follow the supplied reference order, with increasing value. Existing kill credits and hunting-contract rewards remain in place.
+
+| Resource | Credits per unit | Scout drop | Sentinel drop | Heavy drop |
+| --- | --- | --- | --- | --- |
+| Prometium | 1 | 6 to 10 | 10 to 16 | 18 to 24 |
+| Endurium | 2 | 2 to 4 | 6 to 10 | 12 to 18 |
+| Terbium | 4 | 1 to 2 | 4 to 6 | 8 to 12 |
+| Prometid | 8 | None | 2 to 4 | 6 to 10 |
+| Duranium | 16 | None | 1 to 2 | 4 to 6 |
+| Promerium | 32 | None | None | 2 to 4 |
+| Seprom | 64 | None | None | 1 to 2 |
+
+Each alien leaves one shared box at its destruction position. The server rolls quantities once; damage repeats and client claims cannot create drops. Stronger types always drop more total units and include more valuable resources.
+
+Living ships collect automatically within 12 m. The nearest ship with free capacity collects first; exact distance ties use peer-ID order. Any connected pilot can collect, independently of kill-credit contribution eligibility. Partial pickups take the most valuable resources first and leave excess units for another pilot or a later trip. Uncollected boxes expire after three minutes. At most 64 boxes exist; a new drop replaces the oldest when that limit is reached. Late joiners receive current boxes. Space loot resets with the server session.
+
+The Pathfinder holds 200 units; every resource uses one unit. Capacity is defined by ship model for future ship types, and cargo belongs to each individual owned ship. The flight HUD shows usage and FULL status; the station cargo page lists resource quantities, prices and total sale value. Collected cargo survives death, reconnects and server restarts. A future death penalty needs a separate decision.
+
+Press B at Outpost 01 and choose Cargo / sell resources to sell one resource type or all active-ship cargo. Sales use the station restrictions: alive, within 60 m, at most 8 m/s and five seconds since damage. The server saves cargo removal, credit payment and the transaction sequence together before confirming success. Duplicate and stale requests cannot pay twice. A sale that exceeds the wallet limit leaves all cargo intact. Cargo collection also commits before removing units from space; a save failure stops progression.
+
+Save schema 3 adds validated per-ship cargo. Versions 1 and 2 migrate once to empty holds while retaining credits, equipment, contracts and unrelated progression. The operator provisioning tool preserves cargo when rotating credentials. Older servers cannot read schema 3; rollback requires a pre-migration ledger backup.
+
+Capacity, pickup distance, box lifetime, quantities and prices are provisional playtest values. Resource income changes the previous equipment-price estimates; hunting and selling need human economy playtesting before prices are finalized. Crafting, refining, resource missions and additional playable ships are outside this addition.
 
 ## Multiplayer and hosting
 

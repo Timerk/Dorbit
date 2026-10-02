@@ -7,7 +7,7 @@ const MAX_PLAYERS: int = 10
 const COMMAND_TIMEOUT: float = 0.5
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when gameplay packet contents change without an RPC signature change.
-const NETWORK_SCHEMA: int = 1
+const NETWORK_SCHEMA: int = 2
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
@@ -430,6 +430,7 @@ func ready_for_flight() -> void:
 	spawn.rpc(id, location)
 	ships[id].set_meta("spawn_slot", slot)
 	combat.publish_inventory(id)
+	combat.loot_state.rpc_id(id, sector.loot.drops)
 	status = "Server on UDP %d. Players: %d/%d" % [host_port, ships.size(), MAX_PLAYERS]
 	if sector.dedicated_server:
 		print(status)
