@@ -46,7 +46,7 @@ func run() -> void:
 	check(combat.inventory["items"].size() == 3 and client.credits == 12000, "Only authenticated inventory and wallet reach the client")
 	check(ship.laser_damage == 11 and ship.max_shield == 70 and ship.cruise_speed == 36 and ship.boost_speed == 78, "Starter performance is preserved")
 	var snapshot: Dictionary = client.session.goals[id].duplicate(true)
-	snapshot["contract"] = HuntingContracts.accept("sentinel")
+	snapshot["contracts"] = {"sentinel": HuntingContracts.accept("sentinel")}
 	check(var_to_bytes([{id: snapshot}, {}, 1]).size() < 1200, "Player snapshot with equipment and an active contract leaves room below the ENet MTU")
 	print("Snapshot payload: one player=%d bytes; two players=%d bytes" % [var_to_bytes([{id: snapshot}, {}, 1]).size(), var_to_bytes([{id: snapshot, 2: snapshot}, {}, 1]).size()])
 	client.get_viewport().size = Vector2i(960, 600)
@@ -210,7 +210,7 @@ func run() -> void:
 	var migration := PilotStore.new()
 	check(migration.open(migration_dir) and migration.pilots["pilot0"]["credits"] == 4345, "Migration preserves a nonzero wallet")
 	migration.transact("pilot0", 1, "buy", "laser", "", "")
-	check(migration.pilots["pilot0"]["contract"] == legacy_contract, "Migration and equipment saves preserve the accepted contract and progress")
+	check(migration.pilots["pilot0"]["contracts"] == {"scout": legacy_contract}, "Migration and equipment saves preserve the accepted contract and progress")
 	migration.close()
 	check(migration.open(migration_dir) and migration.pilots["pilot0"]["equipment"]["items"].size() == 4, "Repeated startup grants no additional starter equipment")
 	migration.close()
