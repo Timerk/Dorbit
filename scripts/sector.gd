@@ -29,7 +29,7 @@ var target: SpaceShip
 var hud: FlightHud
 var credits: int = 0
 var kills: int = 0
-var active_contract: Dictionary = {}
+var active_contracts: Dictionary = {}
 var auto_fire: bool = false
 var paused: bool = false
 var player_respawn: float = 0.0
