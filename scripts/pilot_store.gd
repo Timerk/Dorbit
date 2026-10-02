@@ -3,6 +3,7 @@ extends RefCounted
 ## One server-owned ledger for the private group. Never creates or repairs saves implicitly.
 
 const MAX_CREDITS: int = 2_000_000_000
+const PREVIEW_CREDIT_GRANT: int = 100_000
 var path: String
 var error: String = ""
 var pilots: Dictionary = {}
@@ -110,11 +111,14 @@ func commit(balances: Dictionary, contracts: Dictionary = {}) -> bool:
 
 # The persisted sequence rejects every old request, including after a reconnect or restart.
 # Only successful changes advance it; distinct purchases use the next sequence.
-func transact(id: String, sequence: int, action: String, subject: String, ship: String, slot: String) -> String:
+func transact(id: String, sequence: int, action: String, subject: String, ship: String, slot: String, allow_preview_credits: bool = false) -> String:
 	if failed or not locked or not pilots.has(id):
 		return "Persistence unavailable."
+	if action == "test_credits" and not allow_preview_credits:
+		return "Test credits are unavailable for this pilot on this server."
 	var next := pilots.duplicate(true)
 	var pilot: Dictionary = next[id]
+	var previous_credits: int = pilot["credits"]
 	var equipment: Dictionary = pilot["equipment"]
 	if sequence <= equipment["revision"]:
 		return "Request already processed. Inventory refreshed."
@@ -131,6 +135,12 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 			return "Insufficient credits. Need %d CR." % price
 		pilot["credits"] -= price
 		equipment["items"]["purchase-%d" % sequence] = {"model": subject, "ship": "", "slot": ""}
+	elif action == "test_credits":
+		if not subject.is_empty() or not ship.is_empty() or not slot.is_empty():
+			return "Invalid test credit request."
+		if pilot["credits"] == MAX_CREDITS:
+			return "Credit limit reached."
+		pilot["credits"] = mini(MAX_CREDITS, pilot["credits"] + PREVIEW_CREDIT_GRANT)
 	elif action == "fit":
 		var blocker := Equipment.fitting_blocker(equipment, subject, ship, slot)
 		if not blocker.is_empty():
@@ -142,6 +152,8 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 	equipment["revision"] = sequence
 	if not persist(next):
 		return "Persistence unavailable."
+	if action == "test_credits":
+		return "Preview: added %d test credits." % (pilot["credits"] - previous_credits)
 	return "Purchased. Item is in storage." if action == "buy" else "Fitting saved."
 
 

@@ -147,6 +147,14 @@ Proposed progression principles:
 
 Exact prices, ship roles, upgrade limits, rewards, and sector unlocks remain open.
 
+Preview playtesting includes an optional station-shop button to add 100,000 test
+credits without restarting the server. The server enables it only for explicitly
+allowlisted private test pilots; it is disabled by default. Grants commit through
+the normal persistence path with duplicate-request protection and preserve owned
+equipment and contract progress. Production does not enable these tools. Seeded
+wallets are for testing equipment behavior, not measuring the economy's progression
+speed. See README.md for configuration and use.
+
 ### First station equipment shop and fitting
 
 This Milestone 3 slice adds equipment for the Pathfinder starter. The second playable ship is a separate feature.
