@@ -201,6 +201,22 @@ The project uses Godot Compatibility rendering with 4x MSAA by default. The firs
 
 ## Validation
 
+### Resource cargo and selling
+
+Destroyed Scouts, Sentinels and Heavies leave glowing resource boxes. Fly within 12 m to collect them automatically. The Pathfinder holds 200 units, with one unit per resource. A full hold leaves loot in space; partial pickups take valuable resources first. Boxes are shared, with the nearest living ship collecting first, and expire after three minutes. The server keeps at most 64 boxes.
+
+Press B at Outpost 01 and select **Cargo / sell resources**. Sell an individual resource type or all cargo for credits. Sales require the usual station conditions: alive, within 60 m, no faster than 8 m/s and five seconds since the last hit. Resource value increases in this order: Prometium, Endurium, Terbium, Prometid, Duranium, Promerium, Seprom. Provisional prices are 1, 2, 4, 8, 16, 32 and 64 CR per unit. Stronger aliens drop larger quantities and higher resource tiers. Full drop tables are in [GAME_PLAN.md](GAME_PLAN.md#enemy-resources-cargo-and-station-sales).
+
+Cargo belongs to each owned ship and survives death, reconnects and restarts. Collected cargo and sale credits are server-owned saves. Uncollected boxes remain session state. Save versions 1 and 2 migrate to version 3 with empty cargo. Preserve a pre-migration ledger backup when deploying; older servers cannot load version 3. Credential rotation with `tools/pilots.py` retains cargo.
+
+`res://tests/resources_test.gd` checks actual ENet kills, replicated and late-join loot, two-pilot pickup conservation, full and partial holds, client authority, station restrictions, per-resource and sell-all actions, duplicate sales, restart recovery, wallet limits, expiry and failed writes. Run it headlessly or with the renderer to capture the cargo panel and loot markers at 960 x 600 under `build/validation`. Windows and Linux check scripts include it. Operator-tool tests cover cargo-preserving migration and credential rotation, and reject corrupted cargo without altering the ledger.
+
+Review captures show the [full cargo panel](docs/feedback/resources-full-hold.png), [confirmed sale](docs/feedback/resources-sold.png) and [resource box in space](docs/feedback/resources-in-space.png). Prices and capacities still need human balance playtesting.
+
+On 2 October 2026, the resource integration test passed 47 assertions on Windows headless, Windows OpenGL and Linux headless. Both full check scripts passed. Rendered equipment checks passed 53 assertions after adding the cargo page. The Windows release export passed, and its protocol fingerprint matched the Windows and WSL Linux source runtimes. Operator-tool tests passed three cases; Linux shutdown and migration checks passed seven cases, including corrupt cargo and a version-2 ledger backup. Some combat and compatibility replays emitted ObjectDB cleanup warnings on exit while passing their assertions; the resource runs did not.
+
+### Existing gameplay checks
+
 For a repeatable ten-client Linux server workload, CPU/memory measurements and their limits, see [PERFORMANCE.md](PERFORMANCE.md). Headless simulation measurements do not establish rendered client FPS.
 
 `check` imports the project and runs headless integration tests against the actual scene and physics world, network checks with separate ENet peers, and a complete hunt-and-repair replay. It covers input actions, shield and hull damage, cooldowns, range, firing arcs, obstacles, rewards, repairs, rescue, movement, mouse steering, pause, joining, replication, and disconnects.
@@ -256,6 +272,8 @@ On 2 October 2026, the full Windows check command passed after the concurrent-hu
 - `scripts/flight_session.gd`: session menu, ENet connection lifecycle, host flight simulation, and client prediction/interpolation.
 - `scripts/session_combat.gd`: server-owned independent alien encounters, per-player wallets, repairs, respawns, and combat snapshots/effects.
 - `scripts/pilot_store.gd`: validated pilot ledger, challenge verification, atomic replacement and previous-save backup.
+- `scripts/cargo_resources.gd`: resource values, enemy loot tables, per-model capacities and cargo validation.
+- `scripts/resource_loot.gd`: bounded shared resource boxes, collection timing and placeholder visuals.
 - `tools/pilots.py`: operator provisioning and credential rotation with the server stopped.
 - `scripts/visuals.gd` and `shaders/space.gdshader`: procedural placeholder art and effects.
 - `scripts/hud.gd`: flight instruments, targets, objectives, and pause display.
