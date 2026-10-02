@@ -54,6 +54,7 @@ PY
     checked --headless --path . --script res://tests/pilot_persistence_test.gd
     python3 tests/server_shutdown_test.py "$engine"
     checked --headless --path . --script res://tests/alien_sector_test.gd
+    checked --headless --path . --script res://tests/targeting_test.gd
     checked --headless --path . --script res://tests/hunting_contracts_test.gd
     checked --headless --path . --script res://tests/equipment_test.gd
     checked --headless --path . --script res://tests/preview_credits_test.gd

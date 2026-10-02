@@ -44,6 +44,17 @@ func press(code: Key) -> void:
 	await process_frame
 
 
+func target_with_tab(enemy: Alien) -> void:
+	var cursor := sector.player.camera.unproject_position(enemy.global_position)
+	if rendered:
+		root.warp_mouse(cursor)
+		await process_frame
+		await press(KEY_TAB)
+	else:
+		sector.cycle_target(cursor)
+	check(sector.target == enemy, "Tab selects the alien nearest the replay cursor")
+
+
 func snapshot(label: String) -> void:
 	if rendered:
 		# Let changed text and transient meshes reach a complete rendered frame.
@@ -72,7 +83,7 @@ func run() -> void:
 		enemy.damaged.connect(capture_impact)
 	flight_replay_running = true
 	sampling = true
-	await press(KEY_TAB)
+	await target_with_tab(sector.aliens[1])
 	var expected_reward: int = (sector.target as Alien).tuning()["reward"]
 	await press(KEY_SPACE)
 	await hunt_selected()
@@ -123,7 +134,7 @@ func feedback_checks() -> void:
 		Input.parse_input_event(click)
 		check(sector.target == sector.alien, "Click selects the visible alien")
 		sector.select_target(null)
-	await press(KEY_TAB)
+	await target_with_tab(sector.alien)
 	check(is_instance_valid(sector.target), "Tab selects an available alien")
 	sector.select_target(sector.alien)
 	sector.weapon_status = sector.player.firing_blocker(sector.target)

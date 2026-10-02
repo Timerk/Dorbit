@@ -43,7 +43,7 @@ The following controls are agreed as the starting layout. Check comfort and usab
 | Q / E | Move down / up |
 | Hold right mouse and move mouse | Turn the ship; the camera follows |
 | Left click an enemy | Select that target |
-| Tab | Cycle nearby enemy targets |
+| Tab | Select the on-screen enemy closest to the mouse cursor |
 | Space | Toggle automatic laser fire |
 | Shift | Boost using rechargeable energy |
 
@@ -91,7 +91,7 @@ Milestone 3 now includes multiple simultaneous aliens in the current sector. Thi
 - Station protection remains a 75 m sphere. Aliens cannot attack protected pilots. Protected pilots cannot damage aliens.
 - Exceeding the home leash, or losing all eligible targets after engagement, starts a return. Health and contributions reset and the life number advances. Returning aliens reject damage and cannot attack until they reach home. If direct flight is blocked, a 30-second server timeout places them at home so a rock cannot strand an invulnerable slot. Old fire commands cannot cross a reset or respawn.
 - Joining clients receive every alien's current identity, transform, health, life, engagement/return state and respawn countdown. Snapshot ordering is tracked per entity.
-- Left click selects the visible alien intersected by the camera ray. Tab starts with the nearest available alien within 550 m, then cycles fixed slot order to avoid reordering as enemies move. Death, return, life changes and leaving selection range clear that target and fire.
+- Left click selects the visible alien intersected by the camera ray. Tab selects the available on-screen alien closest to the mouse cursor each time, using screen center while right-mouse steering captures the cursor. Selection has no combat-range limit. Repeated Tab over the same enemy retains the lock and fire intent; Tab with no on-screen candidate preserves an existing lock. Locks persist through distance, camera turns and a living alien's return home until manual retargeting or deselection. Target death, player rescue and disconnect clear the lock. Encounter resets stop automatic fire without clearing a living target, so stale fire cannot cross lives. Weapon range, firing arc, protection and line of sight still decide whether lasers fire.
 - Names and numbered markers distinguish contacts. Scouts have smaller amber-accented hulls, Sentinels retain the reference shape with red accents, and Heavies use larger purple-accented hulls with an extra armor block.
 
 Provisional tuning lives in `Alien.TYPES` and `Sector.ALIEN_SPAWNS`. These values need human balance playtesting.

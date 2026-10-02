@@ -43,8 +43,11 @@ func run() -> void:
 	await sync_physics()
 	var player := sector.player
 	var alien := sector.alien
+	# Put the Scout under the cursor so this input check is independent of OS mouse position.
+	sector.aliens[1].position = player.camera.project_position(root.get_mouse_position(), 100.0)
 	await tap_key(KEY_TAB)
-	check(sector.target == sector.aliens[1], "Tab input selects the nearest Scout")
+	check(sector.target == sector.aliens[1], "Tab input selects the Scout nearest the cursor")
+	sector.aliens[1].position = sector.aliens[1].home_position
 	await tap_key(KEY_SPACE)
 	check(sector.auto_fire, "Space input toggles laser fire")
 	await tap_key(KEY_F3)

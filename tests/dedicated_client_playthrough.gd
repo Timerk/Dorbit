@@ -38,7 +38,7 @@ func run() -> void:
 		return
 	replay_active = true
 	sector.set_paused(false)
-	await press(KEY_TAB)
+	await target_with_tab(sector.aliens[1])
 	await press(KEY_SPACE)
 	firing = true
 	await hunt_selected()

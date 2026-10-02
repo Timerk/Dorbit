@@ -75,7 +75,10 @@ func tick(delta: float) -> void:
 	for alien: Alien in sector.aliens.values():
 		alien.check_retreat(choose_target(alien))
 		if sector.target == alien and not alien.available():
-			sector.select_target(null)
+			if not alien.alive:
+				sector.select_target(null)
+			else:
+				sector.auto_fire = false
 	for id: int in records:
 		pay_pending_contracts(id)
 		var ship := session.ships[id]
@@ -358,8 +361,12 @@ func apply_alien(data: Dictionary) -> void:
 	if alien == null or alien.kind != data["kind"]:
 		return
 	var reset: bool = alien.life != data["encounter"] or alien.alive != data["alive"]
-	if session.sector.target == alien and (reset or data["returning"]):
-		session.sector.select_target(null)
+	if session.sector.target == alien:
+		if not data["alive"]:
+			session.sector.select_target(null)
+		elif reset or data["returning"]:
+			# Keep tracking the living alien, but never carry fire into a reset encounter.
+			session.sector.auto_fire = false
 	if reset or alien.snapshot_goal.is_empty() or alien.returning != data["returning"]:
 		alien.position = data["position"]
 		alien.rotation = data["rotation"]
