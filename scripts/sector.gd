@@ -40,6 +40,7 @@ var show_performance: bool = false
 var low_quality: bool = false
 var weapon_status: String = "NO TARGET"
 var session: FlightSession
+var shop: StationShop
 var dedicated_server: bool = false
 var client_only: bool = true
 var server_port: int = FlightSession.PORT
@@ -82,6 +83,13 @@ func _ready() -> void:
 	session.name = "FlightSession"
 	session.sector = self
 	add_child(session)
+	if not dedicated_server:
+		var shop_layer := CanvasLayer.new()
+		shop_layer.layer = 4
+		add_child(shop_layer)
+		shop = StationShop.new()
+		shop.sector = self
+		shop_layer.add_child(shop)
 	if dedicated_server:
 		var port := server_port
 		for argument in OS.get_cmdline_user_args():
@@ -107,7 +115,7 @@ func configure_input() -> void:
 		"repair": KEY_R, "pause_game": KEY_ESCAPE, "fullscreen": KEY_F11,
 		"performance": KEY_F3, "quality": KEY_F4, "quit_game": KEY_F10,
 		"resolution_down": KEY_F5, "resolution_up": KEY_F6,
-		"multiplayer_menu": KEY_F7, "contracts": KEY_C,
+		"multiplayer_menu": KEY_F7, "contracts": KEY_C, "station_shop": KEY_B,
 	}
 	for action: String in bindings:
 		if InputMap.has_action(action):
@@ -136,13 +144,23 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("multiplayer_menu"):
 		hud.contract_panel.hide()
+		shop.hide()
 		session.open_menu()
 		return
 	if event.is_action_pressed("contracts") and session.active:
 		hud.toggle_contracts()
 		return
+	if event.is_action_pressed("station_shop"):
+		if shop.visible:
+			shop.close()
+		else:
+			shop.open()
+		return
 	if event.is_action_pressed("pause_game"):
 		hud.contract_panel.hide()
+		if shop.visible:
+			shop.close()
+			return
 		session.menu.hide()
 		set_paused(not paused)
 	if event.is_action_pressed("quit_game") and paused:

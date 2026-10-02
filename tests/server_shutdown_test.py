@@ -15,6 +15,9 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+import pilots
+
 ENGINE = Path(sys.argv.pop(1)).resolve()
 
 
@@ -27,8 +30,9 @@ class ServerShutdownTest(unittest.TestCase):
         self.data.mkdir()
         self.ledger = self.data / "pilots.json"
         self.lock = self.data / "pilots.json.lock"
-        self.original = json.dumps({"version": 1, "pilots": {
-            "restart_test": {"verifier": hashlib.sha256(b"disposable test token").hexdigest(), "credits": 137}
+        self.original = json.dumps({"version": 2, "pilots": {
+            "restart_test": {"verifier": hashlib.sha256(b"disposable test token").hexdigest(), "credits": 137,
+                             "equipment": pilots.starter_equipment()}
         }})
         self.ledger.write_text(self.original)
         self.processes: list[subprocess.Popen] = []

@@ -2,7 +2,7 @@
 
 A space game inspired by DarkOrbit, built with Godot. Windows players connect to a dedicated Linux server to fly, hunt aliens, earn rewards and repair together. Playing alone uses the same server encounter.
 
-Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated server with provisioned pilot identities, persistent credits and hunting contracts. The sector supports independent Scout, Sentinel and Heavy hunts. Equipment purchases follow. Ships, scenery and effects use procedural placeholder art.
+Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated server with provisioned pilot identities, persistent credits, hunting contracts, and station equipment purchases and fitting. The sector supports independent Scout, Sentinel and Heavy hunts. Ships, scenery and effects use procedural placeholder art.
 
 - [Game requirements and development plan](GAME_PLAN.md)
 - [Development workflow](AGENTS.md)
@@ -85,9 +85,21 @@ python3 tools/pilots.py "$HOME/dorbit-data" alex "$HOME/dorbit-credentials/alex-
 
 Distribute the new file and restart. The old token no longer works. To revoke access without redistributing a token, rotate it and retain the new file with the operator. Keep the same ID to keep the wallet. Do not rename a pilot or change credentials while the server runs.
 
+### Station equipment
+
+Press **B** within 60 m of Outpost 01 while moving at most 8 m/s and five seconds clear of damage. Buy equipment into storage, select an owned item and a compatible empty slot, then install it. Move installed items to storage for free. The Pathfinder has two laser slots and two generator slots shared by shields and engines. The panel previews the resulting stats and explains blocked actions. The server keeps running while it is open.
+
+B and C switch between equipment and contracts. Only one station panel is visible at a time; Esc resumes flight and F7 opens the session menu. Pause-menu volume controls stay hidden while either station panel is open.
+
+New pilots start with one of each item installed. A second laser costs 3,000 CR; shields and engines cost 2,400 CR each. All values are provisional, with economy assumptions in [GAME_PLAN.md](GAME_PLAN.md). Fitting changes do not repair or refill your ship. Inventory and fittings survive rescue, reconnects and restart. Equipment purchases require the persistent dedicated server; the offline development fixture retains its original stats.
+
 ### Saves, backups and recovery
 
-The ledger is `DORBIT_DATA_DIR/pilots.json`, schema version 1. Every reward, repair charge and rescue fee is committed before the server confirms the balance. All contributors' shares use one commit. Writes go to a sibling temporary file, flush and verify its contents, then rename over the destination. `pilots.json.bak` keeps the previous complete ledger. A save failure stops simulation and exits the server with code 1 before granting the pending transaction.
+The ledger is `DORBIT_DATA_DIR/pilots.json`, schema version 2. Version 1 saves migrate before the server opens its port, retaining credits and adding starter equipment once. Keep matching server, client and provisioning-tool versions; older builds cannot read version 2. The migration uses the normal backup and failure path. Version 2 records with missing or invalid equipment fail validation rather than receiving replacements. Credential rotation preserves inventory, fittings and other pilot fields.
+
+Every reward, repair charge, rescue fee, purchase and fitting change is committed before the server confirms it. All contributors' shares use one commit. Writes go to a sibling temporary file, flush and verify its contents, then rename over the destination. `pilots.json.bak` keeps the previous complete ledger. A save failure stops simulation and exits the server with code 1 before granting the pending transaction.
+
+Each pilot's equipment record contains owned ship IDs, the active ship, item IDs with a single ship/slot location, and a successful-request sequence. Empty ship and slot strings mean storage. Inventory is sent reliably only to its owner; snapshots carry combat and movement stats for all ships. Purchase and fitting requests supply the next sequence and the current life, never a pilot ID, price or stat bonus. Retrying a successful sequence refreshes inventory without applying another transaction. After reconnecting, review the server inventory before making a new purchase.
 
 Only one server or provisioning tool may own the directory. `pilots.json.lock` is an exclusive directory lock. Clean shutdown removes it. On Linux, use `tools/server.sh run`: its launcher translates SIGTERM and Ctrl+C into a scene-tree shutdown, allowing the server to release the lock. Signaling Godot directly bypasses this launcher. A crash, SIGKILL, power loss or shutdown timeout can still leave the lock behind and requires operator recovery. Missing, malformed, unsupported or out-of-range data fails closed. The server does not replace an invalid ledger with zero balances, and it detects primary-file edits made while running.
 
@@ -187,11 +199,11 @@ Esc opens master and effects volume controls and mute. Preferences stay on this 
 
 On 18 September, alien variety was integrated with the merged feedback changes. Enemy captions use type and slot number; the station and selected target take priority over secondary contacts. The Windows gameplay/network/persistence checks passed, as did the rendered 2560 x 1440 Scout hunt and feedback replay. A separate 60-second run with one rendered client, nine headless clients and a dedicated server kept ten pilots connected: all five aliens fought and died, with overlapping encounters on 33.8% of ticks. The capped 1440 x 900 client averaged 59.97 FPS with 16.82 ms p95 frame time on the RTX A500 Laptop GPU. This is a local integration check, not an internet or reference-hardware benchmark. The busy encounter capture above now shows that run.
 
-Purchases follow on the equipment branch. Its successful server confirmation must trigger `SessionCombat.message(peer_id, text, "purchase")`; failed purchases and wallet snapshots must not trigger it. Clients and server must use matching builds.
+Purchases play a confirmation cue only after the server commits a new transaction. Failed and duplicate purchases stay silent. Clients and server must use matching builds.
 
 `tests/hunting_contracts_test.gd` checks authenticated concurrent contracts, shared kill progress, automatic payouts, restart recovery, abandonment, repeatability, legacy migration and failed saves. Both check helpers run it. For a rendered replay, run Godot with `--path . --script res://tests/contracts_playthrough.gd`. It provisions a disposable pilot and server on UDP 24690, accepts all three hunts, completes the Scout hunt with automatic payment in flight, and saves frames under `build/validation/contracts-*.png`.
 
-The contract board hides pause-menu audio controls. Equipment integration follows in PR #15 and needs to incorporate the concurrent contract collection and automatic payouts.
+The contract board hides pause-menu audio controls. Equipment purchases and fitting share the version-2 persistence path with concurrent contracts and automatic payouts. The replay starts with a 3,000-credit purchase budget, buys and installs a second laser after the Scout hunt, and checks that credits, all accepted contracts and fitting survive a server restart. Inventory uses an owner-only reliable channel; world snapshots send one player per packet with equipment stats and active contracts.
 
 On 2 October 2026, the full Windows check command passed after the concurrent-hunt update, and the expanded contract checks passed 43 assertions. The rendered replay accepted all three hunts, paid the Scout reward in flight for 180 total credits, kept the other hunts active, and repeated the Scout offer at the station. The board was inspected at 960 x 600.
 
