@@ -39,12 +39,16 @@ func run() -> void:
 		client.session.credential_token = test_token(index)
 		clients.append(client)
 		check(client.session.join("127.0.0.1", 24683) == OK, "Client %d begins joining" % index)
-	await settle(0.5)
+	# Admission spans several ENet/authentication frames. Wait for the actual roster,
+	# rather than assuming all ten peers finish within 500 ms on a busy CI runner.
+	var deadline := Time.get_ticks_msec() + 8000
+	while (server.session.ships.size() < 10 or clients.any(func(peer: Sector): return not peer.session.active)) and Time.get_ticks_msec() < deadline:
+		await process_frame
 	check(server.session.ships.size() == 10 and not server.session.ships.has(1), "All ten slots belong to clients, with no ghost host ship")
 	if server.session.ships.size() != 10:
 		finish()
 		return
-	var deadline := Time.get_ticks_msec() + 8000
+	deadline = Time.get_ticks_msec() + 8000
 	while clients.any(func(peer: Sector): return not peer.session.received_snapshot) and Time.get_ticks_msec() < deadline:
 		await replicate(server)
 	for client in clients:
