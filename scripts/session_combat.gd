@@ -8,6 +8,7 @@ var solo: Dictionary = {}
 var inventory: Dictionary = {}
 var station_pending: bool = false
 var station_message: String = ""
+var preview_tools_available: bool = false
 
 
 func begin() -> void:
@@ -410,6 +411,7 @@ func show_explosion(location: Vector3) -> void:
 func finish() -> void:
 	session.sector.active_contracts = {}
 	inventory.clear()
+	preview_tools_available = false
 	station_pending = false
 	station_message = ""
 	if not solo.is_empty():
@@ -450,7 +452,7 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 		return
 	var pilot_id := session.pilot_ids[id]
 	var previous_revision: int = session.store.pilots[pilot_id]["equipment"]["revision"]
-	var result := session.store.transact(pilot_id, sequence, action, subject, ship, slot)
+	var result := session.store.transact(pilot_id, sequence, action, subject, ship, slot, session.can_grant_test_credits(id))
 	if session.store.failed:
 		session.stop_for_save_failure()
 		return
@@ -464,12 +466,13 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 
 func publish_inventory(id: int, result: String = "") -> void:
 	if session.sector.dedicated_server:
-		station_result.rpc_id(id, session.store.pilots[session.pilot_ids[id]]["equipment"], result)
+		station_result.rpc_id(id, session.store.pilots[session.pilot_ids[id]]["equipment"], result, session.can_grant_test_credits(id))
 
 
 @rpc("authority", "call_remote", "reliable")
-func station_result(data: Dictionary, result: String) -> void:
+func station_result(data: Dictionary, result: String, test_credits_allowed: bool = false) -> void:
 	if session.active:
 		inventory = data
+		preview_tools_available = test_credits_allowed
 		station_pending = false
 		station_message = result

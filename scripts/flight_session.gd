@@ -42,6 +42,8 @@ var credential_id: String = ""
 var credential_token: String = ""
 var auth_proof_sent: bool = false
 var shutdown_file: String = ""
+var preview_tools_enabled: bool = false
+var preview_pilots: PackedStringArray = []
 
 
 func _ready() -> void:
@@ -174,6 +176,9 @@ func host(port: int = PORT) -> Error:
 	if active or connecting:
 		return ERR_ALREADY_IN_USE
 	if sector.dedicated_server:
+		# Read only server configuration. Client environment variables grant no permissions.
+		preview_tools_enabled = OS.get_environment("DORBIT_PREVIEW_TOOLS") == "1"
+		preview_pilots = OS.get_environment("DORBIT_PREVIEW_PILOTS").split(",", false)
 		store = PilotStore.new()
 		if not store.open(OS.get_environment("DORBIT_DATA_DIR")):
 			status = store.error
@@ -196,6 +201,10 @@ func host(port: int = PORT) -> Error:
 	if sector.dedicated_server:
 		print(status)
 	return OK
+
+
+func can_grant_test_credits(id: int) -> bool:
+	return sector.dedicated_server and active and multiplayer.is_server() and preview_tools_enabled and pilot_ids.has(id) and pilot_ids[id] in preview_pilots
 
 
 func join(host_address: String, port: int = PORT) -> Error:

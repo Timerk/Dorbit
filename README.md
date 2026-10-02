@@ -10,6 +10,38 @@ Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated ser
 
 ## Play
 
+### Preview test credits
+
+On a preview server with test tools enabled, press **B** at Outpost 01 and choose
+**Preview: add 100,000 test credits**. You can repeat this when you need another
+shopping budget, without disconnecting or restarting the server. Credits save
+immediately, can buy normal equipment, and survive reconnects and restarts.
+Seeded sessions test item behavior; use an unseeded pilot to evaluate progression
+speed and prices.
+
+The operator enables this once in the preview service environment, for example
+`/etc/dorbit-preview/server.env`, then deploys or restarts preview:
+
+```ini
+DORBIT_PREVIEW_TOOLS=1
+DORBIT_PREVIEW_PILOTS=preview
+```
+
+`DORBIT_PREVIEW_PILOTS` is a comma-separated list of stable pilot IDs. Both
+settings are required. Keep them out of the production service environment.
+Clients cannot enable tools through their own environment or select a different
+wallet. The button is hidden for other pilots and on servers without this opt-in.
+Grants obey station-service rules and the credit cap. Duplicate requests cannot
+grant twice, including after a reconnect or restart. Use matching client/server
+builds; the original PR #15 client does not have this button.
+
+The authenticated preview-credit checks run with both Windows and Linux check
+commands. They cover disabled tools, allowed pilots, actual shop purchases,
+duplicate requests, restart persistence, the credit cap and failed saves.
+[Review the shop at 960 x 600](docs/feedback/preview-test-credits.png).
+
+### Launch and controls
+
 Launch `build/windows/Dorbit.exe` after building, or download the `Dorbit-Windows-<commit>-<attempt>` artifact from a successful GitHub Actions run. Extract the artifact, then its `windows.zip`, before playing and keep the included third-party notices with the executable.
 
 Set `DORBIT_PILOT_FILE` to your private credential file as described below. Enter the server address and UDP port in the connection menu, then choose **Connect**. Use matching client and server builds.
