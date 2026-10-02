@@ -10,6 +10,7 @@ var destination: OptionButton
 var preview: Label
 var fit_button: Button
 var remove_button: Button
+var test_credits_button: Button
 var buys: Dictionary[String, Button] = {}
 var item_ids: Array[String] = []
 var destinations: Array[Dictionary] = []
@@ -55,7 +56,13 @@ func _ready() -> void:
 	preview = label(rows)
 	status = label(rows)
 	status.custom_minimum_size.y = 24
-	sector.session.add_button(rows, "Back to flight [B / Esc]", close)
+	var footer := HBoxContainer.new()
+	rows.add_child(footer)
+	var back_button := sector.session.add_button(footer, "Back to flight [B / Esc]", close)
+	back_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	test_credits_button = sector.session.add_button(footer, "Preview: add 100,000 test credits", func(): sector.session.combat.request_station("test_credits", ""))
+	test_credits_button.tooltip_text = "Adds saved test credits to your pilot on this preview server."
+	test_credits_button.hide()
 	hide()
 
 
@@ -136,6 +143,8 @@ func _process(_delta: float) -> void:
 	var blocked := sector.repair_blocker()
 	if combat.station_pending:
 		blocked = "Waiting for server..."
+	test_credits_button.visible = combat.preview_tools_available
+	test_credits_button.disabled = not blocked.is_empty() or sector.credits >= PilotStore.MAX_CREDITS
 	for model: String in buys:
 		var info: Dictionary = Equipment.MODELS[model]
 		var shortfall := maxi(0, int(info["price"]) - sector.credits)
