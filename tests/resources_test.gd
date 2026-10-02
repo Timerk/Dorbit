@@ -145,6 +145,7 @@ func run() -> void:
 	combat.records[id]["credits"] = PilotStore.MAX_CREDITS - 1
 	await request(client, 3, "sell", "all")
 	check(client.cargo == {"duranium": 2} and client.session.combat.station_message.contains("credit limit"), "Wallet limit rejects the whole sale and keeps cargo")
+	await check_resource_shop(server, client)
 	var failure_dir := store.path.get_base_dir().path_join("resource-failure")
 	DirAccess.make_dir_absolute(failure_dir)
 	var file := FileAccess.open(failure_dir.path_join("pilots.json"), FileAccess.WRITE)
@@ -156,7 +157,113 @@ func run() -> void:
 	var before := probe.pilots.duplicate(true)
 	var disk_before := FileAccess.get_file_as_string(probe.path)
 	DirAccess.make_dir_absolute(probe.path + ".tmp")
-	probe.transact("pilot0", 3, "sell", "all", "", "")
+	probe.transact("pilot0", int(probe.pilots["pilot0"]["equipment"]["revision"]) + 1, "sell", "all", "", "")
 	check(probe.failed and probe.pilots == before and FileAccess.get_file_as_string(probe.path) == disk_before, "Write failure preserves cargo, credits, sequence and disk ledger")
 	probe.close()
 	finish()
+
+
+func click_control(client: Sector, control: Control) -> void:
+	var event := InputEventMouseButton.new()
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.position = control.get_global_rect().get_center()
+	event.pressed = true
+	client.get_viewport().push_input(event)
+	await process_frame
+	event = event.duplicate()
+	event.pressed = false
+	client.get_viewport().push_input(event)
+	await settle()
+
+
+func check_resource_shop(server: Sector, client: Sector) -> void:
+	var store := server.session.store
+	var combat := server.session.combat
+	var id := client.multiplayer.get_unique_id()
+	var hold := {}
+	for resource: String in CargoResources.TYPES:
+		hold[resource] = 10
+	check(store.commit({"pilot0": 1000}, {}, {"pilot0": {"starter": hold}}), "Seed all seven ores for the trading controls")
+	combat.records[id]["credits"] = 1000
+	combat.cargo_holds[id] = {"starter": hold.duplicate()}
+	combat.publish_inventory(id)
+	await settle()
+	client.get_viewport().size = Vector2i(960, 600)
+	client.shop.open()
+	client.shop.equipment_page.hide()
+	client.shop.cargo_page.show()
+	await settle()
+	var shop := client.shop
+	check(shop.visible and shop.sells.size() == 7 and shop.selected["seprom"] == 10, "Trading displays all seven resources with full quantities initially selected")
+	check(shop.get_global_rect().position.x >= 0 and shop.get_global_rect().end.x <= 960 and shop.get_global_rect().end.y <= 600, "Ore cards fit the minimum supported viewport")
+	for resource: String in CargoResources.TYPES:
+		check(shop.sells[resource].get_global_rect().end.x <= shop.get_global_rect().end.x and shop.sells[resource].get_global_rect().end.y <= shop.get_global_rect().end.y, "%s sale control stays inside the shop" % resource)
+	await screenshot(client, "resource-shop")
+	await click_control(client, shop.decreases["seprom"])
+	check(shop.selected["seprom"] == 9 and shop.totals["seprom"].text == "576 CR", "Real minus-button input updates quantity and exact proceeds")
+	await click_control(client, shop.increases["seprom"])
+	check(shop.selected["seprom"] == 10 and shop.increases["seprom"].disabled, "Plus button stops at held quantity")
+	await click_control(client, shop.quantities["seprom"])
+	shop.quantities["seprom"].select_all()
+	var key := InputEventKey.new()
+	key.keycode = KEY_BACKSPACE
+	key.pressed = true
+	client.get_viewport().push_input(key)
+	await process_frame
+	for digit in "10":
+		key = InputEventKey.new()
+		key.keycode = digit.unicode_at(0)
+		key.unicode = digit.unicode_at(0)
+		key.pressed = true
+		client.get_viewport().push_input(key)
+		await process_frame
+	check(shop.selected["seprom"] == 10 and shop.quantities["seprom"].text == "10", "Clearing and typing a multi-digit quantity preserves normal cursor behavior")
+	shop.quantities["seprom"].select_all()
+	key = InputEventKey.new()
+	key.keycode = KEY_3
+	key.unicode = 51
+	key.pressed = true
+	client.get_viewport().push_input(key)
+	await settle()
+	check(shop.totals["seprom"].text == "192 CR", "Editable quantity updates the sale total")
+	client.session.combat.station_pending = true
+	await settle()
+	check(shop.sells["seprom"].disabled and shop.increases["seprom"].disabled and not shop.quantities["seprom"].editable, "Pending server reply blocks quantity changes and further sales")
+	client.session.combat.station_pending = false
+	var revision: int = client.session.combat.inventory["revision"]
+	for subject in ["seprom:0", "seprom:-1", "seprom:11", "seprom:1.5", "seprom:abc", "seprom:", "seprom:1:2", "all:1", "seprom:99999999999999999999"]:
+		await request(client, revision + 1, "sell", subject)
+		check(store.pilots["pilot0"]["credits"] == 1000 and store.pilots["pilot0"]["cargo"]["starter"] == hold and store.pilots["pilot0"]["equipment"]["revision"] == revision, "Reject malformed or unavailable amount: " + subject)
+	await click_control(client, shop.sells["seprom"])
+	check(client.cargo["seprom"] == 7 and client.credits == 1192 and store.pilots["pilot0"]["cargo"]["starter"]["seprom"] == 7, "Selected-quantity button saves and replicates exactly three sold units")
+	check(shop.selected["seprom"] == 3 and shop.held["seprom"].text == "In hold: 7", "Partial sale preserves the smaller selection and updates held amount")
+	await request(client, revision + 1, "sell", "seprom:3")
+	check(client.credits == 1192 and client.cargo["seprom"] == 7, "Repeated partial sale cannot pay twice")
+	shop.set_quantity("seprom", 999)
+	await settle()
+	check(shop.selected["seprom"] == 7, "Quantity cannot exceed remaining cargo")
+	shop.set_quantity("seprom", 0)
+	await settle()
+	check(shop.sells["seprom"].disabled and shop.decreases["seprom"].disabled, "Zero selection disables selling and decrement")
+	check(store.commit({"pilot0": PilotStore.MAX_CREDITS - 3}), "Seed wallet space for a partial sale")
+	combat.records[id]["credits"] = PilotStore.MAX_CREDITS - 3
+	combat.publish_inventory(id)
+	await settle()
+	shop.set_quantity("endurium", 2)
+	await settle()
+	check(shop.sells["endurium"].disabled, "Selected amount exceeding remaining wallet space is disabled")
+	await request(client, revision + 2, "sell", "endurium:2")
+	check(client.cargo["endurium"] == 10 and client.credits == PilotStore.MAX_CREDITS - 3, "Server rejects an overflowing partial sale without removing cargo")
+	shop.set_quantity("endurium", 1)
+	await settle()
+	check(not shop.sells["endurium"].disabled, "A smaller affordable sale is enabled even when selling the whole type is blocked")
+	check(store.commit({"pilot0": 1192}), "Restore the sale fixture wallet")
+	combat.records[id]["credits"] = 1192
+	combat.publish_inventory(id)
+	await settle()
+	client.get_viewport().size = Vector2i(1440, 900)
+	await settle()
+	await screenshot(client, "resource-shop-large")
+	check(shop.get_global_rect().position.x >= 0 and shop.get_global_rect().end.x <= 1440, "Trading fits the larger viewport")
+	client.get_viewport().size = Vector2i(960, 600)
+	shop.close()

@@ -155,18 +155,30 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 			return "Credit limit reached."
 		pilot["credits"] = mini(MAX_CREDITS, pilot["credits"] + PREVIEW_CREDIT_GRANT)
 	elif action == "sell":
-		if not ship.is_empty() or not slot.is_empty() or (subject != "all" and not CargoResources.TYPES.has(subject)):
+		# A resource:quantity subject sells a selection; legacy subjects sell the whole type.
+		var parts := subject.split(":")
+		var resource: String = parts[0]
+		if not ship.is_empty() or not slot.is_empty() or parts.size() > 2 or (resource != "all" and not CargoResources.TYPES.has(resource)):
 			return "Unknown resource sale."
 		var hold: Dictionary = pilot["cargo"][equipment["active_ship"]]
-		var sold := hold.duplicate() if subject == "all" else ({subject: hold[subject]} if hold.has(subject) else {})
+		var sold := hold.duplicate() if resource == "all" else ({resource: hold[resource]} if hold.has(resource) else {})
+		if parts.size() == 2:
+			if resource == "all" or not parts[1].is_valid_int() or parts[1].length() > 3:
+				return "Invalid sale quantity."
+			var amount := parts[1].to_int()
+			if amount < 1 or amount > int(hold.get(resource, 0)):
+				return "Invalid sale quantity."
+			sold = {resource: amount}
 		if sold.is_empty():
 			return "No resources to sell."
 		var proceeds := CargoResources.value(sold)
 		if proceeds > MAX_CREDITS - pilot["credits"]:
 			return "Sale exceeds the credit limit. Free wallet space first."
 		pilot["credits"] += proceeds
-		for resource: String in sold:
-			hold.erase(resource)
+		for sold_resource: String in sold:
+			hold[sold_resource] -= sold[sold_resource]
+			if hold[sold_resource] == 0:
+				hold.erase(sold_resource)
 	elif action == "fit":
 		var blocker := Equipment.fitting_blocker(equipment, subject, ship, slot)
 		if not blocker.is_empty():
