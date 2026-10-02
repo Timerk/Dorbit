@@ -51,6 +51,14 @@ func run() -> void:
 	await replicate(server)
 	second.select_target(second.aliens[4])
 	second.auto_fire = true
+	q.position = heavy.position + Vector3(0, 0, 900)
+	await replicate(server)
+	second.validate_target()
+	check(second.target == second.aliens[4] and second.auto_fire, "Replicated movement beyond selection and weapon range keeps the client lock and fire intent")
+	q.position = heavy.position + Vector3(0, 0, 90)
+	await replicate(server)
+	second.validate_target()
+	check(second.target == second.aliens[4] and second.auto_fire, "Returning to combat range preserves the same client lock")
 	var heavy_health := heavy.hull + heavy.shield
 	var heavy_life := heavy.life
 	scout.take_damage(999, p)
@@ -69,7 +77,7 @@ func run() -> void:
 	heavy.take_damage(9999, q)
 	check(heavy.alive and combat.records[second_id]["credits"] == 0, "Returning alien rejects damage and rewards")
 	await replicate(server)
-	check(second.target == null and not second.auto_fire, "Returning target clears on its client")
+	check(second.target == second.aliens[4] and not second.auto_fire, "Returning target remains locked while stale fire stops on its client")
 	late.session.credential_id = "pilot2"
 	late.session.credential_token = test_token(2)
 	late.session.join("127.0.0.1", 24683)
@@ -140,7 +148,7 @@ func run() -> void:
 	check(blocked.returning, "Blocked return stays unavailable")
 	blocked.fly(Alien.RETURN_TIMEOUT, null, Sector.STATION_POSITION)
 	check(blocked.available() and blocked.position.is_equal_approx(blocked.home_position) and blocked.contributors.is_empty(), "Return timeout restores a blocked slot safely at home")
-	# Target controls use nearest-first, then stable slot order.
+	# Each Tab selects by cursor distance, even when another target is already locked.
 	var control := first
 	(control.get_parent() as SubViewport).size = Vector2i(1280, 720)
 	control.player.position = Sector.SPAWN_POSITION
@@ -148,20 +156,19 @@ func run() -> void:
 		enemy.position = enemy.home_position
 		enemy.returning = false
 		enemy.reset_health()
-	control.cycle_target()
-	check(control.target == control.aliens[1], "First Tab selects the nearest available enemy")
-	var visited: Array[int] = []
-	for step in range(5):
-		visited.append((control.target as Alien).alien_id)
-		control.cycle_target()
-	check(visited.size() == 5 and visited.count(1) == 1 and control.target == control.aliens[1], "Tab cycles all nearby aliens in a stable order")
+	var cursor := control.player.camera.unproject_position(control.aliens[2].global_position)
+	control.cycle_target(cursor)
+	check(control.target == control.aliens[2], "Tab selects the available enemy nearest the cursor")
+	control.cycle_target(cursor)
+	check(control.target == control.aliens[2], "Repeated Tab does not cycle away from the cursor")
+	control.select_target(control.aliens[1])
 	control.aliens[1].returning = true
 	control.validate_target()
-	check(control.target == null and not control.auto_fire, "Unavailable target clears immediately")
+	check(control.target == control.aliens[1], "Returning enemy retains its lock")
 	control.select_target(control.aliens[0])
 	control.player.position = Vector3(0, 0, 699)
 	control.validate_target()
-	check(control.target == null, "Out-of-range target clears")
+	check(control.target == control.aliens[0], "Out-of-range target remains locked")
 	control.player.position = Vector3(0, 100, 0)
 	control.player.rotation = Vector3.ZERO
 	control.aliens[2].position = Vector3(0, 100, -80)

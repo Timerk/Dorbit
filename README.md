@@ -47,7 +47,7 @@ Launch `build/windows/Dorbit.exe` after building, or download the `Dorbit-Window
 Set `DORBIT_PILOT_FILE` to your private credential file as described below. Enter the server address and UDP port in the connection menu, then choose **Connect**. Use matching client and server builds.
 
 1. Hold right mouse and move the mouse to steer. Use W/S for forward/backward movement, A/D to strafe, and Q/E to descend/rise.
-2. Start with an amber Scout near the station approach. Tab selects the nearest available alien, then cycles nearby contacts; left click selects the ship under the pointer. Space toggles automatic lasers.
+2. Start with an amber Scout near the station approach. Tab selects the on-screen alien closest to the mouse cursor, or screen center while steering; left click selects the ship under the pointer. The lock persists beyond weapon range and when you turn away or the alien returns home. Space toggles automatic lasers. Enemy encounter resets stop automatic fire while retaining the lock; death clears it.
 3. Keep the alien ahead, within 170 m, and clear of obstacles. Shift boosts while energy is available. Releasing movement brakes the ship.
 4. Scout, Sentinel and Heavy kills grant pools of 30, 75 and 180 credits respectively, split equally among eligible contributors. Return within 60 m of the green outpost marker, slow below 8 m/s, and press R to repair. Repairs require five seconds without taking damage.
 
@@ -216,6 +216,8 @@ GitHub Actions runs the Windows checks, exports the Windows client, and tests th
 The Scout hunt-and-repair replays follow the selected alien through 3D flight. For a two-client Windows-to-Linux replay, provision two fresh test pilots and run the server on port 24684 with a disposable data directory. Set a different `DORBIT_PILOT_FILE` for each Windows Godot process, then launch with `--path . --script res://tests/dedicated_client_playthrough.gd -- --address=YOUR_WSL_IP --label=a`, using `--label=b` for the other. Start both within ten seconds. Each replays the hunt and repair loop; rendered runs save screenshots under `build/validation`.
 
 ## Feedback validation
+
+Cursor targeting and persistent locks were checked on 2 October 2026 with Godot 4.7.2 on Windows. Run `res://tests/targeting_test.gd` headlessly for 13 assertions, or with a renderer for 14 assertions including captured-mouse steering and real cursor/Tab input. The checks cover cursor retargeting, repeated Tab, acquisition beyond 550 m, lock retention beyond weapon range and behind the camera, returning enemies, snapshot resets, destruction and candidate filtering. The [900 m lock capture](docs/feedback/targeting-distant-lock.png) shows the retained target with OUT OF RANGE feedback. The rendered Scout hunt-and-repair replay and gameplay, network, dedicated-server, persistence and connection checks also passed. These are automated local checks; the revised targeting still needs human playtesting.
 
 Combat feedback was checked on 13 September 2026 with Godot 4.7.2, Windows and an NVIDIA RTX A500 Laptop GPU. The rendered flight replay passed click/Tab targeting, disabled fire, range, arc and real wall obstruction, shield/hull impacts, kill reward and return/repair. The final hunt measured 2.35 ms average and 3.70 ms p95 at 2560 x 1440 with VSync disabled. These local development measurements are not a reference-hardware performance guarantee.
 
