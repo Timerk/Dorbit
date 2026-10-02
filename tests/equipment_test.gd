@@ -27,6 +27,65 @@ func screenshot(client: Sector, label: String) -> void:
 	client.get_viewport().get_texture().get_image().save_png(directory.path_join(label + ".png"))
 
 
+func drag(client: Sector, source: Control, target_control: Control) -> void:
+	var viewport := client.get_viewport()
+	var start := source.get_global_rect().get_center()
+	var finish := target_control.get_global_rect().get_center()
+	var down := InputEventMouseButton.new()
+	down.button_index = MOUSE_BUTTON_LEFT
+	down.button_mask = MOUSE_BUTTON_MASK_LEFT
+	down.position = start
+	down.pressed = true
+	viewport.push_input(down)
+	await process_frame
+	for point: Vector2 in [start + Vector2(20, 0), finish]:
+		var motion := InputEventMouseMotion.new()
+		motion.position = point
+		motion.relative = point - start
+		motion.button_mask = MOUSE_BUTTON_MASK_LEFT
+		viewport.push_input(motion)
+		await process_frame
+	var up := InputEventMouseButton.new()
+	up.button_index = MOUSE_BUTTON_LEFT
+	up.position = finish
+	viewport.push_input(up)
+	await settle()
+
+
+func check_inventory_layout(client: Sector) -> void:
+	# Presentation-only fixture; real ownership transactions are exercised in run().
+	var combat := client.session.combat
+	var committed := combat.inventory.duplicate(true)
+	var fixture := committed.duplicate(true)
+	for index in range(30):
+		fixture["items"]["layout-%d" % index] = {"model": ["laser", "shield", "engine"][index % 3], "ship": "", "slot": ""}
+	combat.inventory = fixture
+	await settle()
+	var fitting := client.equipment_menu
+	check(fitting.stored.size() == 31 and fitting.storage_grid.columns == 3, "Large inventory renders each owned stored instance in a three-column grid")
+	var scroll := fitting.storage_grid.get_parent() as ScrollContainer
+	scroll.scroll_vertical = 1000
+	await settle()
+	check(scroll.scroll_vertical > 0, "Inventory scrolls to items beyond the first visible rows")
+	check(fitting.storage_grid.get_rect().size.x <= scroll.size.x, "Inventory grid fits its available width at 960 pixels")
+	await screenshot(client, "equipment-inventory-scroll")
+	var payload := {"equipment_item": "starter-engine", "screen": fitting}
+	combat.station_pending = true
+	check(not fitting.can_drop(payload, "") and fitting.preview.text.contains("Waiting"), "Pending request blocks further fitting and explains why")
+	combat.station_pending = false
+	check(not fitting.can_drop({"equipment_item": "missing", "screen": fitting}, "") and not fitting.can_drop("foreign drag", ""), "Unknown items and unrelated drags are rejected")
+	fitting.drop_hint = ""
+	fitting.preview.text = ""
+	client.get_viewport().size = Vector2i(1440, 900)
+	await settle()
+	check(fitting.get_global_rect().position.x >= 0 and fitting.get_global_rect().end.x <= 1440 and fitting.get_global_rect().end.y <= 900, "Equipment resizes within the larger viewport")
+	scroll.scroll_vertical = 0
+	await screenshot(client, "equipment-large-window")
+	client.get_viewport().size = Vector2i(960, 600)
+	combat.inventory = committed
+	await settle()
+
+
 func run() -> void:
 	var server := make_sector("EquipmentServer", true, 24731)
 	var store := server.session.store
@@ -59,17 +118,29 @@ func run() -> void:
 	client.shop.open()
 	await settle()
 	check(client.shop.visible and client.paused, "Station shop opens and stops flight commands")
-	check(not client.hud.audio_controls.visible, "Equipment panel hides pause-menu audio controls")
+	check(not client.hud.audio_controls.visible, "Shop hides pause-menu audio controls")
 	await press(client, KEY_C)
-	check(client.hud.contract_panel.visible and not client.shop.visible and client.paused and not client.hud.audio_controls.visible, "C switches from equipment to contracts while flight stays paused")
+	check(client.hud.contract_panel.visible and not client.shop.visible and client.paused and not client.hud.audio_controls.visible, "C switches from shop to contracts while flight stays paused")
 	await press(client, KEY_B)
-	check(client.shop.visible and not client.hud.contract_panel.visible and client.paused and not client.hud.audio_controls.visible, "B switches back to equipment without overlapping panels")
+	check(client.shop.visible and not client.hud.contract_panel.visible and client.paused and not client.hud.audio_controls.visible, "B switches back to shop without overlapping panels")
 	await press(client, KEY_F7)
 	check(client.session.menu.visible and not client.shop.visible and not client.hud.contract_panel.visible, "Session menu closes both station panels")
 	await press(client, KEY_ESCAPE)
 	check(not client.paused and not client.session.menu.visible, "Esc resumes flight after the session menu")
 	await press(client, KEY_B)
 	await screenshot(client, "equipment-starter")
+	await press(client, KEY_I)
+	check(client.equipment_menu.visible and not client.shop.visible and client.paused and not client.hud.audio_controls.visible, "I opens separate equipment screen and hides shop and pause controls")
+	check(client.equipment_menu.slots.size() == 4 and client.equipment_menu.stored.is_empty(), "Active ship shows its four real slots and storage excludes installed items")
+	check(client.equipment_menu.get_global_rect().position.y >= 0 and client.equipment_menu.get_global_rect().end.y <= 600, "Equipment panel fits the minimum window height")
+	await screenshot(client, "equipment-layout-starter")
+	await press(client, KEY_C)
+	check(client.hud.contract_panel.visible and not client.equipment_menu.visible, "Contracts hide the equipment screen")
+	await press(client, KEY_I)
+	await press(client, KEY_F7)
+	check(client.session.menu.visible and not client.equipment_menu.visible, "Session menu hides equipment")
+	await press(client, KEY_ESCAPE)
+	await press(client, KEY_B)
 	client.audio.muted = false
 	client.audio.master = 1.0
 	client.audio.effects = 1.0
@@ -104,22 +175,33 @@ func run() -> void:
 	ship.hull = 87
 	ship.energy = 42
 	ship.shot_cooldown = 0.3
-	# Exercise the same buttons and preview used by a player.
-	client.shop.items.select(client.shop.item_ids.find("purchase-1"))
-	client.shop.destination.select(1)
+	# Exercise the actual Godot drag routing and server-committed result.
+	await press(client, KEY_I)
+	var fitting := client.equipment_menu
+	fitting.select_item("purchase-1")
+	fitting.inspect_tile(fitting.slots["laser2"])
 	await settle()
-	check(client.shop.preview.text.contains("22 damage"), "Preview includes the resulting additive damage")
-	client.shop.fit_button.pressed.emit()
-	await settle()
+	check(fitting.preview.text.contains("22 damage"), "Preview includes the resulting additive damage")
+	var revision: int = combat.inventory["revision"]
+	await drag(client, fitting.stored["purchase-1"], fitting.slots["generator1"])
+	check(combat.inventory["revision"] == revision and fitting.preview.text.is_empty(), "Incompatible drop leaves authoritative inventory unchanged and clears drag preview")
+	await drag(client, fitting.stored["purchase-1"], fitting.slots["laser1"])
+	check(combat.inventory["revision"] == revision, "Occupied slot rejects drops")
+	await drag(client, fitting.stored["purchase-1"], fitting.slots["laser2"])
 	await replicate(server)
 	check(ship.laser_damage == 22 and client.player.laser_damage == 22, "Fitting updates authoritative and displayed damage")
+	check(not fitting.stored.has("purchase-1") and fitting.slots["laser2"].item_id == "purchase-1", "Successful drag moves one instance from inventory into its slot")
 	check(ship.shield == 23 and ship.hull == 87 and ship.energy == 42 and ship.shot_cooldown == 0.3, "Installing grants no repairs, shield charge, boost energy or cooldown reset")
 	await screenshot(client, "equipment-fitted")
+	await check_inventory_layout(client)
 	await request(client, 3, "fit", "purchase-1", "starter", "laser2")
 	check(combat.inventory["revision"] == 3, "Duplicate fitting does not change revision")
-	await request(client, 4, "fit", "starter-shield")
+	await drag(client, fitting.slots["generator1"], fitting.storage_panel)
 	check(ship.max_shield == 0 and ship.shield == 0, "Removing the last shield clamps charge to zero")
-	await request(client, 5, "fit", "starter-shield", "starter", "generator1")
+	check(fitting.stored.has("starter-shield") and fitting.slots["generator1"].item_id.is_empty(), "Dragging a fitted item into inventory empties its slot")
+	fitting.stored["starter-shield"].pressed.emit()
+	fitting.slots["generator1"].pressed.emit()
+	await settle()
 	check(ship.max_shield == 70 and ship.shield == 0, "Reinstalling shields does not refill them")
 	await request(client, 6, "buy", "engine")
 	await request(client, 7, "fit", "starter-shield")
@@ -133,7 +215,7 @@ func run() -> void:
 	check(not client.audio.last_played.has("purchase"), "Failed purchase does not play a success sound")
 	await replicate(server)
 	await screenshot(client, "equipment-insufficient")
-	client.shop.close()
+	fitting.close()
 	ship.position = server.alien.home_position + Vector3(0, 0, 100)
 	ship.rotation = Vector3.ZERO
 	ship.velocity = Vector3.ZERO

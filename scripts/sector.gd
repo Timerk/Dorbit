@@ -43,6 +43,7 @@ var low_quality: bool = false
 var weapon_status: String = "NO TARGET"
 var session: FlightSession
 var shop: StationShop
+var equipment_menu: ShipEquipment
 var dedicated_server: bool = false
 var client_only: bool = true
 var server_port: int = FlightSession.PORT
@@ -97,7 +98,10 @@ func _ready() -> void:
 		add_child(shop_layer)
 		shop = StationShop.new()
 		shop.sector = self
+		equipment_menu = ShipEquipment.new()
+		equipment_menu.sector = self
 		shop_layer.add_child(shop)
+		shop_layer.add_child(equipment_menu)
 	if dedicated_server:
 		var port := server_port
 		for argument in OS.get_cmdline_user_args():
@@ -124,6 +128,7 @@ func configure_input() -> void:
 		"performance": KEY_F3, "quality": KEY_F4, "quit_game": KEY_F10,
 		"resolution_down": KEY_F5, "resolution_up": KEY_F6,
 		"multiplayer_menu": KEY_F7, "contracts": KEY_C, "station_shop": KEY_B,
+		"ship_equipment": KEY_I,
 	}
 	for action: String in bindings:
 		if InputMap.has_action(action):
@@ -153,6 +158,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("multiplayer_menu"):
 		hud.contract_panel.hide()
 		shop.hide()
+		equipment_menu.hide()
 		session.open_menu()
 		return
 	if event.is_action_pressed("contracts") and session.active:
@@ -164,8 +170,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			shop.open()
 		return
+	if event.is_action_pressed("ship_equipment"):
+		if equipment_menu.visible:
+			equipment_menu.close()
+		else:
+			equipment_menu.open()
+		return
 	if event.is_action_pressed("pause_game"):
 		hud.contract_panel.hide()
+		if equipment_menu.visible:
+			equipment_menu.close()
+			return
 		if shop.visible:
 			shop.close()
 			return
