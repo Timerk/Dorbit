@@ -1,6 +1,6 @@
 class_name HuntingContracts
 extends RefCounted
-## Fixed station trips. Saved runs keep their own objective and reward across tuning changes.
+## Concurrent hunts. Saved runs keep their own objective and reward across tuning changes.
 
 const OFFERS: Dictionary = {
 	"scout": {"type": "scout", "required": 3, "reward": 90},
@@ -41,9 +41,33 @@ static func after_kill(contract: Dictionary, alien_type: String) -> Dictionary:
 	return next
 
 
+static func valid_collection(value: Variant) -> bool:
+	if not value is Dictionary or value.size() > OFFERS.size():
+		return false
+	for kind: Variant in value:
+		if not kind is String or not OFFERS.has(kind) or not valid(value[kind]) or value[kind].is_empty() or value[kind]["type"] != kind:
+			return false
+	return true
+
+
+# Clear paid runs in the same transaction as their rewards. Full wallets keep pending runs.
+static func settle(contracts: Dictionary, credits: int) -> Dictionary:
+	var next := contracts.duplicate(true)
+	var paid: Array[String] = []
+	var reward := 0
+	for kind: String in OFFERS:
+		if next.has(kind) and ready(next[kind]) and credits <= PilotStore.MAX_CREDITS - int(next[kind]["reward"]):
+			var amount := int(next[kind]["reward"])
+			credits += amount
+			reward += amount
+			paid.append(kind.capitalize())
+			next.erase(kind)
+	return {"contracts": next, "credits": credits, "reward": reward, "paid": paid}
+
+
 static func ready(contract: Dictionary) -> bool:
 	return not contract.is_empty() and contract["progress"] == contract["required"]
 
 
 static func objective(contract: Dictionary) -> String:
-	return "%s hunt: %d / %d  |  %d CR%s" % [str(contract["type"]).capitalize(), contract["progress"], contract["required"], contract["reward"], "  |  READY TO CLAIM" if ready(contract) else ""]
+	return "%s hunt: %d / %d  |  %d CR%s" % [str(contract["type"]).capitalize(), contract["progress"], contract["required"], contract["reward"], "  |  WALLET FULL / REWARD PENDING" if ready(contract) else ""]

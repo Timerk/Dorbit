@@ -264,7 +264,7 @@ Completion criteria:
 
 ### First station hunting contracts
 
-Each pilot can accept one repeatable hunting contract at Outpost 01. Press C at the station to choose a hunt, claim a completed reward, or abandon the active contract. These actions use the repair restrictions: alive, within 60 m, at most 8 m/s, and five seconds since the last hit. Opening the board stops local controls while the shared world continues.
+Each pilot can run the Scout, Sentinel and Heavy hunting contracts together, with one active run per offer. Press C at Outpost 01 to accept hunts or abandon individual contracts. These station actions use the repair restrictions: alive, within 60 m, at most 8 m/s, and five seconds since the last hit. Opening the board stops local controls while the shared world continues. The flight HUD shows every active hunt.
 
 | Alien | Required kills | Fixed contract reward |
 | --- | --- | --- |
@@ -274,11 +274,11 @@ Each pilot can accept one repeatable hunting contract at Outpost 01. Press C at 
 
 Counts and rewards are provisional values for short hunting trips. Accepted contracts retain their original terms if later updates tune the offers.
 
-Only qualifying kills after acceptance count. The existing encounter contribution rules decide eligibility, including connected contributors awaiting rescue. Every eligible pilot with a matching contract earns one full kill of progress, independently of the split kill-credit pool. Death preserves the contract and progress. Completion caps progress and leaves the contract active until claimed or abandoned.
+Only qualifying kills after acceptance count. The existing encounter contribution rules decide eligibility, including connected contributors awaiting rescue. Every eligible pilot with a matching contract earns one full kill of progress, independently of the split kill-credit pool. Death preserves all contracts and progress. The final qualifying kill automatically grants the fixed hunting reward once and clears that run, wherever the pilot is. Other hunts remain active.
 
-Claiming at the station grants the fixed reward once and clears the contract. A full wallet keeps the completed contract until it can receive the entire reward. Abandonment clears progress without charging credits. Either action allows another contract, including the same offer. The server validates all actions and saves kill progress together with the corresponding credit shares. Active and completed contracts survive reconnects and server restarts. Claims save the reward and cleared contract together, and stale requests identify their original accepted run.
+A full wallet keeps the completed contract until it can receive the entire reward, then pays automatically when there is room. Abandonment clears only the selected run without charging credits. A cleared offer can be accepted again at the station. The server saves kill progress, kill-credit shares, automatic rewards and cleared runs together before publishing them. Contracts and pending rewards survive reconnects and server restarts. Stale abandonment requests identify their original accepted run. Existing single-contract saves migrate with their accepted terms and progress intact; completed legacy hunts pay automatically.
 
-This slice depends on persistent pilots and the multiple-alien sector. It adds no timers, daily limits, chains, party missions, multiple active contracts, or mission scripting framework. Equipment and ship purchases remain separate feature work.
+Hunting quests do not require returning to the station for payment. Future resource-collection or special-item quests may require station delivery; those quest types are outside this slice. This slice depends on persistent pilots and the multiple-alien sector. It adds no timers, daily limits, chains, party missions or mission scripting framework. Equipment and ship purchases remain separate feature work.
 
 ### Milestone 4: Expansion and polish
 

@@ -16,8 +16,7 @@ var audio_controls: VBoxContainer
 var contract_panel: PanelContainer
 var contract_status: Label
 var contract_offers: Array[Button] = []
-var contract_claim: Button
-var contract_abandon: Button
+var contract_abandon: Array[Button] = []
 
 
 func _ready() -> void:
@@ -87,24 +86,22 @@ func build_contract_panel() -> void:
 	title.add_theme_color_override("font_color", CYAN)
 	rows.add_child(title)
 	contract_status = Label.new()
-	contract_status.custom_minimum_size = Vector2(550, 80)
+	contract_status.custom_minimum_size = Vector2(550, 60)
 	contract_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	rows.add_child(contract_status)
 	for offer: String in HuntingContracts.OFFERS:
-		var terms: Dictionary = HuntingContracts.OFFERS[offer]
 		var button := Button.new()
-		button.text = "Hunt %d %s%s / %d CR" % [terms["required"], offer.capitalize(), "s" if terms["required"] > 1 else "", terms["reward"]]
 		button.pressed.connect(func(): sector.session.combat.request_contract("accept", offer))
-		rows.add_child(button)
+		var offer_row := HBoxContainer.new()
+		rows.add_child(offer_row)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		offer_row.add_child(button)
 		contract_offers.append(button)
-	contract_claim = Button.new()
-	contract_claim.text = "Claim reward"
-	contract_claim.pressed.connect(func(): sector.session.combat.request_contract("claim"))
-	rows.add_child(contract_claim)
-	contract_abandon = Button.new()
-	contract_abandon.text = "Abandon contract / no penalty"
-	contract_abandon.pressed.connect(func(): sector.session.combat.request_contract("abandon"))
-	rows.add_child(contract_abandon)
+		var abandon := Button.new()
+		abandon.text = "Abandon"
+		abandon.pressed.connect(func(): sector.session.combat.request_contract("abandon", offer))
+		offer_row.add_child(abandon)
+		contract_abandon.append(abandon)
 	var close := Button.new()
 	close.text = "Return to flight / C or Esc"
 	close.pressed.connect(toggle_contracts)
@@ -133,20 +130,20 @@ func update_contract_panel() -> void:
 	if not sector.session.active:
 		contract_panel.hide()
 		return
-	var contract := sector.active_contract
 	var blocker := sector.repair_blocker()
-	contract_status.text = "Choose one repeatable hunt. Return here to claim its reward."
-	if not contract.is_empty():
-		contract_status.text = HuntingContracts.objective(contract) + "\nReturn to this station to claim. Death keeps your progress."
+	contract_status.text = "Run one hunt of each type together. Rewards pay automatically.\nDeath keeps progress. Abandoning a hunt has no penalty."
 	if not blocker.is_empty():
 		contract_status.text += "\n" + blocker
-	for button in contract_offers:
-		button.visible = contract.is_empty()
-		button.disabled = not blocker.is_empty()
-	contract_claim.visible = not contract.is_empty()
-	contract_claim.disabled = not blocker.is_empty() or not HuntingContracts.ready(contract)
-	contract_abandon.visible = not contract.is_empty()
-	contract_abandon.disabled = not blocker.is_empty()
+	var index := 0
+	for offer: String in HuntingContracts.OFFERS:
+		var terms: Dictionary = HuntingContracts.OFFERS[offer]
+		var current: Dictionary = sector.active_contracts.get(offer, {})
+		var button := contract_offers[index]
+		button.text = HuntingContracts.objective(current) if not current.is_empty() else "Accept: %d %s%s / %d CR" % [terms["required"], offer.capitalize(), "s" if terms["required"] > 1 else "", terms["reward"]]
+		button.disabled = not blocker.is_empty() or not current.is_empty()
+		contract_abandon[index].visible = not current.is_empty()
+		contract_abandon[index].disabled = not blocker.is_empty()
+		index += 1
 
 
 func text_at(point: Vector2, text: String, size_px: int = 16, color: Color = INK) -> void:
@@ -201,11 +198,19 @@ func _draw() -> void:
 		"Encounter complete. Keep exploring or hunt another alien.",
 	][sector.objective_stage]
 	if shared:
-		objective = "C  Choose a hunting contract at Outpost 01." if sector.active_contract.is_empty() else HuntingContracts.objective(sector.active_contract)
-	text_at(Vector2(33, 113), "HUNTING CONTRACT" if shared else "OBJECTIVE", 11, GREEN)
-	text_at(Vector2(33, 137), objective, 14 if compact else 17)
+		objective = "C  Choose hunting contracts at Outpost 01. Rewards pay automatically."
+	text_at(Vector2(33, 113), "HUNTING CONTRACTS" if shared else "OBJECTIVE", 11, GREEN)
+	var objective_y := 137.0
+	if shared and not sector.active_contracts.is_empty():
+		for kind: String in HuntingContracts.OFFERS:
+			if sector.active_contracts.has(kind):
+				text_at(Vector2(33, objective_y), HuntingContracts.objective(sector.active_contracts[kind]), 14 if compact else 17)
+				objective_y += 22
+	else:
+		text_at(Vector2(33, objective_y), objective, 14 if compact else 17)
+		objective_y += 22
 	if sector.toast_time > 0.0:
-		text_at(Vector2(33, 169), sector.toast, 12 if compact else 14, CYAN)
+		text_at(Vector2(33, objective_y + 10), sector.toast, 12 if compact else 14, CYAN)
 	marker(Sector.STATION_POSITION, "[+] OUTPOST 01", GREEN, false)
 	if is_instance_valid(sector.target):
 		alien_marker(sector.target as Alien)

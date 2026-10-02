@@ -41,11 +41,11 @@ Credits survive disconnects and server restarts. Ship position, health, kills an
 
 ### Hunting contracts
 
-Press C at Outpost 01 to choose one repeatable hunt: 3 Scouts for 90 credits, 2 Sentinels for 150, or 1 Heavy for 200. Return to the station to claim the reward. The board shows progress, reward and readiness; the flight HUD tracks the active hunt. C or Esc returns to flight.
+Press C at Outpost 01 to accept repeatable hunts: 3 Scouts for 90 credits, 2 Sentinels for 150, and 1 Heavy for 200. All three can run together, with one active run of each offer. The final qualifying kill automatically pays its reward in flight and clears that hunt. The board and flight HUD track all active hunts. C or Esc returns to flight.
 
-Contract actions require the same position, speed and damage cooldown as repairs. Each eligible contributor earns a full kill of matching progress after acceptance, separately from split kill credits. Death preserves progress. A completed hunt stays active until claimed or abandoned, and abandonment costs nothing. You can then accept the same hunt again. Counts and rewards need playtesting.
+Accepting or abandoning a hunt requires the same position, speed and damage cooldown as repairs. Each eligible contributor earns a full kill of matching progress after acceptance, separately from split kill credits. Death preserves progress. Abandonment costs nothing and removes only the selected hunt. Completed or abandoned offers can be accepted again at the station. Counts and rewards need playtesting.
 
-Contracts and their accepted terms are saved with the pilot. Kill progress and credit shares commit together; claiming commits its reward and clears the contract in one save. Repeated claims cannot pay twice. A wallet too close to the credit cap must spend credits before claiming. Existing version-1 ledgers without a contract load with no active hunt; malformed contract data stops startup for recovery. Use matching client and server builds, and preserve the ledger when updating or rotating credentials.
+Contracts and their accepted terms are saved with the pilot. Kill progress, credit shares, automatic rewards and cleared runs commit together. Completed runs cannot pay twice. A wallet too close to the credit cap keeps the whole reward pending and pays automatically after credits are spent. Existing version-1 ledgers without contracts load with no active hunts; legacy single-contract saves retain their run and progress, and completed legacy hunts pay automatically on connection. Malformed contract data stops startup for recovery. Updated saves use the `contracts` collection; use matching client and server builds and back up saves before upgrading. Older single-contract builds cannot read the new progression correctly.
 
 ### Provision the private group
 
@@ -189,9 +189,11 @@ On 18 September, alien variety was integrated with the merged feedback changes. 
 
 Purchases follow on the equipment branch. Its successful server confirmation must trigger `SessionCombat.message(peer_id, text, "purchase")`; failed purchases and wallet snapshots must not trigger it. Clients and server must use matching builds.
 
-`tests/hunting_contracts_test.gd` checks authenticated contract actions, shared kill progress, restart recovery, abandonment, repeatability and failed saves. Both check helpers run it. For a rendered accept/hunt/claim replay, run Godot with `--path . --script res://tests/contracts_playthrough.gd`. It provisions a disposable pilot and server on UDP 24690, flies three Scout hunts, claims through the station controls, and saves frames under `build/validation/contracts-*.png`.
+`tests/hunting_contracts_test.gd` checks authenticated concurrent contracts, shared kill progress, automatic payouts, restart recovery, abandonment, repeatability, legacy migration and failed saves. Both check helpers run it. For a rendered replay, run Godot with `--path . --script res://tests/contracts_playthrough.gd`. It provisions a disposable pilot and server on UDP 24690, accepts all three hunts, completes the Scout hunt with automatic payment in flight, and saves frames under `build/validation/contracts-*.png`.
 
-The 18 September integration with combat feedback passed the full Windows check command, including 38 contract assertions, and the rendered three-Scout contract replay finished with 180 credits. The contract board hides pause-menu audio controls and retains the active hunt in the flight HUD. Equipment integration follows in PR #15, stacked on this branch.
+The contract board hides pause-menu audio controls. Equipment integration follows in PR #15 and needs to incorporate the concurrent contract collection and automatic payouts.
+
+On 2 October 2026, the full Windows check command passed after the concurrent-hunt update, and the expanded contract checks passed 43 assertions. The rendered replay accepted all three hunts, paid the Scout reward in flight for 180 total credits, kept the other hunts active, and repeated the Scout offer at the station. The board was inspected at 960 x 600.
 
 ## Code layout
 

@@ -1,8 +1,7 @@
 extends "res://tests/dedicated_server_test.gd"
-## Contracts use authenticated RPCs, actual alien deaths and the production ledger.
+## Authenticated concurrent hunts, automatic payment and durable transactions.
 
 const CONTRACT_PORT := 24689
-
 
 func connect_pilot(client: Sector, index: int) -> void:
 	client.session.credential_id = "pilot%d" % index
@@ -10,19 +9,16 @@ func connect_pilot(client: Sector, index: int) -> void:
 	client.session.join("127.0.0.1", CONTRACT_PORT)
 	await settle(0.4)
 
-
 func station(server: Sector, client: Sector) -> void:
 	var ship := server.session.ships[client.multiplayer.get_unique_id()]
 	ship.position = Sector.SPAWN_POSITION
 	ship.velocity = Vector3.ZERO
 	ship.time_since_hit = 6
 
-
 func action(server: Sector, client: Sector, verb: String, offer: String = "") -> void:
 	client.session.combat.request_contract(verb, offer)
 	await settle(0.08)
 	await replicate(server)
-
 
 func kill(server: Sector, kind: String, clients: Array[Sector]) -> void:
 	var alien: Alien
@@ -37,10 +33,8 @@ func kill(server: Sector, kind: String, clients: Array[Sector]) -> void:
 		ship.position = alien.home_position + Vector3(0, 0, 80)
 		alien.take_damage(1, ship)
 	alien.take_damage(9999, server.session.ships[clients.back().multiplayer.get_unique_id()])
-	# A second lethal hit must not emit another rewarded kill.
 	alien.take_damage(9999, server.session.ships[clients.back().multiplayer.get_unique_id()])
 	await replicate(server)
-
 
 func run() -> void:
 	for argument in OS.get_cmdline_user_args():
@@ -62,80 +56,79 @@ func run() -> void:
 	var combat := server.session.combat
 	var id := pilot.multiplayer.get_unique_id()
 	var remote := server.session.ships[id]
-	check(pilot.active_contract.is_empty(), "Legacy wallets start without a contract")
+	check(pilot.active_contracts.is_empty(), "Legacy wallets start without hunts")
 	await kill(server, "Scout", [pilot])
 	station(server, pilot)
 	remote.position = Vector3(0, 0, 400)
 	await action(server, pilot, "accept", "scout")
-	check(pilot.active_contract.is_empty(), "Acceptance outside station radius is rejected")
+	check(pilot.active_contracts.is_empty(), "Acceptance outside station radius is rejected")
 	station(server, pilot)
 	remote.velocity = Vector3(9, 0, 0)
 	await action(server, pilot, "accept", "scout")
-	check(pilot.active_contract.is_empty(), "Acceptance while moving too fast is rejected")
+	check(pilot.active_contracts.is_empty(), "Acceptance while moving too fast is rejected")
 	station(server, pilot)
 	remote.time_since_hit = 0
 	await action(server, pilot, "accept", "scout")
-	check(pilot.active_contract.is_empty(), "Acceptance during damage cooldown is rejected")
+	check(pilot.active_contracts.is_empty(), "Acceptance during damage cooldown is rejected")
 	station(server, pilot)
 	await action(server, pilot, "accept", "invented")
-	check(pilot.active_contract.is_empty(), "Unknown offers cannot create a contract")
+	check(pilot.active_contracts.is_empty(), "Unknown offers are rejected")
+	for kind: String in HuntingContracts.OFFERS:
+		await action(server, pilot, "accept", kind)
+	check(pilot.active_contracts.size() == 3, "All three hunts can run concurrently")
+	check(pilot.active_contracts["scout"]["progress"] == 0, "Kills before acceptance do not count")
+	var first := pilot.active_contracts.duplicate(true)
 	await action(server, pilot, "accept", "scout")
-	check(pilot.active_contract.get("progress") == 0, "Kills before acceptance are not counted")
-	var first := pilot.active_contract.duplicate()
-	await action(server, pilot, "accept", "heavy")
-	await action(server, pilot, "claim")
-	check(pilot.active_contract == first, "Only one active contract; incomplete claims do nothing")
+	await action(server, pilot, "claim", "scout")
+	check(pilot.active_contracts == first, "Duplicate acceptance and manual claims do nothing")
+	var packet: Dictionary = {id: combat.pack_player(id)}
+	packet[id].merge({"position": Vector3.ZERO, "rotation": Vector3.ZERO, "velocity": Vector3.ZERO, "energy": 100.0})
+	check(var_to_bytes([packet, {}, 1]).size() < 1300, "One player with all hunts fits the snapshot datagram budget")
 	for client in [partner, spectator]:
 		station(server, client)
 		await action(server, client, "accept", "scout")
-	var packet: Dictionary = {}
-	for peer in [id, partner.multiplayer.get_unique_id()]:
-		packet[peer] = combat.pack_player(peer)
-		packet[peer].merge({"position": Vector3.ZERO, "rotation": Vector3.ZERO, "velocity": Vector3.ZERO, "energy": 100.0})
-	check(var_to_bytes([packet, {}, 1]).size() < 1300, "Two active-contract player records leave room for RPC and ENet headers")
 	await kill(server, "Sentinel", [pilot, partner])
-	check(pilot.active_contract["progress"] == 0 and partner.active_contract["progress"] == 0, "Nonmatching kills still award credits but no contract progress")
-	var credits_before := pilot.credits + partner.credits
+	check(pilot.active_contracts["sentinel"]["progress"] == 1 and pilot.active_contracts["scout"]["progress"] == 0, "Only the matching hunt progresses")
+	var before := pilot.credits + partner.credits
 	await kill(server, "Scout", [pilot, partner])
-	check(pilot.active_contract["progress"] == 1 and partner.active_contract["progress"] == 1, "Each eligible contributor gets a full kill regardless of final hit")
-	check(pilot.credits + partner.credits == credits_before + 30, "Credit splitting stays separate from full progress")
-	check(spectator.active_contract["progress"] == 0, "A matching contract alone does not grant contribution eligibility")
+	check(pilot.active_contracts["scout"]["progress"] == 1 and partner.active_contracts["scout"]["progress"] == 1, "Every contributor receives full matching progress")
+	check(pilot.credits + partner.credits == before + 30, "Kill credit splitting remains independent")
+	check(spectator.active_contracts["scout"]["progress"] == 0, "Noncontributors receive no progress")
 	var path := server.session.store.path
 	var disk: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
-	for field in ["progress", "required", "reward"]:
-		disk["pilots"]["pilot0"]["contract"][field] = int(disk["pilots"]["pilot0"]["contract"][field])
-	check(disk["pilots"]["pilot0"]["contract"] == pilot.active_contract and disk["pilots"]["pilot0"]["credits"] == pilot.credits, "Progress and its kill credits share one saved ledger")
-	var saved := pilot.active_contract.duplicate()
-	pilot.session.disconnect_session("Contract reconnect")
+	for contract: Dictionary in disk["pilots"]["pilot0"]["contracts"].values():
+		for field in ["progress", "required", "reward"]:
+			contract[field] = int(contract[field])
+	check(disk["pilots"]["pilot0"]["contracts"] == pilot.active_contracts and disk["pilots"]["pilot0"]["credits"] == pilot.credits, "All progress and kill credits commit together")
+	var saved := pilot.active_contracts.duplicate(true)
+	pilot.session.disconnect_session("Reconnect")
 	await settle(0.2)
 	await connect_pilot(pilot, 0)
 	await replicate(server)
-	check(pilot.active_contract == saved, "Reconnect restores partial progress and run identity")
+	check(pilot.active_contracts == saved, "Reconnect restores all runs and progress")
 	id = pilot.multiplayer.get_unique_id()
 	remote = server.session.ships[id]
-	var scout: Alien
-	for alien: Alien in server.aliens.values():
-		if alien.kind == "Scout":
-			scout = alien
-			break
+	var scout: Alien = server.aliens[1]
 	scout.reset_encounter()
 	remote.position = scout.home_position + Vector3(0, 0, 80)
 	scout.take_damage(1, remote)
-	remote.take_damage(9999, server.aliens.values()[0])
+	remote.take_damage(9999, server.aliens[0])
 	await replicate(server)
-	check(not pilot.player.alive and pilot.active_contract == saved, "Death preserves the accepted contract and earned progress")
-	await action(server, pilot, "abandon")
-	check(pilot.active_contract == saved, "Dead pilots cannot perform station actions")
-	# Connected contributors awaiting rescue remain eligible under the encounter rules.
+	check(not pilot.player.alive and pilot.active_contracts == saved, "Death preserves all hunts")
+	await action(server, pilot, "abandon", "scout")
+	check(pilot.active_contracts == saved, "Dead pilots cannot abandon")
 	scout.take_damage(9999, server.session.ships[partner.multiplayer.get_unique_id()])
 	await replicate(server)
-	check(pilot.active_contract["progress"] == 2, "Eligible pilot awaiting rescue receives matching kill progress")
+	check(pilot.active_contracts["scout"]["progress"] == 2, "Contributors awaiting rescue receive progress")
 	combat.tick(3.1)
 	await replicate(server)
+	before = pilot.credits
 	await kill(server, "Scout", [pilot, partner])
-	check(HuntingContracts.ready(pilot.active_contract), "Required count marks contract ready without claiming")
+	check(not pilot.active_contracts.has("scout") and pilot.credits == before + 15 + 90, "Final kill pays full hunt reward automatically outside the station")
+	check(pilot.active_contracts.size() == 2 and pilot.active_contracts["sentinel"]["progress"] == 1, "Payment leaves other hunts intact")
+	before = pilot.credits
 	await kill(server, "Scout", [pilot])
-	check(pilot.active_contract["progress"] == 3, "Completed progress is capped until claim or abandonment")
+	check(pilot.credits == before + 30, "Subsequent kills cannot pay the completed run again")
 	scout.reset_encounter()
 	var departing := server.session.ships[spectator.multiplayer.get_unique_id()]
 	departing.position = scout.home_position + Vector3(0, 0, 80)
@@ -145,86 +138,88 @@ func run() -> void:
 	scout.take_damage(9999, remote)
 	await connect_pilot(spectator, 2)
 	await replicate(server)
-	check(spectator.active_contract["progress"] == 0, "Disconnecting before death loses encounter eligibility and earns no progress")
-	var completed := pilot.active_contract.duplicate()
-	server.session.disconnect_session("Contract restart")
+	check(spectator.active_contracts["scout"]["progress"] == 0, "Disconnecting before the kill removes contribution eligibility")
+	var paid_balance := pilot.credits
+	var remaining := pilot.active_contracts.duplicate(true)
+	server.session.disconnect_session("Restart")
 	await settle(0.3)
-	check(server.session.host(CONTRACT_PORT) == OK, "Server reopens the saved ledger")
+	check(server.session.host(CONTRACT_PORT) == OK, "Server reopens ledger")
 	await connect_pilot(pilot, 0)
 	await replicate(server)
-	check(pilot.active_contract == completed, "Completed but unclaimed contract survives server restart")
-	station(server, pilot)
+	check(pilot.credits == paid_balance and pilot.active_contracts == remaining, "Restart retains payout, cleared run and other hunts atomically")
 	id = pilot.multiplayer.get_unique_id()
-	remote = server.session.ships[id]
-	remote.position = Vector3(0, 0, 400)
-	await action(server, pilot, "claim")
-	check(pilot.active_contract == completed, "Completed reward cannot be claimed remotely")
 	station(server, pilot)
-	var before_claim := pilot.credits
-	# Both requests carry the same accepted run, before a snapshot can clear the client UI.
-	pilot.session.combat.request_contract("claim")
-	pilot.session.combat.request_contract("claim")
-	await settle(0.1)
-	await replicate(server)
-	check(pilot.credits == before_claim + 90 and pilot.active_contract.is_empty(), "Repeated claims pay exactly once and clear the contract")
 	await action(server, pilot, "accept", "scout")
-	check(pilot.active_contract["progress"] == 0 and pilot.active_contract["run"] != completed["run"], "Same offer can be repeated with a fresh run")
-	pilot.session.combat.contract_request.rpc_id(1, 0, "abandon", "", completed["run"])
-	pilot.session.combat.contract_request.rpc_id(1, 0, "claim", "", completed["run"])
+	check(pilot.active_contracts["scout"]["run"] != first["scout"]["run"], "Repeated hunt gets a fresh run identity")
+	pilot.session.combat.contract_request.rpc_id(1, 0, "abandon", "scout", first["scout"]["run"])
+	pilot.session.combat.contract_request.rpc_id(1, 0, "claim", "scout", first["scout"]["run"])
 	await settle(0.1)
 	await replicate(server)
-	check(not pilot.active_contract.is_empty() and pilot.credits == before_claim + 90, "Stale requests cannot abandon a new run or pay an old reward")
-	await kill(server, "Scout", [pilot])
-	station(server, pilot)
-	var before_abandon := pilot.credits
-	await action(server, pilot, "abandon")
-	check(pilot.active_contract.is_empty() and pilot.credits == before_abandon, "Abandonment clears earned progress without a charge")
-	await action(server, pilot, "accept", "heavy")
+	check(pilot.active_contracts.size() == 3 and pilot.credits == paid_balance, "Stale requests cannot alter repeated hunts or pay rewards")
+	await action(server, pilot, "abandon", "scout")
+	check(pilot.active_contracts == remaining and pilot.credits == paid_balance, "Abandonment removes only the chosen hunt without a charge")
 	await kill(server, "Heavy", [pilot])
-	station(server, pilot)
-	var before_heavy := pilot.credits
-	await action(server, pilot, "claim")
-	check(pilot.active_contract.is_empty() and pilot.credits == before_heavy + 200, "Heavy contract uses its fixed objective and reward")
-	server.session.disconnect_session("Verify claimed restart")
+	check(not pilot.active_contracts.has("heavy") and pilot.credits == paid_balance + 180 + 200, "Heavy completion pays instantly without manual claim")
+	server.session.save_balances({id: PilotStore.MAX_CREDITS})
+	combat.records[id]["credits"] = PilotStore.MAX_CREDITS
+	await kill(server, "Sentinel", [pilot])
+	check(HuntingContracts.ready(pilot.active_contracts["sentinel"]) and pilot.credits == PilotStore.MAX_CREDITS, "Full wallet retains the whole completed reward")
+	server.session.disconnect_session("Pending restart")
 	await settle(0.3)
 	server.session.host(CONTRACT_PORT)
 	await connect_pilot(pilot, 0)
 	await replicate(server)
-	check(pilot.active_contract.is_empty() and pilot.credits == before_heavy + 200, "Claim payout and cleared run survive restart together")
-	station(server, pilot)
-	await action(server, pilot, "accept", "sentinel")
-	await kill(server, "Sentinel", [pilot])
-	await kill(server, "Sentinel", [pilot])
-	station(server, pilot)
-	check(HuntingContracts.ready(pilot.active_contract), "Sentinel contract completes after two matching kills")
-	var capped_id := pilot.multiplayer.get_unique_id()
-	server.session.save_balances({capped_id: PilotStore.MAX_CREDITS})
-	combat.records[capped_id]["credits"] = PilotStore.MAX_CREDITS
+	id = pilot.multiplayer.get_unique_id()
+	check(HuntingContracts.ready(pilot.active_contracts["sentinel"]) and pilot.credits == PilotStore.MAX_CREDITS, "Pending rewards survive restart without premature payment")
+	server.session.save_balances({id: PilotStore.MAX_CREDITS - 150})
+	combat.records[id]["credits"] = PilotStore.MAX_CREDITS - 150
+	combat.tick(0.01)
 	await replicate(server)
-	await action(server, pilot, "claim")
-	check(HuntingContracts.ready(pilot.active_contract) and pilot.credits == PilotStore.MAX_CREDITS, "Wallet cap retains the whole pending reward instead of silently losing it")
-	await action(server, pilot, "abandon")
-	check(pilot.active_contract.is_empty(), "Completed contracts can also be abandoned")
+	check(pilot.active_contracts.is_empty() and pilot.credits == PilotStore.MAX_CREDITS, "Pending reward pays automatically when there is room")
+	combat.tick(0.01)
+	check(combat.records[id]["credits"] == PilotStore.MAX_CREDITS, "Repeated settlement cannot pay twice")
 	var output: Array = []
-	for operation in ["kill", "claim"]:
+	for operation in ["progress", "completion", "pending"]:
 		output.clear()
 		var code := OS.execute(OS.get_executable_path(), ["--headless", "--path", ProjectSettings.globalize_path("res://"), "--script", "res://tests/hunting_contracts_test.gd", "--", "--contract-save-failure=" + operation], output, true)
-		check(code == 1 and str(output).contains("CONTRACT_FAILURE_VERIFIED"), "Failed %s save exits without publishing credits or contract changes" % operation)
+		check(code == 1 and str(output).contains("CONTRACT_FAILURE_VERIFIED"), "Failed %s save publishes neither progress nor reward" % operation)
 	server.session.disconnect_session("Schema validation")
 	await settle(0.2)
 	var ledger: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
-	var contract := HuntingContracts.accept("scout")
-	for invalid in [{"type": "scout"}, null, {"run": contract["run"], "type": "scout", "required": 3, "reward": 90, "progress": 4}]:
-		ledger["pilots"]["pilot0"]["contract"] = invalid
-		var file := FileAccess.open(path, FileAccess.WRITE)
-		file.store_string(JSON.stringify(ledger))
-		file.close()
+	var legacy := HuntingContracts.accept("scout")
+	legacy["progress"] = 2
+	ledger["pilots"]["pilot0"].erase("contracts")
+	ledger["pilots"]["pilot0"]["contract"] = legacy
+	write_ledger(path, ledger)
+	var store := PilotStore.new()
+	check(store.open(path.get_base_dir()) and store.pilots["pilot0"]["contracts"] == {"scout": legacy}, "Legacy single hunt migrates without losing run or progress")
+	store.close()
+	legacy["progress"] = 3
+	ledger["pilots"]["pilot0"]["credits"] = 100
+	write_ledger(path, ledger)
+	server.session.host(CONTRACT_PORT)
+	await connect_pilot(pilot, 0)
+	combat.tick(0.01)
+	await replicate(server)
+	check(pilot.active_contracts.is_empty() and pilot.credits == 190, "Legacy completed hunts pay automatically on connection")
+	server.session.disconnect_session("Legacy paid")
+	await settle(0.2)
+	ledger["pilots"]["pilot0"].erase("contract")
+	var malformed := legacy.duplicate()
+	malformed["progress"] = 4
+	for invalid in [null, {"scout": {}}, {"heavy": legacy}, {"invented": legacy}, {"scout": malformed}]:
+		ledger["pilots"]["pilot0"]["contracts"] = invalid
+		write_ledger(path, ledger)
 		var original := FileAccess.get_file_as_string(path)
-		var store := PilotStore.new()
-		check(not store.open(path.get_base_dir()) and FileAccess.get_file_as_string(path) == original, "Malformed contract fails closed without modifying the ledger")
+		store = PilotStore.new()
+		check(not store.open(path.get_base_dir()) and FileAccess.get_file_as_string(path) == original, "Malformed collections fail closed without changing saves")
 		store.close()
 	finish()
 
+func write_ledger(path: String, data: Dictionary) -> void:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify(data))
+	file.close()
 
 func failed_transaction(operation: String) -> void:
 	var server := make_sector("FailingContractServer", true, CONTRACT_PORT + 2)
@@ -239,23 +234,22 @@ func failed_transaction(operation: String) -> void:
 	var id := pilot.multiplayer.get_unique_id()
 	var combat := server.session.combat
 	station(server, pilot)
-	combat.contract_action(id, 0, "accept", "heavy", "")
-	var heavy: Alien
-	for alien: Alien in server.aliens.values():
-		if alien.kind == "Heavy":
-			heavy = alien
-			break
-	server.session.ships[id].position = heavy.home_position + Vector3(0, 0, 80)
-	if operation == "claim":
-		heavy.take_damage(9999, server.session.ships[id])
-		station(server, pilot)
+	combat.contract_action(id, 0, "accept", "scout" if operation == "progress" else "heavy", "")
+	var alien: Alien = server.aliens[1 if operation == "progress" else 4]
+	server.session.ships[id].position = alien.home_position + Vector3(0, 0, 80)
+	if operation == "pending":
+		server.session.save_balances({id: PilotStore.MAX_CREDITS})
+		combat.records[id]["credits"] = PilotStore.MAX_CREDITS
+		alien.take_damage(9999, server.session.ships[id])
+		server.session.save_balances({id: PilotStore.MAX_CREDITS - 200})
+		combat.records[id]["credits"] = PilotStore.MAX_CREDITS - 200
 	var original := FileAccess.get_file_as_string(server.session.store.path)
 	var record: Dictionary = combat.records[id].duplicate(true)
 	DirAccess.make_dir_absolute(server.session.store.path + ".bak.tmp")
-	if operation == "claim":
-		combat.contract_action(id, 0, "claim", "", record["contract"]["run"])
+	if operation == "pending":
+		combat.pay_pending_contracts(id)
 	else:
-		heavy.take_damage(9999, server.session.ships[id])
+		alien.take_damage(9999, server.session.ships[id])
 	if server.session.store.failed and combat.records[id] == record and FileAccess.get_file_as_string(server.session.store.path) == original:
 		print("CONTRACT_FAILURE_VERIFIED")
 	else:
