@@ -38,6 +38,30 @@ function Invoke-Godot([string[]]$EngineArgs) {
     }
 }
 
+function Get-ProtocolFingerprint([string]$Executable, [string]$Label) {
+    $validationDir = Join-Path $projectRoot 'build/validation'
+    New-Item -ItemType Directory -Force -Path $validationDir | Out-Null
+    $stdoutPath = Join-Path $validationDir "protocol-$Label.log"
+    $stderrPath = Join-Path $validationDir "protocol-$Label-errors.log"
+    # Wait explicitly for the exported GUI executable, even with --headless.
+    $process = Start-Process -FilePath $Executable -ArgumentList @('--headless', '--', '--print-protocol') `
+        -WorkingDirectory $projectRoot -WindowStyle Hidden -PassThru `
+        -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+    $null = $process.Handle # Retain the exit code when Windows PowerShell observes process exit.
+    if (-not $process.WaitForExit(30000)) {
+        Stop-Process -Id $process.Id
+        throw "Protocol diagnostic timed out for $Label."
+    }
+    $output = @(Get-Content -LiteralPath $stdoutPath) + @(Get-Content -LiteralPath $stderrPath)
+    if ($process.ExitCode -ne 0 -or ($output -match 'SCRIPT ERROR:|Parse Error:|ERROR:')) {
+        $output | ForEach-Object { Write-Host $_ }
+        throw "Protocol diagnostic failed for $Label."
+    }
+    $fingerprints = @($output | Where-Object { $_ -match '^DORBIT_PROTOCOL=[a-f0-9]{64}$' })
+    if ($fingerprints.Count -ne 1) { throw "Expected one protocol fingerprint for $Label." }
+    return $fingerprints[0]
+}
+
 if ($Task -eq 'setup') {
     if (-not (Test-Path -LiteralPath $engine)) {
         $archive = Get-VerifiedAsset "Godot_v${version}_win64.exe.zip" '731980f9608d61333e5baf54a2ef17210acc7a538446c0cb9969f002aca1e953'
@@ -92,6 +116,12 @@ switch ($Task) {
         New-Item -ItemType Directory -Force -Path (Join-Path $projectRoot 'build/windows') | Out-Null
         Invoke-Godot @('--headless', '--path', $projectRoot, '--editor', '--import')
         Invoke-Godot @('--headless', '--path', $projectRoot, '--export-release', 'Windows Desktop')
+        $sourceProtocol = Get-ProtocolFingerprint $engine 'source'
+        $releaseProtocol = Get-ProtocolFingerprint (Join-Path $projectRoot 'build/windows/Dorbit.exe') 'release'
+        if ($sourceProtocol -ne $releaseProtocol) {
+            throw "Source and exported client protocols differ: $sourceProtocol versus $releaseProtocol"
+        }
+        Write-Host 'Source and exported client protocol fingerprints match.'
         Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tools/export_notices.gd')
     }
     'run' { & $engine --path $projectRoot }

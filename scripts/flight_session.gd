@@ -67,6 +67,10 @@ func _ready() -> void:
 	multiplayer.server_disconnected.connect(func(): disconnect_session("Connection to the server was lost. You can try connecting again."))
 	if not sector.dedicated_server:
 		build_menu()
+	if "--print-protocol" in OS.get_cmdline_user_args():
+		# Operator/CI diagnostic. No network connection or pilot credentials are needed.
+		print("DORBIT_PROTOCOL=" + protocol_fingerprint())
+		get_tree().quit()
 
 
 func build_menu() -> void:
@@ -257,7 +261,11 @@ func rpc_signature(node: Node) -> Array:
 		# Derived scripts take precedence over inherited RPC declarations.
 		config.merge(script.get_rpc_config(), false)
 		script = script.get_base_script()
-	var names := config.keys()
+	# StringName ordering depends on the runtime's interned names. Sort text so
+	# release templates and editor/server runtimes hash the same RPC definitions.
+	var names: Array[String] = []
+	for method_name in config:
+		names.append(str(method_name))
 	names.sort()
 	var signature: Array = []
 	for method_name in names:

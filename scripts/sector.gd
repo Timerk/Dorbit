@@ -82,6 +82,8 @@ func _ready() -> void:
 	session.name = "FlightSession"
 	session.sector = self
 	add_child(session)
+	if "--print-protocol" in OS.get_cmdline_user_args():
+		return
 	if not dedicated_server:
 		var shop_layer := CanvasLayer.new()
 		shop_layer.layer = 4
