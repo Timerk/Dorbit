@@ -6,6 +6,9 @@ const PORT: int = 24567
 const MAX_PLAYERS: int = 10
 const COMMAND_TIMEOUT: float = 0.5
 const CONNECT_TIMEOUT: float = 10.0
+# Bump when gameplay packet contents change without an RPC signature change.
+const NETWORK_SCHEMA: int = 1
+const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
 var active: bool = false
@@ -41,6 +44,7 @@ var challenges: Dictionary[int, PackedByteArray] = {}
 var credential_id: String = ""
 var credential_token: String = ""
 var auth_proof_sent: bool = false
+var incompatible_build: bool = false
 var shutdown_file: String = ""
 var preview_tools_enabled: bool = false
 var preview_pilots: PackedStringArray = []
@@ -237,6 +241,7 @@ func join(host_address: String, port: int = PORT) -> Error:
 	multiplayer.multiplayer_peer = peer
 	connecting = true
 	auth_proof_sent = false
+	incompatible_build = false
 	connect_clock = 0.0
 	sector.set_paused(true)
 	status = "Connecting..."
@@ -245,12 +250,42 @@ func join(host_address: String, port: int = PORT) -> Error:
 	return OK
 
 
+func rpc_signature(node: Node) -> Array:
+	var config: Dictionary = {}
+	var script: Script = node.get_script()
+	while script != null:
+		# Derived scripts take precedence over inherited RPC declarations.
+		config.merge(script.get_rpc_config(), false)
+		script = script.get_base_script()
+	var names := config.keys()
+	names.sort()
+	var signature: Array = []
+	for method_name in names:
+		var settings: Dictionary = config[method_name]
+		for method in node.get_method_list():
+			if method["name"] != method_name:
+				continue
+			var args: Array = []
+			for argument in method["args"]:
+				args.append([argument["type"], str(argument["class_name"])])
+			signature.append([str(method_name), settings.get("rpc_mode", 0),
+				settings.get("call_local", false), settings.get("transfer_mode", 0),
+				settings.get("channel", 0), args, method["default_args"],
+				method["return"]["type"], str(method["return"]["class_name"])])
+			break
+	return signature
+
+
+func protocol_fingerprint() -> String:
+	return JSON.stringify([NETWORK_SCHEMA, rpc_signature(self), rpc_signature(combat)]).sha256_text()
+
+
 func begin_authentication(id: int) -> void:
 	if not multiplayer.is_server():
 		return
 	var nonce := Crypto.new().generate_random_bytes(32) if sector.dedicated_server else PackedByteArray([0])
 	challenges[id] = nonce
-	multiplayer.send_auth(id, nonce)
+	multiplayer.send_auth(id, JSON.stringify({"nonce": nonce.hex_encode(), "protocol": protocol_fingerprint()}).to_utf8_buffer())
 
 
 func authenticate(id: int, data: PackedByteArray) -> void:
@@ -258,21 +293,39 @@ func authenticate(id: int, data: PackedByteArray) -> void:
 		if id == 1 and auth_proof_sent and data == PackedByteArray([1]):
 			multiplayer.complete_auth(id)
 			return
-		if id != 1 or (data.size() != 32 and (sector.client_only or data != PackedByteArray([0]))):
+		if id != 1:
 			multiplayer.disconnect_peer(id)
 			return
-		var proof := Crypto.new().hmac_digest(HashingContext.HASH_SHA256, credential_token.sha256_buffer(), data)
-		multiplayer.send_auth(id, JSON.stringify({"id": credential_id, "proof": proof.hex_encode()}).to_utf8_buffer())
+		# Older servers send a binary nonce, which must not be decoded as UTF-8 JSON.
+		if data.is_empty() or data.size() == 32 or data[0] != 123:
+			incompatible_build = true
+			disconnect_session.call_deferred(BUILD_MISMATCH)
+			return
+		var json := JSON.new()
+		var challenge: Variant = json.data if data.size() <= 512 and json.parse(data.get_string_from_utf8()) == OK else null
+		if not challenge is Dictionary or challenge.get("protocol", "") != protocol_fingerprint():
+			incompatible_build = true
+			disconnect_session.call_deferred(BUILD_MISMATCH)
+			return
+		var nonce_hex: Variant = challenge.get("nonce")
+		if not nonce_hex is String or (not PilotStore.valid_hex(nonce_hex) and (sector.client_only or nonce_hex != "00")):
+			multiplayer.disconnect_peer(id)
+			return
+		var proof := Crypto.new().hmac_digest(HashingContext.HASH_SHA256, credential_token.sha256_buffer(), nonce_hex.hex_decode())
+		multiplayer.send_auth(id, JSON.stringify({"id": credential_id, "proof": proof.hex_encode(), "protocol": protocol_fingerprint()}).to_utf8_buffer())
 		auth_proof_sent = true
 		return
 	if not challenges.has(id):
 		return
 	var nonce := challenges[id]
 	challenges.erase(id) # Each connection gets exactly one attempt with a fresh challenge.
+	var json := JSON.new()
+	var response: Variant = json.data if data.size() <= 512 and json.parse(data.get_string_from_utf8()) == OK else null
+	if not response is Dictionary or response.get("protocol", "") != protocol_fingerprint():
+		multiplayer.disconnect_peer(id)
+		return
 	if sector.dedicated_server:
-		var json := JSON.new()
-		var response: Variant = json.data if data.size() <= 256 and json.parse(data.get_string_from_utf8()) == OK else null
-		if not response is Dictionary or not response.get("id") is String or not response.get("proof") is String:
+		if not response.get("id") is String or not response.get("proof") is String:
 			multiplayer.disconnect_peer(id)
 			return
 		var pilot: String = response["id"]
@@ -289,7 +342,7 @@ func authentication_failed(id: int) -> void:
 	challenges.erase(id)
 	pilot_ids.erase(id)
 	if not multiplayer.is_server():
-		disconnect_session.call_deferred("Authentication failed. Check credentials, matching builds, or an existing pilot login.")
+		disconnect_session.call_deferred(BUILD_MISMATCH if incompatible_build else "Authentication failed. Check credentials, matching builds, or an existing pilot login.")
 
 
 # Called only by server combat, before applying any visible reward or charge.

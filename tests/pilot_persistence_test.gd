@@ -42,7 +42,9 @@ func run() -> void:
 		if challenge == PackedByteArray([1]):
 			attacker.multiplayer.complete_auth(peer)
 		else:
-			var forged := {"id": "pilot1", "proof": Crypto.new().hmac_digest(HashingContext.HASH_SHA256, test_token(1).sha256_buffer(), challenge).hex_encode(), "credits": 999999, "wallet": "pilot0"}
+			var envelope: Dictionary = JSON.parse_string(challenge.get_string_from_utf8())
+			var nonce: PackedByteArray = envelope["nonce"].hex_decode()
+			var forged := {"id": "pilot1", "proof": Crypto.new().hmac_digest(HashingContext.HASH_SHA256, test_token(1).sha256_buffer(), nonce).hex_encode(), "protocol": attacker.session.protocol_fingerprint(), "credits": 999999, "wallet": "pilot0"}
 			attacker.multiplayer.send_auth(peer, JSON.stringify(forged).to_utf8_buffer())
 	attacker.session.join("127.0.0.1", 24683)
 	await settle(0.5)
