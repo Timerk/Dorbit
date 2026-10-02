@@ -265,6 +265,10 @@ The contract board hides pause-menu audio controls. Equipment purchases and fitt
 
 On 2 October 2026, the full Windows check command passed after the concurrent-hunt update, and the expanded contract checks passed 43 assertions. The rendered replay accepted all three hunts, paid the Scout reward in flight for 180 total credits, kept the other hunts active, and repeated the Scout offer at the station. The board was inspected at 960 x 600.
 
+The Mission Control board now separates hunt selection from acceptance. Hunting contracts and Active contracts tabs share a left-hand list; the right pane shows the selected briefing, accepted objective progress and reward. The footer accepts or abandons that run, reports remaining slots and explains station restrictions. Saved terms and wallet-full pending rewards remain visible. Review the [available hunts](docs/feedback/contracts-offers.png) and [active contracts](docs/feedback/contracts-active.png) at 960 x 600. The rendered replay checks mouse selection and actions, keyboard selection and acceptance, retained focus, filtering, abandonment, saved terms, pending rewards and minimum-window layout before continuing the live hunt, purchase and restart loop.
+
+On 3 October 2026, the revised rendered contract replay passed 26 checks on Windows OpenGL, with captures inspected at 960 x 600 and 1440 x 900. Headless hunting-contract checks passed 43 assertions and equipment checks passed 68. The replay verifies the exact Scout payout in flight and preserves the returned wallet through repeat acceptance, purchase and restart; rescue fees incurred during the live return are accounted for separately.
+
 ## Code layout
 
 - `scripts/ship.gd`: shared combat state and weapon validation.

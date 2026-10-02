@@ -328,6 +328,8 @@ Completion criteria:
 
 Each pilot can run the Scout, Sentinel and Heavy hunting contracts together, with one active run per offer. Press C at Outpost 01 to accept hunts or abandon individual contracts. These station actions use the repair restrictions: alive, within 60 m, at most 8 m/s, and five seconds since the last hit. Opening the board stops local controls while the shared world continues. The flight HUD shows every active hunt.
 
+The contract board follows the supplied Mission Control reference: hunting and active-contract tabs, a selectable hunt list beside the station uplink image, and a detail pane with briefing, objective progress and credit reward. Selecting a hunt previews it; a separate footer button accepts or abandons the selected run. The footer shows remaining contract slots and explains blocked station actions. The existing three hunts, concurrent acceptance and automatic payouts remain the scope.
+
 | Alien | Required kills | Fixed contract reward |
 | --- | --- | --- |
 | Scout | 3 | 90 credits |

@@ -4,6 +4,29 @@ extends "res://tests/flight_playthrough.gd"
 var server: Sector
 var flying := false
 var hunt: Alien
+var checks := 0
+
+
+func check(condition: bool, message: String) -> void:
+	checks += 1
+	super.check(condition, message)
+
+
+func click_button(button: Button) -> void:
+	var point := button.get_global_rect().get_center()
+	var motion := InputEventMouseMotion.new()
+	motion.position = point
+	root.push_input(motion)
+	var event := InputEventMouseButton.new()
+	event.position = point
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.pressed = true
+	root.push_input(event)
+	await process_frame
+	event = event.duplicate()
+	event.pressed = false
+	root.push_input(event)
+	await process_frame
 
 
 func _process(delta: float) -> bool:
@@ -19,6 +42,8 @@ func _process(delta: float) -> bool:
 
 
 func run() -> void:
+	# Inspect native pixel sizes, including the minimum supported window.
+	root.content_scale_size = Vector2i.ZERO
 	OS.unset_environment("DORBIT_PILOT_FILE")
 	var directory := ProjectSettings.globalize_path("user://contract-replay-%d-%d" % [OS.get_process_id(), Time.get_ticks_usec()])
 	DirAccess.make_dir_recursive_absolute(directory)
@@ -53,14 +78,73 @@ func run() -> void:
 	await press(KEY_C)
 	check(sector.hud.contract_panel.visible, "C opens station contract board")
 	check(not sector.hud.audio_controls.visible, "Station contracts hide pause-menu audio controls")
+	sector.hud.contract_tabs[1].pressed.emit()
+	check(sector.hud.contract_selected.is_empty() and sector.hud.contract_empty.visible and not sector.hud.contract_accept.visible, "Empty active tab has no actionable selection")
+	sector.hud.contract_tabs[0].pressed.emit()
+	await click_button(sector.hud.contract_choices["heavy"])
+	check(sector.active_contracts.is_empty() and sector.hud.contract_selected == "heavy" and sector.hud.contract_reward.text == "Credits    200", "Selecting a hunt only changes briefing and reward, without accepting")
+	sector.hud.contract_choices["scout"].grab_focus()
+	await press(KEY_ENTER)
+	check(sector.hud.contract_selected == "scout", "Keyboard activation selects a hunt without accepting it")
+	if rendered:
+		root.size = Vector2i(960, 600)
+		await create_timer(0.4).timeout
+		var board := sector.hud.contract_panel.get_global_rect()
+		check(board.position.x >= 0 and board.position.y >= 0 and board.end.x <= 960 and board.end.y <= 600, "Contracts fit the minimum native window")
+		var last_choice := sector.hud.contract_choices["heavy"]
+		var scroll := last_choice.get_parent().get_parent() as ScrollContainer
+		check(last_choice.get_global_rect().end.y <= scroll.get_global_rect().end.y, "All three hunt rows are visible without scrolling at the minimum size")
 	await snapshot("contracts-01-offers")
-	sector.hud.contract_offers[0].pressed.emit()
+	await click_button(sector.hud.contract_accept)
 	await create_timer(0.4).timeout
-	sector.hud.contract_offers[1].pressed.emit()
-	sector.hud.contract_offers[2].pressed.emit()
+	check(not sector.hud.contract_accept.visible and sector.hud.contract_abandon.visible, "Active selection replaces acceptance with abandonment")
+	sector.hud.contract_choices["sentinel"].pressed.emit()
+	sector.hud.contract_accept.grab_focus()
+	await create_timer(0.1).timeout
+	check(sector.hud.contract_accept.has_focus(), "Live updates preserve keyboard focus on the action button")
+	await press(KEY_ENTER)
+	await create_timer(0.4).timeout
+	sector.hud.contract_choices["heavy"].pressed.emit()
+	sector.hud.contract_accept.pressed.emit()
 	await create_timer(0.4).timeout
 	check(sector.active_contracts.size() == 3, "All three hunts accept through server RPC")
+	sector.hud.contract_tabs[1].pressed.emit()
+	check(sector.hud.contract_slots.text == "0 contract slots remaining / 3 active", "Board reports concurrent hunt capacity")
+	# Saved runs can retain different terms from the current offer catalog.
+	var original: Dictionary = sector.active_contracts["heavy"].duplicate()
+	sector.active_contracts["heavy"]["required"] = 4
+	sector.active_contracts["heavy"]["reward"] = 321
+	sector.active_contracts["heavy"]["progress"] = 2
+	sector.hud.update_contract_panel()
+	check(sector.hud.contract_progress.value == 2 and sector.hud.contract_progress.max_value == 4 and sector.hud.contract_reward.text == "Credits    321", "Detail view uses accepted progress, objective and reward terms")
+	sector.active_contracts["heavy"]["progress"] = 4
+	sector.hud.update_contract_panel()
+	check("Reward pending" in sector.hud.contract_choices["heavy"].text and "wallet full" in sector.hud.contract_reward.text, "Completed pending reward remains visible and cannot be reaccepted")
+	sector.active_contracts["heavy"] = original
+	sector.hud.update_contract_panel()
+	var position := sector.player.position
+	sector.player.position = Vector3(1000, 0, 0)
+	sector.hud.update_contract_panel()
+	check(sector.hud.contract_abandon.disabled and sector.hud.contract_status.visible, "Live station restrictions disable the action with an explanation")
+	if rendered:
+		await process_frame
+		await process_frame
+		check(sector.hud.contract_panel.get_global_rect().end.y <= 600, "Station restriction explanation fits the minimum window")
+	sector.player.position = position
+	sector.hud.update_contract_panel()
 	await snapshot("contracts-02-accepted")
+	if rendered:
+		root.size = Vector2i(1440, 900)
+		await create_timer(0.4).timeout
+		await snapshot("contracts-large-window")
+	sector.hud.contract_choices["scout"].pressed.emit()
+	await click_button(sector.hud.contract_abandon)
+	await create_timer(0.4).timeout
+	check(sector.active_contracts.size() == 2 and not sector.hud.contract_choices["scout"].visible and sector.hud.contract_selected == "sentinel", "Abandoning only the selected hunt moves active selection to the next hunt")
+	sector.hud.contract_tabs[0].pressed.emit()
+	sector.hud.contract_choices["scout"].pressed.emit()
+	sector.hud.contract_accept.pressed.emit()
+	await create_timer(0.4).timeout
 	await press(KEY_C)
 	flying = true
 	# Fly into the nearest Scout's territory with normal flight commands and target-lock fire.
@@ -97,10 +181,13 @@ func run() -> void:
 	await create_timer(6.0).timeout
 	flying = false
 	await press(KEY_C)
-	check(sector.hud.contract_panel.visible and not sector.hud.contract_offers[0].disabled, "Returning pilot can repeat the paid hunt")
-	sector.hud.contract_offers[0].pressed.emit()
+	sector.hud.contract_choices["scout"].pressed.emit()
+	check(sector.hud.contract_panel.visible and sector.hud.contract_accept.visible and not sector.hud.contract_accept.disabled, "Returning pilot can repeat the paid hunt")
+	# The live return can incur rescue fees; accepting a repeat must preserve this wallet.
+	var station_credits := sector.credits
+	sector.hud.contract_accept.pressed.emit()
 	await create_timer(0.4).timeout
-	check(sector.active_contracts.size() == 3 and sector.credits == 3180, "Repeating a hunt leaves the other contracts intact")
+	check(sector.active_contracts.size() == 3 and sector.credits == station_credits, "Repeating a hunt leaves the wallet and other contracts intact")
 	await snapshot("contracts-06-repeated")
 	if rendered:
 		root.size = Vector2i(960, 600)
@@ -110,7 +197,7 @@ func run() -> void:
 	check(sector.shop.visible and not sector.hud.contract_panel.visible and not sector.hud.audio_controls.visible, "B switches from the contract board to shop")
 	sector.shop.buys["laser"].pressed.emit()
 	await create_timer(0.4).timeout
-	check(sector.session.combat.inventory["items"].has("purchase-1") and sector.credits == 180, "Contract and kill rewards remain after buying the laser")
+	check(sector.session.combat.inventory["items"].has("purchase-1") and sector.credits == station_credits - 3000, "Buying the laser deducts only its price from the returned wallet")
 	await press(KEY_I)
 	sector.equipment_menu.stored["purchase-1"].pressed.emit()
 	await process_frame
@@ -124,14 +211,14 @@ func run() -> void:
 	check(server.session.host(24690) == OK, "Server restarts with the combined progression ledger")
 	sector.session.join("127.0.0.1", 24690)
 	await create_timer(0.7).timeout
-	check(sector.session.received_snapshot and sector.credits == 180 and sector.active_contracts.size() == 3 and sector.player.laser_damage == 22 and sector.session.combat.inventory.get("revision") == 2, "Restart preserves rewards, concurrent contracts and purchased fitting together")
+	check(sector.session.received_snapshot and sector.credits == station_credits - 3000 and sector.active_contracts.size() == 3 and sector.player.laser_damage == 22 and sector.session.combat.inventory.get("revision") == 2, "Restart preserves rewards, concurrent contracts and purchased fitting together")
 	await finish_replay()
 
 
 func finish_replay() -> void:
 	flying = false
 	Input.action_release("forward")
-	print("Contract playthrough: %d failures; credits=%d; contract=%s" % [failures, sector.credits, sector.active_contracts])
+	print("Contract playthrough: %d checks, %d failures; credits=%d; contract=%s" % [checks, failures, sector.credits, sector.active_contracts])
 	sector.session.disconnect_session("Replay finished")
 	server.session.disconnect_session("Replay finished")
 	quit(0 if failures == 0 else 1)
