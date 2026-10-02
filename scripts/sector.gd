@@ -20,7 +20,6 @@ const ALIEN_SPAWNS := [
 	{"kind": "Sentinel", "home": Vector3(-230, 35, -430)},
 	{"kind": "Heavy", "home": Vector3(320, 15, -390)},
 ]
-const TARGET_RANGE: float = 550.0
 var player: Pilot
 var aliens: Dictionary[int, Alien] = {}
 var alien: Alien:
@@ -279,29 +278,36 @@ func pick_target(screen_position: Vector2) -> void:
 
 
 func target_available(enemy: Alien) -> bool:
-	return is_instance_valid(enemy) and enemy.available() and enemy.visible and player.position.distance_to(enemy.position) <= TARGET_RANGE
+	return is_instance_valid(enemy) and enemy.available() and enemy.is_visible_in_tree()
 
 
 func validate_target() -> void:
-	if target != null and (not is_instance_valid(target) or not target_available(target as Alien)):
+	if target != null and (not is_instance_valid(target) or not target.alive):
 		select_target(null)
+	elif target is Alien and target.returning:
+		auto_fire = false
 
 
-func cycle_target() -> void:
-	var candidates: Array[Alien] = []
+func cycle_target(screen_position: Vector2 = Vector2.INF) -> void:
+	var camera := player.camera
+	var viewport := get_viewport()
+	var cursor := viewport.get_mouse_position() if screen_position == Vector2.INF else screen_position
+	if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		cursor = viewport.get_visible_rect().get_center()
+	var nearest: Alien = null
+	var nearest_distance: float = INF
 	for enemy: Alien in aliens.values():
-		if target_available(enemy):
-			candidates.append(enemy)
-	# Fixed slot order after the first nearest selection avoids cycling jitter as enemies move.
-	if candidates.is_empty():
-		select_target(null)
-	elif target in candidates:
-		select_target(candidates[(candidates.find(target) + 1) % candidates.size()])
-	else:
-		var nearest := candidates[0]
-		for enemy in candidates:
-			if player.position.distance_squared_to(enemy.position) < player.position.distance_squared_to(nearest.position):
-				nearest = enemy
+		if not target_available(enemy) or camera.is_position_behind(enemy.global_position):
+			continue
+		var enemy_screen_position := camera.unproject_position(enemy.global_position)
+		if not viewport.get_visible_rect().has_point(enemy_screen_position):
+			continue
+		var distance := cursor.distance_squared_to(enemy_screen_position)
+		if distance < nearest_distance:
+			nearest = enemy
+			nearest_distance = distance
+	# Pressing Tab again over the same enemy must not interrupt its fire intent.
+	if nearest != null and nearest != target:
 		select_target(nearest)
 
 
