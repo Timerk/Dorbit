@@ -15,14 +15,19 @@ var buys: Dictionary[String, Button] = {}
 var item_ids: Array[String] = []
 var destinations: Array[Dictionary] = []
 var last_inventory: Dictionary = {}
+var equipment_page: VBoxContainer
+var cargo_page: VBoxContainer
+var cargo_summary: Label
+var sell_all: Button
+var sells: Dictionary[String, Button] = {}
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	offset_left = -430
 	offset_right = 430
-	offset_top = -260
-	offset_bottom = 260
+	offset_top = -280
+	offset_bottom = 280
 	add_theme_stylebox_override("panel", FlightHud.panel_style())
 	var margin := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
@@ -32,28 +37,46 @@ func _ready() -> void:
 	rows.add_theme_constant_override("separation", 6)
 	margin.add_child(rows)
 	var title := Label.new()
-	title.text = "OUTPOST 01 / EQUIPMENT & FITTING"
-	title.add_theme_font_size_override("font_size", 23)
+	title.text = "OUTPOST 01 / EQUIPMENT, FITTING & CARGO"
+	title.add_theme_font_size_override("font_size", 21)
 	rows.add_child(title)
 	summary = label(rows)
+	var tabs := HBoxContainer.new()
+	rows.add_child(tabs)
+	sector.session.add_button(tabs, "Equipment & fitting", func(): equipment_page.show(); cargo_page.hide())
+	sector.session.add_button(tabs, "Cargo / sell resources", func(): equipment_page.hide(); cargo_page.show())
+	equipment_page = VBoxContainer.new()
+	equipment_page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rows.add_child(equipment_page)
 	for model: String in Equipment.MODELS:
 		var info: Dictionary = Equipment.MODELS[model]
-		var button := sector.session.add_button(rows, "", func(): sector.session.combat.request_station("buy", model))
+		var button := sector.session.add_button(equipment_page, "", func(): sector.session.combat.request_station("buy", model))
 		button.tooltip_text = "%s: +%.0f damage, +%.0f shield, +%.0f cruise and boost speed" % [info["name"], info["damage"], info["shield"], info["speed"]]
 		buys[model] = button
-	label(rows).text = "Owned items / select an item to fit or remove. Fitting is free."
+	label(equipment_page).text = "Owned items / select an item to fit or remove. Fitting is free."
 	items = ItemList.new()
-	items.custom_minimum_size.y = 100
+	items.custom_minimum_size.y = 72
 	items.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	rows.add_child(items)
+	equipment_page.add_child(items)
 	var controls := HBoxContainer.new()
-	rows.add_child(controls)
+	equipment_page.add_child(controls)
 	destination = OptionButton.new()
 	destination.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	controls.add_child(destination)
 	fit_button = sector.session.add_button(controls, "Install / transfer", fit_selected)
 	remove_button = sector.session.add_button(controls, "Move to storage", func(): sector.session.combat.request_station("fit", selected_item()))
-	preview = label(rows)
+	preview = label(equipment_page)
+	cargo_page = VBoxContainer.new()
+	cargo_page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rows.add_child(cargo_page)
+	cargo_summary = label(cargo_page)
+	for resource: String in CargoResources.TYPES:
+		var button := sector.session.add_button(cargo_page, "", func(): sector.session.combat.request_station("sell", resource))
+		button.add_theme_color_override("font_color", CargoResources.TYPES[resource]["color"])
+		sells[resource] = button
+	sell_all = sector.session.add_button(cargo_page, "", func(): sector.session.combat.request_station("sell", "all"))
+	label(cargo_page).text = "Fly within 12 m of loot to collect it. Each resource uses 1 cargo unit."
+	cargo_page.hide()
 	status = label(rows)
 	status.custom_minimum_size.y = 24
 	var footer := HBoxContainer.new()
@@ -139,10 +162,22 @@ func _process(_delta: float) -> void:
 				destination.add_item("%s / %s: %s" % [ship, slot, content])
 				destinations.append({"ship": ship, "slot": slot})
 		destination.select(clampi(selected_destination, 0, destinations.size() - 1))
-	summary.text = "%d CR | Pathfinder: 2 laser + 2 shared generator slots\nCurrent: %s" % [sector.credits, stats_text(Equipment.stats(data))]
+	summary.text = "%d CR | Cargo %d / %d | Pathfinder: 2 laser + 2 shared generator slots\nCurrent: %s" % [sector.credits, CargoResources.units(sector.cargo), sector.cargo_capacity, stats_text(Equipment.stats(data))]
 	var blocked := sector.repair_blocker()
 	if combat.station_pending:
 		blocked = "Waiting for server..."
+	cargo_summary.text = "SHIP CARGO / %d of %d units / %d CR sale value" % [CargoResources.units(sector.cargo), sector.cargo_capacity, CargoResources.value(sector.cargo)]
+	for resource: String in sells:
+		var info: Dictionary = CargoResources.TYPES[resource]
+		var amount := int(sector.cargo.get(resource, 0))
+		var proceeds := amount * int(info["price"])
+		sells[resource].text = "%s x%d / %d CR each / Sell for %d CR" % [info["name"], amount, info["price"], proceeds]
+		sells[resource].disabled = not blocked.is_empty() or amount == 0 or proceeds > PilotStore.MAX_CREDITS - sector.credits
+		sells[resource].tooltip_text = blocked if not blocked.is_empty() else ("Sale exceeds the credit limit." if proceeds > PilotStore.MAX_CREDITS - sector.credits else "Sell this resource from the active ship.")
+	var total := CargoResources.value(sector.cargo)
+	sell_all.text = "Sell all cargo / +%d CR" % total
+	sell_all.disabled = not blocked.is_empty() or total == 0 or total > PilotStore.MAX_CREDITS - sector.credits
+	sell_all.tooltip_text = blocked if not blocked.is_empty() else ("Sale exceeds the credit limit." if total > PilotStore.MAX_CREDITS - sector.credits else "Sell every resource in the active ship.")
 	test_credits_button.visible = combat.preview_tools_available
 	test_credits_button.disabled = not blocked.is_empty() or sector.credits >= PilotStore.MAX_CREDITS
 	for model: String in buys:

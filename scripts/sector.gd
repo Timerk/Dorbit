@@ -29,6 +29,9 @@ var hud: FlightHud
 var credits: int = 0
 var kills: int = 0
 var active_contracts: Dictionary = {}
+var cargo: Dictionary = {}
+var cargo_capacity: int = CargoResources.SHIP_CAPACITIES["pathfinder"]
+var loot: ResourceLoot
 var auto_fire: bool = false
 var paused: bool = false
 var player_respawn: float = 0.0
@@ -82,6 +85,10 @@ func _ready() -> void:
 	session.name = "FlightSession"
 	session.sector = self
 	add_child(session)
+	loot = ResourceLoot.new()
+	loot.sector = self
+	loot.name = "ResourceLoot"
+	add_child(loot)
 	if "--print-protocol" in OS.get_cmdline_user_args():
 		return
 	if not dedicated_server:
@@ -251,6 +258,7 @@ func _physics_process(delta: float) -> void:
 				enemy.returning = false
 				enemy.reset_encounter()
 	weapon_status = player.firing_blocker(target)
+	loot.tick(delta)
 
 
 func _process(_delta: float) -> void:
@@ -335,6 +343,7 @@ func on_destroyed(ship: SpaceShip, attacker: SpaceShip) -> void:
 	SectorVisuals.explosion(self, ship.global_position)
 	if ship is Alien:
 		var enemy := ship as Alien
+		loot.spawn_drop(enemy)
 		var reward: int = enemy.tuning()["reward"]
 		if attacker == player:
 			credits += reward

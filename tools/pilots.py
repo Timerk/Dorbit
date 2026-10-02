@@ -41,6 +41,20 @@ def valid_equipment(data: object) -> bool:
         occupied.add(location)
     return True
 
+def valid_cargo(data: object, equipment: dict) -> bool:
+    prices = {"prometium", "endurium", "terbium", "prometid", "duranium", "promerium", "seprom"}
+    capacities = {"pathfinder": 200}
+    if not isinstance(data, dict) or data.keys() != equipment["ships"].keys():
+        return False
+    for ship, hold in data.items():
+        if not isinstance(hold, dict):
+            return False
+        capacity = capacities[equipment["ships"][ship]]
+        if any(resource not in prices or type(amount) is not int or not 1 <= amount <= capacity
+               for resource, amount in hold.items()) or sum(hold.values()) > capacity:
+            return False
+    return True
+
 
 def write_new(path: Path, data: dict) -> None:
     # Exclusive creation preserves interrupted files and existing credentials.
@@ -70,10 +84,10 @@ def main() -> None:
         if args.init:
             if path.exists() or args.rotate:
                 parser.error("--init requires a new ledger and cannot be combined with --rotate")
-            data = {"version": 2, "pilots": {}}
+            data = {"version": 3, "pilots": {}}
         else:
             data = json.loads(path.read_text(encoding="utf-8"))
-            if data.get("version") not in (1, 2) or not isinstance(data.get("pilots"), dict) or not data["pilots"]:
+            if data.get("version") not in (1, 2, 3) or not isinstance(data.get("pilots"), dict) or not data["pilots"]:
                 parser.error("Invalid ledger; preserve it and recover from backup")
             for pilot, record in data["pilots"].items():
                 if (not re.fullmatch(r"[a-z0-9_-]{1,32}", pilot)
@@ -89,13 +103,19 @@ def main() -> None:
                     record["equipment"] = starter_equipment()
                 elif not valid_equipment(record.get("equipment")):
                     parser.error("Invalid equipment; preserve it and recover from backup")
-            data["version"] = 2
+                if data["version"] < 3:
+                    if "cargo" in record:
+                        parser.error("Unexpected cargo in legacy ledger; preserve it and recover")
+                    record["cargo"] = {ship: {} for ship in record["equipment"]["ships"]}
+                elif not valid_cargo(record.get("cargo"), record["equipment"]):
+                    parser.error("Invalid cargo; preserve it and recover from backup")
+            data["version"] = 3
         exists = args.pilot in data["pilots"]
         if exists != args.rotate:
             parser.error("Use --rotate for an existing pilot; omit it for a new pilot")
         token = secrets.token_hex(32)
         credits = data["pilots"].get(args.pilot, {}).get("credits", 0)
-        record = data["pilots"].setdefault(args.pilot, {"credits": credits, "equipment": starter_equipment()})
+        record = data["pilots"].setdefault(args.pilot, {"credits": credits, "equipment": starter_equipment(), "cargo": {"starter": {}}})
         record["verifier"] = hashlib.sha256(token.encode()).hexdigest()
         temporary = path.with_name("pilots.json.tmp")
         if temporary.exists():

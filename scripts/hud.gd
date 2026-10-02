@@ -190,6 +190,8 @@ func _draw() -> void:
 	text_at(Vector2(width - 200, 36), "%05d  CR" % sector.credits, 22, GREEN)
 	var connection := "CO-OP  /  %d PILOTS" % sector.session.ships.size() if shared else ("DISCONNECTED" if sector.client_only else "LOCAL SECTOR  /  SOLO")
 	text_at(Vector2(width - 200, 60), connection, 11, MUTED)
+	var cargo_used := CargoResources.units(sector.cargo)
+	text_at(Vector2(width - 390, 60), "CARGO %d / %d%s" % [cargo_used, sector.cargo_capacity, " FULL" if cargo_used >= sector.cargo_capacity else ""], 11, RED if cargo_used >= sector.cargo_capacity else GREEN)
 	draw_line(Vector2(32, 82), Vector2(width - 32, 82), Color(0.3, 0.5, 0.65, 0.25), 1.0)
 	var objective: String = [
 		"Leave the outpost. W to fly forward.",
@@ -215,6 +217,8 @@ func _draw() -> void:
 	marker(Sector.STATION_POSITION, "[+] OUTPOST 01", GREEN, false)
 	if is_instance_valid(sector.target):
 		alien_marker(sector.target as Alien)
+	for drop: Dictionary in sector.loot.drops.values():
+		marker(drop["position"], "LOOT %d UNITS / FLY CLOSE" % CargoResources.units(drop["resources"]), Color("ffc55d"), false, null, false)
 	for enemy: Alien in sector.aliens.values():
 		if enemy != sector.target and enemy.alive and enemy.visible:
 			alien_marker(enemy)
@@ -244,7 +248,7 @@ func _draw() -> void:
 		elif player.time_since_hit < 5.0:
 			label = "REPAIRS AVAILABLE IN %d s" % ceili(5.0 - player.time_since_hit)
 		text_at(Vector2(width - 310, height - 256), label, 14, GREEN)
-		text_at(Vector2(width - 310, height - 304), "B  EQUIPMENT SHOP / FITTING", 14, CYAN)
+		text_at(Vector2(width - 310, height - 304), "B  SHOP / FITTING / SELL CARGO", 14, CYAN)
 	var controls := "WASD  Move    Q/E  Rise / descend    RMB  Steer    Tab  Target    Space  Fire    Shift  Boost    R  Repair    Esc  Pause"
 	if shared:
 		controls = "WASD  Move    Q/E  Rise / descend    RMB  Steer    Tab  Target    Space  Fire    Shift  Boost    R  Repair    F7  Session"

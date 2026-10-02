@@ -30,9 +30,9 @@ class ServerShutdownTest(unittest.TestCase):
         self.data.mkdir()
         self.ledger = self.data / "pilots.json"
         self.lock = self.data / "pilots.json.lock"
-        self.original = json.dumps({"version": 2, "pilots": {
+        self.original = json.dumps({"version": 3, "pilots": {
             "restart_test": {"verifier": hashlib.sha256(b"disposable test token").hexdigest(), "credits": 137,
-                             "equipment": pilots.starter_equipment()}
+                             "equipment": pilots.starter_equipment(), "cargo": {"starter": {"seprom": 5}}}
         }})
         self.ledger.write_text(self.original)
         self.processes: list[subprocess.Popen] = []
@@ -99,6 +99,42 @@ class ServerShutdownTest(unittest.TestCase):
         self.assertTrue(self.lock.is_dir())
         self.assertIsNone(first.poll())
         self.assertEqual(self.ledger.read_text(), self.original)
+
+    def test_version_two_migration_preserves_progression_and_backup(self) -> None:
+        legacy = json.loads(self.original)
+        legacy["version"] = 2
+        del legacy["pilots"]["restart_test"]["cargo"]
+        original = json.dumps(legacy)
+        self.ledger.write_text(original)
+        process, log = self.start()
+        self.ready(process, log)
+        process.terminate()
+        self.assertEqual(process.wait(timeout=10), 0, log.read_text())
+        migrated = json.loads(self.ledger.read_text())
+        self.assertEqual(migrated["version"], 3)
+        expected = legacy["pilots"]["restart_test"] | {"cargo": {"starter": {}}, "contracts": {}}
+        self.assertEqual(migrated["pilots"]["restart_test"], expected)
+        self.assertEqual(self.ledger.with_name("pilots.json.bak").read_text(), original)
+        saved_text = self.ledger.read_text()
+        process, log = self.start()
+        self.ready(process, log)
+        process.terminate()
+        self.assertEqual(process.wait(timeout=10), 0, log.read_text())
+        self.assertEqual(self.ledger.read_text(), saved_text)
+
+    def test_corrupt_cargo_is_preserved(self) -> None:
+        for cargo in (None, {}, {"starter": {"seprom": -1}}, {"starter": {"seprom": 1.5}},
+                      {"starter": {"unknown": 1}}, {"starter": {"prometium": 200, "seprom": 1}}):
+            with self.subTest(cargo=cargo):
+                corrupted = json.loads(self.original)
+                corrupted["pilots"]["restart_test"]["cargo"] = cargo
+                original = json.dumps(corrupted)
+                self.ledger.write_text(original)
+                process, log = self.start()
+                self.assertEqual(process.wait(timeout=10), 1, log.read_text())
+                self.assertIn("Invalid pilot cargo", log.read_text())
+                self.assertEqual(self.ledger.read_text(), original)
+                self.assertFalse(self.lock.exists())
 
     def test_crash_preserves_lock_and_requires_recovery(self) -> None:
         process, log = self.start()
