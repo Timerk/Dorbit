@@ -121,9 +121,11 @@ Distribute the new file and restart. The old token no longer works. To revoke ac
 
 ### Station equipment
 
-Press **B** within 60 m of Outpost 01 while moving at most 8 m/s and five seconds clear of damage. Buy equipment into storage, select an owned item and a compatible empty slot, then install it. Move installed items to storage for free. The Pathfinder has two laser slots and two generator slots shared by shields and engines. The panel previews the resulting stats and explains blocked actions. The server keeps running while it is open.
+Press **B** within 60 m of Outpost 01 while moving at most 8 m/s and five seconds clear of damage to open the station shop. Purchases go into inventory. Press **I** for ship equipment, with a placeholder ship preview on the left, the Pathfinder's two laser slots and two shared generator slots in the middle, and scrollable inventory on the right. Drag an item into a compatible empty slot to equip it, or from a slot back into inventory to remove it for free. Shields and engines share generator slots. Remove an installed item before replacing it. You can also select an item and click an empty slot, or use Tab and Enter with the slot and removal controls. The screen previews resulting stats and explains blocked actions. The server keeps running while it is open.
 
-B and C switch between equipment and contracts. Only one station panel is visible at a time; Esc resumes flight and F7 opens the session menu. Pause-menu volume controls stay hidden while either station panel is open.
+B, I and C switch between shop, ship equipment and contracts. The same screens are available through station navigation buttons. Only one station panel is visible at a time; Esc resumes flight and F7 opens the session menu. Pause-menu volume controls stay hidden while any station panel is open.
+
+[Review the equipment screen at 960 x 600](docs/feedback/ship-equipment.png). The equipment test drives Godot's mouse drag routing through authenticated RPCs for install and removal, rejects incompatible and occupied slots, checks click-based fitting, and verifies pending-request blocking. A separate presentation fixture checks scrolling with 31 stored items and layouts at 960 x 600 and 1440 x 900.
 
 New pilots start with one of each item installed. A second laser costs 3,000 CR; shields and engines cost 2,400 CR each. All values are provisional, with economy assumptions in [GAME_PLAN.md](GAME_PLAN.md). Fitting changes do not repair or refill your ship. Inventory and fittings survive rescue, reconnects and restart. Equipment purchases require the persistent dedicated server; the offline development fixture retains its original stats.
 

@@ -107,14 +107,14 @@ func run() -> void:
 		await create_timer(0.4).timeout
 		await snapshot("contracts-07-small-window")
 	await press(KEY_B)
-	check(sector.shop.visible and not sector.hud.contract_panel.visible and not sector.hud.audio_controls.visible, "B switches from the contract board to equipment")
+	check(sector.shop.visible and not sector.hud.contract_panel.visible and not sector.hud.audio_controls.visible, "B switches from the contract board to shop")
 	sector.shop.buys["laser"].pressed.emit()
 	await create_timer(0.4).timeout
 	check(sector.session.combat.inventory["items"].has("purchase-1") and sector.credits == 180, "Contract and kill rewards remain after buying the laser")
-	sector.shop.items.select(sector.shop.item_ids.find("purchase-1"))
-	sector.shop.destination.select(1)
+	await press(KEY_I)
+	sector.equipment_menu.stored["purchase-1"].pressed.emit()
 	await process_frame
-	sector.shop.fit_button.pressed.emit()
+	sector.equipment_menu.slots["laser2"].pressed.emit()
 	await create_timer(0.4).timeout
 	check(sector.player.laser_damage == 22, "Purchased laser fits through station controls")
 	await snapshot("contracts-08-equipped")
