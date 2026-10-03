@@ -31,7 +31,7 @@ var contract_abandon: Button
 
 const CONTRACT_GOLD := Color("f4cf65")
 const CONTRACT_BRIEFINGS: Dictionary = {
-	"scout": "Scout patrols are closing in on the station approach. Clear these light contacts to keep the route to Outpost 01 open. A good first assignment for the Pathfinder.",
+	"scout": "Scout patrols are closing in on the station approach. Clear these light contacts to keep the route to Outpost 01 open. A good first assignment for the Liberator.",
 	"sentinel": "Sentinels hold the deeper hunting grounds. Break their patrol to give our pilots room to operate. Expect stronger shields and sustained laser fire.",
 	"heavy": "A Heavy guards the outer flank. Bring upgraded equipment or fly with allies to take down this armored contact. Every contributing pilot advances their own hunt.",
 }
@@ -342,9 +342,9 @@ func _draw() -> void:
 	draw_line(center + Vector2(3, 0), center + Vector2(8, 0), Color(0.7, 0.85, 0.95, 0.5), 1.0)
 	draw_circle(center, 1.0, CYAN)
 	panel(Rect2(32, height - 245, 290, 174))
-	text_at(Vector2(50, height - 218), "PATHFINDER  /  LIGHT FIGHTER", 12, CYAN)
+	text_at(Vector2(50, height - 218), "LIBERATOR  /  LIGHT FIGHTER", 12, CYAN)
 	meter(Vector2(50, height - 190), "SHIELD", player.shield, player.max_shield, CYAN)
-	meter(Vector2(50, height - 145), "HULL", player.hull, player.max_hull, GREEN if player.hull > 35.0 else RED)
+	meter(Vector2(50, height - 145), "HULL", player.hull, player.max_hull, GREEN if player.hull > player.max_hull * 0.3 else RED)
 	meter(Vector2(50, height - 100), "BOOST", player.energy, 100.0, Color("e3b777"))
 	text_at(Vector2(343, height - 100), "%03d" % roundi(player.velocity.length()), 32)
 	text_at(Vector2(343, height - 79), "m/s  /  " + ("BOOST" if player.boosting else "FLIGHT ASSIST"), 10, MUTED)

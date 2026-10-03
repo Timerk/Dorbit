@@ -31,37 +31,47 @@ func _ready() -> void:
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rows.add_child(body)
 	var ship_card := StationUi.card(body)
-	ship_card.custom_minimum_size.x = 210
+	ship_card.custom_minimum_size.x = 190
 	ship_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var ship_rows := StationUi.rows(ship_card, 10)
-	StationUi.text(ship_rows, "PATHFINDER", 22)
+	StationUi.text(ship_rows, "LIBERATOR", 22)
 	StationUi.text(ship_rows, "ACTIVE SHIP / STARTER HULL", 11, FlightHud.MUTED)
-	var image := StationUi.art(ship_rows, "ship", Vector2(160, 100))
+	var image := StationUi.art(ship_rows, "ship", Vector2(160, 80))
 	image.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	StationUi.text(ship_rows, "Placeholder ship preview", 12, FlightHud.MUTED)
-	ship_stats = StationUi.text(ship_rows, "", 13)
+	ship_stats = StationUi.text(ship_rows, "", 12)
 	var fitting := StationUi.card(body)
-	fitting.custom_minimum_size.x = 310
+	fitting.custom_minimum_size.x = 346
 	fitting.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var fitting_rows := StationUi.rows(fitting, 10)
 	StationUi.text(fitting_rows, "SHIP SLOTS", 17)
-	for kind: String in ["laser", "generator"]:
-		StationUi.text(fitting_rows, "LASERS / 2 SLOTS" if kind == "laser" else "GENERATORS / 2 SHARED SLOTS", 13, Color("f4c778") if kind == "laser" else FlightHud.CYAN)
-		var group := HBoxContainer.new()
-		group.add_theme_constant_override("separation", 10)
-		fitting_rows.add_child(group)
+	var fitting_scroll := ScrollContainer.new()
+	fitting_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	fitting_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	fitting_rows.add_child(fitting_scroll)
+	var slot_rows := VBoxContainer.new()
+	slot_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fitting_scroll.add_child(slot_rows)
+	for kind: String in ["laser", "generator", "extra"]:
+		var count := Equipment.SLOTS.values().count(kind)
+		StationUi.text(slot_rows, "%s / %d SLOTS" % [kind.to_upper() + "S", count], 13, Color("f4c778") if kind == "laser" else FlightHud.CYAN)
+		var group := GridContainer.new()
+		group.columns = 4
+		group.add_theme_constant_override("h_separation", 6)
+		group.add_theme_constant_override("v_separation", 6)
+		slot_rows.add_child(group)
 		for slot: String in Equipment.SLOTS:
 			if Equipment.SLOTS[slot] != kind:
 				continue
 			var tile := EquipmentTile.new()
 			tile.screen = self
 			tile.slot = slot
+			tile.compact = true
 			tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			group.add_child(tile)
 			slots[slot] = tile
-	StationUi.text(fitting_rows, "Shields and engines share generator slots. Remove an item before replacing it.", 12, FlightHud.MUTED)
+	StationUi.text(fitting_rows, "Shields and engines share generator slots. Extras are reserved for future items.", 12, FlightHud.MUTED)
 	storage_panel = StationUi.card(body)
-	storage_panel.custom_minimum_size.x = 278
+	storage_panel.custom_minimum_size.x = 254
 	storage_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	storage_panel.set_drag_forwarding(Callable(), storage_can_drop, storage_drop)
 	var storage_rows := StationUi.rows(storage_panel, 10)
@@ -157,7 +167,7 @@ func refresh_inventory() -> void:
 
 func update_stats() -> void:
 	var values := Equipment.stats(inventory())
-	ship_stats.text = "CURRENT FITTING\n%d damage / shot\n%d shield capacity\n%d m/s cruise\n%d m/s boost" % [values["damage"], values["shield"], values["speed"], values["boost"]]
+	ship_stats.text = "CURRENT FITTING\n%d hull\n%d damage / shot\n%d shield capacity\n%d%% absorption\n%d m/s cruise\n%d m/s boost" % [sector.player.max_hull, values["damage"], values["shield"], roundi(values["absorption"] * 100), values["speed"], values["boost"]]
 	summary.text = "OUTPOST 01 / SHIP EQUIPMENT    /    %d CR" % sector.credits
 
 
@@ -204,7 +214,7 @@ func show_proposal(id: String, slot: String) -> void:
 	proposed["items"][id]["ship"] = proposed["active_ship"] if not slot.is_empty() else ""
 	proposed["items"][id]["slot"] = slot
 	var values := Equipment.stats(proposed)
-	preview.text = "After %s: %d damage / %d shield / %d cruise / %d boost" % ["install" if not slot.is_empty() else "removal", values["damage"], values["shield"], values["speed"], values["boost"]]
+	preview.text = "After %s: %d damage / %d shield (%d%%) / %d m/s cruise / %d m/s boost" % ["install" if not slot.is_empty() else "removal", values["damage"], values["shield"], roundi(values["absorption"] * 100), values["speed"], values["boost"]]
 
 
 func valid_drag(data: Variant) -> bool:

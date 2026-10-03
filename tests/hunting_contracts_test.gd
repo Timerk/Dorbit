@@ -32,8 +32,8 @@ func kill(server: Sector, kind: String, clients: Array[Sector]) -> void:
 		var ship := server.session.ships[client.multiplayer.get_unique_id()]
 		ship.position = alien.home_position + Vector3(0, 0, 80)
 		alien.take_damage(1, ship)
-	alien.take_damage(9999, server.session.ships[clients.back().multiplayer.get_unique_id()])
-	alien.take_damage(9999, server.session.ships[clients.back().multiplayer.get_unique_id()])
+	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, server.session.ships[clients.back().multiplayer.get_unique_id()])
+	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, server.session.ships[clients.back().multiplayer.get_unique_id()])
 	await replicate(server)
 
 func run() -> void:
@@ -112,12 +112,12 @@ func run() -> void:
 	scout.reset_encounter()
 	remote.position = scout.home_position + Vector3(0, 0, 80)
 	scout.take_damage(1, remote)
-	remote.take_damage(9999, server.aliens[0])
+	remote.take_damage(remote.max_hull + remote.max_shield + 1.0, server.aliens[0])
 	await replicate(server)
 	check(not pilot.player.alive and pilot.active_contracts == saved, "Death preserves all hunts")
 	await action(server, pilot, "abandon", "scout")
 	check(pilot.active_contracts == saved, "Dead pilots cannot abandon")
-	scout.take_damage(9999, server.session.ships[partner.multiplayer.get_unique_id()])
+	scout.take_damage(scout.max_hull + scout.max_shield + 1.0, server.session.ships[partner.multiplayer.get_unique_id()])
 	await replicate(server)
 	check(pilot.active_contracts["scout"]["progress"] == 2, "Contributors awaiting rescue receive progress")
 	combat.tick(3.1)
@@ -135,7 +135,7 @@ func run() -> void:
 	scout.take_damage(1, departing)
 	spectator.session.disconnect_session("Leave before kill")
 	await settle(0.2)
-	scout.take_damage(9999, remote)
+	scout.take_damage(scout.max_hull + scout.max_shield + 1.0, remote)
 	await connect_pilot(spectator, 2)
 	await replicate(server)
 	check(spectator.active_contracts["scout"]["progress"] == 0, "Disconnecting before the kill removes contribution eligibility")
@@ -240,7 +240,7 @@ func failed_transaction(operation: String) -> void:
 	if operation == "pending":
 		server.session.save_balances({id: PilotStore.MAX_CREDITS})
 		combat.records[id]["credits"] = PilotStore.MAX_CREDITS
-		alien.take_damage(9999, server.session.ships[id])
+		alien.take_damage(alien.max_hull + alien.max_shield + 1.0, server.session.ships[id])
 		server.session.save_balances({id: PilotStore.MAX_CREDITS - 200})
 		combat.records[id]["credits"] = PilotStore.MAX_CREDITS - 200
 	var original := FileAccess.get_file_as_string(server.session.store.path)
@@ -249,7 +249,7 @@ func failed_transaction(operation: String) -> void:
 	if operation == "pending":
 		combat.pay_pending_contracts(id)
 	else:
-		alien.take_damage(9999, server.session.ships[id])
+		alien.take_damage(alien.max_hull + alien.max_shield + 1.0, server.session.ships[id])
 	if server.session.store.failed and combat.records[id] == record and FileAccess.get_file_as_string(server.session.store.path) == original:
 		print("CONTRACT_FAILURE_VERIFIED")
 	else:
