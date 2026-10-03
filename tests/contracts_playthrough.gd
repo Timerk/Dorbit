@@ -77,7 +77,7 @@ func run() -> void:
 	sector.set_paused(false)
 	await press(KEY_C)
 	check(sector.hud.contract_panel.visible, "C opens station contract board")
-	check(not sector.hud.audio_controls.visible, "Station contracts hide pause-menu audio controls")
+	check(not sector.settings_menu.pause_panel.visible, "Station contracts hide flight-menu controls")
 	sector.hud.contract_tabs[1].pressed.emit()
 	check(sector.hud.contract_selected.is_empty() and sector.hud.contract_empty.visible and not sector.hud.contract_accept.visible, "Empty active tab has no actionable selection")
 	sector.hud.contract_tabs[0].pressed.emit()
@@ -194,7 +194,7 @@ func run() -> void:
 		await create_timer(0.4).timeout
 		await snapshot("contracts-07-small-window")
 	await press(KEY_B)
-	check(sector.shop.visible and not sector.hud.contract_panel.visible and not sector.hud.audio_controls.visible, "B switches from the contract board to shop")
+	check(sector.shop.visible and not sector.hud.contract_panel.visible and not sector.settings_menu.pause_panel.visible, "B switches from the contract board to shop")
 	sector.shop.buys["laser"].pressed.emit()
 	await create_timer(0.4).timeout
 	check(sector.session.combat.inventory["items"].has("purchase-1") and sector.credits == station_credits - 3000, "Buying the laser deducts only its price from the returned wallet")

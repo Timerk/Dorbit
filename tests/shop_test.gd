@@ -53,7 +53,7 @@ func run() -> void:
 		root.add_child(screen)
 		root.size = Vector2i(960, 600)
 	await press(client, KEY_B)
-	check(shop.visible and client.paused and not client.hud.audio_controls.visible, "B opens the shop and suppresses flight and pause controls")
+	check(shop.visible and client.paused and not client.settings_menu.pause_panel.visible, "B opens the shop and suppresses flight and pause controls")
 	check(shop.selected_model == "laser" and shop.cards.values().all(func(card: Button): return card.visible), "All equipment opens with the laser selected")
 	await click(client, shop.cargo_button)
 	check(shop.cargo_page.visible and not shop.equipment_page.visible and shop.sells.size() == 7, "Trading navigation opens all seven ore cards without overlapping the equipment catalog")
