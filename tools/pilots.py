@@ -35,7 +35,8 @@ def valid_equipment(data: object) -> bool:
         location = item["ship"], item["slot"]
         if location == ("", ""):
             continue
-        slots = ("laser1", "laser2") if item["model"] == "laser" else ("generator1", "generator2")
+        kind, count = ("laser", 4) if item["model"] == "laser" else ("generator", 6)
+        slots = tuple(f"{kind}{index}" for index in range(1, count + 1))
         if item["ship"] not in data["ships"] or item["slot"] not in slots or location in occupied:
             return False
         occupied.add(location)

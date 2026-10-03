@@ -32,12 +32,12 @@ func run() -> void:
 	ship.position = Vector3(0, 100, 0)
 	for slot in [1, 0, 4]:
 		var alien: Alien = server.aliens[slot]
-		alien.take_damage(9999, ship)
+		alien.take_damage(alien.max_hull + alien.max_shield + 1.0, ship)
 		await settle()
 		var drop_id: int = server.loot.drops.keys().back()
 		check(server.loot.drops[drop_id]["position"] == alien.position and client.loot.drops.has(drop_id), "%s death drops replicated resources at the wreck" % alien.kind)
 		var count := server.loot.drops.size()
-		alien.take_damage(9999, ship)
+		alien.take_damage(alien.max_hull + alien.max_shield + 1.0, ship)
 		check(server.loot.drops.size() == count, "Repeated damage cannot duplicate %s loot" % alien.kind)
 	check(server.loot.meshes.is_empty(), "Dedicated server creates no loot meshes")
 	server.loot.clear()
@@ -79,7 +79,7 @@ func run() -> void:
 	combat.collect_loot()
 	await settle()
 	check(client.cargo == {"endurium": 199, "duranium": 1} and server.loot.drops[101]["resources"] == {"duranium": 2}, "Partial pickup preserves every excess unit")
-	ship.take_damage(9999, server.alien)
+	ship.take_damage(ship.max_hull + ship.max_shield + 1.0, server.alien)
 	combat.collect_loot()
 	check(server.loot.drops[101]["resources"] == {"duranium": 2}, "Destroyed ships cannot collect")
 	combat.tick(3.1)

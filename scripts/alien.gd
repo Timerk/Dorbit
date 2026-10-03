@@ -3,9 +3,9 @@ extends SpaceShip
 
 const RETURN_TIMEOUT: float = 30.0
 const TYPES := {
-	"Scout": {"hull": 60.0, "shield": 20.0, "damage": 6.0, "interval": 0.85, "range": 120.0, "speed": 29.0, "detection": 155.0, "leash": 170.0, "reward": 30, "respawn": 10.0, "scale": Vector3(0.7, 0.7, 0.85), "color": Color("ffc875")},
-	"Sentinel": {"hull": 130.0, "shield": 50.0, "damage": 10.0, "interval": 0.75, "range": 155.0, "speed": 18.0, "detection": 180.0, "leash": 230.0, "reward": 75, "respawn": 12.0, "scale": Vector3.ONE, "color": Color("ff8176")},
-	"Heavy": {"hull": 340.0, "shield": 140.0, "damage": 23.0, "interval": 0.9, "range": 165.0, "speed": 12.0, "detection": 220.0, "leash": 180.0, "reward": 180, "respawn": 18.0, "scale": Vector3(1.5, 1.6, 1.25), "color": Color("d2a0ff")},
+	"Scout": {"hull": 1000.0, "shield": 500.0, "damage": 1500.0, "interval": 0.85, "range": 120.0, "speed": 29.0, "detection": 155.0, "leash": 170.0, "reward": 30, "respawn": 10.0, "scale": Vector3(0.7, 0.7, 0.85), "color": Color("ffc875")},
+	"Sentinel": {"hull": 4000.0, "shield": 2000.0, "damage": 5000.0, "interval": 0.75, "range": 155.0, "speed": 18.0, "detection": 180.0, "leash": 230.0, "reward": 75, "respawn": 12.0, "scale": Vector3.ONE, "color": Color("ff8176")},
+	"Heavy": {"hull": 10000.0, "shield": 5000.0, "damage": 12000.0, "interval": 0.9, "range": 165.0, "speed": 12.0, "detection": 220.0, "leash": 180.0, "reward": 180, "respawn": 18.0, "scale": Vector3(1.5, 1.6, 1.25), "color": Color("d2a0ff")},
 }
 
 var alien_id: int = 0
@@ -29,6 +29,7 @@ func _ready() -> void:
 	var stats := tuning()
 	max_hull = stats["hull"]
 	max_shield = stats["shield"]
+	shield_absorption = 0.8
 	laser_damage = stats["damage"]
 	laser_interval = stats["interval"]
 	laser_range = stats["range"]
