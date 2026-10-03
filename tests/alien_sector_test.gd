@@ -61,7 +61,7 @@ func run() -> void:
 	check(second.target == second.aliens[4] and second.auto_fire, "Returning to combat range preserves the same client lock")
 	var heavy_health := heavy.hull + heavy.shield
 	var heavy_life := heavy.life
-	scout.take_damage(999, p)
+	scout.take_damage(scout.max_hull + scout.max_shield + 1.0, p)
 	await replicate(server)
 	check(combat.records[first_id]["credits"] == 30 and combat.records[second_id]["credits"] == 0, "Scout pays only its contributor")
 	check(heavy.hull + heavy.shield == heavy_health and heavy.life == heavy_life and heavy.contributors == [second_id], "Scout death preserves Heavy health, life and contributions")
@@ -69,12 +69,12 @@ func run() -> void:
 	var timer := scout.respawn
 	# Crossing the leash invalidates the life before any queued lethal shot can land.
 	heavy.position = heavy.home_position + Vector3(float(heavy.tuning()["leash"]) + 1, 0, 0)
-	heavy.take_damage(9999, q)
+	heavy.take_damage(heavy.max_hull + heavy.max_shield + 1.0, q)
 	check(heavy.alive, "Lethal damage outside the leash cannot grant a kill")
 	combat.tick(0.01)
 	check(heavy.returning and heavy.life == heavy_life + 1 and heavy.contributors.is_empty(), "Leash reset clears only that life's contributions")
 	check(heavy.hull == heavy.max_hull and heavy.shield == heavy.max_shield and scout.respawn < timer, "Reset restores health without restarting another respawn")
-	heavy.take_damage(9999, q)
+	heavy.take_damage(heavy.max_hull + heavy.max_shield + 1.0, q)
 	check(heavy.alive and combat.records[second_id]["credits"] == 0, "Returning alien rejects damage and rewards")
 	await replicate(server)
 	check(second.target == second.aliens[4] and not second.auto_fire, "Returning target remains locked while stale fire stops on its client")
@@ -110,7 +110,7 @@ func run() -> void:
 	var shield := q.shield
 	heavy.try_fire(q)
 	check(q.shield == shield, "Alien cannot attack a station-protected pilot")
-	heavy.take_damage(9999, q)
+	heavy.take_damage(heavy.max_hull + heavy.max_shield + 1.0, q)
 	check(heavy.alive and heavy.contributors.is_empty(), "Protected pilot cannot farm an alien")
 	p.position = heavy.position + Vector3(0, 0, 90)
 	heavy.take_damage(1, p)
@@ -124,10 +124,10 @@ func run() -> void:
 	p.position = heavy.position + Vector3(0, 0, 90)
 	q.position = heavy.position + Vector3(20, 0, 90)
 	heavy.take_damage(1, p)
-	p.take_damage(9999, heavy)
-	heavy.take_damage(9999, q)
+	p.take_damage(p.max_hull + p.max_shield + 1.0, heavy)
+	heavy.take_damage(heavy.max_hull + heavy.max_shield + 1.0, q)
 	check(combat.records[first_id]["credits"] == 110 and combat.records[second_id]["credits"] == 90, "Heavy pool splits equally, including a contributor awaiting rescue after its fee")
-	heavy.take_damage(9999, q)
+	heavy.take_damage(heavy.max_hull + heavy.max_shield + 1.0, q)
 	check(combat.records[second_id]["credits"] == 90, "Repeated destruction cannot pay twice")
 	# No connected pilots are needed to restore the bounded population.
 	for client in clients:

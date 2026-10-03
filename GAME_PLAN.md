@@ -59,7 +59,7 @@ The starting combat proposal is:
 
 - Lasers track the selected enemy within weapon range and a generous forward firing arc.
 - Obstacles can block line of sight.
-- Shields absorb damage before the hull.
+- Shields absorb their configured fraction of each hit; the remainder damages hull immediately. Any shield share exceeding remaining charge also damages hull.
 - Destroying an alien grants a reward.
 - The station supports repairs.
 - Player ships and aliens use consistent targeting, weapon, shield, and damage rules where applicable.
@@ -85,7 +85,7 @@ The rendered replay covers click/Tab selection, fire-state reasons using real co
 Milestone 3 now includes multiple simultaneous aliens in the current sector. This slice precedes equipment and hunting contracts. It adds no connected sectors, bosses, loot tables, missions or art pipeline.
 
 - Five fixed spawn slots support independent encounters. Every alien owns its identity, movement, target choice, health, contribution list, life number, death and respawn timer. The server controls these and all rewards, including when no pilots are connected.
-- Scouts are starter encounters near the station approach. Sentinels keep the reference combat stats farther ahead. The Heavy occupies the outer right flank and is intended for upgraded pilots or a small group. Upgrades are outside this slice.
+- Scouts are starter encounters near the station approach. Sentinels require additional lasers or cooperative hunting farther ahead. The Heavy occupies the outer right flank and is intended for upgraded pilots or a small group. Enemy hull, shields and damage were increased for the starter equipment rebalance; movement, rewards and respawns stay unchanged.
 - Each kill splits that type's credit pool equally among connected pilots who damaged that alien in its current life. Contributors awaiting rescue remain eligible; disconnected pilots are removed. Integer remainders go in ascending peer-ID order. Persistence commits the shares before clients see them.
 - Killing or resetting one alien must leave other encounters, contributions and active fire intact. Player rescue also leaves encounters independent.
 - Station protection remains a 75 m sphere. Aliens cannot attack protected pilots. Protected pilots cannot damage aliens.
@@ -98,9 +98,9 @@ Provisional tuning lives in `Alien.TYPES` and `Sector.ALIEN_SPAWNS`. These value
 
 | Type | Count | Hull / shield | Speed | Laser damage / interval | Weapon range | Detection | Home leash | Credits | Respawn |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Scout | 2 | 60 / 20 | 29 m/s | 6 / 0.85 s | 120 m | 155 m | 170 m | 30 | 10 s |
-| Sentinel | 2 | 130 / 50 | 18 m/s | 10 / 0.75 s | 155 m | 180 m | 230 m | 75 | 12 s |
-| Heavy | 1 | 340 / 140 | 12 m/s | 23 / 0.9 s | 165 m | 220 m | 180 m | 180 | 18 s |
+| Scout | 2 | 1,000 / 500 | 29 m/s | 1,500 / 0.85 s | 120 m | 155 m | 170 m | 30 | 10 s |
+| Sentinel | 2 | 4,000 / 2,000 | 18 m/s | 5,000 / 0.75 s | 155 m | 180 m | 230 m | 75 | 12 s |
+| Heavy | 1 | 10,000 / 5,000 | 12 m/s | 12,000 / 0.9 s | 165 m | 220 m | 180 m | 180 | 18 s |
 
 Home coordinates are relative to sector origin. Slot 0 is Sentinel at `(0, 8, -440)`; slots 1 and 2 are Scouts at `(-85, 8, -150)` and `(85, -12, -175)`; slot 3 is Sentinel at `(-230, 35, -430)`; slot 4 is Heavy at `(320, 15, -390)`. Patrols stay within 18 m horizontally and 8 m vertically of home before engagement. Fixed slots respawn in place; timers never create extra nodes.
 
@@ -157,17 +157,17 @@ speed. See README.md for configuration and use.
 
 ### First station equipment shop and fitting
 
-This Milestone 3 slice adds equipment for the Pathfinder starter. The second playable ship is a separate feature.
+This Milestone 3 slice adds equipment for the Liberator starter. The second playable ship is a separate feature.
 
 - Each equipment item is individually owned, either in storage or installed in exactly one slot on one owned ship. Players may buy multiple copies of each model.
 - Ships own their fittings. Installing, removing and transferring items between owned ships is free at the station. Switching ships will not move equipment automatically.
-- The starter has two laser slots and two shared generator slots. A generator slot accepts either a shield generator or an engine.
-- Lasers add damage, shield generators add shield capacity, and engines add speed. Bonuses stack by addition. Hull and base movement belong to the ship; empty slots never prevent flight.
+- The starter follows the regular Liberator: four laser slots, six shared generator slots and two extra slots reserved for future equipment. A generator slot accepts either a shield generator or an engine.
+- Lasers add damage, shield generators add shield capacity, and engines add speed. Damage, capacity and speed bonuses stack by addition. Shield absorption is the capacity-weighted average of installed shield generators, never the sum of their percentages. Hull and base movement belong to the ship; empty slots never prevent flight.
 - New pilots receive one laser, one shield generator and one engine installed. Existing saves receive the same starter fitting exactly once, retaining credits and unrelated progression fields.
 - Press B near the station for the shop and I for a separate ship equipment screen. Both use the repair checks: alive, within 60 m, speed at most 8 m/s, and at least five seconds since damage. The server checks every action again.
 - The shop has category navigation, a two-column item catalog, a selected-item preview and a purchase summary. Weapons contain lasers; generators have shield and engine submenus. All equipment shows the existing three models together. Ships shows the starter preview and explains that no ships are for sale yet. Selecting categories or items never purchases anything. Item images use the same temporary artwork as inventory.
 - The shop shows visual item cards, prices and credits, and delivers purchases to inventory. The equipment screen shows a placeholder image of the active ship on the left, its actual laser and shared generator slots in the middle, and scrollable storage inventory on the right. Drag items to compatible empty slots to install them, or back to inventory to remove them. Selecting an item and clicking an empty slot, plus a removal button, also supports keyboard use. Occupied slots require removal first.
-- Current and proposed damage, shield capacity, cruise and boost speeds remain visible. Unavailable purchases and fitting actions explain why. B, I and C switch station screens; Esc returns to flight. Generated item art and a temporary ship preview do not depend on the final ship models.
+- Current and proposed damage, shield capacity, absorption, cruise and boost speeds remain visible. Unavailable purchases and fitting actions explain why. B, I and C switch station screens; Esc returns to flight. Generated item art and a temporary ship preview do not depend on the final ship models.
 - Fitting changes never repair hull, refill shields or boost energy, or reset weapon cooldowns. Added shield capacity starts empty and recovers through the normal shield regeneration rules. Removing capacity discards excess charge.
 - The server commits a purchase's credit deduction, new item and request sequence together. Successful requests cannot run again, even after restart. A new intentional purchase uses the next sequence. Inventory and fittings survive death, reconnects and server restarts.
 - No equipment selling, trading, rarity, equipment leveling or further tiers are included. Resource cargo and sales are described below.
@@ -176,13 +176,17 @@ Provisional equipment values:
 
 | Model | Price | Bonus per installed item |
 | --- | --- | --- |
-| Pulse laser | 3,000 CR | +11 damage per shot |
-| Shield generator | 2,400 CR | +70 shield capacity |
+| Pulse laser | 3,000 CR | +65 damage per shot (LF-1 baseline) |
+| Shield generator | 2,400 CR | +1,000 shield capacity / 40% absorption (SG3N-A01 baseline) |
 | Ion engine | 2,400 CR | +8 m/s cruise and boost speed |
 
-The unequipped Pathfinder has 120 hull, no laser damage or shield capacity, 28 m/s cruise and 70 m/s boost. One of each starter item preserves the previous 11 damage, 70 shield, 36 m/s cruise and 78 m/s boost. Acceleration stays 40 m/s² and laser interval stays 0.42 seconds. A second laser fills the empty laser slot; a second shield or engine requires giving up the other generator type.
+The starter uses the regular Liberator's 116,000 hull and 4 laser / 6 generator / 2 extra slots, confirmed by the [official ship FAQ](https://board-es.darkorbit.com/threads/faqs-naves-y-disenos.147561/). The user chose the regular ship rather than the supplied Liberator Plus hull. The persisted `pathfinder` model ID stays unchanged so existing equipment, ownership and cargo need no destructive migration; the UI calls it Liberator. Cargo remains 200 units in this rebalance.
 
-These prices target a first useful purchase in roughly 15–30 minutes for solo or two-player hunting. The Sentinel has 180 combined health and awards a shared pool of 75 CR. Ideal solo firing takes about seven seconds, followed by a 12-second respawn; movement, aiming, shield recovery and occasional station returns extend that cycle. Budgeting 22–30 seconds per solo kill and an average 2–8 CR for repairs or rescue gives roughly 135–200 net CR/minute, or 15–22 minutes for the second laser. Two contributors split the pool into 37/38 CR; a 17–20 second cycle with roughly 1–3 CR of upkeep per pilot gives about 104–130 net CR/minute, or 23–29 minutes. These are tuning assumptions, not measured progression sessions. Highly efficient hunting can be faster. More contributors divide the same pool and can take substantially longer, so the ten-player economy needs additional content and playtesting. Contract rewards are not included in these estimates and should trigger a pricing review when integrated.
+Empty fittings have no laser damage or shield capacity, 28 m/s cruise and 70 m/s boost. New pilots still receive one laser, one shield and one engine, for 65 damage, 1,000 shield with 40% absorption, 36 m/s cruise and 78 m/s boost. Existing pilots keep their purchases and slot assignments; newly available slots start empty. Four starter lasers deal 260 per shot. Six shields provide 6,000 capacity with 40% absorption. Engines retain +8 m/s per copy by the user's final speed preference; all flight values are expressed in m/s. Acceleration remains 40 m/s² and laser interval remains 0.42 seconds. Only the current three models are sold; higher tiers and extra-slot items follow later.
+
+For 80% absorption, a 100-damage hit takes 80 shield and 20 hull. With only 30 shield remaining it takes 30 shield and 70 hull. No shield means the entire hit damages hull. Starter shields use 40%; all current aliens use 80%. Hull can reach zero while shield remains. Shield recovery waits six seconds without damage, then restores one twelfth of maximum capacity per second. Station fitting never refills charge. Repairs cost `ceil(missing hull fraction × 14.4)` credits, capped at the wallet, preserving the old full-hull price of 15 CR at the new scale; rescue still costs up to 10 CR.
+
+Alien values are Dorbit playtesting choices, not copied DarkOrbit alien stats. With continuous in-range fire and no regeneration, one starter laser kills a Scout in about 9.7 seconds; three lasers kill a Sentinel in about 12.6 seconds; four lasers kill a Heavy in about 23.9 seconds. Scouts suit starter solo hunts, Sentinels reward filling laser slots, and Heavy damage encourages a group. Prices, kill pools, contracts and resource payouts stay unchanged. The former 15–30 minute purchase estimates no longer describe this balance; actual progression timing and multi-pilot encounters need human playtesting.
 
 ### Enemy resources, cargo and station sales
 
@@ -202,7 +206,7 @@ Each alien leaves one shared box at its destruction position. The server rolls q
 
 Living ships collect automatically within 12 m. The nearest ship with free capacity collects first; exact distance ties use peer-ID order. Any connected pilot can collect, independently of kill-credit contribution eligibility. Partial pickups take the most valuable resources first and leave excess units for another pilot or a later trip. Uncollected boxes expire after three minutes. At most 64 boxes exist; a new drop replaces the oldest when that limit is reached. Late joiners receive current boxes. Space loot resets with the server session.
 
-The Pathfinder holds 200 units; every resource uses one unit. Capacity is defined by ship model for future ship types, and cargo belongs to each individual owned ship. The flight HUD shows usage and FULL status; the station cargo page lists resource quantities, prices and total sale value. Collected cargo survives death, reconnects and server restarts. A future death penalty needs a separate decision.
+The Liberator holds 200 units; every resource uses one unit. Capacity is defined by ship model for future ship types, and cargo belongs to each individual owned ship. The flight HUD shows usage and FULL status; the station cargo page lists resource quantities, prices and total sale value. Collected cargo survives death, reconnects and server restarts. A future death penalty needs a separate decision.
 
 Press B at Outpost 01 and choose Trade raw materials. Seven horizontal ore cards use the colored images from the supplied resource screenshots, with unit prices, held amounts, minus/plus and editable quantity controls, sale totals and Sell buttons. Select a quantity of one resource or sell all active-ship cargo. Sales use the station restrictions: alive, within 60 m, at most 8 m/s and five seconds since damage. The server validates the selected amount and saves cargo removal, credit payment and the transaction sequence together before confirming success. Duplicate and stale requests cannot pay twice. A sale that exceeds the wallet limit leaves all cargo intact. Cargo collection also commits before removing units from space; a save failure stops progression.
 

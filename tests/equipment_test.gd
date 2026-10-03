@@ -103,7 +103,7 @@ func run() -> void:
 	var ship := server.session.ships[id]
 	var combat := client.session.combat
 	check(combat.inventory["items"].size() == 3 and client.credits == 12000, "Only authenticated inventory and wallet reach the client")
-	check(ship.laser_damage == 11 and ship.max_shield == 70 and ship.cruise_speed == 36 and ship.boost_speed == 78, "Starter performance is preserved")
+	check(ship.laser_damage == 65 and ship.max_shield == 1000 and ship.cruise_speed == 36 and ship.boost_speed == 78, "Starter uses baseline damage and shields with unchanged flight speeds")
 	var snapshot: Dictionary = client.session.goals[id].duplicate(true)
 	snapshot["contracts"] = {"sentinel": HuntingContracts.accept("sentinel")}
 	check(var_to_bytes([{id: snapshot}, {}, 1]).size() < 1200, "Player snapshot with equipment and an active contract leaves room below the ENet MTU")
@@ -131,9 +131,16 @@ func run() -> void:
 	await screenshot(client, "equipment-starter")
 	await press(client, KEY_I)
 	check(client.equipment_menu.visible and not client.shop.visible and client.paused and not client.hud.audio_controls.visible, "I opens separate equipment screen and hides shop and pause controls")
-	check(client.equipment_menu.slots.size() == 4 and client.equipment_menu.stored.is_empty(), "Active ship shows its four real slots and storage excludes installed items")
+	check(client.equipment_menu.slots.size() == 12 and client.equipment_menu.stored.is_empty(), "Active ship shows its twelve real slots and storage excludes installed items")
 	check(client.equipment_menu.get_global_rect().position.y >= 0 and client.equipment_menu.get_global_rect().end.y <= 600, "Equipment panel fits the minimum window height")
 	await screenshot(client, "equipment-layout-starter")
+	var slot_scroll := client.equipment_menu.slots["extra2"].get_parent().get_parent().get_parent() as ScrollContainer
+	slot_scroll.scroll_vertical = 1000
+	await settle()
+	check(slot_scroll.get_global_rect().encloses(client.equipment_menu.slots["extra2"].get_global_rect()), "Scrolling exposes the reserved extras within the minimum window")
+	check(slot_scroll.get_global_rect().encloses(client.equipment_menu.slots["generator6"].get_global_rect()), "The sixth generator slot is reachable at minimum window size")
+	await screenshot(client, "equipment-extra-slots")
+	slot_scroll.scroll_vertical = 0
 	await press(client, KEY_C)
 	check(client.hud.contract_panel.visible and not client.equipment_menu.visible, "Contracts hide the equipment screen")
 	await press(client, KEY_I)
@@ -181,7 +188,7 @@ func run() -> void:
 	fitting.select_item("purchase-1")
 	fitting.inspect_tile(fitting.slots["laser2"])
 	await settle()
-	check(fitting.preview.text.contains("22 damage"), "Preview includes the resulting additive damage")
+	check(fitting.preview.text.contains("130 damage"), "Preview includes the resulting additive damage")
 	var revision: int = combat.inventory["revision"]
 	await drag(client, fitting.stored["purchase-1"], fitting.slots["generator1"])
 	check(combat.inventory["revision"] == revision and fitting.preview.text.is_empty(), "Incompatible drop leaves authoritative inventory unchanged and clears drag preview")
@@ -189,7 +196,7 @@ func run() -> void:
 	check(combat.inventory["revision"] == revision, "Occupied slot rejects drops")
 	await drag(client, fitting.stored["purchase-1"], fitting.slots["laser2"])
 	await replicate(server)
-	check(ship.laser_damage == 22 and client.player.laser_damage == 22, "Fitting updates authoritative and displayed damage")
+	check(ship.laser_damage == 130 and client.player.laser_damage == 130, "Fitting updates authoritative and displayed damage")
 	check(not fitting.stored.has("purchase-1") and fitting.slots["laser2"].item_id == "purchase-1", "Successful drag moves one instance from inventory into its slot")
 	check(ship.shield == 23 and ship.hull == 87 and ship.energy == 42 and ship.shot_cooldown == 0.3, "Installing grants no repairs, shield charge, boost energy or cooldown reset")
 	await screenshot(client, "equipment-fitted")
@@ -202,7 +209,7 @@ func run() -> void:
 	fitting.stored["starter-shield"].pressed.emit()
 	fitting.slots["generator1"].pressed.emit()
 	await settle()
-	check(ship.max_shield == 70 and ship.shield == 0, "Reinstalling shields does not refill them")
+	check(ship.max_shield == 1000 and ship.shield == 0, "Reinstalling shields does not refill them")
 	await request(client, 6, "buy", "engine")
 	await request(client, 7, "fit", "starter-shield")
 	await request(client, 8, "fit", "purchase-6", "starter", "generator1")
@@ -226,7 +233,7 @@ func run() -> void:
 	ship.shot_cooldown = 0
 	var health_before := server.alien.shield + server.alien.hull
 	check(ship.try_fire(server.alien), "Fitted ship fires in the live physics world")
-	check(is_equal_approx(health_before - server.alien.shield - server.alien.hull, 22), "Actual combat applies both lasers")
+	check(is_equal_approx(health_before - server.alien.shield - server.alien.hull, 130), "Actual combat applies both lasers")
 	await replicate(server)
 	await screenshot(client, "equipment-combat")
 	# Allow the heavier flight acceleration to reach the upgraded cruise speed.
@@ -238,9 +245,9 @@ func run() -> void:
 	check(is_equal_approx(client.player.velocity.length(), 44), "Client prediction reaches the same fitted cruise speed")
 	await replicate(server)
 	await screenshot(client, "equipment-flight")
-	ship.take_damage(999, server.alien)
+	ship.take_damage(ship.max_hull + ship.max_shield + 1.0, server.alien)
 	server.session.combat.tick(3.1)
-	check(ship.alive and ship.laser_damage == 22 and ship.cruise_speed == 44, "Death and rescue preserve fitting")
+	check(ship.alive and ship.laser_damage == 130 and ship.cruise_speed == 44, "Death and rescue preserve fitting")
 	client.session.disconnect_session("Restart test")
 	await settle()
 	server.session.disconnect_session("Restart test")
@@ -269,7 +276,7 @@ func run() -> void:
 	empty_ship.position = Vector3(100, 100, 100)
 	Equipment.apply_stats(empty_ship, Equipment.stats(empty))
 	empty_ship.fly_command(1.0, Vector3.FORWARD, false)
-	check(empty_ship.hull == 120 and empty_ship.velocity.length() == 28 and empty_ship.firing_blocker(server.alien) == "NO LASER INSTALLED", "An empty fitting retains base hull and flight but cannot fire")
+	check(empty_ship.hull == Equipment.STARTER_HULL and empty_ship.velocity.length() == 28 and empty_ship.firing_blocker(server.alien) == "NO LASER INSTALLED", "An empty fitting retains base hull and flight but cannot fire")
 	empty_ship.queue_free()
 	candidate["items"]["starter-laser"]["slot"] = "laser2"
 	check(not Equipment.valid(candidate), "Save validation rejects duplicate slot occupancy")

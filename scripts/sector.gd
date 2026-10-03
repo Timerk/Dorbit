@@ -404,7 +404,7 @@ func repair_blocker(ship: Pilot = null) -> String:
 func repair_cost(ship: Pilot = null, balance: int = -1) -> int:
 	if ship == null:
 		ship = player
-	return mini(credits if balance < 0 else balance, ceili((ship.max_hull - ship.hull) * 0.12))
+	return mini(credits if balance < 0 else balance, ceili((ship.max_hull - ship.hull) / ship.max_hull * 14.4))
 
 
 func request_repair() -> bool:

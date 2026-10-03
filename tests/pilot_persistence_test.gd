@@ -54,7 +54,7 @@ func run() -> void:
 	await settle(0.3)
 	var combat := server.session.combat
 	server.session.ships[id].position = Vector3(0, 100, -200)
-	server.alien.take_damage(999, server.session.ships[id])
+	server.alien.take_damage(server.alien.max_hull + server.alien.max_shield + 1.0, server.session.ships[id])
 	await replicate(server)
 	check(client.credits == 75, "Earned reward is replicated after persistence")
 	var directory := OS.get_environment("DORBIT_DATA_DIR")
@@ -147,7 +147,7 @@ func save_failure_process() -> void:
 	var original := FileAccess.get_file_as_string(path)
 	DirAccess.make_dir_absolute(path + ".bak.tmp")
 	server.session.ships[id].position = Vector3(0, 100, -200)
-	server.alien.take_damage(999, server.session.ships[id])
+	server.alien.take_damage(server.alien.max_hull + server.alien.max_shield + 1.0, server.session.ships[id])
 	if server.session.store.failed and not server.is_physics_processing() and server.session.combat.records[id]["credits"] == 0 and FileAccess.get_file_as_string(path) == original:
 		print("SAVE_FAILURE_VERIFIED")
 	else:
