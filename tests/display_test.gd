@@ -51,6 +51,9 @@ func run() -> void:
 	menu.binding_buttons.fire.pressed.emit()
 	await tap_key(KEY_F10)
 	check(menu.pending_action == "fire" and sector.settings.bindings.fire == KEY_SPACE, "Reserved shortcuts cannot be rebound or quit during capture")
+	for shortcut in [KEY_B, KEY_I, KEY_C]:
+		await tap_key(shortcut)
+		check(menu.pending_action == "fire" and sector.settings.bindings.fire == KEY_SPACE and not sector.shop.visible and not sector.equipment_menu.visible and not sector.hud.contract_panel.visible, "Station shortcut %s stays reserved during binding capture" % OS.get_keycode_string(shortcut))
 	await tap_key(KEY_ESCAPE)
 	check(menu.pending_action.is_empty() and menu.panel.visible, "Escape cancels capture without leaving settings")
 	menu.begin_binding("fire")
