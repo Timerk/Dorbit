@@ -12,6 +12,17 @@ import pilots
 
 
 class ProvisioningTest(unittest.TestCase):
+    def test_expanded_slots(self):
+        equipment = pilots.starter_equipment()
+        equipment["items"]["starter-laser"]["slot"] = "laser4"
+        equipment["items"]["starter-shield"]["slot"] = "generator6"
+        self.assertTrue(pilots.valid_equipment(equipment))
+        for model, slot in [("laser", "laser5"), ("shield", "generator7"), ("engine", "extra1")]:
+            with self.subTest(slot=slot):
+                candidate = pilots.starter_equipment()
+                candidate["items"][f"starter-{model}"]["slot"] = slot
+                self.assertFalse(pilots.valid_equipment(candidate))
+
     def test_rotation_and_migration(self):
         for version in (1, 2, 3):
             with self.subTest(version=version), tempfile.TemporaryDirectory() as directory:

@@ -40,7 +40,7 @@ func run() -> void:
 	await physics_frame
 	await replicate(host)
 	check(client.alien.position.is_equal_approx(alien.position), "Client receives the host's alien position")
-	client.alien.take_damage(999, client.player)
+	client.alien.take_damage(client.alien.max_hull + client.alien.max_shield + 1.0, client.player)
 	check(client.alien.alive and client.alien.hull == alien.hull, "Client cannot apply local damage")
 	check(not client.player.try_fire(client.alien), "Client cannot simulate an authoritative shot")
 	var initial := alien.shield
@@ -95,12 +95,12 @@ func run() -> void:
 	remote.position = alien.position + Vector3(0, 0, 80)
 	host.player.position = Vector3(-100, 100, 0)
 	check(combat.choose_target(alien) == remote, "Alien chooses the nearest eligible player")
-	remote.take_damage(80, alien)
+	remote.take_damage(remote.max_shield + remote.max_hull / 12.0, alien)
 	await replicate(host)
-	check(client.player.shield == 0 and client.player.hull == 110, "Player shield overflow and hull damage replicate")
+	check(client.player.shield == 0 and client.player.hull == remote.max_hull - remote.max_hull / 12.0, "Split damage and shield depletion replicate")
 	# Only the two contributors share the conserved reward pool; a spectator gets none.
-	alien.take_damage(999, host.player)
-	alien.take_damage(999, host.player)
+	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, host.player)
+	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, host.player)
 	await replicate(host)
 	check(combat.records[1]["credits"] + combat.records[id]["credits"] == 75, "Reward pool is awarded exactly once and conserved")
 	check(absi(combat.records[1]["credits"] - combat.records[id]["credits"]) <= 1, "Contributors receive equal integer shares")
@@ -113,18 +113,18 @@ func run() -> void:
 	var wallet: int = combat.records[id]["credits"]
 	client.session.combat.repair_request.rpc_id(1, 0)
 	await settle()
-	check(remote.hull == 110 and combat.records[id]["credits"] == wallet, "Remote repairs fail away from station")
+	check(remote.hull == remote.max_hull - remote.max_hull / 12.0 and combat.records[id]["credits"] == wallet, "Remote repairs fail away from station")
 	remote.position = combat.records[id]["spawn"]
 	remote.velocity = Vector3(20, 0, 0)
 	remote.time_since_hit = 6
 	client.session.combat.repair_request.rpc_id(1, 0)
 	await settle()
-	check(remote.hull == 110, "Remote repairs fail while moving too fast")
+	check(remote.hull == remote.max_hull - remote.max_hull / 12.0, "Remote repairs fail while moving too fast")
 	remote.velocity = Vector3.ZERO
 	remote.time_since_hit = 1
 	client.session.combat.repair_request.rpc_id(1, 0)
 	await settle()
-	check(remote.hull == 110, "Remote repairs fail after recent damage")
+	check(remote.hull == remote.max_hull - remote.max_hull / 12.0, "Remote repairs fail after recent damage")
 	remote.time_since_hit = 6
 	client.session.combat.repair_request.rpc_id(1, 0)
 	await settle()
@@ -136,8 +136,8 @@ func run() -> void:
 	await settle()
 	check(combat.records[id]["credits"] == wallet - 2, "Repeated repair cannot charge twice for the same damage")
 	# Player death charges once and does not reset the alien's respawn timer.
-	remote.take_damage(999, alien)
-	remote.take_damage(999, alien)
+	remote.take_damage(remote.max_hull + remote.max_shield + 1.0, alien)
+	remote.take_damage(remote.max_hull + remote.max_shield + 1.0, alien)
 	await replicate(host)
 	check(not client.player.alive and client.player_respawn == 3.0, "Remote destruction and rescue timer replicate")
 	check(client.credits == wallet - 12, "Rescue fee is charged once")
@@ -161,7 +161,7 @@ func run() -> void:
 	await settle()
 	check(id not in alien.contributors and not combat.records.has(id), "Leaving removes combat state and reward eligibility")
 	check(client.credits == 456, "Leaving restores the client's separate solo credits")
-	alien.take_damage(999, host.player)
+	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, host.player)
 	check(combat.records[1]["credits"] == 113, "Remaining contributor receives the next reward pool")
 	host.session.disconnect_session("Test complete")
 	await settle()

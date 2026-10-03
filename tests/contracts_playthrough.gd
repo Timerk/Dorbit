@@ -203,7 +203,7 @@ func run() -> void:
 	await process_frame
 	sector.equipment_menu.slots["laser2"].pressed.emit()
 	await create_timer(0.4).timeout
-	check(sector.player.laser_damage == 22, "Purchased laser fits through station controls")
+	check(sector.player.laser_damage == 130, "Purchased laser fits through station controls")
 	await snapshot("contracts-08-equipped")
 	sector.session.disconnect_session("Progression restart")
 	server.session.disconnect_session("Progression restart")
@@ -211,7 +211,7 @@ func run() -> void:
 	check(server.session.host(24690) == OK, "Server restarts with the combined progression ledger")
 	sector.session.join("127.0.0.1", 24690)
 	await create_timer(0.7).timeout
-	check(sector.session.received_snapshot and sector.credits == station_credits - 3000 and sector.active_contracts.size() == 3 and sector.player.laser_damage == 22 and sector.session.combat.inventory.get("revision") == 2, "Restart preserves rewards, concurrent contracts and purchased fitting together")
+	check(sector.session.received_snapshot and sector.credits == station_credits - 3000 and sector.active_contracts.size() == 3 and sector.player.laser_damage == 130 and sector.session.combat.inventory.get("revision") == 2, "Restart preserves rewards, concurrent contracts and purchased fitting together")
 	await finish_replay()
 
 

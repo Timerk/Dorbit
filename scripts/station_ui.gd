@@ -107,7 +107,7 @@ static func bonus(model: String) -> String:
 	if model == "laser":
 		return "+%d damage / shot" % info["damage"]
 	if model == "shield":
-		return "+%d shield capacity" % info["shield"]
+		return "+%d shield / %d%% absorption" % [info["shield"], roundi(info["absorption"] * 100)]
 	return "+%d m/s cruise & boost" % info["speed"]
 
 

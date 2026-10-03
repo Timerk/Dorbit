@@ -318,6 +318,7 @@ func pack_player(id: int) -> Dictionary:
 	var ship := session.ships[id]
 	# Replicate combat and movement stats without exposing the owner's full inventory.
 	data["stats"] = Vector4(ship.laser_damage, ship.max_shield, ship.cruise_speed, ship.boost_speed)
+	data["absorption"] = ship.shield_absorption
 	return data
 
 
@@ -347,7 +348,7 @@ func apply_player(id: int, data: Dictionary) -> bool:
 	var reset: bool = int(ship.get_meta("life", 0)) != data["life"] or ship.alive != data["alive"]
 	ship.set_meta("life", data["life"])
 	var stats: Vector4 = data["stats"]
-	Equipment.apply_stats(ship, {"damage": stats.x, "shield": stats.y, "speed": stats.z, "boost": stats.w})
+	Equipment.apply_stats(ship, {"damage": stats.x, "shield": stats.y, "absorption": data["absorption"], "speed": stats.z, "boost": stats.w})
 	apply_health(ship, data)
 	if ship == session.sector.player:
 		update_local(data)

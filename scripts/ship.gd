@@ -6,9 +6,10 @@ signal destroyed(ship: SpaceShip, attacker: SpaceShip)
 signal fired(origin: Vector3, destination: Vector3, hostile: bool)
 signal damaged(ship: SpaceShip, attacker: SpaceShip)
 
-@export var max_hull: float = 120.0
-@export var max_shield: float = 70.0
-@export var laser_damage: float = 11.0
+@export var max_hull: float = Equipment.STARTER_HULL
+@export var max_shield: float = 1000.0
+@export_range(0.0, 1.0) var shield_absorption: float = 0.4
+@export var laser_damage: float = 65.0
 @export var laser_interval: float = 0.42
 @export var laser_range: float = 170.0
 @export_range(-1.0, 1.0) var firing_arc_cosine: float = 0.25
@@ -45,7 +46,7 @@ func tick_combat(delta: float) -> void:
 	shot_cooldown = maxf(0.0, shot_cooldown - delta)
 	time_since_hit += delta
 	if alive and time_since_hit >= 6.0:
-		shield = minf(max_shield, shield + delta * 6.0)
+		shield = minf(max_shield, shield + delta * max_shield / 12.0)
 
 
 func reset_health() -> void:
@@ -63,7 +64,7 @@ func take_damage(amount: float, attacker: SpaceShip) -> void:
 	if not simulation_authority or not alive or amount <= 0.0:
 		return
 	time_since_hit = 0.0
-	var absorbed := minf(shield, amount)
+	var absorbed := minf(shield, amount * clampf(shield_absorption, 0.0, 1.0))
 	shield -= absorbed
 	hull = maxf(0.0, hull - (amount - absorbed))
 	present_impact(absorbed > 0.0, amount > absorbed)

@@ -5,12 +5,13 @@ extends Button
 var screen: ShipEquipment
 var item_id: String = ""
 var slot: String = ""
+var compact: bool = false
 var caption: Label
 var artwork: TextureRect
 
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(72, 86)
+	custom_minimum_size = Vector2(72, 64 if compact else 86)
 	add_theme_stylebox_override("normal", StationUi.style(Color("102235"), Color("37546c")))
 	add_theme_stylebox_override("hover", StationUi.style(Color("1c3548"), FlightHud.CYAN))
 	add_theme_stylebox_override("focus", StationUi.style(Color(0, 0, 0, 0), FlightHud.CYAN))
@@ -25,7 +26,7 @@ func _ready() -> void:
 	artwork = TextureRect.new()
 	artwork.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	artwork.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	artwork.custom_minimum_size.y = 50
+	artwork.custom_minimum_size.y = 32 if compact else 50
 	artwork.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	artwork.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rows.add_child(artwork)
@@ -41,6 +42,11 @@ func _ready() -> void:
 func refresh() -> void:
 	var item: Dictionary = screen.inventory().get("items", {}).get(item_id, {})
 	if item.is_empty():
+		if Equipment.SLOTS.get(slot) == "extra":
+			artwork.texture = null
+			caption.text = "EXTRA"
+			tooltip_text = "Extra slot reserved for future equipment."
+			return
 		artwork.texture = StationUi.texture("laser" if Equipment.SLOTS.get(slot) == "laser" else "shield")
 		artwork.modulate = Color(1, 1, 1, 0.18)
 		caption.text = "EMPTY"

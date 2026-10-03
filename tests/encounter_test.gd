@@ -60,10 +60,10 @@ func run() -> void:
 	check(not sector.paused, "Escape input resumes the game")
 	sector.select_target(null)
 
-	# Shields must absorb first, with only excess damage reaching the hull.
-	player.take_damage(80.0, alien)
-	check(is_equal_approx(player.shield, 0.0), "Damage depletes shields before hull")
-	check(is_equal_approx(player.hull, 110.0), "Only shield overflow damages hull")
+	# Damage splits by absorption; depleted shield share spills into the hull.
+	player.take_damage(2500.0, alien)
+	check(is_equal_approx(player.shield, 0.0), "Shield absorbs its 40% share")
+	check(is_equal_approx(player.hull, player.max_hull - 1500.0), "The remaining 60% damages hull")
 	player.tick_combat(5.0)
 	check(is_zero_approx(player.shield), "Shields wait before regenerating")
 	player.tick_combat(1.0)
@@ -105,8 +105,8 @@ func run() -> void:
 	# Death is one transition: repeated hits never award repeated rewards.
 	sector.select_target(alien)
 	sector.auto_fire = true
-	alien.take_damage(999.0, player)
-	alien.take_damage(999.0, player)
+	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, player)
+	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, player)
 	check(sector.credits == Sector.KILL_REWARD, "One kill awards exactly one reward")
 	check(sector.kills == 1 and not alien.alive, "Alien destruction updates the encounter")
 	check(sector.target == null and not sector.auto_fire, "Destroyed target clears lock and autofire")
@@ -136,8 +136,8 @@ func run() -> void:
 
 	# Destruction and rescue preserve remaining credits and reset motion and target state.
 	sector.credits = 25
-	player.take_damage(999.0, alien)
-	player.take_damage(999.0, alien)
+	player.take_damage(player.max_hull + player.max_shield + 1.0, alien)
+	player.take_damage(player.max_hull + player.max_shield + 1.0, alien)
 	check(sector.credits == 15, "Rescue fee is charged once")
 	check(not player.alive and sector.player_respawn > 0.0, "Destruction schedules rescue")
 	sector._physics_process(3.1)

@@ -4,11 +4,18 @@ extends RefCounted
 
 # Provisional economy and bonuses; see GAME_PLAN.md.
 const MODELS := {
-	"laser": {"name": "Pulse laser", "kind": "laser", "price": 3000, "damage": 11.0, "shield": 0.0, "speed": 0.0},
-	"shield": {"name": "Shield generator", "kind": "generator", "price": 2400, "damage": 0.0, "shield": 70.0, "speed": 0.0},
+	"laser": {"name": "Pulse laser", "kind": "laser", "price": 3000, "damage": 65.0, "shield": 0.0, "speed": 0.0},
+	"shield": {"name": "Shield generator", "kind": "generator", "price": 2400, "damage": 0.0, "shield": 1000.0, "absorption": 0.4, "speed": 0.0},
 	"engine": {"name": "Ion engine", "kind": "generator", "price": 2400, "damage": 0.0, "shield": 0.0, "speed": 8.0},
 }
-const SLOTS := {"laser1": "laser", "laser2": "laser", "generator1": "generator", "generator2": "generator"}
+const SLOTS := {
+	"laser1": "laser", "laser2": "laser", "laser3": "laser", "laser4": "laser",
+	"generator1": "generator", "generator2": "generator", "generator3": "generator",
+	"generator4": "generator", "generator5": "generator", "generator6": "generator",
+	"extra1": "extra", "extra2": "extra",
+}
+# Keep the persisted pathfinder model ID so existing ownership and cargo stay valid.
+const STARTER_HULL: float = 116000.0
 
 
 static func starter() -> Dictionary:
@@ -55,6 +62,8 @@ static func fitting_blocker(data: Dictionary, item_id: String, ship: String, slo
 		return "Already in storage." if data["items"][item_id]["ship"] == "" else ""
 	if not data["ships"].has(ship):
 		return "You do not own that ship."
+	if SLOTS.get(slot) == "extra":
+		return "Extra slots are reserved for future equipment."
 	if not SLOTS.has(slot) or SLOTS[slot] != MODELS[data["items"][item_id]["model"]]["kind"]:
 		return "Incompatible slot. Lasers need laser slots; shields and engines share generator slots."
 	for item: Dictionary in data["items"].values():
@@ -66,7 +75,7 @@ static func fitting_blocker(data: Dictionary, item_id: String, ship: String, slo
 static func stats(data: Dictionary, ship: String = "") -> Dictionary:
 	if ship.is_empty():
 		ship = data["active_ship"]
-	var result := {"damage": 0.0, "shield": 0.0, "speed": 28.0, "boost": 70.0}
+	var result := {"damage": 0.0, "shield": 0.0, "absorption": 0.0, "speed": 28.0, "boost": 70.0}
 	for item: Dictionary in data["items"].values():
 		if item["ship"] != ship:
 			continue
@@ -74,12 +83,17 @@ static func stats(data: Dictionary, ship: String = "") -> Dictionary:
 		for stat in ["damage", "shield", "speed"]:
 			result[stat] += model[stat]
 		result["boost"] += model["speed"]
+		# Weight by capacity, rather than adding percentages for multiple generators.
+		result["absorption"] += model["shield"] * model.get("absorption", 0.0)
+	if result["shield"] > 0.0:
+		result["absorption"] /= result["shield"]
 	return result
 
 
 static func apply_stats(ship: Pilot, values: Dictionary) -> void:
 	ship.laser_damage = values["damage"]
 	ship.max_shield = values["shield"]
+	ship.shield_absorption = values["absorption"]
 	ship.cruise_speed = values["speed"]
 	ship.boost_speed = values["boost"]
 	# Capacity increases stay empty; decreases discard excess charge. Never reset combat state.
