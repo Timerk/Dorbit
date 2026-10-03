@@ -127,12 +127,28 @@ func run() -> void:
 		for pixels in [Vector2i(960, 600), Vector2i(1440, 900), Vector2i(1920, 1080)]:
 			DisplayServer.window_set_size(pixels)
 			await create_timer(0.2).timeout
+			menu.back_button.grab_focus()
+			(menu.tabs.get_tab_control(0) as ScrollContainer).scroll_vertical = 0
 			for tab in range(menu.tabs.get_tab_count()):
 				menu.tabs.current_tab = tab
 				await process_frame
 				await RenderingServer.frame_post_draw
 				check(root.get_visible_rect().encloses(menu.panel.get_global_rect()), "Settings panel fits at %d px, tab %d" % [pixels.x, tab])
 				root.get_texture().get_image().save_png("res://build/validation/settings-%d-%d.png" % [pixels.x, tab])
+			menu.tabs.current_tab = 0
+			menu.reset_button.grab_focus()
+			await process_frame
+			await process_frame
+			var controls_scroll := menu.tabs.get_tab_control(0) as ScrollContainer
+			check(controls_scroll.get_global_rect().encloses(menu.reset_button.get_global_rect()), "Keyboard focus scrolls to the last controls at %d px" % pixels.x)
+			await RenderingServer.frame_post_draw
+			root.get_texture().get_image().save_png("res://build/validation/settings-bindings-%d.png" % pixels.x)
+			menu.close()
+			await process_frame
+			await RenderingServer.frame_post_draw
+			check(root.get_visible_rect().encloses(menu.pause_panel.get_global_rect()), "Flight menu fits at %d px" % pixels.x)
+			root.get_texture().get_image().save_png("res://build/validation/settings-pause-%d.png" % pixels.x)
+			menu.open()
 		menu.fullscreen.button_pressed = true
 		await create_timer(0.2).timeout
 		check(DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN, "Fullscreen control enters fullscreen")
