@@ -249,7 +249,7 @@ func build_catalog(parent: Node) -> void:
 		art.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		text(content, "%s CR" % credits_text(info["price"]), 12, FlightHud.CYAN)
 		cards[model] = card
-	empty_catalog = text(rows, "No ships for sale yet.\n\nThe Pathfinder is your starter ship. Buy equipment in the other categories.", 14, FlightHud.MUTED)
+	empty_catalog = text(rows, "No ships for sale yet.\n\nThe Liberator is your starter ship. Buy equipment in the other categories.", 14, FlightHud.MUTED)
 	empty_catalog.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 
@@ -395,14 +395,14 @@ func select_model(model: String) -> void:
 		cards[key].set_pressed_no_signal(key == model)
 	var available := not model.is_empty()
 	product_art.texture = StationUi.texture(model if available else "ship")
-	product_title.text = Equipment.MODELS[model]["name"] if available else "Pathfinder"
-	description.text = DESCRIPTIONS[model] if available else "Your starter hull has two laser slots and two generator slots. Ships are not sold at this station yet."
+	product_title.text = Equipment.MODELS[model]["name"] if available else "Liberator"
+	description.text = DESCRIPTIONS[model] if available else "Your starter hull has four laser slots, six generator slots and two reserved extra slots. Ships are not sold at this station yet."
 	if available:
 		bonus.text = StationUi.bonus(model)
 		slot_hint.text = "Laser slot. Bonuses stack per installed item." if model == "laser" else "Generator slot. Shields and engines share these slots."
 	else:
-		bonus.text = "120 base hull"
-		slot_hint.text = "2 laser slots / 2 shared generator slots"
+		bonus.text = "%s base hull" % credits_text(int(Equipment.STARTER_HULL))
+		slot_hint.text = "4 laser / 6 shared generator / 2 extra slots"
 	order_title.text = product_title.text
 	price.text = "%s CR" % credits_text(Equipment.MODELS[model]["price"]) if available else "Not for sale"
 	refresh()
