@@ -475,8 +475,61 @@ func spawn(id: int, location: Vector3, docked: bool = false) -> void:
 
 
 func launch() -> void:
-	if active and sector.preflight and received_snapshot and not combat.inventory.is_empty() and not combat.station_pending:
+	if active and sector.preflight and sector.player.alive and received_snapshot and not combat.inventory.is_empty() and not combat.station_pending:
 		launch_request.rpc_id(1)
+
+
+func quit_to_menu() -> void:
+	if active and not sector.preflight and not multiplayer.is_server():
+		sector.set_paused(true)
+		dock_request.rpc_id(1)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func dock_request() -> void:
+	if not active or not multiplayer.is_server():
+		return
+	var id := multiplayer.get_remote_sender_id()
+	if not ships.has(id) or ships[id].get_meta("docked", false):
+		return
+	var ship := ships[id]
+	ship.set_meta("docked", true)
+	ship.hide()
+	ship.collision_layer = 0
+	ship.position = combat.records[id]["spawn"]
+	ship.rotation = Vector3.ZERO
+	ship.velocity = Vector3.ZERO
+	combat.records[id]["life"] += 1
+	ship.set_meta("life", combat.records[id]["life"])
+	commands.erase(id)
+	for enemy: Alien in sector.aliens.values():
+		enemy.contributors.erase(id)
+	var data := combat.pack_player(id)
+	data.merge({"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy})
+	flight_docked.rpc(id, data, snapshot_sequence)
+
+
+@rpc("authority", "call_remote", "reliable")
+func flight_docked(id: int, data: Dictionary, sequence: int) -> void:
+	if not active or not ships.has(id):
+		return
+	if id != multiplayer.get_unique_id():
+		if sector.target == ships[id]:
+			sector.select_target(null)
+		despawn(id)
+	else:
+		sector.preflight = true
+		sector.select_target(null)
+		sector.player.set_meta("docked", true)
+		combat.apply_player(id, data)
+		sector.player.position = data["position"]
+		sector.player.rotation = data["rotation"]
+		sector.player.velocity = Vector3.ZERO
+		sector.player.energy = data["energy"]
+		sector.set_paused(true)
+		sector.main_menu.show_home()
+	# Keep a sequence barrier when an observer later receives the same peer's relaunch.
+	player_sequences[id] = maxi(player_sequences.get(id, -1), sequence)
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -484,7 +537,7 @@ func launch_request() -> void:
 	if not active or not multiplayer.is_server():
 		return
 	var id := multiplayer.get_remote_sender_id()
-	if not ships.has(id) or not ships[id].get_meta("docked", false):
+	if not ships.has(id) or not ships[id].get_meta("docked", false) or not ships[id].alive:
 		return
 	ships[id].set_meta("docked", false)
 	ships[id].show()
@@ -656,11 +709,11 @@ func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int) -> void
 	for id: int in state:
 		if not ships.has(id) or sequence <= player_sequences.get(id, -1):
 			continue
-		player_sequences[id] = sequence
 		var data: Dictionary = state[id]
-		# Reliable launch acknowledgement can overtake an earlier docked datagram.
-		if ships[id] == sector.player and not sector.preflight and data.get("docked", false):
+		# Reliable dock/launch acknowledgements and snapshots travel on different channels.
+		if ships[id] == sector.player and bool(data.get("docked", false)) != sector.preflight:
 			continue
+		player_sequences[id] = sequence
 		goals[id] = data
 		var ship := ships[id]
 		var reset := combat.apply_player(id, data)

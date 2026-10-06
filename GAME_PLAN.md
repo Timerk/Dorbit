@@ -194,6 +194,15 @@ pages and launches the selected hull at the existing station spawn. Reconnection
 requires a fresh explicit launch; saved progression is retained. Menus opened
 after launch retain the existing live-world station and pause behavior.
 
+After launch, Esc > Quit to main menu leaves the map from any position without
+disconnecting. The server returns the internal ship to its station spawn, removes
+it from other pilots' maps, clears movement/fire and its current encounter
+contributions, and invalidates commands from that flight. Credits, inventory,
+fitting, cargo and quests remain. Returning grants no immediate repair or refill;
+normal shield recovery, weapon and damage cooldowns continue while docked. A
+pending rescue completes in the menu with its existing fee and timer; Start is
+unavailable until the ship is alive. Start can then launch the prepared ship again.
+
 The console fits 960 x 600 through 1440 x 900 and larger windows; station panels
 scale to leave its persistent launch/navigation header accessible. Client and
 server builds must match (network schema 5 adds docked state and launch RPCs).

@@ -91,19 +91,22 @@ func tick(delta: float) -> void:
 	for id: int in records:
 		pay_pending_contracts(id)
 		var ship := session.ships[id]
-		if ship.get_meta("docked", false):
-			continue
 		ship.tick_combat(delta)
 		if not ship.alive:
 			records[id]["respawn"] = maxf(0.0, records[id]["respawn"] - delta)
 			if records[id]["respawn"] <= 0.0:
 				ship.reset_health()
+				if ship.get_meta("docked", false):
+					ship.hide()
+					ship.collision_layer = 0
 				ship.energy = 100.0
 				ship.position = records[id]["spawn"]
 				ship.rotation = Vector3.ZERO
 				records[id]["life"] += 1
 				ship.set_meta("life", records[id]["life"])
 				session.commands.erase(id)
+			continue
+		if ship.get_meta("docked", false):
 			continue
 		if ship.position.distance_to(Sector.STATION_POSITION) > 75.0:
 			records[id]["stage"] = maxi(records[id]["stage"], 1)

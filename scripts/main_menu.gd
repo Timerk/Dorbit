@@ -156,6 +156,12 @@ func select_page(page: String) -> void:
 		return
 	if page in ["shop", "hangar", "cargo", "quests"] and (not sector.session.received_snapshot or sector.session.combat.inventory.is_empty()):
 		return
+	if page in ["shop", "hangar", "cargo", "quests"]:
+		var blocker := sector.repair_blocker()
+		if not blocker.is_empty():
+			sector.notify(blocker)
+			show_home()
+			return
 	hide_pages()
 	sector.session.menu.hide()
 	selected_page = page
@@ -199,15 +205,19 @@ func _process(_delta: float) -> void:
 	elif sector.hud.contract_panel.visible:
 		selected_page = "quests"
 	var ready := sector.session.received_snapshot and not sector.session.combat.inventory.is_empty()
-	start_button.disabled = not ready or sector.session.combat.station_pending
-	start_button.tooltip_text = "Waiting for server confirmation." if start_button.disabled else "Launch your active ship at Outpost 01."
+	start_button.disabled = not ready or not sector.player.alive or sector.session.combat.station_pending
+	start_button.tooltip_text = "Wait for rescue before launching." if not sector.player.alive else ("Waiting for server confirmation." if start_button.disabled else "Launch your active ship at Outpost 01.")
 	for page: String in navigation:
 		navigation[page].set_pressed_no_signal(selected_page == page)
 		if page in ["shop", "hangar", "cargo", "quests"]:
-			navigation[page].disabled = not ready
+			navigation[page].disabled = not ready or not sector.player.alive
 	wallet.text = StationShop.credits_text(sector.credits) + " CR"
 	connection.text = "OUTPOST 01 / DOCKED" if ready else "SYNCING PILOT..."
+	if ready and not sector.player.alive:
+		connection.text = "DOCKED / RESCUE IN %d s" % ceili(sector.player_respawn)
 	notice.text = sector.session.combat.station_message if not sector.session.combat.station_message.is_empty() else "Your equipment, credits and quests are saved on the server."
+	if sector.toast_time > 0:
+		notice.text = sector.toast
 	if ready:
 		var data := sector.session.combat.inventory
 		var model: String = ShipCatalog.canonical(data["ships"][data["active_ship"]])

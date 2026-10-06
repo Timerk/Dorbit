@@ -24,6 +24,7 @@ var binding_help: Label
 var save_status: Label
 var back_button: Button
 var resume_button: Button
+var main_menu_button: Button
 var reset_button: Button
 var pending_action: String = ""
 var from_connection: bool = false
@@ -33,13 +34,14 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	theme = menu_theme()
-	pause_panel = make_panel(Vector2(540, 340))
+	pause_panel = make_panel(Vector2(540, 400))
 	var pause_rows := content(pause_panel)
 	label(pause_rows, "DORBIT / PILOT CONSOLE", 11)
 	label(pause_rows, "FLIGHT MENU", 28)
 	resume_button = button(pause_rows, "Resume flight", func(): sector.set_paused(false))
 	button(pause_rows, "Settings", func(): open())
 	button(pause_rows, "Multiplayer session", sector.session.open_menu)
+	main_menu_button = button(pause_rows, "Quit to main menu", sector.session.quit_to_menu)
 	button(pause_rows, "Quit to desktop", func(): get_tree().quit())
 	label(pause_rows, "In multiplayer, the world keeps running while menus are open.", 14)
 	pause_panel.hide()
@@ -121,7 +123,7 @@ static func menu_theme() -> Theme:
 
 func layout() -> void:
 	for entry: PanelContainer in [panel, pause_panel]:
-		var preferred := Vector2(880, 680) if entry == panel else Vector2(540, 340)
+		var preferred := Vector2(880, 680) if entry == panel else Vector2(540, 400)
 		var dimensions := preferred.min(get_viewport_rect().size - Vector2(32, 32))
 		entry.offset_left = -dimensions.x / 2
 		entry.offset_right = dimensions.x / 2
@@ -397,6 +399,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
+	main_menu_button.visible = sector.client_only and sector.session.active
 	var show_pause := sector.paused and not sector.preflight and not sector.session.menu.visible and not panel.visible and not sector.shop.visible and not sector.equipment_menu.visible and not sector.hud.contract_panel.visible and not sector.hud.navigation.overview.visible
 	if show_pause and not pause_panel.visible:
 		pause_panel.show()
