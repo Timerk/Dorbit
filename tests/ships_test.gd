@@ -160,7 +160,7 @@ func run() -> void:
 	var sale_balance: int = client.credits
 	client.shop.sells["prometium"].pressed.emit()
 	await settle(0.2)
-	check(client.cargo.is_empty() and client.credits == sale_balance + 1200 and store.pilots["pilot0"]["cargo"]["starter"] == {"seprom": 2}, "Four-digit station sale pays exactly and preserves the inactive hull's cargo")
+	check(client.cargo.is_empty() and client.credits == sale_balance + 12000 and store.pilots["pilot0"]["cargo"]["starter"] == {"seprom": 2}, "Four-digit station sale pays exactly and preserves the inactive hull's cargo")
 	client.shop.close()
 	var late := make_sector("ShipLate")
 	late.session.credential_id = "pilot2"
