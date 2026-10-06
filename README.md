@@ -125,6 +125,16 @@ the overview; these actions do not launch. Docked ships are hidden from other
 pilots and cannot move, fight or collect loot. Each reconnect returns to this menu
 with your saved credits, inventory, ships, cargo and quests.
 
+To leave the map without disconnecting, press **Esc** and choose **Quit to main
+menu**. This works from anywhere on the map and returns you to the docked console,
+where Shop, Hangar and Quests are available before choosing **Start** again. Your
+progression and current ship health/charge remain; returning does not repair or
+refill the ship. Normal shield recovery and service cooldowns continue. If rescue
+is pending, it finishes in the menu before Start becomes available. **Quit to
+desktop** remains a separate action.
+
+[Review the flight menu](docs/feedback/quit-to-menu.png) at 960 x 600.
+
 The menu integration replay runs in both check commands and exercises actual
 ENet admission, purchases, fitting, quests, launch, observer visibility and
 reconnects. Run Godot with `--path . --script res://tests/main_menu_test.gd` in a
