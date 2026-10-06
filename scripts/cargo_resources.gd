@@ -3,13 +3,13 @@ extends RefCounted
 ## Prices, loot and hold sizes are provisional playtesting values.
 
 const TYPES := {
-	"prometium": {"name": "Prometium", "price": 1, "color": Color("ef704b")},
-	"endurium": {"name": "Endurium", "price": 2, "color": Color("b4d7e9")},
-	"terbium": {"name": "Terbium", "price": 4, "color": Color("d6df56")},
-	"prometid": {"name": "Prometid", "price": 8, "color": Color("f6a5d5")},
-	"duranium": {"name": "Duranium", "price": 16, "color": Color("7be3b0")},
-	"promerium": {"name": "Promerium", "price": 32, "color": Color("ffc55d")},
-	"seprom": {"name": "Seprom", "price": 64, "color": Color("ab83ff")},
+	"prometium": {"name": "Prometium", "price": 10, "color": Color("ef704b")},
+	"endurium": {"name": "Endurium", "price": 20, "color": Color("b4d7e9")},
+	"terbium": {"name": "Terbium", "price": 40, "color": Color("d6df56")},
+	"prometid": {"name": "Prometid", "price": 80, "color": Color("f6a5d5")},
+	"duranium": {"name": "Duranium", "price": 160, "color": Color("7be3b0")},
+	"promerium": {"name": "Promerium", "price": 320, "color": Color("ffc55d")},
+	"seprom": {"name": "Seprom", "price": 640, "color": Color("ab83ff")},
 }
 const LOOT := {
 	"Scout": {"prometium": Vector2i(6, 10), "endurium": Vector2i(2, 4), "terbium": Vector2i(1, 2)},

@@ -5,7 +5,6 @@ extends Node3D
 const STATION_POSITION := Vector3(-38.0, -8.0, 0.0)
 const SPAWN_POSITION := Vector3(0.0, 0.0, 45.0)
 const REPAIR_RADIUS: float = 60.0
-const KILL_REWARD: int = 75
 const RESPAWN_FEE: int = 10
 const MAP_RADIUS: float = 1200.0
 const BOUNDARY_WARNING_DISTANCE: float = 120.0

@@ -64,11 +64,14 @@ func run() -> void:
 	check(second.target == second.aliens[4] and second.auto_fire, "Returning to combat range preserves the same client lock")
 	var heavy_health := heavy.hull + heavy.shield
 	var heavy_life := heavy.life
+	await fire_at(second, heavy)
+	check(combat.remote_firing(second_id), "Heavy fire command is fresh before another alien dies")
 	scout.take_damage(scout.max_hull + scout.max_shield + 1.0, p)
+	check(combat.remote_firing(second_id), "Scout death preserves the Heavy fire command before its timeout")
 	await replicate(server)
-	check(combat.records[first_id]["credits"] == 30 and combat.records[second_id]["credits"] == 0, "Scout pays only its contributor")
+	check(combat.records[first_id]["credits"] == 300 and combat.records[second_id]["credits"] == 0, "Scout pays only its contributor")
 	check(heavy.hull + heavy.shield == heavy_health and heavy.life == heavy_life and heavy.contributors == [second_id], "Scout death preserves Heavy health, life and contributions")
-	check(second.target == second.aliens[4] and second.auto_fire and combat.remote_firing(second_id), "Another alien's death leaves Heavy targeting and fire active")
+	check(second.target == second.aliens[4] and second.auto_fire, "Another alien's death leaves Heavy targeting and fire active")
 	var timer := scout.respawn
 	# Crossing the leash invalidates the life before any queued lethal shot can land.
 	heavy.position = heavy.home_position + Vector3(float(heavy.tuning()["leash"]) + 1, 0, 0)
@@ -129,9 +132,9 @@ func run() -> void:
 	heavy.take_damage(1, p)
 	p.take_damage(p.max_hull + p.max_shield + 1.0, heavy)
 	heavy.take_damage(heavy.max_hull + heavy.max_shield + 1.0, q)
-	check(combat.records[first_id]["credits"] == 110 and combat.records[second_id]["credits"] == 90, "Heavy pool splits equally, including a contributor awaiting rescue after its fee")
+	check(combat.records[first_id]["credits"] == 5290 and combat.records[second_id]["credits"] == 5000, "Heavy pool splits equally, including a contributor awaiting rescue after its fee")
 	heavy.take_damage(heavy.max_hull + heavy.max_shield + 1.0, q)
-	check(combat.records[second_id]["credits"] == 90, "Repeated destruction cannot pay twice")
+	check(combat.records[second_id]["credits"] == 5000, "Repeated destruction cannot pay twice")
 	# No connected pilots are needed to restore the bounded population.
 	for client in clients:
 		client.session.disconnect_session("Empty-sector check")

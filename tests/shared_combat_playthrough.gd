@@ -43,7 +43,7 @@ func run() -> void:
 	await snapshot("scout-combat-" + label)
 	firing = false
 	check(sector.kills == 1, "Both contributors receive a kill")
-	check(sector.credits == 15, "Both contributors receive half the reward pool")
+	check(sector.credits == 150, "Both contributors receive half the reward pool")
 	check(sector.player.alive, "Co-op encounter is survivable")
 	await snapshot("shared-reward-" + label)
 	await return_to_station()
