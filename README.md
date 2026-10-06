@@ -26,11 +26,20 @@ Blender is only required to regenerate assets, not to run, build or deploy the g
 ### Navigation and radiation
 
 The safe sector is a **2.4 km diameter sphere**, with free movement past its edge.
-The upper-right maps show a fixed-axis top view (X–Z) and side view (X–Y).
-Together they cover all three movement axes. Your white marker shows heading;
-the green plus is Outpost 01, cyan dots are other pilots, and colored numbered
-dots are aliens. A white ring identifies your selected target. The footer shows
-your signed altitude and the selected target's relative height. Alien homes are
+The upper-right radar follows your ship: forward is up, left/right match your
+steering, and small arrows show contacts above or below. Green marks Outpost 01,
+cyan marks other pilots, and aliens use their type colors. A white ring identifies
+your destination. Use **− / +** to change range from 250 m to 2.4 km.
+Press **M** or click Map for a larger sector overview. Click a contact or its row
+to select a destination; drag right mouse on the plot to rotate the height view.
+Choosing an alien also selects it for combat. Choosing the outpost or another
+pilot clears the combat target. M or Esc returns to flight. Multiplayer keeps
+running while the overview is open.
+
+The destination compass shows where to turn, distance and relative height.
+Center its dot to face the destination; a hollow dot means it is behind you.
+Radiation temporarily replaces your destination with the nearest safe return
+point, then restores your choice when you re-enter. Alien homes are
 randomized across the sphere at server startup and each respawn, retaining two
 Scouts, two Sentinels and one Heavy.
 
@@ -49,16 +58,19 @@ fittings can be faster, and boost/acceleration affect the trip. See
 The ship roster from PR 34 is included. Network schema 5 requires matching
 server/client builds; clients from before the map update cannot connect.
 
-Review the [960×600 navigation maps](docs/feedback/map-navigation-960.png),
+Review the [960×600 radar and guidance](docs/feedback/map-navigation-960.png),
 [1440×900 layout](docs/feedback/map-navigation-1440.png) and
+[sector overview](docs/feedback/map-overview-960.png), plus the
 [radiation alert](docs/feedback/map-radiation.png).
 The map integration fixture (`tests/map_layout_test.gd`) checks 100 random homes,
 respawn and late-join replication, every boundary axis, increasing authoritative
 damage, re-entry, rescue, menu behavior and packet budgets over ENet. The flight
 replay (`tests/map_layout_playthrough.gd`) crosses the edge through actual flight,
-turns back to safety and captures both layouts with a renderer. Both check runners
-include these fixtures. Local map checks passed 133 assertions and the rendered
-flight replay passed three behavior checks. Human travel, encounter-density and
+turns back to safety and checks ship-relative guidance, keyboard/menu behavior,
+real mouse range/contact selection, rescue cleanup and both layouts with a renderer.
+Both check runners include these fixtures. The single-encounter network combat
+test keeps unrelated aliens away from its scripted encounter so random spawning
+cannot alter damage and repair expectations. Human travel, encounter-density and
 radiation tuning remain pending; Linux execution is left to PR CI.
 
 ### Preview test credits
