@@ -62,6 +62,7 @@ PY
     checked --headless --path . --script res://tests/hunting_contracts_test.gd
     checked --headless --path . --script res://tests/equipment_test.gd
     checked --headless --path . --script res://tests/shop_test.gd
+    checked --headless --path . --script res://tests/main_menu_test.gd
     checked --headless --path . --script res://tests/ships_test.gd
     checked --headless --path . --script res://tests/balance_test.gd
     checked --headless --path . --script res://tests/darkorbit_equipment_test.gd

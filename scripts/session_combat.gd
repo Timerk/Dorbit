@@ -91,6 +91,8 @@ func tick(delta: float) -> void:
 	for id: int in records:
 		pay_pending_contracts(id)
 		var ship := session.ships[id]
+		if ship.get_meta("docked", false):
+			continue
 		ship.tick_combat(delta)
 		if not ship.alive:
 			records[id]["respawn"] = maxf(0.0, records[id]["respawn"] - delta)
@@ -139,7 +141,7 @@ func choose_target(alien: Alien) -> Pilot:
 	var target: Pilot = null
 	var nearest: float = alien.tuning()["detection"]
 	for ship: Pilot in session.ships.values():
-		if not ship.alive or ship.position.distance_to(Sector.STATION_POSITION) <= 75.0:
+		if ship.get_meta("docked", false) or not ship.alive or ship.position.distance_to(Sector.STATION_POSITION) <= 75.0:
 			continue
 		var distance := ship.position.distance_to(alien.position)
 		if distance < nearest:
@@ -326,6 +328,7 @@ func pack_player(id: int) -> Dictionary:
 	data["npc_damage"] = ship.npc_laser_damage
 	data["regen_bonus"] = ship.shield_regen_bonus
 	data["radiation"] = ship.radiation_exposure
+	data["docked"] = ship.get_meta("docked", false)
 	return data
 
 
@@ -346,6 +349,9 @@ func apply_health(ship: SpaceShip, data: Dictionary) -> void:
 	ship.time_since_hit = data["since_hit"]
 	ship.visible = ship.alive
 	ship.set_collision_layer_value(2, ship.alive)
+	if data.get("docked", false):
+		ship.hide()
+		ship.collision_layer = 0
 	if not ship.alive:
 		ship.velocity = Vector3.ZERO
 
@@ -537,7 +543,7 @@ func collect_loot() -> void:
 		for id: int in records:
 			var ship := session.ships[id]
 			var equipment := session.store.pilots[session.pilot_ids[id]]["equipment"] as Dictionary if session.sector.dedicated_server else Equipment.starter()
-			if ship.alive and ship.position.distance_to(drop["position"]) <= ResourceLoot.PICKUP_RADIUS and CargoResources.units(next[id][equipment["active_ship"]]) < CargoResources.capacity(equipment):
+			if not ship.get_meta("docked", false) and ship.alive and ship.position.distance_to(drop["position"]) <= ResourceLoot.PICKUP_RADIUS and CargoResources.units(next[id][equipment["active_ship"]]) < CargoResources.capacity(equipment):
 				candidates.append(id)
 		candidates.sort_custom(func(a: int, b: int) -> bool:
 			var da := session.ships[a].position.distance_squared_to(drop["position"])

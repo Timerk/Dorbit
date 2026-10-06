@@ -49,6 +49,8 @@ var audio: FeedbackAudio
 var settings := GameSettings.new()
 var settings_menu: SettingsMenu
 var spawn_rng := RandomNumberGenerator.new()
+var main_menu: MainMenu
+var preflight: bool = false
 
 
 func _ready() -> void:
@@ -118,6 +120,12 @@ func _ready() -> void:
 		settings_menu = SettingsMenu.new()
 		settings_menu.sector = self
 		layer.add_child(settings_menu)
+		var menu_layer := CanvasLayer.new()
+		menu_layer.layer = 0
+		add_child(menu_layer)
+		main_menu = MainMenu.new()
+		main_menu.sector = self
+		menu_layer.add_child(main_menu)
 	if dedicated_server:
 		var port := server_port
 		for argument in OS.get_cmdline_user_args():
@@ -196,6 +204,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			equipment_menu.open()
 		return
 	if event.is_action_pressed("pause_game"):
+		if preflight:
+			main_menu.show_home()
+			return
 		hud.contract_panel.hide()
 		if equipment_menu.visible:
 			equipment_menu.close()
@@ -352,6 +363,13 @@ func relocate_alien(enemy: Alien) -> void:
 
 
 func set_paused(value: bool) -> void:
+	if preflight:
+		paused = true
+		player.release_mouse()
+		auto_fire = false
+		if not value and is_instance_valid(main_menu):
+			main_menu.show_home()
+		return
 	paused = value
 	if not paused and is_instance_valid(settings_menu):
 		settings_menu.dismiss()

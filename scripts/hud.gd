@@ -173,6 +173,8 @@ func toggle_contracts() -> void:
 	sector.shop.hide()
 	sector.equipment_menu.hide()
 	sector.set_paused(true)
+	contract_panel.scale = Vector2.ONE
+	StationUi.frame(contract_panel, Vector2(880, 560))
 	contract_panel.show()
 	update_contract_panel()
 
@@ -259,6 +261,9 @@ func meter(point: Vector2, title: String, value: float, maximum: float, color: C
 
 func _draw() -> void:
 	marker_labels.clear()
+	if sector.preflight:
+		update_contract_panel()
+		return
 	marker_labels.append(Rect2(size.x - 322, 96, 290, 182))
 	if not is_instance_valid(sector.player):
 		return

@@ -7,7 +7,7 @@ const MAX_PLAYERS: int = 10
 const COMMAND_TIMEOUT: float = 0.5
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when gameplay packet contents change without an RPC signature change.
-const NETWORK_SCHEMA: int = 6
+const NETWORK_SCHEMA: int = 7
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
@@ -129,7 +129,7 @@ func build_menu() -> void:
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	status_label.custom_minimum_size.x = 540
 	rows.add_child(status_label)
-	back_button = add_button(rows, "Back to flight", func(): menu.hide(); sector.set_paused(false))
+	back_button = add_button(rows, "Back", func(): menu.hide(); sector.set_paused(false))
 	add_button(rows, "Settings", func(): sector.settings_menu.open(true))
 	add_button(rows, "Quit to desktop", func(): get_tree().quit())
 	menu.hide()
@@ -400,20 +400,23 @@ func start_flight() -> void:
 	sector.player.rotation = Vector3.ZERO
 	# Players cannot push each other, but can block weapon line of sight.
 	sector.player.collision_mask = 1
-	sector.set_paused(false)
+	sector.set_paused(sector.preflight)
 	menu.hide()
 
 
 func connected() -> void:
 	if sector.client_only:
 		preferences.remember(attempted_address, attempted_port)
+	sector.preflight = sector.client_only
 	start_flight()
+	if sector.preflight:
+		sector.main_menu.show_home()
 	status = "Connected. Waiting for the server's sector..."
-	ready_for_flight.rpc_id(1)
+	ready_for_flight.rpc_id(1, sector.preflight)
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func ready_for_flight() -> void:
+func ready_for_flight(docked: bool = false) -> void:
 	if not active or not multiplayer.is_server():
 		return
 	var id := multiplayer.get_remote_sender_id()
@@ -422,7 +425,8 @@ func ready_for_flight() -> void:
 	if ships.has(id) or ships.size() >= MAX_PLAYERS:
 		return
 	for existing: int in ships:
-		spawn.rpc_id(id, existing, ships[existing].position)
+		if not ships[existing].get_meta("docked", false):
+			spawn.rpc_id(id, existing, ships[existing].position)
 	var occupied: Array[int] = []
 	for existing: int in ships:
 		occupied.append(int(ships[existing].get_meta("spawn_slot", 0)))
@@ -430,7 +434,11 @@ func ready_for_flight() -> void:
 	while slot in occupied:
 		slot += 1
 	var location := Vector3(-24 + (slot % 5) * 6, int(slot / 5) * 6, 33)
-	spawn.rpc(id, location)
+	if docked:
+		spawn(id, location, true)
+		spawn.rpc_id(id, id, location, true)
+	else:
+		spawn.rpc(id, location)
 	ships[id].set_meta("spawn_slot", slot)
 	combat.publish_inventory(id)
 	combat.loot_state.rpc_id(id, sector.loot.drops)
@@ -440,7 +448,7 @@ func ready_for_flight() -> void:
 
 
 @rpc("authority", "call_local", "reliable")
-func spawn(id: int, location: Vector3) -> void:
+func spawn(id: int, location: Vector3, docked: bool = false) -> void:
 	if ships.has(id):
 		return
 	var ship: Pilot
@@ -458,8 +466,50 @@ func spawn(id: int, location: Vector3) -> void:
 	ship.position = location
 	ships[id] = ship
 	combat.add_player(id, location)
+	ship.set_meta("docked", docked)
+	if docked:
+		ship.hide()
+		ship.collision_layer = 0
 	if not sector.dedicated_server:
 		sector.player.camera.make_current()
+
+
+func launch() -> void:
+	if active and sector.preflight and received_snapshot and not combat.inventory.is_empty() and not combat.station_pending:
+		launch_request.rpc_id(1)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func launch_request() -> void:
+	if not active or not multiplayer.is_server():
+		return
+	var id := multiplayer.get_remote_sender_id()
+	if not ships.has(id) or not ships[id].get_meta("docked", false):
+		return
+	ships[id].set_meta("docked", false)
+	ships[id].show()
+	ships[id].collision_layer = 2
+	commands.erase(id)
+	for peer_id in multiplayer.get_peers():
+		if peer_id != id:
+			spawn.rpc_id(peer_id, id, ships[id].position)
+	flight_launched.rpc(id)
+
+
+@rpc("authority", "call_remote", "reliable")
+func flight_launched(id: int) -> void:
+	if not active or not ships.has(id):
+		return
+	ships[id].set_meta("docked", false)
+	ships[id].show()
+	ships[id].collision_layer = 2
+	if id == multiplayer.get_unique_id():
+		sector.preflight = false
+		sector.main_menu.hide()
+		sector.main_menu.hide_pages()
+		menu.hide()
+		sector.set_paused(false)
+		sector.notify("Launched at Outpost 01. Hold %s to steer." % GameSettings.binding_text("steer"))
 
 
 func peer_left(id: int) -> void:
@@ -514,6 +564,8 @@ func tick(delta: float) -> void:
 			sector.player.fly_command(delta, movement, boost)
 		for id: int in ships:
 			var ship := ships[id]
+			if ship.get_meta("docked", false):
+				continue
 			if not ship.alive:
 				continue
 			if id != 1:
@@ -534,11 +586,13 @@ func tick(delta: float) -> void:
 				disconnect_session("Connected, but no sector arrived. Check that client and server builds match, then try again.")
 			return
 		if sector.player.alive:
-			sector.player.fly_command(delta, movement, boost)
+			if not sector.preflight:
+				sector.player.fly_command(delta, movement, boost)
 		if send_clock >= 0.05:
 			send_clock = 0.0
 			var enemy := sector.target as Alien
-			command_flight.rpc_id(1, movement, sector.player.rotation, boost, sector.auto_fire and enemy != null and not sector.paused, int(sector.player.get_meta("life", 0)), enemy.life if enemy != null else -1, enemy.alien_id if enemy != null else -1)
+			if not sector.preflight:
+				command_flight.rpc_id(1, movement, sector.player.rotation, boost, sector.auto_fire and enemy != null and not sector.paused, int(sector.player.get_meta("life", 0)), enemy.life if enemy != null else -1, enemy.alien_id if enemy != null else -1)
 		combat.interpolate(delta)
 		for id: int in goals:
 			if not ships.has(id):
@@ -562,7 +616,10 @@ func send_snapshot() -> void:
 		var ship := ships[id]
 		var state := {id: {"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}}
 		state[id].merge(combat.pack_player(id))
-		snapshot.rpc(state, {}, snapshot_sequence)
+		if ship.get_meta("docked", false):
+			snapshot.rpc_id(id, state, {}, snapshot_sequence)
+		else:
+			snapshot.rpc(state, {}, snapshot_sequence)
 	for enemy: Alien in sector.aliens.values():
 		snapshot.rpc({}, combat.pack_alien(enemy), snapshot_sequence)
 
@@ -573,6 +630,8 @@ func command_flight(movement: Vector3, angles: Vector3, boost: bool, fire: bool 
 		return
 	var id := multiplayer.get_remote_sender_id()
 	if not ships.has(id) or not movement.is_finite() or not angles.is_finite():
+		return
+	if ships[id].get_meta("docked", false):
 		return
 	if not ships[id].alive or combat.records[id]["life"] != life:
 		return
@@ -599,6 +658,9 @@ func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int) -> void
 			continue
 		player_sequences[id] = sequence
 		var data: Dictionary = state[id]
+		# Reliable launch acknowledgement can overtake an earlier docked datagram.
+		if ships[id] == sector.player and not sector.preflight and data.get("docked", false):
+			continue
 		goals[id] = data
 		var ship := ships[id]
 		var reset := combat.apply_player(id, data)
@@ -619,6 +681,10 @@ func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int) -> void
 
 
 func disconnect_session(message: String) -> void:
+	sector.preflight = false
+	if is_instance_valid(sector.main_menu):
+		sector.main_menu.hide()
+		sector.main_menu.hide_pages()
 	active = false
 	connecting = false
 	pilot_ids.clear()
