@@ -14,6 +14,8 @@ a switch.
 
 The user selected the newer base-ship stats, matching the existing 116,000-HP
 Liberator, and **100 credits per Uridium**. Original credit prices are retained.
+Yamato and Defcom have user-requested prices of **150,000 CR each**, between
+Piranha and Nostromo, while retaining the newer base-ship stats.
 Goliath retains the agreed 8,000,000-CR price, based on its earlier 80,000-Uridium
 price; the newer wiki lists 50,000 Uridium. There is no second currency.
 
@@ -29,8 +31,8 @@ price; the newer wiki lists 50,000 Uridium. There is no second currency.
 | Spearhead | 200,000 | 370 | 37 | 5 | 12 | 2 | 500 | 4,500,000 |
 | Goliath | 356,000 | 300 | 30 | 15 | 15 | 3 | 1,500 | 8,000,000 |
 | Aegis | 375,000 | 300 | 30 | 10 | 15 | 3 | 2,000 | 8,000,000 |
-| Defcom | 250,000 | 340 | 34 | 12 | 8 | 2 | 800 | 12,000,000 |
-| Yamato | 260,000 | 260 | 26 | 8 | 12 | 2 | 1,000 | 12,000,000 |
+| Defcom | 250,000 | 340 | 34 | 12 | 8 | 2 | 800 | 150,000 |
+| Yamato | 260,000 | 260 | 26 | 8 | 12 | 2 | 1,000 | 150,000 |
 
 DarkOrbit speed is converted at 0.1 m/s per map unit to fit this game's sector
 scale, preserving the ships' speed ratios. Dorbit's boost adds 42 m/s; each
