@@ -1,6 +1,6 @@
 # DarkOrbit ship model review
 
-Twelve editable base-ship Blender models built around the supplied DarkOrbit image catalogue. Aegis is the user's accepted quality benchmark and its model and renders are preserved. This revision corrects the other eleven ships' proportions, colors, glazing and assemblies after a close comparison with each supplied base image. Nothing is connected to gameplay.
+Twelve editable base-ship Blender models built around the supplied DarkOrbit image catalogue. Aegis is the user's accepted quality benchmark and its model and renders are preserved. This revision corrects the other eleven ships' proportions, colors, glazing and assemblies after a close comparison with each supplied base image. The editable studies remain isolated from Godot imports. Derived gameplay exports now live under `assets/ships`; see [playable ships](../../docs/ships.md).
 
 [Overview of all twelve ships and their source pictures](previews/additional-ships-overview.jpg)
 
