@@ -1,6 +1,6 @@
 class_name FlightNavigation
 extends Control
-## Presentation-only navigation. Target selection still uses normal authoritative combat rules.
+## Navigation display and local autopilot toggle. Combat selection keeps its authoritative rules.
 
 const RANGES: Array[float] = [250.0, 500.0, 1000.0, 2400.0]
 var sector: Sector
@@ -15,6 +15,7 @@ var contact_buttons: Dictionary[String, Button] = {}
 var range_less: Button
 var range_more: Button
 var map_button: Button
+var autopilot_button: Button
 var reset_button: Button
 var view_yaw: float = -0.55
 var view_pitch: float = atan2(0.55, 0.7)
@@ -83,7 +84,11 @@ func _ready() -> void:
 	range_less = StationUi.button(self, "-", func(): change_range(-1))
 	range_more = StationUi.button(self, "+", func(): change_range(1))
 	map_button = StationUi.button(self, "Map [M]", open_overview)
-	for button in [range_less, range_more, map_button]:
+	autopilot_button = StationUi.button(self, "", sector.autopilot.toggle)
+	autopilot_button.toggle_mode = true
+	autopilot_button.add_theme_stylebox_override("pressed", StationUi.style(Color("20455b"), FlightHud.CYAN))
+	autopilot_button.tooltip_text = "Fly to the destination. Movement, steering and menus cancel autopilot."
+	for button in [range_less, range_more, map_button, autopilot_button]:
 		button.focus_mode = Control.FOCUS_NONE
 	build_overview()
 
@@ -125,6 +130,7 @@ func choose_contact(key: String) -> void:
 	for contact in contacts():
 		if contact["key"] != key:
 			continue
+		sector.autopilot.cancel()
 		sector.select_target(contact["ship"] if contact["ship"] is Alien else null)
 		last_target = sector.target
 		waypoint_key = key
@@ -261,8 +267,12 @@ func _process(_delta: float) -> void:
 		button.size = Vector2(32, 30)
 	map_button.position = origin + Vector2(164, 131)
 	map_button.size = Vector2(110, 34)
+	autopilot_button.position = Vector2(size.x * 0.5 - 128, size.y - 222)
+	autopilot_button.size = Vector2(256, 32)
+	autopilot_button.text = "Autopilot: %s [%s]" % [sector.autopilot.status, GameSettings.binding_text("autopilot")]
+	autopilot_button.set_pressed_no_signal(sector.autopilot.enabled)
 	var flight := sector.player.alive and not sector.paused and (not sector.client_only or sector.session.active)
-	for button in [range_less, range_more, map_button]:
+	for button in [range_less, range_more, map_button, autopilot_button]:
 		button.visible = flight
 	range_less.disabled = range_index == 0
 	range_more.disabled = range_index == RANGES.size() - 1
