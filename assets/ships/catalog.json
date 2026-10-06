@@ -9,6 +9,6 @@
   "spearhead": {"name": "Spearhead", "hull": 200000, "speed": 370, "lasers": 5, "generators": 12, "extras": 2, "cargo": 500, "price": 45000, "currency": "uridium"},
   "goliath": {"name": "Goliath", "hull": 356000, "speed": 300, "lasers": 15, "generators": 15, "extras": 3, "cargo": 1500, "price": 80000, "currency": "uridium"},
   "aegis": {"name": "Aegis", "hull": 375000, "speed": 300, "lasers": 10, "generators": 15, "extras": 3, "cargo": 2000, "price": 80000, "currency": "uridium"},
-  "defcom": {"name": "Defcom", "hull": 250000, "speed": 340, "lasers": 12, "generators": 8, "extras": 2, "cargo": 800, "price": 120000, "currency": "uridium"},
-  "yamato": {"name": "Yamato", "hull": 260000, "speed": 260, "lasers": 8, "generators": 12, "extras": 2, "cargo": 1000, "price": 120000, "currency": "uridium"}
+  "defcom": {"name": "Defcom", "hull": 250000, "speed": 340, "lasers": 12, "generators": 8, "extras": 2, "cargo": 800, "price": 150000, "currency": "credits"},
+  "yamato": {"name": "Yamato", "hull": 260000, "speed": 260, "lasers": 8, "generators": 12, "extras": 2, "cargo": 1000, "price": 150000, "currency": "credits"}
 }
