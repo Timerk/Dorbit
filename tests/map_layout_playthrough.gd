@@ -56,7 +56,7 @@ func drag_map(navigation: FlightNavigation, button: int) -> void:
 	await process_frame
 
 
-func scroll_map(point: Vector2, up: bool, ctrl: bool = true) -> void:
+func scroll_map(point: Vector2, up: bool, ctrl: bool = false) -> void:
 	var event := InputEventMouseButton.new()
 	event.button_index = MOUSE_BUTTON_WHEEL_UP if up else MOUSE_BUTTON_WHEEL_DOWN
 	event.position = point
@@ -126,12 +126,13 @@ func run() -> void:
 			await click_at(navigation.reset_button.get_global_rect().get_center())
 			check(is_equal_approx(navigation.view_yaw, -0.55) and is_equal_approx(navigation.view_pitch, atan2(0.55, 0.7)), "Reset view restores rotation")
 		var zoom_point := navigation.plot_point(sector.aliens[1].position)
-		await scroll_map(navigation.plot.global_position + zoom_point, true, false)
-		check(navigation.view_zoom == 1, "Plain wheel does not zoom the overview")
 		await scroll_map(navigation.plot.global_position + zoom_point, true)
-		check(navigation.view_zoom > 1 and navigation.plot_point(sector.aliens[1].position).is_equal_approx(zoom_point), "Ctrl wheel zooms around the contact under the cursor")
+		check(navigation.view_zoom > 1 and navigation.plot_point(sector.aliens[1].position).is_equal_approx(zoom_point), "Plain wheel zooms around the contact under the cursor")
 		await scroll_map(navigation.plot.global_position + zoom_point, false)
-		check(is_equal_approx(navigation.view_zoom, 1), "Ctrl wheel down zooms back out")
+		check(is_equal_approx(navigation.view_zoom, 1), "Plain wheel down zooms back out")
+		await scroll_map(navigation.plot.global_position + zoom_point, true, true)
+		check(navigation.view_zoom > 1, "Holding Ctrl does not block wheel zoom")
+		navigation.reset_view()
 		for step in range(12):
 			await scroll_map(navigation.plot.get_global_rect().get_center(), true)
 		check(is_equal_approx(navigation.view_zoom, 3), "Zoom stops at readable maximum")

@@ -34,7 +34,7 @@ Press **M** or click Map for a larger sector overview. Click a contact or its ro
 to select a destination. Markers, names and height lines are clickable directly
 on the map and highlight under the pointer. Hold left mouse and drag to rotate
 horizontally or vertically; a short click selects instead of rotating. Right-mouse
-drag also rotates. **Ctrl + mouse wheel** zooms around the cursor, from 0.6× to
+drag also rotates. **Mouse wheel** zooms around the cursor, from 0.6× to
 3×. **Reset view** restores rotation and zoom.
 Choosing an alien also selects it for combat. Choosing the outpost or another
 pilot clears the combat target. M or Esc returns to flight. Multiplayer keeps
