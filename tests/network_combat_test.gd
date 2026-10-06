@@ -32,6 +32,12 @@ func run() -> void:
 	var combat := host.session.combat
 	var remote := host.session.ships[id]
 	var alien := host.alien
+	# This fixture exercises one encounter. Random sector homes must not introduce
+	# unrelated attackers into the scripted damage, repair and rescue assertions.
+	for other: Alien in host.aliens.values():
+		if other != alien:
+			other.home_position = Vector3(700, 600, other.alien_id * 40)
+			other.position = other.home_position
 	check(host.credits == 0 and client.credits == 0, "Shared wallets start independently of solo credits")
 	host.player.position = Vector3(-12, 100, 0)
 	remote.position = Vector3(12, 100, 0)
