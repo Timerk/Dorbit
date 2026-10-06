@@ -319,8 +319,8 @@ func _draw() -> void:
 	meter(Vector2(50, height - 190), "SHIELD", player.shield, player.max_shield, CYAN)
 	meter(Vector2(50, height - 145), "HULL", player.hull, player.max_hull, GREEN if player.hull > player.max_hull * 0.3 else RED)
 	meter(Vector2(50, height - 100), "BOOST", player.energy, 100.0, Color("e3b777"))
-	text_at(Vector2(343, height - (193 if compact else 100)), "%03d" % roundi(player.velocity.length()), 32)
-	text_at(Vector2(343, height - (172 if compact else 79)), "m/s  /  " + ("BOOST" if player.boosting else "FLIGHT ASSIST"), 10, MUTED)
+	text_at(Vector2(343, height - (212 if compact else 100)), "%03d" % roundi(player.velocity.length()), 32)
+	text_at(Vector2(343, height - (191 if compact else 79)), "m/s  /  " + ("BOOST" if player.boosting else "FLIGHT ASSIST"), 10, MUTED)
 	draw_target_panel(width, height)
 	var distance := player.global_position.distance_to(Sector.STATION_POSITION)
 	if distance <= Sector.REPAIR_RADIUS and player.alive:
