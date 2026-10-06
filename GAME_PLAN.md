@@ -86,8 +86,8 @@ The rendered replay covers click/Tab selection, fire-state reasons using real co
 
 Milestone 3 now includes multiple simultaneous aliens in the current sector. This slice precedes equipment and hunting contracts. It adds no connected sectors, bosses, loot tables, missions or art pipeline.
 
-- Five fixed spawn slots support independent encounters. Every alien owns its identity, movement, target choice, health, contribution list, life number, death and respawn timer. The server controls these and all rewards, including when no pilots are connected.
-- Scouts are starter encounters near the station approach. Sentinels require additional lasers or cooperative hunting farther ahead. The Heavy occupies the outer right flank and is intended for upgraded pilots or a small group. Enemy hull, shields and damage were increased for the starter equipment rebalance; movement, rewards and respawns stay unchanged.
+- Five stable identities support independent encounters, with random homes across the sector at startup and after each death. Every alien owns its identity, movement, target choice, health, contribution list, life number, death and respawn timer. The server controls these and all rewards, including when no pilots are connected.
+- Scouts are starter encounters; Sentinels require additional lasers or cooperative hunting. The Heavy is intended for upgraded pilots or a small group. Their colored numbered contacts appear on the navigation maps. Enemy hull, shields and damage were increased for the starter equipment rebalance; movement, rewards and respawn timers stay unchanged.
 - Each kill splits that type's credit pool equally among connected pilots who damaged that alien in its current life. Contributors awaiting rescue remain eligible; disconnected pilots are removed. Integer remainders go in ascending peer-ID order. Persistence commits the shares before clients see them.
 - Killing or resetting one alien must leave other encounters, contributions and active fire intact. Player rescue also leaves encounters independent.
 - Station protection remains a 75 m sphere. Aliens cannot attack protected pilots. Protected pilots cannot damage aliens.
@@ -96,7 +96,7 @@ Milestone 3 now includes multiple simultaneous aliens in the current sector. Thi
 - Left click selects the visible alien intersected by the camera ray. Tab selects the available on-screen alien closest to the mouse cursor each time, using screen center while right-mouse steering captures the cursor. Selection has no combat-range limit. Repeated Tab over the same enemy retains the lock and fire intent; Tab with no on-screen candidate preserves an existing lock. Locks persist through distance, camera turns and a living alien's return home until manual retargeting or deselection. Target death, player rescue and disconnect clear the lock. Encounter resets stop automatic fire without clearing a living target, so stale fire cannot cross lives. Weapon range, firing arc, protection and line of sight still decide whether lasers fire.
 - Names and numbered markers distinguish contacts. Scouts have smaller amber-accented hulls, Sentinels retain the reference shape with red accents, and Heavies use larger purple-accented hulls with an extra armor block.
 
-Provisional tuning lives in `Alien.TYPES` and `Sector.ALIEN_SPAWNS`. These values need human balance playtesting.
+Provisional tuning lives in `Alien.TYPES`, `Sector.ALIEN_KINDS` and `Sector.MAP_RADIUS`. These values need human balance playtesting.
 
 | Type | Count | Hull / shield | Speed | Laser damage / interval | Weapon range | Detection | Home leash | Credits | Respawn |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -104,9 +104,19 @@ Provisional tuning lives in `Alien.TYPES` and `Sector.ALIEN_SPAWNS`. These value
 | Sentinel | 2 | 4,000 / 2,000 | 18 m/s | 5,000 / 0.75 s | 155 m | 180 m | 230 m | 75 | 12 s |
 | Heavy | 1 | 10,000 / 5,000 | 12 m/s | 12,000 / 0.9 s | 165 m | 220 m | 180 m | 180 | 18 s |
 
-Home coordinates are relative to sector origin. Slot 0 is Sentinel at `(0, 8, -440)`; slots 1 and 2 are Scouts at `(-85, 8, -150)` and `(85, -12, -175)`; slot 3 is Sentinel at `(-230, 35, -430)`; slot 4 is Heavy at `(320, 15, -390)`. Patrols stay within 18 m horizontally and 8 m vertically of home before engagement. Fixed slots respawn in place; timers never create extra nodes.
+Home coordinates are server-selected random points throughout the safe sphere, with clearance for the entire home leash plus 35 m, station detection/protection, asteroids and other homes. IDs 0 and 3 remain Sentinels, 1 and 2 Scouts, and 4 Heavy. Patrols stay within 18 m horizontally and 8 m vertically of home before engagement. Returning living aliens keep their current home; a death chooses a new home on respawn. Timers never create extra nodes. Clients and late joiners receive authoritative homes and transforms.
 
 Hunting contracts will stack on this work and use `Alien.kind` plus each kill's contribution eligibility. Merge alien variety first, hunting contracts second. The existing `SessionCombat.destroyed()` reward path holds the eligible contributor list until rewards are committed and applied.
+
+### Sector size, radiation and 3D navigation
+
+The user requested a substantially larger map, random alien positions, radiation instead of invisible walls, and a navigation display for full 3D flight. The safe sector is a sphere with a provisional 1,200 m radius (2.4 km diameter), up from 700 m. This increases safe volume about fivefold. The outpost, service/protection radii and physical asteroid cluster retain their positions. Decorative derelicts and the distant belt move outward beyond the enlarged safe sphere.
+
+Crossing the diameter should be on the order of 20–45 seconds for representative fitted ships, with meaningful differences between hulls and engine/shield choices. These are tuning targets, not hard limits. [PR 34's merged ship roster](https://github.com/Timerk/Dorbit/pull/34) supplies 26–38 m/s base cruise; Ion engines add 8 m/s each. At steady cruise, a Liberator with three engines (57 m/s) takes 42.1 s; a Vengeance with six engines (86 m/s) takes 27.9 s; a Goliath with eleven engines (118 m/s) takes 20.3 s. Acceleration adds time, boost temporarily reduces it, and shorter routes take less time. Empty/low-engine hulls can exceed 45 s and extreme engine fittings can cross in under 20 s. Travel feel and the five-alien density need human playtesting.
+
+The edge has no movement clamp. Within 120 m of it, the HUD warns of radiation ahead. Outside, a persistent alert, soft red full-screen pulse and red border signal danger, with a marker pointing toward the nearest safe re-entry point. Radiation damage starts at 1% of maximum hull per second and adds 0.5 percentage points per second of continuous exposure. It uses the existing shield absorption/hull damage and rescue rules. Exposure resets immediately inside the sphere or on rescue. Only the authority applies damage; multiplayer menus do not stop exposure. These rates remain provisional.
+
+Paired fixed-axis top (X–Z) and side (X–Y) maps show the whole sector, the white pilot heading, green outpost, friendly cyan pilots and numbered alien contacts in their type colors. The selected alien has a white ring. Signed Y altitude and target-relative height make vertical separation explicit. Circular outlines show the sphere's projected extent; the two maps together describe all three axes. These are navigation aids, not new targeting controls or a separate fog-of-war system. Network schema 5 adds exposure and random home state and deliberately rejects older builds, including PR 34's schema 4.
 
 ### Death and recovery
 
@@ -302,10 +312,11 @@ composition; no DarkOrbit assets are included.
 Blender-generated GLBs and seamless stone textures are committed with their
 generator. Godot remains the runtime and uses the existing Compatibility renderer.
 Static nebula calculations bake into the sky cubemap; the background asteroid belt
-uses three instanced meshes. Distant scenery is outside the 700 m flight boundary
-and has no collision or interaction. Dedicated servers create only the existing
-obstacle physics. The original 24 asteroid positions/radii, station colliders,
-station services, five alien homes and sector boundary remain unchanged.
+uses three instanced meshes. Distant scenery has no collision or interaction and
+now sits beyond the enlarged safe sector. Dedicated servers create only the existing
+obstacle physics. The original 24 asteroid positions/radii, station colliders and
+station services remain unchanged; sector size, radiation and random alien homes
+are described above.
 
 This is a visual pass on the current huntable sector. Connected maps, jump gates,
 new ships and encounters remain separate work. Visual density and performance on
