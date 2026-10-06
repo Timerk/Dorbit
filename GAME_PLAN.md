@@ -135,7 +135,7 @@ Initial balancing proposals:
 
 These are playtesting targets, not fixed timers or final economy values.
 
-Progression uses credits, equipment upgrades and collectible resources sold at the station. The user requested all twelve modeled base hulls as purchasable ships, with newer DarkOrbit stats and credit prices; Uridium-priced hulls cost 100 times their reference price in credits. See [playable ships](docs/ships.md) for the exact roster and assumptions.
+Progression uses credits, equipment upgrades and collectible resources sold at the station. The user requested all twelve modeled base hulls as purchasable ships, with newer DarkOrbit stats and credit prices; Uridium-priced hulls cost 100 times their reference price in credits. Yamato and Defcom are user-requested exceptions at 150,000 credits each, between Piranha and Nostromo, retaining the newer stats. See [playable ships](docs/ships.md) for the exact roster and assumptions.
 
 Proposed progression principles:
 
