@@ -177,9 +177,10 @@ speed. See README.md for configuration and use.
 ### Docked main menu and launch
 
 Normal clients connect to the persistent server into a docked pilot console before
-entering the map. The user requested a station-console layout inspired by the
-supplied reference, with a central green Start button, blue navigation panels,
-saved credits and active-ship preparation. Hangar, shop, quests (the existing
+entering the map. The original station-console layout used a central green Start
+button and blue navigation panels. The user has approved a minimal graphite-and-amber
+replacement concept with saved credits and active-ship preparation (see below).
+Hangar, shop, quests (the existing
 hunting contracts), cargo trading, settings and connection management use the
 existing screens. Skylab and Galaxy Gates are visible coming-soon pages; their
 gameplay is not implemented in this milestone.
@@ -206,6 +207,26 @@ unavailable until the ship is alive. Start can then launch the prepared ship aga
 The console fits 960 x 600 through 1440 x 900 and larger windows; station panels
 scale to leave its persistent launch/navigation header accessible. Client and
 server builds must match (network schema 7 adds docked state and launch RPCs).
+
+### Menu visual direction
+
+The user approved the [main-menu opening-screen concept](docs/menu-design/main-menu-approved.png).
+Use graphite surfaces, amber accents, a persistent left navigation rail, a large
+active-ship preview, bottom ship statistics and an orange Start action. Align the
+outpost status and credits together at the far right of the top bar.
+
+Keep every menu minimal: short functional labels, necessary values and actions.
+Add text or controls only as needed. Omit slogans, decorative section numbers,
+fictional dates/clocks, repeated outpost headings, ship schematic callouts and
+the flight-preparation instruction panel removed during concept review. Provide
+contextual help or blocked-action reasons when needed instead of permanent
+instruction paragraphs.
+
+The [hangar draft](docs/menu-design/hangar-draft.png) carries this style into owned-ship
+selection, equipment slots and storage inventory. It awaits user review. The
+inventory contents shown are illustrative; actual ownership and fitting remain
+server-authoritative. Saved images are visual references for future implementation,
+not implemented menu screens. See [concept notes and prompts](docs/menu-design/README.md).
 
 ### First station equipment shop and fitting
 
