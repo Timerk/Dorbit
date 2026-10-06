@@ -52,7 +52,7 @@ func drag(client: Sector, source: Control, target_control: Control) -> void:
 	await settle()
 
 
-func click_item(client: Sector, tile: EquipmentTile, shift: bool = true, clicks: int = 1) -> void:
+func click_item(client: Sector, tile: Control, shift: bool = true, clicks: int = 1) -> void:
 	var point := tile.get_global_rect().get_center()
 	for click in range(clicks):
 		for pressed: bool in [true, false]:
@@ -71,15 +71,21 @@ func check_inventory_layout(client: Sector) -> void:
 	var combat := client.session.combat
 	var committed := combat.inventory.duplicate(true)
 	var fixture := committed.duplicate(true)
+	var models := ["laser", "shield", "engine", "lf-3", "fs-01", "g3n-7900", "mp-1", "sg3n-a03", "g3n-2010"]
+	var expected_categories := {"laser": "weapon", "lf-3": "weapon", "mp-1": "weapon", "shield": "shield", "fs-01": "shield", "sg3n-a03": "shield", "engine": "engine", "g3n-7900": "engine", "g3n-2010": "engine"}
 	for index in range(30):
-		fixture["items"]["layout-%d" % index] = {"model": ["laser", "shield", "engine"][index % 3], "ship": "", "slot": ""}
+		fixture["items"]["layout-%d" % index] = {"model": models[index % models.size()], "ship": "", "slot": ""}
 	combat.inventory = fixture
 	await settle()
 	var fitting := client.equipment_menu
-	check(fitting.stored.size() == 31, "Large inventory renders each owned stored instance")
+	var counts := {"weapon": 0, "shield": 0, "engine": 0, "extra": 0}
+	for item: Dictionary in fixture["items"].values():
+		if item["ship"].is_empty():
+			counts[expected_categories[item["model"]]] += 1
+	check(fitting.stored.size() == counts["weapon"] + counts["shield"] + counts["engine"], "Large inventory renders every stored instance across the expanded catalog")
 	var categories: Array[String] = []
 	for tile: EquipmentTile in fitting.stored.values():
-		var category := fitting.storage_category(fixture["items"][tile.item_id]["model"])
+		var category: String = expected_categories[fixture["items"][tile.item_id]["model"]]
 		if categories.is_empty() or categories.back() != category:
 			categories.append(category)
 	check(categories == ["weapon", "shield", "engine"], "Interleaved inventory is grouped as weapons, shields, then speed generators")
@@ -96,8 +102,8 @@ func check_inventory_layout(client: Sector) -> void:
 		fitting.storage_filter.item_selected.emit(index)
 		await settle()
 		var category: String = fitting.STORAGE_CATEGORIES.keys()[index - 1]
-		check(fitting.stored.values().all(func(tile: EquipmentTile): return fitting.storage_category(fixture["items"][tile.item_id]["model"]) == category), "Filter shows only " + category)
-		check(fitting.stored.size() == (11 if category == "weapon" else (0 if category == "extra" else 10)), "Filter retains all stored instances for " + category)
+		check(fitting.stored.values().all(func(tile: EquipmentTile): return expected_categories[fixture["items"][tile.item_id]["model"]] == category), "Filter shows only " + category)
+		check(fitting.stored.size() == counts[category], "Filter retains all stored instances for " + category)
 		check(fitting.empty_storage.visible == (category == "extra"), "Empty extras filter explains that no items match")
 	check(combat.inventory == fixture, "Filtering never changes ownership or fitting")
 	fitting.set_filter("all")
@@ -116,6 +122,8 @@ func check_inventory_layout(client: Sector) -> void:
 	client.get_viewport().size = Vector2i(1440, 900)
 	await settle()
 	check(fitting.get_global_rect().position.x >= 0 and fitting.get_global_rect().end.x <= 1440 and fitting.get_global_rect().end.y <= 900, "Equipment resizes within the larger viewport")
+	if client.preflight:
+		check(fitting.get_global_rect().position.y >= MainMenu.HEADER_HEIGHT and not fitting.get_global_rect().intersects(client.main_menu.start_button.get_global_rect()), "Docked grouped inventory leaves Start accessible")
 	scroll.scroll_vertical = 0
 	await screenshot(client, "equipment-large-window")
 	client.get_viewport().size = Vector2i(960, 600)
@@ -124,23 +132,26 @@ func check_inventory_layout(client: Sector) -> void:
 
 
 func check_quick_equip() -> void:
-	var server := make_sector("QuickEquipServer", true, 24739)
-	check(server.session.store.commit({"pilot0": 40000}), "Fund isolated quick-equip pilot")
+	var server := make_sector("QuickEquipServer", true, 24743)
+	check(server.session.store.commit({"pilot0": 100000}), "Fund isolated quick-equip pilot for current catalog prices")
 	var client := make_sector("QuickEquipClient")
+	client.client_only = true
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
-	client.session.join("127.0.0.1", 24739)
+	client.session.join("127.0.0.1", 24743)
 	await settle(0.5)
 	await replicate(server)
 	client.get_viewport().size = Vector2i(960, 600)
 	client.get_viewport().render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	var combat := client.session.combat
-	var models := ["laser", "laser", "laser", "laser", "shield", "shield", "shield", "engine", "engine"]
+	var models := ["laser", "laser", "laser", "laser", "shield", "shield", "shield", "g3n-2010", "g3n-2010"]
 	for index in range(models.size()):
 		await request(client, index + 1, "buy", models[index])
-	client.equipment_menu.open()
-	await settle()
+	await click_item(client, client.main_menu.navigation["hangar"], false)
 	var fitting := client.equipment_menu
+	check(client.preflight and client.paused and fitting.visible and not client.main_menu.home.visible, "Main menu Hangar opens inventory while the pilot stays docked")
+	check(Rect2(Vector2.ZERO, Vector2(960, 600)).encloses(fitting.get_global_rect()) and fitting.get_global_rect().position.y >= MainMenu.HEADER_HEIGHT, "Docked inventory fits below the header at the minimum window size")
+	await check_inventory_layout(client)
 	await click_item(client, fitting.stored["purchase-1"], false)
 	check(fitting.selected_item == "purchase-1" and combat.inventory["revision"] == 9, "Plain mouse click still selects without equipping")
 	combat.station_pending = true
@@ -184,6 +195,16 @@ func check_quick_equip() -> void:
 	var saved: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(server.session.store.path))["pilots"]["pilot0"]["equipment"]
 	check(int(saved["revision"]) == combat.inventory["revision"] and saved["items"] == combat.inventory["items"] and saved["active_ship"] == combat.inventory["active_ship"], "Quick-equip results persist through normal server transactions")
 	await screenshot(client, "equipment-quick-equip")
+	await press(client, KEY_ESCAPE)
+	check(client.preflight and client.paused and client.main_menu.home.visible and not fitting.visible, "Esc returns from inventory to the main menu without launching")
+	await click_item(client, client.main_menu.navigation["hangar"], false)
+	check(fitting.visible and fitting.filter_category == "shield" and fitting.stored.size() == 1, "Reopening Hangar retains the filter and updated inventory")
+	var back: Button = fitting.find_children("*", "Button", true, false).filter(func(button: Button): return button.text == "Back [Esc]")[0]
+	await click_item(client, back, false)
+	check(client.preflight and client.main_menu.home.visible and not fitting.visible, "Inventory Back returns to the docked overview")
+	await click_item(client, client.main_menu.start_button, false)
+	await replicate(server)
+	check(not client.preflight and not client.main_menu.visible and combat.inventory == before and client.player.laser_damage == 260 and client.player.max_shield == 3000, "Start launches with the Shift-clicked fitting preserved")
 	client.session.disconnect_session("Quick equip complete")
 	server.session.disconnect_session("Quick equip complete")
 	await settle()
