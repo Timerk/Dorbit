@@ -51,9 +51,11 @@ var settings_menu: SettingsMenu
 var spawn_rng := RandomNumberGenerator.new()
 var main_menu: MainMenu
 var preflight: bool = false
+var autopilot := FlightAutopilot.new()
 
 
 func _ready() -> void:
+	autopilot.sector = self
 	spawn_rng.randomize()
 	dedicated_server = dedicated_server or "--server" in OS.get_cmdline_user_args()
 	client_only = client_only and not "--offline" in OS.get_cmdline_user_args()
@@ -221,6 +223,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_tree().quit()
 	if paused or not player.alive:
 		return
+	if event.is_action_pressed("autopilot"):
+		autopilot.toggle()
+	if event.is_action_pressed("steer"):
+		autopilot.cancel()
 	player.handle_mouse(event)
 	if event.is_action_pressed("cycle_target"):
 		cycle_target()
@@ -290,7 +296,7 @@ func _physics_process(delta: float) -> void:
 	validate_target()
 	player.tick_combat(delta)
 	if player.alive:
-		player.fly(delta)
+		player.fly_command(delta, read_flight_movement(delta), Input.is_action_pressed("boost") and not autopilot.enabled)
 		tick_radiation(player, delta)
 		if objective_stage == 0 and player.position.distance_to(STATION_POSITION) > 75.0:
 			objective_stage = 1
@@ -374,6 +380,7 @@ func set_paused(value: bool) -> void:
 	if not paused and is_instance_valid(settings_menu):
 		settings_menu.dismiss()
 	if paused:
+		autopilot.cancel()
 		if is_instance_valid(player):
 			player.release_mouse()
 		auto_fire = false
@@ -427,6 +434,8 @@ func cycle_target(screen_position: Vector2 = Vector2.INF) -> void:
 
 
 func select_target(ship: SpaceShip) -> void:
+	if ship != target:
+		autopilot.cancel()
 	target = ship
 	auto_fire = false
 	if ship != null:
@@ -465,16 +474,27 @@ func on_destroyed(ship: SpaceShip, attacker: SpaceShip) -> void:
 		auto_fire = false
 		target = null
 		player.release_mouse()
+		autopilot.cancel()
 		notify("Ship lost. Rescue dispatched. Recovery cost: %d credits." % fee)
 
 
 func respawn_player() -> void:
+	autopilot.cancel()
 	player.position = SPAWN_POSITION
 	player.rotation = Vector3.ZERO
 	player.energy = 100.0
 	player.reset_health()
 	player_respawn = 0.0
 	select_target(null)
+
+
+func read_flight_movement(delta: float) -> Vector3:
+	var movement := player.read_movement()
+	if movement != Vector3.ZERO or player.steering:
+		autopilot.cancel()
+	if autopilot.enabled:
+		return autopilot.command(delta)
+	return movement
 
 
 func repair_blocker(ship: Pilot = null) -> String:

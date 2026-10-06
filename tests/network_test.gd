@@ -35,13 +35,17 @@ func make_sector(label: String, dedicated: bool = false, port: int = 24683) -> S
 	root.add_child(viewport)
 	worlds.append(viewport)
 	set_multiplayer(SceneMultiplayer.new(), viewport.get_path())
-	var sector := preload("res://scenes/sector.tscn").instantiate()
+	var sector := instantiate_sector()
 	sector.dedicated_server = dedicated
 	sector.server_port = port
 	sector.client_only = false
 	viewport.add_child(sector)
 	sector.set_physics_process(false)
 	return sector
+
+
+func instantiate_sector() -> Sector:
+	return preload("res://scenes/sector.tscn").instantiate()
 
 
 func test_token(index: int) -> String:
