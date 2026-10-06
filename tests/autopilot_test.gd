@@ -45,6 +45,10 @@ func press(sector: Sector, action: String) -> void:
 
 
 func run() -> void:
+	if "--hud-only" in OS.get_cmdline_user_args():
+		await rendered_checks(make_sector("AutopilotHud"))
+		await finish()
+		return
 	if "--network-only" in OS.get_cmdline_user_args():
 		await network_checks()
 		await finish()
@@ -254,6 +258,7 @@ func rendered_checks(sector: Sector) -> void:
 	place(sector, Vector3(0, 200, 0))
 	sector.aliens[1].position = Vector3(100, 210, -200)
 	sector.select_target(sector.aliens[1])
+	await settle(0.1) # Let the reparented root viewport finish layout before routing keyboard input.
 	sector.settings.rebind("autopilot", KEY_L)
 	var key := InputEventKey.new()
 	key.physical_keycode = KEY_L
@@ -273,11 +278,8 @@ func rendered_checks(sector: Sector) -> void:
 		root.size = pixels
 		DisplayServer.window_set_size(pixels)
 		await settle(0.1)
-		var button := sector.hud.navigation.autopilot_button
-		var event := InputEventMouseButton.new()
-		event.button_index = MOUSE_BUTTON_LEFT
-		event.position = button.get_global_rect().get_center()
-		event.global_position = event.position
+		var event := InputEventKey.new()
+		event.physical_keycode = KEY_P
 		event.pressed = true
 		Input.parse_input_event(event)
 		await process_frame
@@ -285,12 +287,20 @@ func rendered_checks(sector: Sector) -> void:
 		event.pressed = false
 		Input.parse_input_event(event)
 		await process_frame
-		check(sector.autopilot.enabled and button.button_pressed, "HUD button toggles autopilot through real mouse input")
+		check(sector.autopilot.enabled and sector.hud.navigation.autopilot_status.visible, "Keyboard toggle shows the compact autopilot status under the radar")
 		sector.player.fly_command(1.0 / 60.0, sector.read_flight_movement(1.0 / 60.0), false)
 		await RenderingServer.frame_post_draw
 		var directory := ProjectSettings.globalize_path("res://build/validation")
 		DirAccess.make_dir_recursive_absolute(directory)
 		root.get_texture().get_image().save_png(directory.path_join("autopilot-%d.png" % pixels.x))
-		sector.autopilot.cancel()
+		event = event.duplicate()
+		event.pressed = true
+		Input.parse_input_event(event)
+		await process_frame
+		event = event.duplicate()
+		event.pressed = false
+		Input.parse_input_event(event)
+		await process_frame
+		check(not sector.autopilot.enabled and not sector.hud.navigation.autopilot_status.visible, "Disabling autopilot hides its status")
 	sector.queue_free()
 	await process_frame

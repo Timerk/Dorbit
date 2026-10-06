@@ -52,8 +52,10 @@ The following controls are agreed as the starting layout. Check comfort and usab
 Flight should have noticeable weight and inertia while staying responsive and arcade-like. Ships retain momentum through turns, build speed gradually, and use assisted braking on release plus stronger counter-thrust when reversing. Mouse steering eases over a few frames. There is no unlimited coasting or manual braking requirement.
 
 The user requested toggled autopilot to the selected target by the shortest route.
-P (rebindable) or the button above the destination compass enables it for the
-current alien, friendly pilot or outpost destination. It flies directly in full
+P (rebindable) enables it for the current alien, friendly pilot or outpost
+destination. Following playtesting, the user requested a small "Autopilot enabled"
+label below the top-right radar instead of the large toggle button. The label
+appears only while autopilot is active. It flies directly in full
 3D when clear, otherwise chooses the shortest visible polyline through sampled
 asteroid rings and expanded station corners. These detours approximate the
 continuous shortest route and keep clearance for the ship collider. Flight uses
