@@ -43,7 +43,7 @@ class SectorPlot extends Control:
 	func _gui_input(event: InputEvent) -> void:
 		if event is InputEventMouseButton:
 			if event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
-				if event.pressed and event.ctrl_pressed:
+				if event.pressed:
 					navigation.zoom_plot(event.position, 1.2 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.2)
 				accept_event()
 			elif event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
@@ -175,7 +175,7 @@ func build_overview() -> void:
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	reset_button = StationUi.button(header, "Reset view", reset_view)
 	StationUi.button(header, "Back to flight [M / Esc]", close_overview)
-	StationUi.text(rows, "Click a marker, name or row to navigate. Drag left mouse to rotate; Ctrl + wheel to zoom.", 13, FlightHud.MUTED)
+	StationUi.text(rows, "Click a marker, name or row to navigate. Drag left mouse to rotate; mouse wheel to zoom.", 13, FlightHud.MUTED)
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rows.add_child(body)
