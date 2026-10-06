@@ -27,12 +27,13 @@ var contract_slots: Label
 var contract_empty: Label
 var contract_accept: Button
 var contract_abandon: Button
+var navigation: FlightNavigation
 
 const CONTRACT_GOLD := Color("f4cf65")
 const CONTRACT_BRIEFINGS: Dictionary = {
-	"scout": "Scouts patrol the sector. Locate their numbered contacts on the navigation maps and clear these light encounters. A good first assignment for the Liberator.",
-	"sentinel": "Sentinels patrol the hunting grounds. Use the navigation maps to find them. Expect stronger shields and sustained laser fire.",
-	"heavy": "A Heavy roams the sector. Find its purple contact on the navigation maps. Bring upgraded equipment or allies to take down this armored encounter.",
+	"scout": "Scouts patrol the sector. Locate their numbered contacts on the sector overview and clear these light encounters. A good first assignment for the Liberator.",
+	"sentinel": "Sentinels patrol the hunting grounds. Use the sector overview to find them. Expect stronger shields and sustained laser fire.",
+	"heavy": "A Heavy roams the sector. Find its purple contact on the sector overview. Bring upgraded equipment or allies to take down this armored encounter.",
 }
 
 
@@ -41,6 +42,9 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background = panel_style()
 	build_contract_panel()
+	navigation = FlightNavigation.new()
+	navigation.sector = sector
+	add_child(navigation)
 
 
 func fire_feedback() -> String:
@@ -255,6 +259,7 @@ func meter(point: Vector2, title: String, value: float, maximum: float, color: C
 
 func _draw() -> void:
 	marker_labels.clear()
+	marker_labels.append(Rect2(size.x - 322, 96, 290, 182))
 	if not is_instance_valid(sector.player):
 		return
 	var width := size.x
@@ -314,10 +319,9 @@ func _draw() -> void:
 	meter(Vector2(50, height - 190), "SHIELD", player.shield, player.max_shield, CYAN)
 	meter(Vector2(50, height - 145), "HULL", player.hull, player.max_hull, GREEN if player.hull > player.max_hull * 0.3 else RED)
 	meter(Vector2(50, height - 100), "BOOST", player.energy, 100.0, Color("e3b777"))
-	text_at(Vector2(343, height - 100), "%03d" % roundi(player.velocity.length()), 32)
-	text_at(Vector2(343, height - 79), "m/s  /  " + ("BOOST" if player.boosting else "FLIGHT ASSIST"), 10, MUTED)
+	text_at(Vector2(343, height - (193 if compact else 100)), "%03d" % roundi(player.velocity.length()), 32)
+	text_at(Vector2(343, height - (172 if compact else 79)), "m/s  /  " + ("BOOST" if player.boosting else "FLIGHT ASSIST"), 10, MUTED)
 	draw_target_panel(width, height)
-	draw_navigation()
 	var distance := player.global_position.distance_to(Sector.STATION_POSITION)
 	if distance <= Sector.REPAIR_RADIUS and player.alive:
 		if shared:
@@ -329,7 +333,7 @@ func _draw() -> void:
 			label = "REPAIRS AVAILABLE IN %d s" % ceili(5.0 - player.time_since_hit)
 		text_at(Vector2(width - 310, height - 256), label, 14, GREEN)
 		text_at(Vector2(width - 310, height - 304), "B  SHOP / CARGO     I  EQUIPMENT", 14, CYAN)
-	var controls := "%s Steer    %s Target    %s Fire    %s Boost    %s Repair    Esc Menu / controls" % [
+	var controls := "%s Steer    %s Target    %s Fire    %s Boost    %s Repair    M Map    Esc Menu / controls" % [
 		GameSettings.binding_text("steer"), GameSettings.binding_text("cycle_target"),
 		GameSettings.binding_text("fire"), GameSettings.binding_text("boost"), GameSettings.binding_text("repair")]
 	text_at(Vector2(33, height - 28), controls, 11 if compact else 13, MUTED)
@@ -353,7 +357,7 @@ func draw_target_panel(width: float, height: float) -> void:
 		text_at(origin, "NO TARGET", 13, MUTED)
 		text_at(origin + Vector2(0, 34), "%s or %s to lock" % [GameSettings.binding_text("cycle_target"), GameSettings.binding_text("select_target")], 15)
 		text_at(origin + Vector2(0, 64), "%02d  ALIENS DESTROYED" % sector.kills, 12, MUTED)
-		text_at(origin + Vector2(0, 104), "Find contacts on the navigation maps", 12, CYAN)
+		text_at(origin + Vector2(0, 104), "M / Choose a contact on the sector map", 12, CYAN)
 		return
 	var enemy := sector.target as Alien
 	text_at(origin, "%s %d / %d m" % [enemy.kind.to_upper(), enemy.alien_id + 1, sector.player.global_position.distance_to(enemy.global_position)], 12, enemy.tuning()["color"])
@@ -364,54 +368,6 @@ func draw_target_panel(width: float, height: float) -> void:
 
 func alien_marker(enemy: Alien) -> void:
 	marker(enemy.global_position, "HOSTILE %s %d%s" % [enemy.kind.to_upper(), enemy.alien_id + 1, " / RETURNING" if enemy.returning else ""], enemy.tuning()["color"], sector.target == enemy, null, sector.target == enemy)
-
-
-static func map_projection(location: Vector3, side_view: bool) -> Vector2:
-	# Fixed world axes avoid a map that flips when the pilot pitches or turns.
-	return Vector2(location.x, -location.y if side_view else location.z) / Sector.MAP_RADIUS
-
-
-func map_contact(center: Vector2, location: Vector3, side_view: bool, color: Color, label: String = "", selected: bool = false) -> void:
-	var point := center + map_projection(location, side_view).limit_length() * 53.0
-	draw_circle(point, 3.0, color)
-	if selected:
-		draw_arc(point, 6.0, 0, TAU, 24, Color.WHITE, 1.5, true)
-	if not label.is_empty():
-		text_at(point + Vector2(5, -3), label, 10, color)
-
-
-func draw_navigation() -> void:
-	var origin := Vector2(size.x - 322, 96)
-	panel(Rect2(origin, Vector2(290, 182)))
-	text_at(origin + Vector2(14, 20), "SECTOR MAP / %.1f km ACROSS" % (Sector.MAP_RADIUS * 0.002), 11, CYAN)
-	for side_view: bool in [false, true]:
-		var center := origin + Vector2(76 if not side_view else 214, 88)
-		draw_circle(center, 54, Color(0.07, 0.12, 0.17, 0.8))
-		draw_arc(center, 54, 0, TAU, 64, MUTED, 1, true)
-		draw_line(center - Vector2(54, 0), center + Vector2(54, 0), Color(MUTED, 0.2))
-		draw_line(center - Vector2(0, 54), center + Vector2(0, 54), Color(MUTED, 0.2))
-		text_at(center + Vector2(-48, -40), "+Y" if side_view else "-Z", 9, MUTED)
-		text_at(center + Vector2(36, 10), "+X", 9, MUTED)
-		map_contact(center, Sector.STATION_POSITION, side_view, GREEN, "+")
-		for enemy: Alien in sector.aliens.values():
-			if enemy.alive and enemy.visible:
-				map_contact(center, enemy.position, side_view, enemy.tuning()["color"], str(enemy.alien_id + 1), sector.target == enemy)
-		if sector.session.active:
-			for ship: Pilot in sector.session.ships.values():
-				if ship != sector.player and ship.alive:
-					map_contact(center, ship.position, side_view, CYAN)
-		var player_point := center + map_projection(sector.player.position, side_view).limit_length() * 53.0
-		var forward := map_projection(-sector.player.global_basis.z, side_view).normalized()
-		if forward.length_squared() > 0.01:
-			var side := forward.orthogonal() * 3.5
-			draw_colored_polygon(PackedVector2Array([player_point + forward * 6, player_point - forward * 4 + side, player_point - forward * 4 - side]), Color.WHITE)
-		else:
-			draw_circle(player_point, 4, Color.WHITE)
-		text_at(center + Vector2(-42, 68), "SIDE / X-Y" if side_view else "TOP / X-Z", 10, MUTED)
-	var altitude := "Y %+.0f m" % sector.player.position.y
-	if is_instance_valid(sector.target):
-		altitude += " / target %+.0f m" % (sector.target.position.y - sector.player.position.y)
-	text_at(origin + Vector2(14, 176), "YOU: white  BASE: green  " + altitude, 10, INK)
 
 
 func draw_boundary_warning() -> void:

@@ -163,8 +163,12 @@ func run() -> void:
 	# A disconnected contributor does not receive a reward or leave stale state.
 	alien.take_damage(1, host.player)
 	alien.take_damage(1, remote)
+	client.hud.navigation.choose_contact("friend1")
+	check(client.target == null and client.hud.navigation.destination()["ship"] == client.session.ships[1], "Friendly waypoint guides without creating a combat target")
+	client.hud.navigation.open_overview()
 	client.session.disconnect_session("Test leave")
 	await settle()
+	check(not client.hud.navigation.overview.visible and client.hud.navigation.waypoint_key == "station", "Disconnect clears overview and missing friendly waypoint")
 	check(id not in alien.contributors and not combat.records.has(id), "Leaving removes combat state and reward eligibility")
 	check(client.credits == 456, "Leaving restores the client's separate solo credits")
 	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, host.player)
