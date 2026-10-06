@@ -48,6 +48,17 @@ var balance: Label
 var availability: Label
 var delivery: Label
 var equipment_button: Button
+var products: Dictionary = {}
+
+
+func catalog() -> Dictionary:
+	if not products.is_empty():
+		return products
+	products = Equipment.MODELS.duplicate()
+	for id: String in ShipCatalog.MODELS:
+		products[id] = ShipCatalog.info(id).duplicate()
+		products[id]["price"] = ShipCatalog.price(id)
+	return products
 
 
 func _ready() -> void:
@@ -97,7 +108,7 @@ func _ready() -> void:
 	status.custom_minimum_size.y = 22
 	var footer := HBoxContainer.new()
 	rows.add_child(footer)
-	var note := text(footer, "Purchases go to storage. Fit owned items in Ship equipment.", 12, FlightHud.MUTED)
+	var note := text(footer, "Equipment goes to storage; ships go to the hangar. Activate and fit in Ship equipment.", 12, FlightHud.MUTED)
 	note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	test_credits_button = button(footer, "Preview: +100,000 CR", func(): sector.session.combat.request_station("test_credits", ""))
 	test_credits_button.tooltip_text = "Adds 100,000 saved test credits on an authorized preview server."
@@ -153,7 +164,7 @@ func build_resource_cards() -> void:
 		input_frame.set_content_margin_all(3)
 		input.add_theme_stylebox_override("normal", input_frame)
 		input.add_theme_stylebox_override("read_only", input_frame)
-		input.max_length = 3
+		input.max_length = 4
 		input.select_all_on_focus = true
 		input.tooltip_text = "Quantity of %s to sell" % info["name"]
 		controls.add_child(input)
@@ -235,8 +246,8 @@ func build_catalog(parent: Node) -> void:
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
 	scroll.add_child(grid)
-	for model: String in Equipment.MODELS:
-		var info: Dictionary = Equipment.MODELS[model]
+	for model: String in catalog():
+		var info: Dictionary = catalog()[model]
 		var card := button(grid, "", func(): select_model(model))
 		card.custom_minimum_size = Vector2(102, 142)
 		card.toggle_mode = true
@@ -249,7 +260,7 @@ func build_catalog(parent: Node) -> void:
 		art.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		text(content, "%s CR" % credits_text(info["price"]), 12, FlightHud.CYAN)
 		cards[model] = card
-	empty_catalog = text(rows, "No ships for sale yet.\n\nThe Liberator is your starter ship. Buy equipment in the other categories.", 14, FlightHud.MUTED)
+	empty_catalog = text(rows, "No items in this category.", 14, FlightHud.MUTED)
 	empty_catalog.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 
@@ -279,8 +290,8 @@ func build_order(parent: Node) -> void:
 	rows.add_child(spacer)
 	availability = text(rows, "", 13, FlightHud.MUTED)
 	availability.custom_minimum_size.y = 34
-	for model: String in Equipment.MODELS:
-		var buy := button(rows, "Buy item", func(): purchase(model))
+	for model: String in catalog():
+		var buy := button(rows, "Buy ship" if ShipCatalog.MODELS.has(model) else "Buy item", func(): purchase(model))
 		buy.custom_minimum_size.y = 44
 		buy.add_theme_stylebox_override("normal", style(Color("264e34"), Color("79c888")))
 		buy.add_theme_stylebox_override("hover", style(Color("356545"), FlightHud.GREEN))
@@ -369,6 +380,10 @@ static func credits_text(value: int) -> String:
 
 func models_in_category(id: String) -> Array[String]:
 	var result: Array[String] = []
+	if id == "ships":
+		for model: String in ShipCatalog.MODELS:
+			result.append(model)
+		return result
 	for model: String in Equipment.MODELS:
 		if id == "all" or (id == "weapons" and model == "laser") or (id == "generators" and Equipment.MODELS[model]["kind"] == "generator") or (id == "shields" and model == "shield") or (id == "engines" and model == "engine"):
 			result.append(model)
@@ -395,23 +410,28 @@ func select_model(model: String) -> void:
 		cards[key].set_pressed_no_signal(key == model)
 	var available := not model.is_empty()
 	product_art.texture = StationUi.texture(model if available else "ship")
-	product_title.text = Equipment.MODELS[model]["name"] if available else "Liberator"
-	description.text = DESCRIPTIONS[model] if available else "Your starter hull has four laser slots, six generator slots and two reserved extra slots. Ships are not sold at this station yet."
-	if available:
+	product_title.text = catalog()[model]["name"] if available else "No selection"
+	var is_ship := ShipCatalog.MODELS.has(model)
+	description.text = "An owned hull with its own fitting and cargo. Purchases do not switch your active ship." if is_ship else DESCRIPTIONS.get(model, "")
+	if is_ship:
+		var entry := ShipCatalog.info(model)
+		bonus.text = "%s hull\n%d m/s base cruise\n%d cargo units" % [credits_text(int(entry["hull"])), entry["speed"] * ShipCatalog.SPEED_SCALE, entry["cargo"]]
+		slot_hint.text = "%d laser / %d shared generator / %d extra slots" % [entry["lasers"], entry["generators"], entry["extras"]]
+	elif available:
 		bonus.text = StationUi.bonus(model)
 		slot_hint.text = "Laser slot. Bonuses stack per installed item." if model == "laser" else "Generator slot. Shields and engines share these slots."
 	else:
-		bonus.text = "%s base hull" % credits_text(int(Equipment.STARTER_HULL))
-		slot_hint.text = "4 laser / 6 shared generator / 2 extra slots"
+		bonus.text = ""
+		slot_hint.text = ""
 	order_title.text = product_title.text
-	price.text = "%s CR" % credits_text(Equipment.MODELS[model]["price"]) if available else "Not for sale"
+	price.text = "%s CR" % credits_text(int(catalog()[model]["price"])) if available else ""
 	refresh()
 
 
 func purchase(model: String) -> void:
 	if not purchase_blocker(model).is_empty():
 		return
-	sector.session.combat.request_station("buy", model)
+	sector.session.combat.request_station("buy_ship" if ShipCatalog.MODELS.has(model) else "buy", model)
 	refresh()
 
 
@@ -423,7 +443,9 @@ func purchase_blocker(model: String) -> String:
 	var reason := sector.repair_blocker()
 	if not reason.is_empty():
 		return reason
-	var shortfall := int(Equipment.MODELS[model]["price"]) - sector.credits
+	if ShipCatalog.MODELS.has(model) and not ShipCatalog.owned_id(sector.session.combat.inventory, model).is_empty():
+		return "Already owned. Activate in Ship equipment."
+	var shortfall := int(catalog()[model]["price"]) - sector.credits
 	return "Need %s more CR" % credits_text(shortfall) if shortfall > 0 else ""
 
 
@@ -493,13 +515,22 @@ func refresh() -> void:
 		var reason := purchase_blocker(model)
 		buys[model].visible = model == selected_model
 		buys[model].disabled = not reason.is_empty()
-		buys[model].tooltip_text = reason if not reason.is_empty() else "Buy one %s into storage" % Equipment.MODELS[model]["name"]
+		buys[model].tooltip_text = reason if not reason.is_empty() else "Buy %s" % catalog()[model]["name"]
 	if selected_model.is_empty():
-		ownership.text = "Starter hull / already owned"
+		ownership.text = ""
 		balance.text = "Wallet\n%s CR" % credits_text(sector.credits)
 		delivery.text = "Not available"
-		availability.text = "Ship purchases are not available yet."
+		availability.text = "Select a product to preview it."
 		availability.add_theme_color_override("font_color", FlightHud.MUTED)
+	elif ShipCatalog.MODELS.has(selected_model):
+		var owned := ShipCatalog.owned_id(combat.inventory, selected_model)
+		ownership.text = "Not owned" if owned.is_empty() else ("Active ship" if owned == combat.inventory.get("active_ship") else "Owned / available to activate")
+		delivery.text = "Empty hull to hangar\nActivate and fit in Ship equipment."
+		var remaining := sector.credits - ShipCatalog.price(selected_model)
+		balance.text = "Wallet: %s CR" % credits_text(sector.credits) if not owned.is_empty() else "Wallet: %s CR\nAfter: %s" % [credits_text(sector.credits), "%s CR" % credits_text(remaining) if remaining >= 0 else "Insufficient funds"]
+		var reason := purchase_blocker(selected_model)
+		availability.text = reason if not reason.is_empty() else "Ready to purchase"
+		availability.add_theme_color_override("font_color", FlightHud.MUTED if not owned.is_empty() else (FlightHud.RED if not reason.is_empty() else FlightHud.GREEN))
 	else:
 		delivery.text = "1 item to storage"
 		var stored := 0

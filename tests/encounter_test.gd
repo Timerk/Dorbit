@@ -173,16 +173,16 @@ func run() -> void:
 	player.velocity = Vector3.FORWARD * player.cruise_speed
 	player.fly_command(0.1, Vector3.BACK, false)
 	check(player.velocity.z < 0.0, "Reversing cannot instantly flip momentum")
-	for frame in range(24):
+	for frame in range(30):
 		player.fly_command(1.0 / 60.0, Vector3.BACK, false)
-	check(player.velocity.z > 0.0, "Counter-thrust starts reversing within half a second")
+	check(player.velocity.z > 0.0, "Counter-thrust starts reversing within 0.6 seconds at Liberator speed")
 	player.velocity = Vector3.FORWARD * player.cruise_speed
 	player.rotation.y = PI / 2.0
 	player.fly_command(0.1, Vector3.FORWARD, false)
 	check(player.velocity.z < -20.0 and player.velocity.x < 0.0, "Turning redirects thrust while retaining world-space momentum")
 	player.rotation = Vector3.ZERO
 	player.velocity = Vector3.ZERO
-	for frame in range(120):
+	for frame in range(150):
 		player.fly_command(1.0 / 60.0, Vector3.ONE, true)
 	check(is_equal_approx(player.velocity.length(), player.boost_speed), "Diagonal boost respects the shared speed cap")
 	player.fly_command(0.1, Vector3.ONE, false)

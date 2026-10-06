@@ -9,6 +9,13 @@ from pathlib import Path
 import re
 import secrets
 
+# Use the runtime catalog to keep hull slots and cargo validation identical.
+SHIP_MODELS = json.loads((Path(__file__).resolve().parents[1] / "assets/ships/catalog.json").read_text(encoding="utf-8"))
+
+
+def ship_info(model: str) -> dict:
+    return SHIP_MODELS["liberator" if model == "pathfinder" else model]
+
 
 def starter_equipment() -> dict:
     return {"revision": 0, "active_ship": "starter", "ships": {"starter": "pathfinder"},
@@ -24,7 +31,8 @@ def valid_equipment(data: object) -> bool:
             or not isinstance(data.get("active_ship"), str) or data["active_ship"] not in data["ships"]):
         return False
     for ship, model in data["ships"].items():
-        if not re.fullmatch(r"[a-z0-9_-]{1,32}", ship) or model != "pathfinder":
+        if (not isinstance(ship, str) or not re.fullmatch(r"[a-z0-9_-]{1,32}", ship)
+                or not isinstance(model, str) or model not in (*SHIP_MODELS, "pathfinder")):
             return False
     occupied = set()
     for identifier, item in data["items"].items():
@@ -35,7 +43,10 @@ def valid_equipment(data: object) -> bool:
         location = item["ship"], item["slot"]
         if location == ("", ""):
             continue
-        kind, count = ("laser", 4) if item["model"] == "laser" else ("generator", 6)
+        if item["ship"] not in data["ships"]:
+            return False
+        hull = ship_info(data["ships"][item["ship"]])
+        kind, count = ("laser", hull["lasers"]) if item["model"] == "laser" else ("generator", hull["generators"])
         slots = tuple(f"{kind}{index}" for index in range(1, count + 1))
         if item["ship"] not in data["ships"] or item["slot"] not in slots or location in occupied:
             return False
@@ -44,13 +55,12 @@ def valid_equipment(data: object) -> bool:
 
 def valid_cargo(data: object, equipment: dict) -> bool:
     prices = {"prometium", "endurium", "terbium", "prometid", "duranium", "promerium", "seprom"}
-    capacities = {"pathfinder": 200}
     if not isinstance(data, dict) or data.keys() != equipment["ships"].keys():
         return False
     for ship, hold in data.items():
         if not isinstance(hold, dict):
             return False
-        capacity = capacities[equipment["ships"][ship]]
+        capacity = ship_info(equipment["ships"][ship])["cargo"]
         if any(resource not in prices or type(amount) is not int or not 1 <= amount <= capacity
                for resource, amount in hold.items()) or sum(hold.values()) > capacity:
             return False

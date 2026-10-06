@@ -319,6 +319,8 @@ func pack_player(id: int) -> Dictionary:
 	# Replicate combat and movement stats without exposing the owner's full inventory.
 	data["stats"] = Vector4(ship.laser_damage, ship.max_shield, ship.cruise_speed, ship.boost_speed)
 	data["absorption"] = ship.shield_absorption
+	data["model"] = ship.ship_model
+	data["max_hull"] = ship.max_hull
 	return data
 
 
@@ -347,8 +349,10 @@ func apply_player(id: int, data: Dictionary) -> bool:
 	var ship := session.ships[id]
 	var reset: bool = int(ship.get_meta("life", 0)) != data["life"] or ship.alive != data["alive"]
 	ship.set_meta("life", data["life"])
+	if reset:
+		ship.set_meta("feedback_health_received", false)
 	var stats: Vector4 = data["stats"]
-	Equipment.apply_stats(ship, {"damage": stats.x, "shield": stats.y, "absorption": data["absorption"], "speed": stats.z, "boost": stats.w})
+	Equipment.apply_stats(ship, {"model": data["model"], "hull": data["max_hull"], "damage": stats.x, "shield": stats.y, "absorption": data["absorption"], "speed": stats.z, "boost": stats.w})
 	apply_health(ship, data)
 	if ship == session.sector.player:
 		update_local(data)
@@ -473,6 +477,7 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 		return
 	var pilot_id := session.pilot_ids[id]
 	var previous_revision: int = session.store.pilots[pilot_id]["equipment"]["revision"]
+	var previous_ship: String = session.store.pilots[pilot_id]["equipment"]["active_ship"]
 	var result := session.store.transact(pilot_id, sequence, action, subject, ship, slot, session.can_grant_test_credits(id))
 	if session.store.failed:
 		session.stop_for_save_failure()
@@ -481,8 +486,15 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 	records[id]["credits"] = pilot["credits"]
 	cargo_holds[id] = pilot["cargo"].duplicate(true)
 	Equipment.apply_stats(session.ships[id], Equipment.stats(pilot["equipment"]))
+	if previous_ship != pilot["equipment"]["active_ship"]:
+		# Switching is not a repair. Keep absolute hull/shield charge (clamped by
+		# the new fitting), boost energy, cooldowns and damage timer.
+		records[id]["life"] += 1
+		session.ships[id].set_meta("life", records[id]["life"])
+		session.commands.erase(id)
+		session.ships[id].velocity = Vector3.ZERO
 	publish_inventory(id, result)
-	if action in ["buy", "sell"] and pilot["equipment"]["revision"] > previous_revision:
+	if action in ["buy", "buy_ship", "sell"] and pilot["equipment"]["revision"] > previous_revision:
 		message(id, result, "purchase")
 
 
@@ -556,7 +568,7 @@ func collect_loot() -> void:
 			cargo_result.rpc_id(id, next[id]["starter"])
 
 @rpc("authority", "call_remote", "reliable")
-func cargo_result(hold: Dictionary, capacity: int = 200) -> void:
+func cargo_result(hold: Dictionary, capacity: int = 400) -> void:
 	if session.active:
 		session.sector.cargo = hold
 		session.sector.cargo_capacity = capacity

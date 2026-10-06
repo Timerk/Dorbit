@@ -30,7 +30,7 @@ var credits: int = 0
 var kills: int = 0
 var active_contracts: Dictionary = {}
 var cargo: Dictionary = {}
-var cargo_capacity: int = CargoResources.SHIP_CAPACITIES["pathfinder"]
+var cargo_capacity: int = CargoResources.capacity(Equipment.starter())
 var loot: ResourceLoot
 var auto_fire: bool = false
 var paused: bool = false

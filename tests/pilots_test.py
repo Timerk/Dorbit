@@ -12,6 +12,38 @@ import pilots
 
 
 class ProvisioningTest(unittest.TestCase):
+    def test_ship_catalog_and_rotation(self):
+        equipment = pilots.starter_equipment()
+        for model, info in pilots.SHIP_MODELS.items():
+            equipment["ships"][model] = model
+            equipment["items"][model + "-laser"] = {
+                "model": "laser", "ship": model, "slot": f'laser{info["lasers"]}'}
+            equipment["items"][model + "-engine"] = {
+                "model": "engine", "ship": model, "slot": f'generator{info["generators"]}'}
+        equipment["active_ship"] = "goliath"
+        cargo = {ship: {"prometium": pilots.ship_info(model)["cargo"]}
+                 for ship, model in equipment["ships"].items()}
+        self.assertTrue(pilots.valid_equipment(equipment))
+        self.assertTrue(pilots.valid_cargo(cargo, equipment))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            record = {"verifier": "a" * 64, "credits": 2345, "equipment": equipment, "cargo": cargo}
+            path = root / "pilots.json"
+            path.write_text(json.dumps({"version": 3, "pilots": {"test": record}}))
+            result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
+                                     str(root / "credential.json"), "--rotate"], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode())
+            saved = json.loads(path.read_text())["pilots"]["test"]
+            self.assertEqual(saved["equipment"], equipment)
+            self.assertEqual(saved["cargo"], cargo)
+        for model, info in pilots.SHIP_MODELS.items():
+            candidate = json.loads(json.dumps(equipment))
+            candidate["items"][model + "-laser"]["slot"] = f'laser{info["lasers"] + 1}'
+            self.assertFalse(pilots.valid_equipment(candidate))
+            candidate = json.loads(json.dumps(cargo))
+            candidate[model]["prometium"] += 1
+            self.assertFalse(pilots.valid_cargo(candidate, equipment))
+
     def test_expanded_slots(self):
         equipment = pilots.starter_equipment()
         equipment["items"]["starter-laser"]["slot"] = "laser4"
@@ -63,7 +95,7 @@ class ProvisioningTest(unittest.TestCase):
 
     def test_invalid_cargo_preserved(self):
         for cargo in ({}, {"starter": {"seprom": -1}}, {"starter": {"seprom": 1.5}},
-                      {"starter": {"unknown": 1}}, {"starter": {"prometium": 200, "seprom": 1}}):
+                      {"starter": {"unknown": 1}}, {"starter": {"prometium": 400, "seprom": 1}}):
             with self.subTest(cargo=cargo), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 path = root / "pilots.json"
