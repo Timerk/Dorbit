@@ -28,6 +28,7 @@ const SHORTCUTS := {
 var sensitivity: float = DEFAULT_SENSITIVITY
 var bindings: Dictionary = DEFAULT_BINDINGS.duplicate()
 var fullscreen: bool = false
+var vsync: bool = false
 var low_quality: bool = false
 var show_performance: bool = false
 var resolution := Vector2i(1440, 900)
@@ -45,7 +46,7 @@ func load_from(path: String = PATH) -> void:
 		value = config.get_value("bindings", action, bindings[action])
 		if value is int and valid_binding(value):
 			rebind(action, value)
-	for setting in ["fullscreen", "low_quality", "show_performance"]:
+	for setting in ["fullscreen", "vsync", "low_quality", "show_performance"]:
 		value = config.get_value("graphics", setting, get(setting))
 		if value is bool:
 			set(setting, value)
@@ -59,7 +60,7 @@ func save(path: String = PATH) -> void:
 	config.set_value("controls", "sensitivity", sensitivity)
 	for action: String in ACTIONS:
 		config.set_value("bindings", action, bindings[action])
-	for setting in ["fullscreen", "low_quality", "show_performance", "resolution"]:
+	for setting in ["fullscreen", "vsync", "low_quality", "show_performance", "resolution"]:
 		config.set_value("graphics", setting, get(setting))
 	save_failed = config.save(path) != OK
 
