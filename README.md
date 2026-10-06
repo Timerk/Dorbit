@@ -40,6 +40,29 @@ Choosing an alien also selects it for combat. Choosing the outpost or another
 pilot clears the combat target. M or Esc returns to flight. Multiplayer keeps
 running while the overview is open.
 
+Press **P** or click **Autopilot** above the destination compass to fly to the
+selected alien, friendly pilot or outpost. P can be rebound in Settings. Clear
+travel follows the shortest straight 3D route; obstacles use the shortest route
+through sampled detour points, an approximation around the actual colliders.
+Autopilot uses cruise speed and brakes to stop 20 m from ships or 50 m from the
+outpost, within service range. It follows moving contacts without enabling
+automatic fire or boost. Press P again, move or steer manually, change targets,
+or open a menu to cancel. Target loss, rescue and disconnect also cancel it.
+Radiation guidance takes priority until re-entry. A blocked route stops autopilot
+with a message. The HUD button shows the flight state or stopping reason.
+
+`tests/autopilot_test.gd` exercises direct and vertical travel, braking, real
+asteroid detours, moving destinations, station arrival, cancellation and normal
+authoritative ENet movement. Both check runners include it. Run with a renderer
+to exercise the HUD button with mouse input and save 960 x 600 and 1440 x 900
+captures under `build/validation`.
+
+Review the [960 x 600 autopilot HUD](docs/feedback/autopilot-960.png) and
+[1440 x 900 HUD](docs/feedback/autopilot-1440.png). The Windows check suite passed
+on 7 October 2026; the final autopilot fixture passed 35 rendered assertions,
+including rebound keyboard and real mouse input. Linux execution is left to PR
+CI. Routes and arrival tuning still need human playtesting.
+
 The destination compass shows where to turn, distance and relative height.
 Center its dot to face the destination; a hollow dot means it is behind you.
 Radiation temporarily replaces your destination with the nearest safe return

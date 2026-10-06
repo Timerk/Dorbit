@@ -609,8 +609,8 @@ func tick(delta: float) -> void:
 	if not sector.dedicated_server:
 		sector.validate_target()
 		sector.weapon_status = sector.player.firing_blocker(sector.target)
-	var movement := Vector3.ZERO if sector.dedicated_server or sector.paused else sector.player.read_movement()
-	var boost := not sector.dedicated_server and not sector.paused and Input.is_action_pressed("boost")
+	var movement := Vector3.ZERO if sector.dedicated_server or sector.paused else sector.read_flight_movement(delta)
+	var boost := not sector.dedicated_server and not sector.paused and not sector.autopilot.enabled and Input.is_action_pressed("boost")
 	send_clock += delta
 	if multiplayer.is_server():
 		if not sector.dedicated_server and sector.player.alive:

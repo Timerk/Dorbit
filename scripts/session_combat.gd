@@ -207,6 +207,7 @@ func destroyed(ship: SpaceShip) -> void:
 		session.commands.erase(id)
 		if ship == session.sector.player:
 			session.sector.select_target(null)
+			session.sector.autopilot.cancel()
 			ship.release_mouse()
 		message(id, "Ship lost. Recovery cost: %d credits. Rescue in three seconds." % fee)
 
@@ -375,6 +376,7 @@ func apply_player(id: int, data: Dictionary) -> bool:
 		update_local(data)
 		if reset:
 			session.sector.select_target(null)
+			session.sector.autopilot.cancel()
 			ship.release_mouse()
 	return reset
 

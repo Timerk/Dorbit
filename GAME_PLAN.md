@@ -47,8 +47,23 @@ The following controls are agreed as the starting layout. Check comfort and usab
 | Space | Toggle automatic laser fire |
 | Shift | Boost using rechargeable energy |
 | M | Open/close the sector overview and choose a destination |
+| P | Toggle autopilot to the selected destination |
 
 Flight should have noticeable weight and inertia while staying responsive and arcade-like. Ships retain momentum through turns, build speed gradually, and use assisted braking on release plus stronger counter-thrust when reversing. Mouse steering eases over a few frames. There is no unlimited coasting or manual braking requirement.
+
+The user requested toggled autopilot to the selected target by the shortest route.
+P (rebindable) or the button above the destination compass enables it for the
+current alien, friendly pilot or outpost destination. It flies directly in full
+3D when clear, otherwise chooses the shortest visible polyline through sampled
+asteroid rings and expanded station corners. These detours approximate the
+continuous shortest route and keep clearance for the ship collider. Flight uses
+normal cruise thrust, inertia and server movement commands, with no automatic
+boost or fire. It replans for moving contacts and brakes to stop 20 m from ships
+or 50 m from the outpost, within station service range. Manual thrust or steering,
+retargeting, menus, target loss, rescue and disconnect cancel it. Radiation
+guidance takes priority until safe re-entry, then restores the chosen destination.
+If no clear route exists, it cancels with feedback. Arrival distances, turn speed
+and clearance remain playtesting settings.
 
 Settings are available from the connection menu and the Esc flight menu. Players can adjust mouse sensitivity, master/effects volume and mute, and rebind flight and combat actions to a single key or mouse button. Assigning an occupied binding swaps the actions; default controls can be restored. Fullscreen, window resolution, VSync, antialiasing and the performance overlay live on the Graphics tab. VSync is disabled by default and can be enabled to synchronize rendering with the screen's refresh rate. Changes apply immediately and persist on the device. Menu shortcuts remain fixed so settings and navigation stay accessible. In multiplayer, menus stop the local pilot's input and fire while the server continues running.
 
