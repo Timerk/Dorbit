@@ -94,7 +94,7 @@ func run() -> void:
 	var before := pilot.credits + partner.credits
 	await kill(server, "Scout", [pilot, partner])
 	check(pilot.active_contracts["scout"]["progress"] == 1 and partner.active_contracts["scout"]["progress"] == 1, "Every contributor receives full matching progress")
-	check(pilot.credits + partner.credits == before + 30, "Kill credit splitting remains independent")
+	check(pilot.credits + partner.credits == before + 300, "Kill credit splitting remains independent")
 	check(spectator.active_contracts["scout"]["progress"] == 0, "Noncontributors receive no progress")
 	var path := server.session.store.path
 	var disk: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
@@ -126,11 +126,11 @@ func run() -> void:
 	await replicate(server)
 	before = pilot.credits
 	await kill(server, "Scout", [pilot, partner])
-	check(not pilot.active_contracts.has("scout") and pilot.credits == before + 15 + 90, "Final kill pays full hunt reward automatically outside the station")
+	check(not pilot.active_contracts.has("scout") and pilot.credits == before + 150 + 900, "Final kill pays full hunt reward automatically outside the station")
 	check(pilot.active_contracts.size() == 2 and pilot.active_contracts["sentinel"]["progress"] == 1, "Payment leaves other hunts intact")
 	before = pilot.credits
 	await kill(server, "Scout", [pilot])
-	check(pilot.credits == before + 30, "Subsequent kills cannot pay the completed run again")
+	check(pilot.credits == before + 300, "Subsequent kills cannot pay the completed run again")
 	scout.reset_encounter()
 	var departing := server.session.ships[spectator.multiplayer.get_unique_id()]
 	departing.position = scout.home_position + Vector3(0, 0, 80)
@@ -161,7 +161,7 @@ func run() -> void:
 	await action(server, pilot, "abandon", "scout")
 	check(pilot.active_contracts == remaining and pilot.credits == paid_balance, "Abandonment removes only the chosen hunt without a charge")
 	await kill(server, "Heavy", [pilot])
-	check(not pilot.active_contracts.has("heavy") and pilot.credits == paid_balance + 180 + 200, "Heavy completion pays instantly without manual claim")
+	check(not pilot.active_contracts.has("heavy") and pilot.credits == paid_balance + 10000 + 30000, "Heavy completion pays instantly without manual claim")
 	server.session.save_balances({id: PilotStore.MAX_CREDITS})
 	combat.records[id]["credits"] = PilotStore.MAX_CREDITS
 	await kill(server, "Sentinel", [pilot])
@@ -173,8 +173,8 @@ func run() -> void:
 	await replicate(server)
 	id = pilot.multiplayer.get_unique_id()
 	check(HuntingContracts.ready(pilot.active_contracts["sentinel"]) and pilot.credits == PilotStore.MAX_CREDITS, "Pending rewards survive restart without premature payment")
-	server.session.save_balances({id: PilotStore.MAX_CREDITS - 150})
-	combat.records[id]["credits"] = PilotStore.MAX_CREDITS - 150
+	server.session.save_balances({id: PilotStore.MAX_CREDITS - 4500})
+	combat.records[id]["credits"] = PilotStore.MAX_CREDITS - 4500
 	combat.tick(0.01)
 	await replicate(server)
 	check(pilot.active_contracts.is_empty() and pilot.credits == PilotStore.MAX_CREDITS, "Pending reward pays automatically when there is room")
@@ -189,6 +189,7 @@ func run() -> void:
 	await settle(0.2)
 	var ledger: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	var legacy := HuntingContracts.accept("scout")
+	legacy["reward"] = 90
 	legacy["progress"] = 2
 	ledger["pilots"]["pilot0"].erase("contracts")
 	ledger["pilots"]["pilot0"]["contract"] = legacy
@@ -243,8 +244,8 @@ func failed_transaction(operation: String) -> void:
 		server.session.save_balances({id: PilotStore.MAX_CREDITS})
 		combat.records[id]["credits"] = PilotStore.MAX_CREDITS
 		alien.take_damage(alien.max_hull + alien.max_shield + 1.0, server.session.ships[id])
-		server.session.save_balances({id: PilotStore.MAX_CREDITS - 200})
-		combat.records[id]["credits"] = PilotStore.MAX_CREDITS - 200
+		server.session.save_balances({id: PilotStore.MAX_CREDITS - 45000})
+		combat.records[id]["credits"] = PilotStore.MAX_CREDITS - 45000
 	var original := FileAccess.get_file_as_string(server.session.store.path)
 	var record: Dictionary = combat.records[id].duplicate(true)
 	DirAccess.make_dir_absolute(server.session.store.path + ".bak.tmp")

@@ -107,7 +107,7 @@ func run() -> void:
 	sector.auto_fire = true
 	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, player)
 	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, player)
-	check(sector.credits == Sector.KILL_REWARD, "One kill awards exactly one reward")
+	check(sector.credits == int(alien.tuning()["reward"]), "One kill awards exactly one reward")
 	check(sector.kills == 1 and not alien.alive, "Alien destruction updates the encounter")
 	check(sector.target == null and not sector.auto_fire, "Destroyed target clears lock and autofire")
 	check(alien.respawn > 0.0, "A replacement alien is scheduled")
@@ -126,7 +126,7 @@ func run() -> void:
 	var expected_cost := sector.repair_cost()
 	check(expected_cost > 0, "Hull damage has a repair cost")
 	check(sector.request_repair(), "Docking repairs succeed")
-	check(sector.credits == Sector.KILL_REWARD - expected_cost, "Repair cost is deducted once")
+	check(sector.credits == int(alien.tuning()["reward"]) - expected_cost, "Repair cost is deducted once")
 	check(player.hull == player.max_hull and player.shield == player.max_shield, "Repair restores hull and shields")
 	check(sector.objective_stage == 4, "Hunt and repair complete the first encounter")
 	sector.credits = 0
