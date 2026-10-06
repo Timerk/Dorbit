@@ -371,6 +371,7 @@ func relocate_alien(enemy: Alien) -> void:
 func set_paused(value: bool) -> void:
 	if preflight:
 		paused = true
+		autopilot.cancel()
 		player.release_mouse()
 		auto_fire = false
 		if not value and is_instance_valid(main_menu):
