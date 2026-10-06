@@ -54,7 +54,7 @@ func run() -> void:
 		root.size = Vector2i(960, 600)
 	await press(client, KEY_B)
 	check(shop.visible and client.paused and not client.settings_menu.pause_panel.visible, "B opens the shop and suppresses flight and pause controls")
-	check(shop.selected_model == "laser" and shop.cards.values().all(func(card: Button): return card.visible), "All equipment opens with the laser selected")
+	check(shop.selected_model == "laser" and shop.cards.keys().filter(func(model: String): return shop.cards[model].visible) == Equipment.MODELS.keys(), "All equipment opens with equipment only and the laser selected")
 	await click(client, shop.cargo_button)
 	check(shop.cargo_page.visible and not shop.equipment_page.visible and shop.sells.size() == 7, "Trading navigation opens all seven ore cards without overlapping the equipment catalog")
 	check(Rect2(Vector2.ZERO, Vector2(960, 600)).encloses(shop.get_global_rect()), "Trading fits the minimum viewport with category-shop navigation")
@@ -67,6 +67,8 @@ func run() -> void:
 		await settle()
 		check(Rect2(Vector2.ZERO, Vector2(dimensions)).encloses(shop.get_global_rect()), "Shop stays inside %s" % dimensions)
 		for model: String in shop.cards:
+			if not shop.cards[model].visible:
+				continue
 			check(shop.get_global_rect().encloses(shop.cards[model].get_global_rect()), "Card %s fits at %s" % [model, dimensions])
 		check(shop.get_global_rect().encloses(shop.buys[shop.selected_model].get_global_rect()), "Buy control fits at %s" % dimensions)
 		if dimensions.x == 960:
@@ -105,8 +107,9 @@ func run() -> void:
 	check(shop.ownership.text.contains("OWNED 2") and shop.ownership.text.contains("1 in storage"), "Server inventory refreshes the displayed ownership count")
 	shop.categories["ships"].pressed.emit()
 	await settle()
-	check(shop.selected_model.is_empty() and shop.empty_catalog.visible and not shop.grid.visible and shop.buys.values().all(func(buy: Button): return not buy.visible), "Ships is an empty category with no stale purchase control")
-	check(shop.product_title.text == "Liberator" and shop.bonus.text == "116,000 base hull" and shop.slot_hint.text == "4 laser / 6 shared generator / 2 extra slots", "Ship preview uses the rebalanced regular Liberator stats")
+	check(shop.models_in_category("ships").size() == 12 and shop.grid.visible and not shop.empty_catalog.visible, "Ships lists all twelve purchasable hulls")
+	shop.select_model("liberator")
+	check(shop.product_title.text == "Liberator" and shop.bonus.text.contains("116,000 hull") and shop.slot_hint.text == "4 laser / 6 shared generator / 2 extra slots" and shop.buys["liberator"].disabled, "Owned Liberator shows its model and stats and blocks another purchase")
 	await capture(client, "shop-ships")
 	shop.categories["weapons"].pressed.emit()
 	check(server.session.store.commit({"pilot0": 500}), "Set a low wallet through persistence")

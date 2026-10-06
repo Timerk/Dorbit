@@ -11,7 +11,6 @@ const TYPES := {
 	"promerium": {"name": "Promerium", "price": 32, "color": Color("ffc55d")},
 	"seprom": {"name": "Seprom", "price": 64, "color": Color("ab83ff")},
 }
-const SHIP_CAPACITIES := {"pathfinder": 200}
 const LOOT := {
 	"Scout": {"prometium": Vector2i(6, 10), "endurium": Vector2i(2, 4), "terbium": Vector2i(1, 2)},
 	"Sentinel": {"prometium": Vector2i(10, 16), "endurium": Vector2i(6, 10), "terbium": Vector2i(4, 6), "prometid": Vector2i(2, 4), "duranium": Vector2i(1, 2)},
@@ -21,7 +20,7 @@ const LOOT := {
 static func capacity(equipment: Dictionary, ship: String = "") -> int:
 	if ship.is_empty():
 		ship = equipment["active_ship"]
-	return SHIP_CAPACITIES[equipment["ships"][ship]]
+	return int(ShipCatalog.info(equipment["ships"][ship])["cargo"])
 
 static func empty_holds(equipment: Dictionary) -> Dictionary:
 	var holds := {}

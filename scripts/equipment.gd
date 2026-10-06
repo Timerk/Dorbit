@@ -8,12 +8,6 @@ const MODELS := {
 	"shield": {"name": "Shield generator", "kind": "generator", "price": 2400, "damage": 0.0, "shield": 1000.0, "absorption": 0.4, "speed": 0.0},
 	"engine": {"name": "Ion engine", "kind": "generator", "price": 2400, "damage": 0.0, "shield": 0.0, "speed": 8.0},
 }
-const SLOTS := {
-	"laser1": "laser", "laser2": "laser", "laser3": "laser", "laser4": "laser",
-	"generator1": "generator", "generator2": "generator", "generator3": "generator",
-	"generator4": "generator", "generator5": "generator", "generator6": "generator",
-	"extra1": "extra", "extra2": "extra",
-}
 # Keep the persisted pathfinder model ID so existing ownership and cargo stay valid.
 const STARTER_HULL: float = 116000.0
 
@@ -35,7 +29,7 @@ static func valid(data: Variant) -> bool:
 	if not data.get("active_ship") is String or not data["ships"].has(data["active_ship"]) or data["ships"].is_empty():
 		return false
 	for id: Variant in data["ships"]:
-		if not id is String or not PilotStore.valid_id(id) or data["ships"][id] != "pathfinder":
+		if not id is String or not PilotStore.valid_id(id) or not data["ships"][id] is String or not ShipCatalog.MODELS.has(ShipCatalog.canonical(data["ships"][id])):
 			return false
 	var occupied: Dictionary = {}
 	for id: Variant in data["items"]:
@@ -46,7 +40,10 @@ static func valid(data: Variant) -> bool:
 			return false
 		if item["ship"] == "" and item["slot"] == "":
 			continue
-		if not data["ships"].has(item["ship"]) or not SLOTS.has(item["slot"]) or SLOTS[item["slot"]] != MODELS[item["model"]]["kind"]:
+		if not data["ships"].has(item["ship"]):
+			return false
+		var ship_slots := slots(data, item["ship"])
+		if not ship_slots.has(item["slot"]) or ship_slots[item["slot"]] != MODELS[item["model"]]["kind"]:
 			return false
 		var location: String = item["ship"] + "/" + item["slot"]
 		if occupied.has(location):
@@ -62,9 +59,10 @@ static func fitting_blocker(data: Dictionary, item_id: String, ship: String, slo
 		return "Already in storage." if data["items"][item_id]["ship"] == "" else ""
 	if not data["ships"].has(ship):
 		return "You do not own that ship."
-	if SLOTS.get(slot) == "extra":
+	var ship_slots := slots(data, ship)
+	if ship_slots.get(slot) == "extra":
 		return "Extra slots are reserved for future equipment."
-	if not SLOTS.has(slot) or SLOTS[slot] != MODELS[data["items"][item_id]["model"]]["kind"]:
+	if not ship_slots.has(slot) or ship_slots[slot] != MODELS[data["items"][item_id]["model"]]["kind"]:
 		return "Incompatible slot. Lasers need laser slots; shields and engines share generator slots."
 	for item: Dictionary in data["items"].values():
 		if item["ship"] == ship and item["slot"] == slot:
@@ -72,25 +70,37 @@ static func fitting_blocker(data: Dictionary, item_id: String, ship: String, slo
 	return ""
 
 
+static func slots(data: Dictionary, ship: String = "") -> Dictionary:
+	return ShipCatalog.slots(data["ships"][data["active_ship"] if ship.is_empty() else ship])
+
+
 static func stats(data: Dictionary, ship: String = "") -> Dictionary:
 	if ship.is_empty():
 		ship = data["active_ship"]
-	var result := {"damage": 0.0, "shield": 0.0, "absorption": 0.0, "speed": 28.0, "boost": 70.0}
+	var model: String = ShipCatalog.canonical(data["ships"][ship])
+	var hull := ShipCatalog.info(model)
+	var speed: float = hull["speed"] * ShipCatalog.SPEED_SCALE
+	var result := {"model": model, "hull": float(hull["hull"]), "damage": 0.0, "shield": 0.0, "absorption": 0.0, "speed": speed, "boost": speed + ShipCatalog.BOOST_BONUS}
 	for item: Dictionary in data["items"].values():
 		if item["ship"] != ship:
 			continue
-		var model: Dictionary = MODELS[item["model"]]
+		var item_model: Dictionary = MODELS[item["model"]]
 		for stat in ["damage", "shield", "speed"]:
-			result[stat] += model[stat]
-		result["boost"] += model["speed"]
+			result[stat] += item_model[stat]
+		result["boost"] += item_model["speed"]
 		# Weight by capacity, rather than adding percentages for multiple generators.
-		result["absorption"] += model["shield"] * model.get("absorption", 0.0)
+		result["absorption"] += item_model["shield"] * item_model.get("absorption", 0.0)
 	if result["shield"] > 0.0:
 		result["absorption"] /= result["shield"]
 	return result
 
 
 static func apply_stats(ship: Pilot, values: Dictionary) -> void:
+	if values.has("model"):
+		ship.set_ship_model(values["model"])
+	if values.has("hull"):
+		ship.max_hull = values["hull"]
+		ship.hull = minf(ship.hull, ship.max_hull)
 	ship.laser_damage = values["damage"]
 	ship.max_shield = values["shield"]
 	ship.shield_absorption = values["absorption"]

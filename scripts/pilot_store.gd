@@ -148,6 +148,26 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 			return "Insufficient credits. Need %d CR." % price
 		pilot["credits"] -= price
 		equipment["items"]["purchase-%d" % sequence] = {"model": subject, "ship": "", "slot": ""}
+	elif action == "buy_ship":
+		if not ShipCatalog.MODELS.has(subject) or not ship.is_empty() or not slot.is_empty():
+			return "Unknown ship model."
+		if not ShipCatalog.owned_id(equipment, subject).is_empty():
+			return "You already own this ship."
+		var price := ShipCatalog.price(subject)
+		if pilot["credits"] < price:
+			return "Insufficient credits. Need %d CR." % price
+		var identifier := "ship-%d" % sequence
+		if equipment["ships"].has(identifier):
+			return "Ship ID conflicts with its transaction sequence."
+		pilot["credits"] -= price
+		equipment["ships"][identifier] = subject
+		pilot["cargo"][identifier] = {}
+	elif action == "switch_ship":
+		if not equipment["ships"].has(subject) or not ship.is_empty() or not slot.is_empty():
+			return "You do not own that ship."
+		if equipment["active_ship"] == subject:
+			return "Ship is already active."
+		equipment["active_ship"] = subject
 	elif action == "test_credits":
 		if not subject.is_empty() or not ship.is_empty() or not slot.is_empty():
 			return "Invalid test credit request."
@@ -163,7 +183,7 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		var hold: Dictionary = pilot["cargo"][equipment["active_ship"]]
 		var sold := hold.duplicate() if resource == "all" else ({resource: hold[resource]} if hold.has(resource) else {})
 		if parts.size() == 2:
-			if resource == "all" or not parts[1].is_valid_int() or parts[1].length() > 3:
+			if resource == "all" or not parts[1].is_valid_int() or parts[1].length() > 4:
 				return "Invalid sale quantity."
 			var amount := parts[1].to_int()
 			if amount < 1 or amount > int(hold.get(resource, 0)):
@@ -194,6 +214,10 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		return "Preview: added %d test credits." % (pilot["credits"] - previous_credits)
 	if action == "sell":
 		return "Resources sold. +%d credits." % (pilot["credits"] - previous_credits)
+	if action == "buy_ship":
+		return "Ship purchased with an empty fitting. Activate it in Ship equipment."
+	if action == "switch_ship":
+		return "Ship activated. Equipment and cargo stay with their ships."
 	return "Purchased. Item is in storage." if action == "buy" else "Fitting saved."
 
 
