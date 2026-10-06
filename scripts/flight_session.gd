@@ -7,7 +7,7 @@ const MAX_PLAYERS: int = 10
 const COMMAND_TIMEOUT: float = 0.5
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when gameplay packet contents change without an RPC signature change.
-const NETWORK_SCHEMA: int = 5
+const NETWORK_SCHEMA: int = 6
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
