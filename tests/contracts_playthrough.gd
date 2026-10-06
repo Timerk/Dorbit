@@ -37,7 +37,16 @@ func _process(delta: float) -> bool:
 		if is_instance_valid(hunt) and hunt.alive:
 			sector.player.look_at(hunt.position, Vector3.UP)
 			sector.select_target(hunt)
-			sector.auto_fire = true
+			sector.auto_fire = hunt.available()
+			# Follow each respawn like the single-hunt replay instead of retaining
+			# the firing position from the initial station approach.
+			if sector.player.position.distance_to(hunt.position) > 85.0 or sector.player.position.distance_to(Sector.STATION_POSITION) < 85.0:
+				Input.action_press("forward")
+			else:
+				Input.action_release("forward")
+		elif is_instance_valid(hunt):
+			Input.action_release("forward")
+			sector.auto_fire = false
 	return false
 
 
@@ -82,7 +91,7 @@ func run() -> void:
 	check(sector.hud.contract_selected.is_empty() and sector.hud.contract_empty.visible and not sector.hud.contract_accept.visible, "Empty active tab has no actionable selection")
 	sector.hud.contract_tabs[0].pressed.emit()
 	await click_button(sector.hud.contract_choices["heavy"])
-	check(sector.active_contracts.is_empty() and sector.hud.contract_selected == "heavy" and sector.hud.contract_reward.text == "Credits    200", "Selecting a hunt only changes briefing and reward, without accepting")
+	check(sector.active_contracts.is_empty() and sector.hud.contract_selected == "heavy" and sector.hud.contract_reward.text == "Credits    30000", "Selecting a hunt only changes briefing and reward, without accepting")
 	sector.hud.contract_choices["scout"].grab_focus()
 	await press(KEY_ENTER)
 	check(sector.hud.contract_selected == "scout", "Keyboard activation selects a hunt without accepting it")
@@ -156,15 +165,33 @@ func run() -> void:
 	Input.action_release("forward")
 	await create_timer(0.5).timeout
 	await snapshot("contracts-03-hunting")
-	deadline = Time.get_ticks_msec() + 80000
+	deadline = Time.get_ticks_msec() + 150000
+	var repaired_progress := 0
+	var repair_spent := 0
 	while sector.active_contracts.has("scout") and Time.get_ticks_msec() < deadline:
 		if not sector.player.alive:
 			break
 		await physics_frame
+		var progress: int = sector.active_contracts.get("scout", {}).get("progress", 3)
+		if progress > repaired_progress and progress < 3:
+			repaired_progress = progress
+			var tracked := hunt
+			hunt = null
+			sector.auto_fire = false
+			await return_to_station()
+			var before_repair := sector.credits
+			await press(KEY_R)
+			await create_timer(0.4).timeout
+			repair_spent += before_repair - sector.credits
+			check(sector.player.alive and sector.player.hull == sector.player.max_hull and sector.active_contracts.get("scout", {}).get("progress") == progress, "Station repairs preserve partial Scout hunt progress")
+			hunt = tracked
+			if failures:
+				break
 	flying = false
 	hunt = null
 	sector.auto_fire = false
-	check(not sector.active_contracts.has("scout") and sector.credits == 3180, "Three live Scout kills pay automatically in flight")
+	Input.action_release("forward")
+	check(not sector.active_contracts.has("scout") and sector.credits == 11800 - repair_spent, "Three live Scout kills pay automatically in flight, less confirmed repair charges")
 	check(sector.active_contracts.has("sentinel") and sector.active_contracts.has("heavy"), "Other hunts remain active")
 	await snapshot("contracts-04-complete")
 	if failures:

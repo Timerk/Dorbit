@@ -105,7 +105,7 @@ The rendered replay covers click/Tab selection, fire-state reasons using real co
 Milestone 3 now includes multiple simultaneous aliens in the current sector. This slice precedes equipment and hunting contracts. It adds no connected sectors, bosses, loot tables, missions or art pipeline.
 
 - Five stable identities support independent encounters, with random homes across the sector at startup and after each death. Every alien owns its identity, movement, target choice, health, contribution list, life number, death and respawn timer. The server controls these and all rewards, including when no pilots are connected.
-- Scouts are starter encounters; Sentinels require additional lasers or cooperative hunting. The Heavy is intended for upgraded pilots or a small group. Their colored contacts appear on the radar and sector overview. Enemy hull, shields and damage were increased for the starter equipment rebalance; movement, rewards and respawn timers stay unchanged.
+- Scouts are starter encounters; Sentinels require additional lasers or cooperative hunting. The Heavy is intended for upgraded pilots or a small group. Their colored contacts appear on the radar and sector overview. Enemy hull, shields and damage were increased for the starter equipment rebalance. Credit pools now reflect the equipment and ship prices; movement and respawn timers retain their previous tuning.
 - Each kill splits that type's credit pool equally among connected pilots who damaged that alien in its current life. Contributors awaiting rescue remain eligible; disconnected pilots are removed. Integer remainders go in ascending peer-ID order. Persistence commits the shares before clients see them.
 - Killing or resetting one alien must leave other encounters, contributions and active fire intact. Player rescue also leaves encounters independent.
 - Station protection remains a 75 m sphere. Aliens cannot attack protected pilots. Protected pilots cannot damage aliens.
@@ -118,9 +118,9 @@ Provisional tuning lives in `Alien.TYPES`, `Sector.ALIEN_KINDS` and `Sector.MAP_
 
 | Type | Count | Hull / shield | Speed | Laser damage / interval | Weapon range | Detection | Home leash | Credits | Respawn |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Scout | 2 | 1,000 / 500 | 29 m/s | 1,500 / 0.85 s | 120 m | 155 m | 170 m | 30 | 10 s |
-| Sentinel | 2 | 4,000 / 2,000 | 18 m/s | 5,000 / 0.75 s | 155 m | 180 m | 230 m | 75 | 12 s |
-| Heavy | 1 | 10,000 / 5,000 | 12 m/s | 12,000 / 0.9 s | 165 m | 220 m | 180 m | 180 | 18 s |
+| Scout | 2 | 1,000 / 500 | 29 m/s | 1,500 / 0.85 s | 120 m | 155 m | 170 m | 300 | 10 s |
+| Sentinel | 2 | 4,000 / 2,000 | 18 m/s | 5,000 / 0.75 s | 155 m | 180 m | 230 m | 1,500 | 12 s |
+| Heavy | 1 | 10,000 / 5,000 | 12 m/s | 12,000 / 0.9 s | 165 m | 220 m | 180 m | 10,000 | 18 s |
 
 Home coordinates are server-selected random points throughout the safe sphere, with clearance for the entire home leash plus 35 m, station detection/protection, asteroids and other homes. IDs 0 and 3 remain Sentinels, 1 and 2 Scouts, and 4 Heavy. Patrols stay within 18 m horizontally and 8 m vertically of home before engagement. Returning living aliens keep their current home; a death chooses a new home on respawn. Timers never create extra nodes. Clients and late joiners receive authoritative homes and transforms.
 
@@ -277,7 +277,55 @@ Installed LF-3 bonuses add 26.25 damage per copy (15% of 175) only when shooting
 
 For 80% absorption, a 100-damage hit takes 80 shield and 20 hull. With only 30 shield remaining it takes 30 shield and 70 hull. No shield means the entire hit damages hull. Starter shields use 40%; all current aliens use 80%. Hull can reach zero while shield remains. Shield recovery waits six seconds without damage, then restores one twelfth of maximum capacity per second. Station fitting never refills charge. Repairs cost `ceil(missing hull fraction × 14.4)` credits, capped at the wallet, preserving the old full-hull price of 15 CR at the new scale; rescue still costs up to 10 CR.
 
-Alien values are Dorbit playtesting choices, not copied DarkOrbit alien stats. With continuous in-range fire and no regeneration, one starter laser kills a Scout in about 9.7 seconds; three lasers kill a Sentinel in about 12.6 seconds; four lasers kill a Heavy in about 23.9 seconds. Scouts suit starter solo hunts, Sentinels reward filling laser slots, and Heavy damage encourages a group. Kill pools, contracts and resource payouts stay unchanged. The former 15–30 minute purchase estimates no longer describe this balance; actual progression timing and multi-pilot encounters need human playtesting.
+Alien values are Dorbit playtesting choices, not copied DarkOrbit alien stats. With continuous in-range fire and no regeneration, one starter laser kills a Scout in about 9.7 seconds; three lasers kill a Sentinel in about 12.6 seconds; four lasers kill a Heavy in about 23.9 seconds. Scouts suit starter solo hunts, Sentinels reward filling laser slots, and Heavy damage encourages a group. Equipment and ship prices retain their agreed values. Kill pools, contracts and resource sale prices are tuned together below; actual progression timing and multi-pilot encounters need human playtesting.
+
+### Credit income tuning for the ship roster
+
+The requested income rebalance is based on the reference equipment prices in
+PR 35: LF-1 costs 10,000 CR, MP-1 40,000 CR, LF-2 500,000 CR and LF-3 1,000,000 CR.
+Scouts fund the first fittings; Sentinels fund early hulls and intermediate
+items; upgraded or cooperative Heavy hunts fund the million-credit equipment
+and hulls. These are provisional Dorbit values, not reference-game rewards.
+
+| Encounter | Shared kill pool | Contract (kills / full payout per eligible pilot) | Resource box sale value (min / mean / max) | Solo credits per kill with repeated contracts and all loot sold (mean) |
+| --- | ---: | ---: | ---: | ---: |
+| Scout | 300 | 3 / 900 | 140 / 200 / 260 | 800 |
+| Sentinel | 1,500 | 2 / 4,500 | 700 / 970 / 1,240 | 4,720 |
+| Heavy | 10,000 | 1 / 30,000 | 3,140 / 4,270 / 5,400 | 44,270 |
+
+Means use uniform loot rolls. Kill pools and boxes are shared; each contributor
+with an accepted matching contract receives its full contract reward. Resource
+prices are ten times the original values, preserving the seven-resource value
+order and existing quantities. A box still belongs to whoever collects it;
+there is no automatic cargo split.
+
+Five Scout contracts (15 kills) earn 11,100 to 12,900 CR including sold loot,
+before repairs, enough for a 10,000-CR LF-1 from an empty wallet with a repair
+reserve. The 15 to 30 minute first upgrade target assumes 60 to 120 seconds per
+kill including approach, pursuit, collection, station trips and acceptance.
+The controlled 9.7-second combat fixture does not establish this cadence;
+efficient pilots may progress faster. Scouts without contracts average 500 CR
+per kill including loot. The 2,000-CR G3N-1010 is an earlier optional purchase;
+it is slower than the free starter Ion engine and is not the first combat upgrade.
+
+At the mean contracted Sentinel income, about 22 kills fund the 100,000-CR
+Piranha and 32 fund either 150,000-CR hull, before repairs and fitting expenses.
+For three contributors all running Heavy contracts, each kill pays each pilot
+33,333 or 33,334 CR before loot. With equal loot collection over time, the mean
+is about 34,757 CR each: a 1-million-CR item takes about 29 hunts, and an
+8-million-CR hull about 231 hunts. Assuming 1 to 3 minutes per Heavy and
+contract return gives about 4 to 12 hours for the hull, spread over several
+sessions. Travel, survival, fitting purchases, unequal pickups and downtime
+can increase this. The Sentinel-to-Heavy income jump supports the expensive
+roster and is a priority for human solo and group playtesting; this sector has
+no higher enemy tiers. Full endgame fittings remain longer goals than one hull.
+
+Existing wallets, fittings and cargo quantities survive unchanged; held cargo
+sells at the new prices. Accepted and completed pending contracts retain their
+saved required kills and payout, including the former 90/150/200-CR terms.
+Only newly accepted runs use the new offers. This tuning requires no additional
+ledger or network schema change beyond PR 35. Servers determine payouts; use
+matching builds so price and offer previews agree with the server.
 
 ### Enemy resources, cargo and station sales
 
@@ -285,13 +333,13 @@ This agreed Milestone 3 addition extends alien hunting with physical resource bo
 
 | Resource | Credits per unit | Scout drop | Sentinel drop | Heavy drop |
 | --- | --- | --- | --- | --- |
-| Prometium | 1 | 6 to 10 | 10 to 16 | 18 to 24 |
-| Endurium | 2 | 2 to 4 | 6 to 10 | 12 to 18 |
-| Terbium | 4 | 1 to 2 | 4 to 6 | 8 to 12 |
-| Prometid | 8 | None | 2 to 4 | 6 to 10 |
-| Duranium | 16 | None | 1 to 2 | 4 to 6 |
-| Promerium | 32 | None | None | 2 to 4 |
-| Seprom | 64 | None | None | 1 to 2 |
+| Prometium | 10 | 6 to 10 | 10 to 16 | 18 to 24 |
+| Endurium | 20 | 2 to 4 | 6 to 10 | 12 to 18 |
+| Terbium | 40 | 1 to 2 | 4 to 6 | 8 to 12 |
+| Prometid | 80 | None | 2 to 4 | 6 to 10 |
+| Duranium | 160 | None | 1 to 2 | 4 to 6 |
+| Promerium | 320 | None | None | 2 to 4 |
+| Seprom | 640 | None | None | 1 to 2 |
 
 Each alien leaves one shared box at its destruction position. The server rolls quantities once; damage repeats and client claims cannot create drops. Stronger types always drop more total units and include more valuable resources.
 
@@ -451,9 +499,9 @@ The contract board follows the supplied Mission Control reference: hunting and a
 
 | Alien | Required kills | Fixed contract reward |
 | --- | --- | --- |
-| Scout | 3 | 90 credits |
-| Sentinel | 2 | 150 credits |
-| Heavy | 1 | 200 credits |
+| Scout | 3 | 900 credits |
+| Sentinel | 2 | 4,500 credits |
+| Heavy | 1 | 30,000 credits |
 
 Counts and rewards are provisional values for short hunting trips. Accepted contracts retain their original terms if later updates tune the offers.
 

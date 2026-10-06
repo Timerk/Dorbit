@@ -3,9 +3,9 @@ extends RefCounted
 ## Concurrent hunts. Saved runs keep their own objective and reward across tuning changes.
 
 const OFFERS: Dictionary = {
-	"scout": {"type": "scout", "required": 3, "reward": 90},
-	"sentinel": {"type": "sentinel", "required": 2, "reward": 150},
-	"heavy": {"type": "heavy", "required": 1, "reward": 200},
+	"scout": {"type": "scout", "required": 3, "reward": 900},
+	"sentinel": {"type": "sentinel", "required": 2, "reward": 4500},
+	"heavy": {"type": "heavy", "required": 1, "reward": 30000},
 }
 
 

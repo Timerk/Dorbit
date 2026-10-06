@@ -200,7 +200,7 @@ Credits survive disconnects and server restarts. Ship position, health, kills an
 
 ### Hunting contracts
 
-Press C at Outpost 01 to accept repeatable hunts: 3 Scouts for 90 credits, 2 Sentinels for 150, and 1 Heavy for 200. All three can run together, with one active run of each offer. The final qualifying kill automatically pays its reward in flight and clears that hunt. The board and flight HUD track all active hunts. C or Esc returns to flight.
+Press C at Outpost 01 to accept repeatable hunts: 3 Scouts for 900 credits, 2 Sentinels for 4,500, and 1 Heavy for 30,000. All three can run together, with one active run of each offer. The final qualifying kill automatically pays its reward in flight and clears that hunt. The board and flight HUD track all active hunts. C or Esc returns to flight.
 
 Accepting or abandoning a hunt requires the same position, speed and damage cooldown as repairs. Each eligible contributor earns a full kill of matching progress after acceptance, separately from split kill credits. Death preserves progress. Abandonment costs nothing and removes only the selected hunt. Completed or abandoned offers can be accepted again at the station. Counts and rewards need playtesting.
 
@@ -267,6 +267,37 @@ Client and server must use this catalog update together. Network schema 7 includ
 The reference catalog test (`res://tests/darkorbit_equipment_test.gd`) runs in both check helpers. It exercises every purchasable model through authenticated purchase, duplicate protection, installation, stat replication and removal. It rejects LF-4, SG3N-B00 and legacy-engine purchases, then checks mixed shields, cumulative fusion regeneration, fractional LF-3 alien damage through real physics shots, UI bonus displays, bonus restoration when switching hulls and restart persistence. A rendered run produces the review captures above under `build/validation`. On 6 October 2026 it passed 131 assertions both headlessly and on Windows OpenGL; the rendered shop test passed 53. The full Windows check script passed, including ten authenticated clients and the flight replay. The compatibility and flight replays emitted their existing ObjectDB cleanup warnings on exit; the new rendered runs were clean. Six Python operator-tool tests passed, including credential rotation preserving all new models. Linux execution and exported client checks are left to PR CI; WSL is unavailable on this machine. Item artwork remains the existing category placeholders, and reference prices need human economy playtesting.
 
 Rebalance validation on 3 October 2026: the complete Windows headless check passed, the rendered equipment replay passed 70 assertions at 960 x 600 and 1440 x 900, and the rendered Scout hunt completed with survival, reward and station repair. The dedicated server check included ten authenticated clients. The new balance fixture passed 26 assertions covering damage split, depletion, destruction with remaining shield, regeneration, all laser/generator slot limits, authoritative fitting/replication and restart. Its stationary physics fights measured 9.67 seconds for one laser against a Scout, 12.61 seconds for three lasers against a Sentinel, and 7.99 seconds for three four-laser pilots against a Heavy. These controlled fights do not measure pursuit, evasive flight or the live economy. Four Python provisioning tests passed. The Linux runner includes the new balance test; Linux execution is left to PR CI. Human balance and progression playtesting remain necessary.
+
+### Credit income
+
+Kills now pay shared pools of **300 CR (Scout), 1,500 CR (Sentinel), and 10,000 CR
+(Heavy)**. Resource sales pay **10 / 20 / 40 / 80 / 160 / 320 / 640 CR** per unit
+from Prometium through Seprom. Matching contracts add the full reward above to
+each eligible pilot. Five Scout contracts plus sold loot fund a 10,000-CR LF-1;
+Sentinel hunts fund early ships, while Heavy contracts support the larger hull
+prices. See [income assumptions](GAME_PLAN.md#credit-income-tuning-for-the-ship-roster)
+for solo/group totals and provisional pacing. Existing accepted and pending
+contracts keep their saved terms; new offers use the increased payouts. Held
+cargo sells at current prices. Use matching client and server builds.
+
+`tests/economy_test.gd` earns and purchases an upgrade from a zero wallet using
+minimum Scout loot, checks three-pilot Heavy shares and full contract payouts,
+rejects repeated destruction payouts, and reloads the earned equipment and
+credits after restart. Both check runners include it. Timing still needs human
+playtesting; the test exercises transactions rather than travel time.
+
+Credit-income validation on 6 October 2026: the full Windows check passed,
+including the 18-assertion economy fixture and ten authenticated clients. The
+rendered resource replay passed 82 assertions; the rendered contract replay
+passed 28, including pursuit, station repairs preserving partial progress,
+automatic payment, fitting and restart. Six Python provisioning tests passed.
+The contract replay seeds a 10,000-CR purchase budget; zero-wallet funding is
+checked separately by the economy fixture. Review the
+[updated resource prices](docs/feedback/economy-resources.png) and
+[confirmed Scout payment](docs/feedback/economy-contract-reward.png). Existing
+ObjectDB cleanup warnings remain in some older checks. Linux-only deployment
+and shutdown tests cannot run on Windows and are left to CI. Human progression
+playtesting is still required.
 
 ### Saves, backups and recovery
 
@@ -402,7 +433,7 @@ On 18 September, alien variety was integrated with the merged feedback changes. 
 
 Purchases play a confirmation cue only after the server commits a new transaction. Failed and duplicate purchases stay silent. Clients and server must use matching builds.
 
-`tests/hunting_contracts_test.gd` checks authenticated concurrent contracts, shared kill progress, automatic payouts, restart recovery, abandonment, repeatability, legacy migration and failed saves. Both check helpers run it. For a rendered replay, run Godot with `--path . --script res://tests/contracts_playthrough.gd`. It provisions a disposable pilot and server on UDP 24690, accepts all three hunts, completes the Scout hunt with automatic payment in flight, and saves frames under `build/validation/contracts-*.png`.
+`tests/hunting_contracts_test.gd` checks authenticated concurrent contracts, shared kill progress, automatic payouts, restart recovery, abandonment, repeatability, legacy migration and failed saves. Both check helpers run it. For a rendered replay, run Godot with `--path . --script res://tests/contracts_playthrough.gd`. It provisions a disposable pilot and server on UDP 24690, accepts all three hunts, follows Scout respawns and repairs between kills, completes the Scout hunt with automatic payment in flight, and saves frames under `build/validation/contracts-*.png`.
 
 The contract board hides pause-menu audio controls. Equipment purchases and fitting share the version-3 persistence path with concurrent contracts and automatic payouts. The replay starts with a 10,000-credit purchase budget, buys and installs a second LF-1 after the Scout hunt, and checks that credits, all accepted contracts and fitting survive a server restart. Inventory uses an owner-only reliable channel; world snapshots send one player per packet with equipment stats and active contracts.
 
