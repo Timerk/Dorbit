@@ -2,7 +2,7 @@
 
 A space game inspired by DarkOrbit, built with Godot. Windows players connect to a dedicated Linux server to fly, hunt aliens, earn rewards and repair together. Playing alone uses the same server encounter.
 
-Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated server with provisioned pilot identities, persistent credits, hunting contracts, and station equipment purchases and fitting. The sector supports independent Scout, Sentinel and Heavy hunts. Ships, scenery and effects use procedural placeholder art.
+Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated server with provisioned pilot identities, persistent credits, hunting contracts, and station equipment purchases and fitting. The sector supports independent Scout, Sentinel and Heavy hunts. Outpost 01 has an original nebula/starfield background, a shaded planet, textured asteroid models and an industrial station. Ships and combat effects retain their temporary art.
 
 - [Game requirements and development plan](GAME_PLAN.md)
 - [Development workflow](AGENTS.md)
@@ -10,6 +10,18 @@ Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated ser
 - [Blender ship review collection](art/ship-review/README.md)
 
 ## Play
+
+### Sector environment
+
+The environment takes composition cues from DarkOrbit's planet and nebula maps,
+adapted to full 3D flight. Original Blender assets replace the smooth placeholder
+rocks and station. Distant freighter wrecks and an asteroid belt provide parallax
+beyond the flight boundary; they have no services, loot or collision. Gameplay
+obstacles and encounter positions retain their existing layout.
+
+See [sector assets and regeneration](assets/sector/README.md) and
+[environment validation](docs/sector-art/README.md) for screenshots and checks.
+Blender is only required to regenerate assets, not to run, build or deploy the game.
 
 ### Preview test credits
 

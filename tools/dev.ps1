@@ -83,6 +83,7 @@ switch ($Task) {
             New-Item -ItemType Directory -Force -Path $env:APPDATA | Out-Null
             Invoke-Godot @('--headless', '--path', $projectRoot, '--editor', '--import')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/encounter_test.gd')
+            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/sector_visuals_test.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/targeting_test.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/network_test.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/network_combat_test.gd')

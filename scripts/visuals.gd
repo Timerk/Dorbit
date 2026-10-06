@@ -1,6 +1,6 @@
 class_name SectorVisuals
 extends RefCounted
-## Procedural placeholder art, kept outside flight and combat simulation.
+## Presentation kept outside flight and combat simulation.
 
 
 static func material(color: Color, glow: bool = false) -> StandardMaterial3D:
@@ -63,24 +63,7 @@ static func station(parent: Node3D, location: Vector3, render: bool = true) -> N
 	root.position = location
 	parent.add_child(root)
 	if render:
-		var armor := material(Color("8b9bad"))
-		var dark := material(Color("182d43"))
-		var glow := material(Color("5af4cf"), true)
-		var ring := TorusMesh.new()
-		ring.inner_radius = 12.0
-		ring.outer_radius = 15.5
-		mesh(root, ring, Vector3.ZERO, armor).rotation.x = PI / 2.0
-		var inner := TorusMesh.new()
-		inner.inner_radius = 11.6
-		inner.outer_radius = 12.1
-		mesh(root, inner, Vector3(0, 0, 0.9), glow).rotation.x = PI / 2.0
-		for side in [-1.0, 1.0]:
-			box(root, Vector3(side * 24, 0, 0), Vector3(20, 2, 2), armor)
-			box(root, Vector3(side * 28, 0, 0), Vector3(13, 0.7, 30), dark)
-			for offset in range(-6, 7):
-				box(root, Vector3(side * 28, 0.42, offset * 2.0), Vector3(12.5, 0.05, 0.06), glow)
-			box(root, Vector3(side * 10.0, -14.0, 0), Vector3(5, 7, 8), dark)
-		box(root, Vector3(0, -20, 0), Vector3(25, 5, 10), armor)
+		root.add_child((load("res://assets/sector/outpost-01.glb") as PackedScene).instantiate())
 	# Separate colliders preserve the open docking ring.
 	for side in [-1.0, 1.0]:
 		add_box_collider(root, Vector3(side * 14, 0, 0), Vector3(5, 27, 5))
@@ -108,49 +91,115 @@ static func environment(parent: Node3D, render: bool = true) -> void:
 		var settings := Environment.new()
 		settings.background_mode = Environment.BG_SKY
 		settings.sky = Sky.new()
+		settings.sky.process_mode = Sky.PROCESS_MODE_QUALITY
+		settings.sky.radiance_size = Sky.RADIANCE_SIZE_512
 		var sky_material := ShaderMaterial.new()
 		sky_material.shader = preload("res://shaders/space.gdshader")
 		settings.sky.sky_material = sky_material
 		settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-		settings.ambient_light_color = Color("91a5d0")
-		settings.ambient_light_energy = 0.65
-		settings.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+		settings.ambient_light_color = Color("8ca6c4")
+		settings.ambient_light_energy = 0.48
+		settings.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 		world.environment = settings
 		parent.add_child(world)
 		var sun := DirectionalLight3D.new()
 		sun.rotation_degrees = Vector3(-30, -35, 0)
-		sun.light_color = Color("c5deff")
-		sun.light_energy = 1.8
+		sun.light_color = Color("ffdfbd")
+		sun.light_energy = 1.55
 		parent.add_child(sun)
+		var fill := DirectionalLight3D.new()
+		fill.rotation_degrees = Vector3(25, 145, 0)
+		fill.light_color = Color("6e9edb")
+		fill.light_energy = 0.45
+		parent.add_child(fill)
 		var planet := SphereMesh.new()
-		planet.radius = 440.0
-		planet.height = 880.0
+		planet.radius = 600.0
+		planet.height = 1200.0
 		planet.radial_segments = 64
 		planet.rings = 32
-		mesh(parent, planet, Vector3(900, 310, -2200), material(Color("284762")))
+		var planet_surface := ShaderMaterial.new()
+		planet_surface.shader = preload("res://shaders/planet.gdshader")
+		mesh(parent, planet, Vector3(1350, 480, -2500), planet_surface)
+		# Distant scenery sits beyond the 700 m flight boundary and has no colliders.
+		distant_scenery(parent)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7301
-	var rock_surface := material(Color("4b5063"))
+	var rock_surface: StandardMaterial3D
+	if render:
+		rock_surface = asteroid_surface()
 	for index in range(24):
 		var body := StaticBody3D.new()
+		body.name = "Asteroid%d" % index
 		var side := -1.0 if index % 2 == 0 else 1.0
 		body.position = Vector3(side * rng.randf_range(80, 280), rng.randf_range(-90, 90), rng.randf_range(-400, -70))
 		var radius := rng.randf_range(4.0, 16.0)
 		# Consume the same random values on clients and servers to preserve collision geometry.
 		var angles := Vector3(rng.randf(), rng.randf(), rng.randf())
 		if render:
-			var rock := SphereMesh.new()
-			rock.radius = radius
-			rock.height = radius * 1.6
-			rock.radial_segments = 7
-			rock.rings = 4
-			mesh(body, rock, Vector3.ZERO, rock_surface).rotation = angles
+			var rock := (load("res://assets/sector/asteroid-%d.glb" % (index % 3)) as PackedScene).instantiate() as Node3D
+			rock.scale = Vector3.ONE * radius
+			rock.rotation = angles
+			apply_surface(rock, rock_surface)
+			body.add_child(rock)
 		var collider := CollisionShape3D.new()
 		var shape := SphereShape3D.new()
 		shape.radius = radius
 		collider.shape = shape
 		body.add_child(collider)
 		parent.add_child(body)
+
+
+static func apply_surface(node: Node, surface: Material) -> void:
+	if node is MeshInstance3D:
+		node.material_override = surface
+	for child in node.get_children():
+		apply_surface(child, surface)
+
+
+static func asteroid_surface() -> StandardMaterial3D:
+	var surface := material(Color.WHITE)
+	surface.metallic = 0.05
+	surface.roughness = 0.96
+	surface.albedo_texture = load("res://assets/sector/rock-albedo.png")
+	surface.normal_enabled = true
+	surface.normal_texture = load("res://assets/sector/rock-normal.png")
+	surface.normal_scale = 0.7
+	surface.uv1_triplanar = true
+	surface.uv1_scale = Vector3.ONE * 2.5
+	return surface
+
+
+static func distant_scenery(parent: Node3D) -> void:
+	var root := Node3D.new()
+	root.name = "DistantScenery"
+	parent.add_child(root)
+	# Three derelict silhouettes frame the outer hunting grounds without fake service markers.
+	for location in [Vector3(-800, -190, -840), Vector3(920, 110, -900), Vector3(-580, 360, 750)]:
+		var wreck := (load("res://assets/sector/derelict.glb") as PackedScene).instantiate() as Node3D
+		wreck.position = location
+		wreck.rotation_degrees = Vector3(12, 32, -18)
+		root.add_child(wreck)
+	# A distant belt adds scale and parallax for three draw calls, outside playable space.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 4671
+	var surface := asteroid_surface()
+	for variant in range(3):
+		var source := (load("res://assets/sector/asteroid-%d.glb" % variant) as PackedScene).instantiate()
+		var shape := (source.find_children("*", "MeshInstance3D")[0] as MeshInstance3D).mesh
+		var instances := MultiMesh.new()
+		instances.transform_format = MultiMesh.TRANSFORM_3D
+		instances.mesh = shape
+		instances.instance_count = 20
+		for index in range(instances.instance_count):
+			var location := Vector3(rng.randf_range(-1600, 1600), rng.randf_range(-410, -200), rng.randf_range(-1800, -950))
+			var radius := rng.randf_range(12, 38)
+			var basis := Basis.from_euler(Vector3(rng.randf(), rng.randf(), rng.randf())).scaled(Vector3.ONE * radius)
+			instances.set_instance_transform(index, Transform3D(basis, location))
+		var belt := MultiMeshInstance3D.new()
+		belt.multimesh = instances
+		belt.material_override = surface
+		root.add_child(belt)
+		source.free()
 
 
 static func laser(parent: Node3D, start: Vector3, finish: Vector3, hostile: bool) -> void:
