@@ -55,7 +55,7 @@ using the reachable speeds in [ship PR 34](https://github.com/Timerk/Dorbit/pull
 It is not a hard travel-time limit: slower/empty hulls take longer, engine-heavy
 fittings can be faster, and boost/acceleration affect the trip. See
 [the game plan](GAME_PLAN.md#sector-size-radiation-and-3d-navigation) for examples.
-The ship roster from PR 34 is included. Network schema 5 requires matching
+The ship roster from PR 34 is included. Network schema 6 requires matching
 server/client builds; clients from before the map update cannot connect.
 
 Review the [960×600 radar and guidance](docs/feedback/map-navigation-960.png),
@@ -200,7 +200,7 @@ The regular Liberator has 116,000 hull. New pilots start with LF-1, SG3N-A01 and
 
 LF-3 adds 175 base damage and 15% more for that laser against aliens (201.25 total) per installed copy. Its bonus never multiplies other lasers. FS-01 adds 3,200 shield, 70% absorption and +6.25% regeneration; its regeneration bonuses add together and multiply normal shield recovery after the existing six-second delay. Shield capacity adds, while absorption is weighted by each generator's capacity. Current fitting and installation previews show these special bonuses. Fitting changes do not repair or refill your ship. Inventory and fittings survive rescue, reconnects and restart. Equipment purchases require the persistent dedicated server; the offline development fixture uses the same starter combat and flight values. Reference prices need human progression playtesting with the existing rewards.
 
-Client and server must use this catalog update together. Network schema 5 includes hull model, maximum hull, alien damage and shield regeneration bonuses in player snapshots; the compatibility handshake rejects older builds before gameplay. Save schema 3 is unchanged. Update the operator provisioning tool with the server so credential rotation recognizes every new model.
+Client and server must use this catalog update together. Network schema 6 includes hull model, maximum hull, alien damage and shield regeneration bonuses in player snapshots; the compatibility handshake rejects older builds before gameplay. Save schema 3 is unchanged. Update the operator provisioning tool with the server so credential rotation recognizes every new model.
 
 The reference catalog test (`res://tests/darkorbit_equipment_test.gd`) runs in both check helpers. It exercises every purchasable model through authenticated purchase, duplicate protection, installation, stat replication and removal. It rejects LF-4, SG3N-B00 and legacy-engine purchases, then checks mixed shields, cumulative fusion regeneration, fractional LF-3 alien damage through real physics shots, UI bonus displays, bonus restoration when switching hulls and restart persistence. A rendered run produces the review captures above under `build/validation`. On 6 October 2026 it passed 131 assertions both headlessly and on Windows OpenGL; the rendered shop test passed 53. The full Windows check script passed, including ten authenticated clients and the flight replay. The compatibility and flight replays emitted their existing ObjectDB cleanup warnings on exit; the new rendered runs were clean. Six Python operator-tool tests passed, including credential rotation preserving all new models. Linux execution and exported client checks are left to PR CI; WSL is unavailable on this machine. Item artwork remains the existing category placeholders, and reference prices need human economy playtesting.
 
