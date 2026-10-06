@@ -51,6 +51,7 @@ PY
       exec python3 tools/run_server.py "$engine" --headless --max-fps 60 --path . -- --server "$@"
     fi
     checked --headless --path . --script res://tests/dedicated_server_test.gd
+    checked --headless --path . --script res://tests/sector_visuals_test.gd
     checked --headless --path . --script res://tests/pilot_persistence_test.gd
     python3 tests/server_shutdown_test.py "$engine"
     checked --headless --path . --script res://tests/alien_sector_test.gd
