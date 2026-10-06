@@ -50,7 +50,7 @@ func run() -> void:
 	var token := "contract-replay".sha256_text()
 	var file := FileAccess.open(directory.path_join("pilots.json"), FileAccess.WRITE)
 	# Seed an upgrade budget; the replay checks the loop, not time-to-first-purchase balance.
-	file.store_string(JSON.stringify({"version": 1, "pilots": {"replay": {"verifier": token.sha256_text(), "credits": 3000}}}))
+	file.store_string(JSON.stringify({"version": 1, "pilots": {"replay": {"verifier": token.sha256_text(), "credits": 10000}}}))
 	file.close()
 	OS.set_environment("DORBIT_DATA_DIR", directory)
 	var world := SubViewport.new()
@@ -197,7 +197,7 @@ func run() -> void:
 	check(sector.shop.visible and not sector.hud.contract_panel.visible and not sector.settings_menu.pause_panel.visible, "B switches from the contract board to shop")
 	sector.shop.buys["laser"].pressed.emit()
 	await create_timer(0.4).timeout
-	check(sector.session.combat.inventory["items"].has("purchase-1") and sector.credits == station_credits - 3000, "Buying the laser deducts only its price from the returned wallet")
+	check(sector.session.combat.inventory["items"].has("purchase-1") and sector.credits == station_credits - 10000, "Buying the laser deducts only its price from the returned wallet")
 	await press(KEY_I)
 	sector.equipment_menu.stored["purchase-1"].pressed.emit()
 	await process_frame
@@ -211,7 +211,7 @@ func run() -> void:
 	check(server.session.host(24690) == OK, "Server restarts with the combined progression ledger")
 	sector.session.join("127.0.0.1", 24690)
 	await create_timer(0.7).timeout
-	check(sector.session.received_snapshot and sector.credits == station_credits - 3000 and sector.active_contracts.size() == 3 and sector.player.laser_damage == 130 and sector.session.combat.inventory.get("revision") == 2, "Restart preserves rewards, concurrent contracts and purchased fitting together")
+	check(sector.session.received_snapshot and sector.credits == station_credits - 10000 and sector.active_contracts.size() == 3 and sector.player.laser_damage == 130 and sector.session.combat.inventory.get("revision") == 2, "Restart preserves rewards, concurrent contracts and purchased fitting together")
 	await finish_replay()
 
 

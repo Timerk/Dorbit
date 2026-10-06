@@ -106,8 +106,8 @@ func run() -> void:
 	var id := client.multiplayer.get_unique_id()
 	var ship := server.session.ships[id]
 	var store := server.session.store
-	check(store.commit({"pilot0": 12000}), "Fund expanded fitting test")
-	server.session.combat.records[id]["credits"] = 12000
+	check(store.commit({"pilot0": 30000}), "Fund expanded fitting test")
+	server.session.combat.records[id]["credits"] = 30000
 	var sequence := 0
 	for slot in ["laser3", "laser4", "generator6"]:
 		sequence += 1

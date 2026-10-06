@@ -62,6 +62,7 @@ PY
     checked --headless --path . --script res://tests/shop_test.gd
     checked --headless --path . --script res://tests/ships_test.gd
     checked --headless --path . --script res://tests/balance_test.gd
+    checked --headless --path . --script res://tests/darkorbit_equipment_test.gd
     checked --headless --path . --script res://tests/preview_credits_test.gd
     checked --headless --path . --script res://tests/resources_test.gd
     python3 tests/pilots_test.py

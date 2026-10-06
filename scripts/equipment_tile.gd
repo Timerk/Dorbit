@@ -57,7 +57,7 @@ func refresh() -> void:
 		var model: String = item["model"]
 		artwork.modulate = Color.WHITE
 		artwork.texture = StationUi.texture(model)
-		caption.text = {"laser": "PULSE", "shield": "SHIELD", "engine": "ION"}[model]
+		caption.text = "ION" if model == "engine" else Equipment.MODELS[model]["name"]
 		tooltip_text = "%s\n%s\n%s" % [Equipment.MODELS[model]["name"], StationUi.bonus(model), "In inventory" if slot.is_empty() else slot.capitalize()]
 		add_theme_stylebox_override("normal", StationUi.style(Color("102235"), StationUi.accent(model).darkened(0.5)))
 	# The selected tile keeps a visible outline after focus moves to a destination.

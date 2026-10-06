@@ -321,6 +321,8 @@ func pack_player(id: int) -> Dictionary:
 	data["absorption"] = ship.shield_absorption
 	data["model"] = ship.ship_model
 	data["max_hull"] = ship.max_hull
+	data["npc_damage"] = ship.npc_laser_damage
+	data["regen_bonus"] = ship.shield_regen_bonus
 	return data
 
 
@@ -352,7 +354,7 @@ func apply_player(id: int, data: Dictionary) -> bool:
 	if reset:
 		ship.set_meta("feedback_health_received", false)
 	var stats: Vector4 = data["stats"]
-	Equipment.apply_stats(ship, {"model": data["model"], "hull": data["max_hull"], "damage": stats.x, "shield": stats.y, "absorption": data["absorption"], "speed": stats.z, "boost": stats.w})
+	Equipment.apply_stats(ship, {"model": data["model"], "hull": data["max_hull"], "npc_damage": data["npc_damage"], "regen_bonus": data["regen_bonus"], "damage": stats.x, "shield": stats.y, "absorption": data["absorption"], "speed": stats.z, "boost": stats.w})
 	apply_health(ship, data)
 	if ship == session.sector.player:
 		update_local(data)

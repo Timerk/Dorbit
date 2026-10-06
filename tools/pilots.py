@@ -16,6 +16,10 @@ SHIP_MODELS = json.loads((Path(__file__).resolve().parents[1] / "assets/ships/ca
 def ship_info(model: str) -> dict:
     return SHIP_MODELS["liberator" if model == "pathfinder" else model]
 
+LASER_MODELS = {"laser", "mp-1", "lf-2", "lf-3", "lf-4"}
+GENERATOR_MODELS = {"shield", "sg3n-a02", "fs-01", "sg3n-a03", "sg3n-b00", "sg3n-b01", "sg3n-b02",
+                    "engine", "g3n-1010", "g3n-2010", "g3n-3210", "g3n-3310", "g3n-6900", "g3n-7900"}
+
 
 def starter_equipment() -> dict:
     return {"revision": 0, "active_ship": "starter", "ships": {"starter": "pathfinder"},
@@ -37,7 +41,8 @@ def valid_equipment(data: object) -> bool:
     occupied = set()
     for identifier, item in data["items"].items():
         if (not re.fullmatch(r"[a-z0-9_-]{1,32}", identifier) or not isinstance(item, dict)
-                or item.get("model") not in ("laser", "shield", "engine")
+                or not isinstance(item.get("model"), str)
+                or item["model"] not in LASER_MODELS | GENERATOR_MODELS
                 or not isinstance(item.get("ship"), str) or not isinstance(item.get("slot"), str)):
             return False
         location = item["ship"], item["slot"]
@@ -46,7 +51,7 @@ def valid_equipment(data: object) -> bool:
         if item["ship"] not in data["ships"]:
             return False
         hull = ship_info(data["ships"][item["ship"]])
-        kind, count = ("laser", hull["lasers"]) if item["model"] == "laser" else ("generator", hull["generators"])
+        kind, count = ("laser", hull["lasers"]) if item["model"] in LASER_MODELS else ("generator", hull["generators"])
         slots = tuple(f"{kind}{index}" for index in range(1, count + 1))
         if item["ship"] not in data["ships"] or item["slot"] not in slots or location in occupied:
             return False

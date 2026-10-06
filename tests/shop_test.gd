@@ -54,7 +54,7 @@ func run() -> void:
 		root.size = Vector2i(960, 600)
 	await press(client, KEY_B)
 	check(shop.visible and client.paused and not client.settings_menu.pause_panel.visible, "B opens the shop and suppresses flight and pause controls")
-	check(shop.selected_model == "laser" and shop.cards.keys().filter(func(model: String): return shop.cards[model].visible) == Equipment.MODELS.keys(), "All equipment opens with equipment only and the laser selected")
+	check(shop.selected_model == "laser" and shop.cards.keys().filter(func(model: String): return shop.cards[model].visible) == Equipment.catalog_models(), "All equipment opens with equipment only and the laser selected")
 	await click(client, shop.cargo_button)
 	check(shop.cargo_page.visible and not shop.equipment_page.visible and shop.sells.size() == 7, "Trading navigation opens all seven ore cards without overlapping the equipment catalog")
 	check(Rect2(Vector2.ZERO, Vector2(960, 600)).encloses(shop.get_global_rect()), "Trading fits the minimum viewport with category-shop navigation")
@@ -66,10 +66,12 @@ func run() -> void:
 		client.get_viewport().size = dimensions
 		await settle()
 		check(Rect2(Vector2.ZERO, Vector2(dimensions)).encloses(shop.get_global_rect()), "Shop stays inside %s" % dimensions)
-		for model: String in shop.cards:
-			if not shop.cards[model].visible:
-				continue
-			check(shop.get_global_rect().encloses(shop.cards[model].get_global_rect()), "Card %s fits at %s" % [model, dimensions])
+		var catalog_scroll := shop.grid.get_parent() as ScrollContainer
+		check(shop.grid.size.x <= catalog_scroll.size.x, "Catalog fits horizontally at %s" % dimensions)
+		catalog_scroll.scroll_vertical = 10000
+		await settle()
+		check(catalog_scroll.scroll_vertical > 0 and catalog_scroll.get_global_rect().encloses(shop.cards["g3n-7900"].get_global_rect()), "Catalog scroll reaches the last engine at %s" % dimensions)
+		catalog_scroll.scroll_vertical = 0
 		check(shop.get_global_rect().encloses(shop.buys[shop.selected_model].get_global_rect()), "Buy control fits at %s" % dimensions)
 		if dimensions.x == 960:
 			await capture(client, "shop-960")
@@ -78,14 +80,19 @@ func run() -> void:
 	for category: String in ["weapons", "generators", "shields", "engines"]:
 		shop.categories[category].pressed.emit()
 		await settle()
-		var expected: Array = {"weapons": ["laser"], "generators": ["shield", "engine"], "shields": ["shield"], "engines": ["engine"]}[category]
+		var expected: Array = {
+			"weapons": ["laser", "mp-1", "lf-2", "lf-3", "lf-4"],
+			"shields": ["shield", "sg3n-a02", "fs-01", "sg3n-a03", "sg3n-b00", "sg3n-b01", "sg3n-b02"],
+			"engines": ["g3n-1010", "g3n-2010", "g3n-3210", "g3n-3310", "g3n-6900", "g3n-7900"],
+			"generators": ["shield", "sg3n-a02", "fs-01", "sg3n-a03", "sg3n-b00", "sg3n-b01", "sg3n-b02", "g3n-1010", "g3n-2010", "g3n-3210", "g3n-3310", "g3n-6900", "g3n-7900"],
+		}[category]
 		check(shop.cards.keys().filter(func(model: String): return shop.cards[model].visible) == expected, "Category %s filters the catalog" % category)
 		check(shop.selected_model in expected and shop.buys[shop.selected_model].visible, "Category %s selects a purchasable item" % category)
 	shop.categories["generators"].pressed.emit()
 	await settle()
 	await click(client, shop.cards["shield"])
 	await settle()
-	check(shop.product_title.text == "Shield generator" and shop.price.text == "2,400 CR" and shop.bonus.text.contains("1000") and shop.bonus.text.contains("40%"), "Selecting a shield shows capacity and absorption with its price")
+	check(shop.product_title.text == "SG3N-A01" and shop.price.text == "8,000 CR" and shop.bonus.text.contains("1000") and shop.bonus.text.contains("40%"), "Selecting a shield shows capacity and absorption with its price")
 	await capture(client, "shop-generators")
 	await press(client, KEY_I)
 	check(client.equipment_menu.visible and not shop.visible and client.paused, "I switches to the separate equipment screen")
@@ -101,7 +108,7 @@ func run() -> void:
 	shop.buys["shield"].pressed.emit()
 	await settle()
 	await replicate(server)
-	check(client.credits == 9600 and combat.inventory["items"].size() == before["items"].size() + 1, "A double click sends one committed purchase")
+	check(client.credits == 4000 and combat.inventory["items"].size() == before["items"].size() + 1, "A double click sends one committed purchase")
 	check(combat.inventory["items"]["purchase-1"] == {"model": "shield", "ship": "", "slot": ""}, "Bought equipment goes into storage")
 	check(Equipment.stats(combat.inventory) == Equipment.stats(before), "Buying never installs equipment or changes ship stats")
 	check(shop.ownership.text.contains("OWNED 2") and shop.ownership.text.contains("1 in storage"), "Server inventory refreshes the displayed ownership count")
@@ -116,7 +123,7 @@ func run() -> void:
 	server.session.combat.records[client.multiplayer.get_unique_id()]["credits"] = 500
 	await replicate(server)
 	await settle()
-	check(shop.buys["laser"].disabled and shop.availability.text == "Need 2,500 more CR", "Insufficient funds disable buying and show the shortfall")
+	check(shop.buys["laser"].disabled and shop.availability.text == "Need 9,500 more CR", "Insufficient funds disable buying and show the shortfall")
 	shop.buys["laser"].pressed.emit()
 	await settle()
 	check(not combat.station_pending and combat.inventory["revision"] == 1, "A disabled purchase cannot send an intent")
