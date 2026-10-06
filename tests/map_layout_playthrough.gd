@@ -33,6 +33,43 @@ func click_at(point: Vector2) -> void:
 	await create_timer(0.05).timeout
 
 
+func drag_map(navigation: FlightNavigation, button: int) -> void:
+	# Starting over a contact must still rotate without selecting on press.
+	var start := navigation.plot.global_position + navigation.plot_point(sector.aliens[1].position)
+	var press := InputEventMouseButton.new()
+	press.button_index = button
+	press.position = start
+	press.pressed = true
+	root.push_input(press)
+	await process_frame
+	var motion := InputEventMouseMotion.new()
+	motion.position = start + Vector2(50, 25)
+	motion.relative = Vector2(50, 25)
+	motion.button_mask = MOUSE_BUTTON_MASK_LEFT if button == MOUSE_BUTTON_LEFT else MOUSE_BUTTON_MASK_RIGHT
+	root.push_input(motion)
+	await process_frame
+	var release := InputEventMouseButton.new()
+	release.button_index = button
+	release.position = motion.position
+	release.pressed = false
+	root.push_input(release)
+	await process_frame
+
+
+func scroll_map(point: Vector2, up: bool, ctrl: bool = true) -> void:
+	var event := InputEventMouseButton.new()
+	event.button_index = MOUSE_BUTTON_WHEEL_UP if up else MOUSE_BUTTON_WHEEL_DOWN
+	event.position = point
+	event.ctrl_pressed = ctrl
+	event.pressed = true
+	root.push_input(event)
+	await process_frame
+	# Native wheel input includes its release; don't leave the GUI mouse grab held.
+	event.pressed = false
+	root.push_input(event)
+	await process_frame
+
+
 func run() -> void:
 	sector = preload("res://scenes/sector.tscn").instantiate()
 	sector.client_only = false
@@ -41,6 +78,10 @@ func run() -> void:
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 	sector.show_performance = false
 	await sync_physics()
+	# Keep pointer tests and captures reproducible. Random homes are tested over ENet.
+	var fixture_positions := {0: Vector3(-600, 0, -400), 2: Vector3(-500, -400, 400), 3: Vector3(300, -450, -600), 4: Vector3(400, 200, -700)}
+	for id: int in fixture_positions:
+		sector.aliens[id].position = fixture_positions[id]
 	var navigation := sector.hud.navigation
 	var transform := Transform3D(Basis.from_euler(Vector3(0.4, 1.2, 0.0)), Vector3(100, 200, 300))
 	check(FlightNavigation.relative_position(transform, transform * Vector3(40, 25, -100)).is_equal_approx(Vector3(40, 25, -100)), "Radar follows both ship yaw and pitch with forward at top")
@@ -74,28 +115,47 @@ func run() -> void:
 		await sync_physics()
 		check(navigation.overview.visible and sector.paused and not sector.auto_fire and not sector.player.steering, "M opens overview and releases flight/fire controls")
 		await capture("map-overview-%d" % pixels.x)
-		var previous_yaw := navigation.view_yaw
-		var drag_start := navigation.plot.get_global_rect().get_center()
-		var right_button := InputEventMouseButton.new()
-		right_button.button_index = MOUSE_BUTTON_RIGHT
-		right_button.position = drag_start
-		right_button.pressed = true
-		root.push_input(right_button)
+		for button in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
+			var previous_yaw := navigation.view_yaw
+			var previous_pitch := navigation.view_pitch
+			await drag_map(navigation, button)
+			check(navigation.view_yaw > previous_yaw and navigation.view_pitch > previous_pitch and sector.player.rotation.is_equal_approx(Vector3(0.1, 0.5, 0)), "Mouse %d rotates overview horizontally and vertically without steering" % button)
+			check(navigation.overview.visible and navigation.waypoint_key == "alien1", "Dragging from a contact does not select it or close overview")
+			if button == MOUSE_BUTTON_LEFT:
+				await capture("map-overview-rotated-%d" % pixels.x)
+			await click_at(navigation.reset_button.get_global_rect().get_center())
+			check(is_equal_approx(navigation.view_yaw, -0.55) and is_equal_approx(navigation.view_pitch, atan2(0.55, 0.7)), "Reset view restores rotation")
+		var zoom_point := navigation.plot_point(sector.aliens[1].position)
+		await scroll_map(navigation.plot.global_position + zoom_point, true, false)
+		check(navigation.view_zoom == 1, "Plain wheel does not zoom the overview")
+		await scroll_map(navigation.plot.global_position + zoom_point, true)
+		check(navigation.view_zoom > 1 and navigation.plot_point(sector.aliens[1].position).is_equal_approx(zoom_point), "Ctrl wheel zooms around the contact under the cursor")
+		await scroll_map(navigation.plot.global_position + zoom_point, false)
+		check(is_equal_approx(navigation.view_zoom, 1), "Ctrl wheel down zooms back out")
+		for step in range(12):
+			await scroll_map(navigation.plot.get_global_rect().get_center(), true)
+		check(is_equal_approx(navigation.view_zoom, 3), "Zoom stops at readable maximum")
+		await capture("map-overview-zoom-%d" % pixels.x)
+		await click_at(navigation.reset_button.get_global_rect().get_center())
+		check(navigation.view_zoom == 1 and navigation.view_offset.is_zero_approx(), "Reset view restores zoom and cursor offset")
+		for step in range(12):
+			await scroll_map(navigation.plot.get_global_rect().get_center(), false)
+		check(is_equal_approx(navigation.view_zoom, 0.6), "Zoom stops at full-sector minimum")
+		navigation.reset_view()
+		var label_rect := navigation.plot_labels()["alien1"]
+		var hover := InputEventMouseMotion.new()
+		hover.position = navigation.plot.global_position + label_rect.get_center()
+		root.push_input(hover)
 		await process_frame
-		var motion := InputEventMouseMotion.new()
-		motion.position = drag_start + Vector2(50, 0)
-		motion.relative = Vector2(50, 0)
-		motion.button_mask = MOUSE_BUTTON_MASK_RIGHT
-		root.push_input(motion)
-		await process_frame
-		right_button = InputEventMouseButton.new()
-		right_button.button_index = MOUSE_BUTTON_RIGHT
-		right_button.position = motion.position
-		right_button.pressed = false
-		root.push_input(right_button)
-		await process_frame
-		check(navigation.view_yaw > previous_yaw and sector.player.rotation.is_equal_approx(Vector3(0.1, 0.5, 0)), "Right mouse rotates overview without steering the ship")
-		navigation.view_yaw = previous_yaw
+		check(navigation.plot.hovered_key == "alien1" and navigation.plot.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND, "Map names show a clickable hover highlight")
+		await click_at(navigation.plot.global_position + label_rect.get_center())
+		check(sector.target == sector.aliens[1] and not navigation.overview.visible and not sector.paused, "Map name selects an alien destination and returns to flight")
+		navigation.open_overview()
+		var alien_position := sector.aliens[1].position
+		var stem_point := navigation.plot_point(alien_position).lerp(navigation.plot_point(Vector3(alien_position.x, 0, alien_position.z)), 0.5)
+		await click_at(navigation.plot.global_position + stem_point)
+		check(not navigation.overview.visible and navigation.waypoint_key == "alien1", "Height stem selects its destination directly on the map")
+		navigation.open_overview()
 		check(not sector.settings_menu.pause_panel.visible, "Overview owns its menu without pause panel overlay")
 		check(Rect2(Vector2.ZERO, Vector2(pixels)).encloses(navigation.overview.get_global_rect()), "Overview fits %d window" % pixels.x)
 		await click_at(navigation.plot.global_position + navigation.plot_point(Sector.STATION_POSITION))

@@ -15,23 +15,64 @@ var contact_buttons: Dictionary[String, Button] = {}
 var range_less: Button
 var range_more: Button
 var map_button: Button
+var reset_button: Button
 var view_yaw: float = -0.55
+var view_pitch: float = atan2(0.55, 0.7)
+var view_zoom: float = 1.0
+var view_offset := Vector2.ZERO
 var font: Font = ThemeDB.fallback_font
 var info: Label
 
 
 class SectorPlot extends Control:
 	var navigation: FlightNavigation
+	var drag_button: int = MOUSE_BUTTON_NONE
+	var drag_distance: float = 0.0
+	var dragged: bool = false
+	var hovered_key := ""
+
+	func _ready() -> void:
+		mouse_exited.connect(func():
+			hovered_key = ""
+			tooltip_text = ""
+			queue_redraw())
 
 	func _draw() -> void:
 		navigation.draw_sector(self)
 
 	func _gui_input(event: InputEvent) -> void:
-		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			navigation.pick_contact(event.position)
-			accept_event()
-		elif event is InputEventMouseMotion and event.button_mask & MOUSE_BUTTON_MASK_RIGHT:
-			navigation.view_yaw += event.relative.x * 0.008
+		if event is InputEventMouseButton:
+			if event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+				if event.pressed and event.ctrl_pressed:
+					navigation.zoom_plot(event.position, 1.2 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.2)
+				accept_event()
+			elif event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
+				if event.pressed and drag_button == MOUSE_BUTTON_NONE:
+					drag_button = event.button_index
+					drag_distance = 0.0
+					dragged = false
+					hovered_key = ""
+					tooltip_text = ""
+				elif not event.pressed and drag_button == event.button_index:
+					var select := drag_button == MOUSE_BUTTON_LEFT and not dragged
+					drag_button = MOUSE_BUTTON_NONE
+					if select:
+						navigation.pick_contact(event.position)
+				accept_event()
+		elif event is InputEventMouseMotion:
+			if drag_button != MOUSE_BUTTON_NONE:
+				drag_distance += event.relative.length()
+				dragged = dragged or drag_distance >= 6.0
+				if dragged:
+					navigation.view_yaw += event.relative.x * 0.008
+					navigation.view_pitch = clampf(navigation.view_pitch + event.relative.y * 0.008, -1.4, 1.4)
+			else:
+				hovered_key = navigation.contact_at(event.position)
+				mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if not hovered_key.is_empty() else Control.CURSOR_ARROW
+				tooltip_text = ""
+				for contact in navigation.contacts():
+					if contact["key"] == hovered_key:
+						tooltip_text = "%s / click to navigate" % contact["name"]
 			queue_redraw()
 			accept_event()
 
@@ -132,8 +173,9 @@ func build_overview() -> void:
 	rows.add_child(header)
 	var title := StationUi.text(header, "SECTOR OVERVIEW / OUTPOST 01", 20, FlightHud.CYAN)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	reset_button = StationUi.button(header, "Reset view", reset_view)
 	StationUi.button(header, "Back to flight [M / Esc]", close_overview)
-	StationUi.text(rows, "Choose a destination. Click a contact or its row; drag right mouse on the map to rotate.", 13, FlightHud.MUTED)
+	StationUi.text(rows, "Click a marker, name or row to navigate. Drag left mouse to rotate; Ctrl + wheel to zoom.", 13, FlightHud.MUTED)
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rows.add_child(body)
@@ -153,6 +195,7 @@ func build_overview() -> void:
 	plot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	plot.custom_minimum_size = Vector2(550, 360)
 	plot.mouse_filter = Control.MOUSE_FILTER_STOP
+	plot.clip_contents = true
 	body.add_child(plot)
 	info = StationUi.text(rows, "", 13, FlightHud.INK)
 	StationUi.text(rows, "White: you   Green: outpost   Colored: aliens   Cyan: pilots   Vertical lines show height", 12, FlightHud.MUTED)
@@ -163,6 +206,8 @@ func open_overview() -> void:
 	if sector.paused or not sector.player.alive or (sector.client_only and not sector.session.active):
 		return
 	sector.set_paused(true)
+	plot.drag_button = MOUSE_BUTTON_NONE
+	plot.hovered_key = ""
 	overview_shared = sector.session.active
 	overview.show()
 	update_contacts()
@@ -296,9 +341,43 @@ func draw_guidance(selected: Dictionary, local: Vector3) -> void:
 
 
 func plot_point(location: Vector3) -> Vector2:
-	var rotated := Basis(Vector3.UP, view_yaw) * location
-	var scale := minf(plot.size.x * 0.44, plot.size.y * 0.44) / Sector.MAP_RADIUS
-	return plot.size * 0.5 + Vector2(rotated.x, rotated.z * 0.55 - rotated.y * 0.7) * scale
+	var rotated := Basis(Vector3.RIGHT, view_pitch) * Basis(Vector3.UP, view_yaw) * location
+	var scale := minf(plot.size.x * 0.44, plot.size.y * 0.44) / Sector.MAP_RADIUS * view_zoom
+	return plot.size * 0.5 + view_offset + Vector2(rotated.x, -rotated.y * 0.89) * scale
+
+
+func zoom_plot(point: Vector2, factor: float) -> void:
+	var next_zoom := clampf(view_zoom * factor, 0.6, 3.0)
+	# Keep the position under the cursor stable while zooming.
+	view_offset = point - plot.size * 0.5 - (point - plot.size * 0.5 - view_offset) * (next_zoom / view_zoom)
+	view_zoom = next_zoom
+	plot.queue_redraw()
+
+
+func reset_view() -> void:
+	view_yaw = -0.55
+	view_pitch = atan2(0.55, 0.7)
+	view_zoom = 1.0
+	view_offset = Vector2.ZERO
+	plot.queue_redraw()
+
+
+func plot_labels() -> Dictionary[String, Rect2]:
+	var labels: Dictionary[String, Rect2] = {}
+	var captions: Array[Rect2] = [Rect2(Vector2.ZERO, Vector2(plot.size.x, 35))]
+	captions.append(Rect2(plot_point(sector.player.position) + Vector2(8, 4), Vector2(32, 16)))
+	var current := contacts()
+	current.sort_custom(func(a: Dictionary, b: Dictionary): return a["key"] == waypoint_key and b["key"] != waypoint_key)
+	for contact in current:
+		var point := plot_point(contact["position"])
+		var width := font.get_string_size(contact["name"], HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+		for offset: Vector2 in [Vector2(12, -8), Vector2(12, 20), Vector2(-width - 12, -8), Vector2(-width - 12, 20)]:
+			var rect := Rect2(point + offset - Vector2(2, 13), Vector2(width + 4, 18))
+			if Rect2(Vector2.ZERO, plot.size).encloses(rect) and not captions.any(func(other: Rect2): return rect.intersects(other)):
+				labels[contact["key"]] = rect
+				captions.append(rect)
+				break
+	return labels
 
 
 func draw_sector(canvas: Control) -> void:
@@ -318,39 +397,51 @@ func draw_sector(canvas: Control) -> void:
 		var extent := sqrt(1 - fraction * fraction) * Sector.MAP_RADIUS
 		canvas.draw_line(plot_point(Vector3(-extent, 0, fraction * Sector.MAP_RADIUS)), plot_point(Vector3(extent, 0, fraction * Sector.MAP_RADIUS)), Color(FlightHud.MUTED, 0.15))
 		canvas.draw_line(plot_point(Vector3(fraction * Sector.MAP_RADIUS, 0, -extent)), plot_point(Vector3(fraction * Sector.MAP_RADIUS, 0, extent)), Color(FlightHud.MUTED, 0.15))
-	var captions: Array[Rect2] = [Rect2(Vector2.ZERO, Vector2(canvas.size.x, 35))]
 	var player_point := plot_point(sector.player.position)
 	canvas.draw_circle(player_point, 5, Color.WHITE)
 	label_at(canvas, player_point + Vector2(8, 16), "YOU", 12)
-	captions.append(Rect2(player_point + Vector2(8, 4), Vector2(32, 16)))
-	var current := contacts()
-	current.sort_custom(func(a: Dictionary, b: Dictionary): return a["key"] == waypoint_key and b["key"] != waypoint_key)
-	for contact in current:
+	var labels := plot_labels()
+	for contact in contacts():
 		var point := plot_point(contact["position"])
 		var floor_point := plot_point(Vector3(contact["position"].x, 0, contact["position"].z))
 		var color: Color = contact["color"]
 		canvas.draw_line(floor_point, point, Color(color, 0.6), 1.5)
 		canvas.draw_circle(floor_point, 2, Color(color, 0.4))
-		canvas.draw_circle(point, 5, color)
+		canvas.draw_circle(point, 6, color)
 		if contact["key"] == waypoint_key:
 			canvas.draw_arc(point, 10, 0, TAU, 32, Color.WHITE, 2, true)
-		var width := font.get_string_size(contact["name"], HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
-		for offset: Vector2 in [Vector2(12, -8), Vector2(12, 20), Vector2(-width - 12, -8), Vector2(-width - 12, 20)]:
-			var rect := Rect2(point + offset - Vector2(2, 13), Vector2(width + 4, 18))
-			if Rect2(Vector2.ZERO, canvas.size).encloses(rect) and not captions.any(func(other: Rect2): return rect.intersects(other)):
-				label_at(canvas, point + offset, contact["name"], 12, color)
-				captions.append(rect)
-				break
+		if contact["key"] == plot.hovered_key:
+			canvas.draw_arc(point, 13, 0, TAU, 32, Color.WHITE, 1, true)
+		if labels.has(contact["key"]):
+			label_at(canvas, labels[contact["key"]].position + Vector2(2, 13), contact["name"], 12, color)
 	label_at(canvas, Vector2(14, 23), "2.4 km SECTOR / HEIGHT VIEW", 12, FlightHud.CYAN)
 
 
-func pick_contact(point: Vector2) -> void:
-	var nearest := 14.0
+func contact_at(point: Vector2) -> String:
+	if not Rect2(Vector2.ZERO, plot.size).has_point(point):
+		return ""
+	var nearest := 16.0
 	var key := ""
 	for contact in contacts():
 		var distance := plot_point(contact["position"]).distance_to(point)
 		if distance < nearest:
 			nearest = distance
 			key = contact["key"]
+	if not key.is_empty():
+		return key
+	var labels := plot_labels()
+	for label_key: String in labels:
+		if labels[label_key].has_point(point):
+			return label_key
+	for contact in contacts():
+		var position: Vector3 = contact["position"]
+		var floor_point := plot_point(Vector3(position.x, 0, position.z))
+		if point.distance_to(Geometry2D.get_closest_point_to_segment(point, floor_point, plot_point(position))) <= 5:
+			return contact["key"]
+	return ""
+
+
+func pick_contact(point: Vector2) -> void:
+	var key := contact_at(point)
 	if not key.is_empty():
 		choose_contact(key)
