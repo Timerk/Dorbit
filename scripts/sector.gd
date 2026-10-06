@@ -167,6 +167,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.is_action_pressed("quit_game"):
 			get_tree().quit()
 		return
+	if hud.navigation.overview.visible:
+		if event.is_action_pressed("pause_game") or event.is_action_pressed("sector_map"):
+			hud.navigation.close_overview()
+		return
+	if event.is_action_pressed("sector_map"):
+		hud.navigation.open_overview()
+		return
 	if event.is_action_pressed("multiplayer_menu"):
 		hud.contract_panel.hide()
 		shop.hide()

@@ -103,8 +103,8 @@ func run() -> void:
 	await replicate(server)
 	check(client.player.alive and client.player.radiation_exposure == 0, "Rescue state reaches owner")
 	check(var_to_bytes([{id: server.session.combat.pack_player(id)}, {}, 1]).size() < 1200, "Radiation player state stays below packet budget")
-	check(FlightHud.map_projection(Vector3(600, 300, -900), false).is_equal_approx(Vector2(0.5, -0.75)), "Top map projects X and Z")
-	check(FlightHud.map_projection(Vector3(600, 300, -900), true).is_equal_approx(Vector2(0.5, -0.25)), "Side map projects X and upward Y")
+	check(FlightNavigation.compass_point(Vector3.FORWARD).is_equal_approx(Vector2.ZERO), "Forward destination centers the compass")
+	check(FlightNavigation.compass_point(Vector3.BACK).is_equal_approx(Vector2.DOWN), "Behind destination stays on compass rim")
 	(client.get_parent() as SubViewport).size = Vector2i(960, 600)
 	client.player.position = Vector3(0, 100, 0)
 	client.player.rotation = Vector3.ZERO

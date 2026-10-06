@@ -46,6 +46,7 @@ The following controls are agreed as the starting layout. Check comfort and usab
 | Tab | Select the on-screen enemy closest to the mouse cursor |
 | Space | Toggle automatic laser fire |
 | Shift | Boost using rechargeable energy |
+| M | Open/close the sector overview and choose a destination |
 
 Flight should have noticeable weight and inertia while staying responsive and arcade-like. Ships retain momentum through turns, build speed gradually, and use assisted braking on release plus stronger counter-thrust when reversing. Mouse steering eases over a few frames. There is no unlimited coasting or manual braking requirement.
 
@@ -87,7 +88,7 @@ The rendered replay covers click/Tab selection, fire-state reasons using real co
 Milestone 3 now includes multiple simultaneous aliens in the current sector. This slice precedes equipment and hunting contracts. It adds no connected sectors, bosses, loot tables, missions or art pipeline.
 
 - Five stable identities support independent encounters, with random homes across the sector at startup and after each death. Every alien owns its identity, movement, target choice, health, contribution list, life number, death and respawn timer. The server controls these and all rewards, including when no pilots are connected.
-- Scouts are starter encounters; Sentinels require additional lasers or cooperative hunting. The Heavy is intended for upgraded pilots or a small group. Their colored numbered contacts appear on the navigation maps. Enemy hull, shields and damage were increased for the starter equipment rebalance; movement, rewards and respawn timers stay unchanged.
+- Scouts are starter encounters; Sentinels require additional lasers or cooperative hunting. The Heavy is intended for upgraded pilots or a small group. Their colored contacts appear on the radar and sector overview. Enemy hull, shields and damage were increased for the starter equipment rebalance; movement, rewards and respawn timers stay unchanged.
 - Each kill splits that type's credit pool equally among connected pilots who damaged that alien in its current life. Contributors awaiting rescue remain eligible; disconnected pilots are removed. Integer remainders go in ascending peer-ID order. Persistence commits the shares before clients see them.
 - Killing or resetting one alien must leave other encounters, contributions and active fire intact. Player rescue also leaves encounters independent.
 - Station protection remains a 75 m sphere. Aliens cannot attack protected pilots. Protected pilots cannot damage aliens.
@@ -116,7 +117,9 @@ Crossing the diameter should be on the order of 20–45 seconds for representati
 
 The edge has no movement clamp. Within 120 m of it, the HUD warns of radiation ahead. Outside, a persistent alert, soft red full-screen pulse and red border signal danger, with a marker pointing toward the nearest safe re-entry point. Radiation damage starts at 1% of maximum hull per second and adds 0.5 percentage points per second of continuous exposure. It uses the existing shield absorption/hull damage and rescue rules. Exposure resets immediately inside the sphere or on rescue. Only the authority applies damage; multiplayer menus do not stop exposure. These rates remain provisional.
 
-Paired fixed-axis top (X–Z) and side (X–Y) maps show the whole sector, the white pilot heading, green outpost, friendly cyan pilots and numbered alien contacts in their type colors. The selected alien has a white ring. Signed Y altitude and target-relative height make vertical separation explicit. Circular outlines show the sphere's projected extent; the two maps together describe all three axes. These are navigation aids, not new targeting controls or a separate fog-of-war system. Network schema 5 adds exposure and random home state and deliberately rejects older builds, including PR 34's schema 4.
+Following playtesting, the user approved replacing the paired world-axis maps with ship-relative navigation. One local radar keeps forward at the top, left/right aligned with steering, and height arrows for contacts above or below. Its range buttons select 250, 500, 1,000 or 2,400 m. A destination compass shows turn guidance, distance and relative height; forward contacts use a filled dot and contacts behind use a hollow dot. Manual alien selection updates the waypoint. Radiation temporarily guides toward the nearest safe re-entry point, then restores the chosen destination.
+
+M opens a larger sector overview with a rotatable height projection and contact list. Clicking a contact or its row sets the destination and returns to flight; alien destinations also use normal combat selection, while outpost/friendly destinations clear the combat target. M or Esc closes it. Opening releases steering and disables automatic fire. Solo simulation pauses; multiplayer and radiation continue on the server. Rescue and disconnect close the overview, and missing contacts fall back to the outpost. This adds navigation controls within the current sector, with no fog of war or arbitrary-coordinate waypoints. Network schema 5 adds exposure and random home state and deliberately rejects older builds, including PR 34's schema 4.
 
 ### Death and recovery
 

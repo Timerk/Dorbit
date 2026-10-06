@@ -394,7 +394,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
-	var show_pause := sector.paused and not sector.session.menu.visible and not panel.visible and not sector.shop.visible and not sector.equipment_menu.visible and not sector.hud.contract_panel.visible
+	var show_pause := sector.paused and not sector.session.menu.visible and not panel.visible and not sector.shop.visible and not sector.equipment_menu.visible and not sector.hud.contract_panel.visible and not sector.hud.navigation.overview.visible
 	if show_pause and not pause_panel.visible:
 		pause_panel.show()
 		resume_button.grab_focus()

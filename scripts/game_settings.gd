@@ -23,6 +23,7 @@ const SHORTCUTS := {
 	"quality": KEY_F4, "quit_game": KEY_F10, "resolution_down": KEY_F5,
 	"resolution_up": KEY_F6, "multiplayer_menu": KEY_F7,
 	"contracts": KEY_C, "station_shop": KEY_B, "ship_equipment": KEY_I,
+	"sector_map": KEY_M,
 }
 
 var sensitivity: float = DEFAULT_SENSITIVITY

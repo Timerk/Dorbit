@@ -43,7 +43,7 @@ func begin() -> void:
 		alien.visible = multiplayer.is_server()
 		if not alien.damaged.is_connected(record_damage):
 			alien.damaged.connect(record_damage)
-	sector.notify("Alien contacts scattered across the sector. Use the top and side maps to navigate.")
+	sector.notify("Alien contacts scattered across the sector. Press M to choose a destination.")
 
 
 func add_player(id: int, location: Vector3) -> void:
