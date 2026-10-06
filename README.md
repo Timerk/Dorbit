@@ -16,12 +16,50 @@ Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated ser
 The environment takes composition cues from DarkOrbit's planet and nebula maps,
 adapted to full 3D flight. Original Blender assets replace the smooth placeholder
 rocks and station. Distant freighter wrecks and an asteroid belt provide parallax
-beyond the flight boundary; they have no services, loot or collision. Gameplay
-obstacles and encounter positions retain their existing layout.
+beyond the safe sector; they have no services, loot or collision. Physical
+asteroids and the station retain their existing layout; aliens have random homes.
 
 See [sector assets and regeneration](assets/sector/README.md) and
 [environment validation](docs/sector-art/README.md) for screenshots and checks.
 Blender is only required to regenerate assets, not to run, build or deploy the game.
+
+### Navigation and radiation
+
+The safe sector is a **2.4 km diameter sphere**, with free movement past its edge.
+The upper-right maps show a fixed-axis top view (X–Z) and side view (X–Y).
+Together they cover all three movement axes. Your white marker shows heading;
+the green plus is Outpost 01, cyan dots are other pilots, and colored numbered
+dots are aliens. A white ring identifies your selected target. The footer shows
+your signed altitude and the selected target's relative height. Alien homes are
+randomized across the sphere at server startup and each respawn, retaining two
+Scouts, two Sentinels and one Heavy.
+
+The HUD warns within 120 m of the edge. Outside, an alert, red screen pulse and
+border warn of **radiation**, and a return marker points to the nearest safe
+space. Damage grows the longer you stay outside, using normal shields, hull and
+rescue. Returning inside immediately resets exposure. Opening multiplayer menus
+does not stop damage. Radiation currently starts at 1% of maximum hull per second,
+increasing by 0.5 percentage points each second; these rates need playtesting.
+
+Map size targets roughly **20–45 s across** with representative engine fittings,
+using the reachable speeds in [ship PR 34](https://github.com/Timerk/Dorbit/pull/34).
+It is not a hard travel-time limit: slower/empty hulls take longer, engine-heavy
+fittings can be faster, and boost/acceleration affect the trip. See
+[the game plan](GAME_PLAN.md#sector-size-radiation-and-3d-navigation) for examples.
+The ship roster from PR 34 is included. Network schema 5 requires matching
+server/client builds; clients from before the map update cannot connect.
+
+Review the [960×600 navigation maps](docs/feedback/map-navigation-960.png),
+[1440×900 layout](docs/feedback/map-navigation-1440.png) and
+[radiation alert](docs/feedback/map-radiation.png).
+The map integration fixture (`tests/map_layout_test.gd`) checks 100 random homes,
+respawn and late-join replication, every boundary axis, increasing authoritative
+damage, re-entry, rescue, menu behavior and packet budgets over ENet. The flight
+replay (`tests/map_layout_playthrough.gd`) crosses the edge through actual flight,
+turns back to safety and captures both layouts with a renderer. Both check runners
+include these fixtures. Local map checks passed 133 assertions and the rendered
+flight replay passed three behavior checks. Human travel, encounter-density and
+radiation tuning remain pending; Linux execution is left to PR CI.
 
 ### Preview test credits
 
