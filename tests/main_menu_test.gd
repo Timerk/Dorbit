@@ -4,7 +4,7 @@ extends "res://tests/shop_test.gd"
 
 func run() -> void:
 	var server := make_sector("MenuServer", true, 24739)
-	check(server.session.store.commit({"pilot0": 12000}), "Seed a preparation budget")
+	check(server.session.store.commit({"pilot0": 19000}), "Seed a preparation budget")
 	var observer := make_sector("FlyingPilot")
 	observer.session.credential_id = "pilot1"
 	observer.session.credential_token = test_token(1)
@@ -21,7 +21,9 @@ func run() -> void:
 	var id := client.multiplayer.get_unique_id()
 	var menu := client.main_menu
 	check(client.preflight and client.paused and menu.visible and menu.home.visible, "Normal connection opens the docked main menu")
-	check(client.credits == 12000 and not menu.start_button.disabled, "Main menu receives saved credits and enables launch after sync")
+	check(client.credits == 19000 and not menu.start_button.disabled, "Main menu receives saved credits and enables launch after sync")
+	await press(client, KEY_M)
+	check(not client.hud.navigation.overview.visible and menu.home.visible, "Docked menu does not open the flight map")
 	check(not observer.session.ships.has(id), "Docked pilot is absent from another pilot's map")
 	var ship := server.session.ships[id]
 	check(ship.get_meta("docked") and not ship.visible and ship.collision_layer == 0, "Server docked ship is invisible and has no collision")
@@ -116,6 +118,13 @@ func run() -> void:
 	await settle()
 	server.session.tick(0.1)
 	check(ship.position.z < origin.z, "Launched ship can fly")
+	await press(client, KEY_M)
+	check(client.hud.navigation.overview.visible, "Launched pilot retains the sector overview")
+	client.session.quit_to_menu()
+	await replicate(server)
+	check(not client.hud.navigation.overview.visible and menu.home.visible, "Returning to the menu closes an open sector overview")
+	await click(client, menu.start_button)
+	await replicate(server)
 	ship.position = Vector3(0, 100, -200)
 	ship.hull = 50000
 	ship.shield = 350

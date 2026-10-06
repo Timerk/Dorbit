@@ -322,6 +322,8 @@ func health(ship: SpaceShip) -> Dictionary:
 func pack_player(id: int) -> Dictionary:
 	var data := health(session.ships[id])
 	data.merge(records[id])
+	# The rescue/dock origin stays on the authority; clients receive current position.
+	data.erase("spawn")
 	var ship := session.ships[id]
 	# Replicate combat and movement stats without exposing the owner's full inventory.
 	data["stats"] = Vector4(ship.laser_damage, ship.max_shield, ship.cruise_speed, ship.boost_speed)

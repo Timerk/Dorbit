@@ -130,6 +130,7 @@ func build_home() -> void:
 
 
 func hide_pages() -> void:
+	sector.hud.navigation.close_overview(false)
 	sector.shop.hide()
 	sector.equipment_menu.hide()
 	sector.hud.contract_panel.hide()

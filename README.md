@@ -59,7 +59,7 @@ using the reachable speeds in [ship PR 34](https://github.com/Timerk/Dorbit/pull
 It is not a hard travel-time limit: slower/empty hulls take longer, engine-heavy
 fittings can be faster, and boost/acceleration affect the trip. See
 [the game plan](GAME_PLAN.md#sector-size-radiation-and-3d-navigation) for examples.
-The ship roster from PR 34 is included. Network schema 6 requires matching
+The ship roster from PR 34 is included. Network schema 7 requires matching
 server/client builds; clients from before the map update cannot connect.
 
 Review the [960×600 radar and guidance](docs/feedback/map-navigation-960.png),

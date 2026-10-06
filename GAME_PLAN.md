@@ -205,7 +205,7 @@ unavailable until the ship is alive. Start can then launch the prepared ship aga
 
 The console fits 960 x 600 through 1440 x 900 and larger windows; station panels
 scale to leave its persistent launch/navigation header accessible. Client and
-server builds must match (network schema 5 adds docked state and launch RPCs).
+server builds must match (network schema 7 adds docked state and launch RPCs).
 
 ### First station equipment shop and fitting
 
