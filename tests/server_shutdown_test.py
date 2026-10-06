@@ -124,7 +124,7 @@ class ServerShutdownTest(unittest.TestCase):
 
     def test_corrupt_cargo_is_preserved(self) -> None:
         for cargo in (None, {}, {"starter": {"seprom": -1}}, {"starter": {"seprom": 1.5}},
-                      {"starter": {"unknown": 1}}, {"starter": {"prometium": 200, "seprom": 1}}):
+                      {"starter": {"unknown": 1}}, {"starter": {"prometium": 400, "seprom": 1}}):
             with self.subTest(cargo=cargo):
                 corrupted = json.loads(self.original)
                 corrupted["pilots"]["restart_test"]["cargo"] = cargo

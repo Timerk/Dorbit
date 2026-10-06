@@ -103,7 +103,7 @@ func run() -> void:
 	var ship := server.session.ships[id]
 	var combat := client.session.combat
 	check(combat.inventory["items"].size() == 3 and client.credits == 12000, "Only authenticated inventory and wallet reach the client")
-	check(ship.laser_damage == 65 and ship.max_shield == 1000 and ship.cruise_speed == 36 and ship.boost_speed == 78, "Starter uses baseline damage and shields with unchanged flight speeds")
+	check(ship.laser_damage == 65 and ship.max_shield == 1000 and ship.cruise_speed == 41 and ship.boost_speed == 83, "Starter uses Liberator base speed plus its installed engine")
 	var snapshot: Dictionary = client.session.goals[id].duplicate(true)
 	snapshot["contracts"] = {"sentinel": HuntingContracts.accept("sentinel")}
 	check(var_to_bytes([{id: snapshot}, {}, 1]).size() < 1200, "Player snapshot with equipment and an active contract leaves room below the ENet MTU")
@@ -214,7 +214,7 @@ func run() -> void:
 	await request(client, 7, "fit", "starter-shield")
 	await request(client, 8, "fit", "purchase-6", "starter", "generator1")
 	await replicate(server)
-	check(ship.cruise_speed == 44 and client.player.cruise_speed == 44 and client.player.boost_speed == 86, "Two engines add speed to server and client prediction")
+	check(ship.cruise_speed == 49 and client.player.cruise_speed == 49 and client.player.boost_speed == 91, "Two engines add speed to server and client prediction")
 	await request(client, 9, "buy", "laser")
 	client.audio.last_played.erase("purchase")
 	await request(client, 10, "buy", "laser")
@@ -241,13 +241,13 @@ func run() -> void:
 		ship.fly_command(1.0 / 60.0, Vector3(1, 0, 0), false)
 		client.player.fly_command(1.0 / 60.0, Vector3(1, 0, 0), false)
 		await physics_frame
-	check(is_equal_approx(ship.velocity.length(), 44), "Actual flight reaches the fitted cruise speed")
-	check(is_equal_approx(client.player.velocity.length(), 44), "Client prediction reaches the same fitted cruise speed")
+	check(is_equal_approx(ship.velocity.length(), 49), "Actual flight reaches the fitted cruise speed")
+	check(is_equal_approx(client.player.velocity.length(), 49), "Client prediction reaches the same fitted cruise speed")
 	await replicate(server)
 	await screenshot(client, "equipment-flight")
 	ship.take_damage(ship.max_hull + ship.max_shield + 1.0, server.alien)
 	server.session.combat.tick(3.1)
-	check(ship.alive and ship.laser_damage == 130 and ship.cruise_speed == 44, "Death and rescue preserve fitting")
+	check(ship.alive and ship.laser_damage == 130 and ship.cruise_speed == 49, "Death and rescue preserve fitting")
 	client.session.disconnect_session("Restart test")
 	await settle()
 	server.session.disconnect_session("Restart test")
@@ -265,7 +265,7 @@ func run() -> void:
 	check(Equipment.fitting_blocker(candidate, "starter-engine", "spare", "generator1").is_empty(), "Items can transfer directly to a free compatible slot on another owned hull")
 	candidate["items"]["starter-engine"]["ship"] = "spare"
 	candidate["items"]["starter-engine"]["slot"] = "generator1"
-	check(Equipment.stats(candidate)["speed"] == 36 and Equipment.stats(candidate, "spare")["speed"] == 36, "Transferred item contributes to exactly one ship")
+	check(Equipment.stats(candidate)["speed"] == 41 and Equipment.stats(candidate, "spare")["speed"] == 41, "Transferred item contributes to exactly one ship")
 	var empty := Equipment.starter()
 	for item: Dictionary in empty["items"].values():
 		item["ship"] = ""
@@ -276,7 +276,7 @@ func run() -> void:
 	empty_ship.position = Vector3(100, 100, 100)
 	Equipment.apply_stats(empty_ship, Equipment.stats(empty))
 	empty_ship.fly_command(1.0, Vector3.FORWARD, false)
-	check(empty_ship.hull == Equipment.STARTER_HULL and empty_ship.velocity.length() == 28 and empty_ship.firing_blocker(server.alien) == "NO LASER INSTALLED", "An empty fitting retains base hull and flight but cannot fire")
+	check(empty_ship.hull == Equipment.STARTER_HULL and empty_ship.velocity.length() == 33 and empty_ship.firing_blocker(server.alien) == "NO LASER INSTALLED", "An empty fitting retains base hull and flight but cannot fire")
 	empty_ship.queue_free()
 	candidate["items"]["starter-laser"]["slot"] = "laser2"
 	check(not Equipment.valid(candidate), "Save validation rejects duplicate slot occupancy")

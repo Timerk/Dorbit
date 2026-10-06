@@ -1,8 +1,8 @@
 class_name Pilot
 extends SpaceShip
 
-@export var cruise_speed: float = 36.0
-@export var boost_speed: float = 78.0
+@export var cruise_speed: float = 41.0
+@export var boost_speed: float = 83.0
 @export var acceleration: float = 40.0
 @export var braking: float = 60.0
 @export var counter_thrust: float = 80.0
@@ -15,12 +15,29 @@ var steering: bool = false
 var camera: Camera3D
 var arm: SpringArm3D
 var pending_look: Vector2 = Vector2.ZERO
+var ship_model: String = "liberator"
+
+
+func set_ship_model(value: String) -> void:
+	value = ShipCatalog.canonical(value)
+	if ship_model == value:
+		return
+	ship_model = value
+	if render_enabled and is_instance_valid(model):
+		remove_child(model)
+		model.queue_free()
+		model = ShipCatalog.model_scene(ship_model)
+		add_child(model)
 
 
 func _ready() -> void:
 	super._ready()
 	if not render_enabled:
 		return
+	remove_child(model)
+	model.queue_free()
+	model = ShipCatalog.model_scene(ship_model)
+	add_child(model)
 	arm = SpringArm3D.new()
 	arm.position = Vector3(0.0, 2.5, 0.0)
 	arm.rotation.x = -0.12

@@ -42,15 +42,16 @@ func _ready() -> void:
 func refresh() -> void:
 	var item: Dictionary = screen.inventory().get("items", {}).get(item_id, {})
 	if item.is_empty():
-		if Equipment.SLOTS.get(slot) == "extra":
+		var kind: String = screen.slots_kind(slot)
+		if kind == "extra":
 			artwork.texture = null
 			caption.text = "EXTRA"
 			tooltip_text = "Extra slot reserved for future equipment."
 			return
-		artwork.texture = StationUi.texture("laser" if Equipment.SLOTS.get(slot) == "laser" else "shield")
+		artwork.texture = StationUi.texture("laser" if kind == "laser" else "shield")
 		artwork.modulate = Color(1, 1, 1, 0.18)
 		caption.text = "EMPTY"
-		tooltip_text = "Empty %s slot. Drag compatible equipment here." % Equipment.SLOTS.get(slot, "")
+		tooltip_text = "Empty %s slot. Drag compatible equipment here." % kind
 		add_theme_stylebox_override("normal", StationUi.style(Color("0b1928"), Color("294156")))
 	else:
 		var model: String = item["model"]

@@ -94,6 +94,7 @@ switch ($Task) {
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/hunting_contracts_test.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/equipment_test.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/shop_test.gd')
+            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/ships_test.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/balance_test.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/preview_credits_test.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/resources_test.gd')
@@ -128,6 +129,10 @@ switch ($Task) {
             throw "Source and exported client protocols differ: $sourceProtocol versus $releaseProtocol"
         }
         Write-Host 'Source and exported client protocol fingerprints match.'
+        # Exercise dynamic hull/preview loads from the pack, isolated from source assets.
+        Invoke-Godot @('--headless', '--path', (Join-Path $projectRoot 'build/windows'),
+            '--main-pack', (Join-Path $projectRoot 'build/windows/Dorbit.exe'),
+            '--script', (Join-Path $projectRoot 'tests/ship_assets_test.gd'), '--quit-after', '10')
         Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tools/export_notices.gd')
     }
     'run' { & $engine --path $projectRoot }

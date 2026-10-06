@@ -18,6 +18,13 @@ var stored: Dictionary[String, EquipmentTile] = {}
 var selected_item: String = ""
 var last_inventory: Dictionary = {}
 var drop_hint: String = ""
+var ship_title: Label
+var ship_art: TextureRect
+var ship_choice: OptionButton
+var activate_button: Button
+var owned_ships: Array[String] = []
+var slot_rows: VBoxContainer
+var current_slot_model: String = ""
 
 
 func _ready() -> void:
@@ -34,11 +41,15 @@ func _ready() -> void:
 	ship_card.custom_minimum_size.x = 190
 	ship_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var ship_rows := StationUi.rows(ship_card, 10)
-	StationUi.text(ship_rows, "LIBERATOR", 22)
-	StationUi.text(ship_rows, "ACTIVE SHIP / STARTER HULL", 11, FlightHud.MUTED)
-	var image := StationUi.art(ship_rows, "ship", Vector2(160, 80))
-	image.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	ship_stats = StationUi.text(ship_rows, "", 12)
+	ship_rows.add_theme_constant_override("separation", 4)
+	ship_title = StationUi.text(ship_rows, "LIBERATOR", 22)
+	StationUi.text(ship_rows, "ACTIVE SHIP", 11, FlightHud.MUTED)
+	ship_choice = OptionButton.new()
+	ship_rows.add_child(ship_choice)
+	activate_button = StationUi.button(ship_rows, "Activate selected ship", activate_selected)
+	ship_art = StationUi.art(ship_rows, "ship", Vector2(160, 60))
+	ship_art.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	ship_stats = StationUi.text(ship_rows, "", 11)
 	var fitting := StationUi.card(body)
 	fitting.custom_minimum_size.x = 346
 	fitting.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -48,27 +59,10 @@ func _ready() -> void:
 	fitting_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	fitting_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	fitting_rows.add_child(fitting_scroll)
-	var slot_rows := VBoxContainer.new()
+	slot_rows = VBoxContainer.new()
 	slot_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fitting_scroll.add_child(slot_rows)
-	for kind: String in ["laser", "generator", "extra"]:
-		var count := Equipment.SLOTS.values().count(kind)
-		StationUi.text(slot_rows, "%s / %d SLOTS" % [kind.to_upper() + "S", count], 13, Color("f4c778") if kind == "laser" else FlightHud.CYAN)
-		var group := GridContainer.new()
-		group.columns = 4
-		group.add_theme_constant_override("h_separation", 6)
-		group.add_theme_constant_override("v_separation", 6)
-		slot_rows.add_child(group)
-		for slot: String in Equipment.SLOTS:
-			if Equipment.SLOTS[slot] != kind:
-				continue
-			var tile := EquipmentTile.new()
-			tile.screen = self
-			tile.slot = slot
-			tile.compact = true
-			tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			group.add_child(tile)
-			slots[slot] = tile
+	rebuild_slots("liberator")
 	StationUi.text(fitting_rows, "Shields and engines share generator slots. Extras are reserved for future items.", 12, FlightHud.MUTED)
 	storage_panel = StationUi.card(body)
 	storage_panel.custom_minimum_size.x = 254
@@ -116,6 +110,44 @@ func inventory() -> Dictionary:
 	return sector.session.combat.inventory
 
 
+func slots_kind(slot: String) -> String:
+	return ShipCatalog.slots(current_slot_model).get(slot, "")
+
+
+func rebuild_slots(model_id: String) -> void:
+	if current_slot_model == model_id:
+		return
+	current_slot_model = model_id
+	for child in slot_rows.get_children():
+		slot_rows.remove_child(child)
+		child.queue_free()
+	slots.clear()
+	var available := ShipCatalog.slots(model_id)
+	for kind: String in ["laser", "generator", "extra"]:
+		StationUi.text(slot_rows, "%s / %d SLOTS" % [kind.to_upper() + "S", available.values().count(kind)], 13, Color("f4c778") if kind == "laser" else FlightHud.CYAN)
+		var group := GridContainer.new()
+		group.columns = 4
+		group.add_theme_constant_override("h_separation", 6)
+		group.add_theme_constant_override("v_separation", 6)
+		slot_rows.add_child(group)
+		for slot: String in available:
+			if available[slot] != kind:
+				continue
+			var tile := EquipmentTile.new()
+			tile.screen = self
+			tile.slot = slot
+			tile.compact = true
+			tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			group.add_child(tile)
+			slots[slot] = tile
+
+
+func activate_selected() -> void:
+	if ship_choice.selected < 0 or not StationUi.blocker(sector).is_empty():
+		return
+	sector.session.combat.request_station("switch_ship", owned_ships[ship_choice.selected])
+
+
 func open() -> void:
 	if not StationUi.can_open(sector):
 		return
@@ -138,6 +170,17 @@ func refresh_inventory() -> void:
 	if data.is_empty() or data == last_inventory:
 		return
 	last_inventory = data.duplicate(true)
+	var model_id: String = ShipCatalog.canonical(data["ships"][data["active_ship"]])
+	rebuild_slots(model_id)
+	ship_title.text = ShipCatalog.info(model_id)["name"].to_upper()
+	ship_art.texture = StationUi.texture(model_id)
+	ship_choice.clear()
+	owned_ships.clear()
+	for id: String in data["ships"]:
+		owned_ships.append(id)
+		ship_choice.add_item(ShipCatalog.info(data["ships"][id])["name"] + (" (active)" if id == data["active_ship"] else ""))
+		if id == data["active_ship"]:
+			ship_choice.select(owned_ships.size() - 1)
 	if not data["items"].has(selected_item):
 		selected_item = ""
 	for tile: EquipmentTile in stored.values():
@@ -167,7 +210,7 @@ func refresh_inventory() -> void:
 
 func update_stats() -> void:
 	var values := Equipment.stats(inventory())
-	ship_stats.text = "CURRENT FITTING\n%d hull\n%d damage / shot\n%d shield capacity\n%d%% absorption\n%d m/s cruise\n%d m/s boost" % [sector.player.max_hull, values["damage"], values["shield"], roundi(values["absorption"] * 100), values["speed"], values["boost"]]
+	ship_stats.text = "CURRENT FITTING\n%d hull / %d cargo\n%d damage / shot\n%d shield / %d%% absorption\n%d m/s cruise / %d boost" % [values["hull"], CargoResources.capacity(inventory()), values["damage"], values["shield"], roundi(values["absorption"] * 100), values["speed"], values["boost"]]
 	summary.text = "OUTPOST 01 / SHIP EQUIPMENT    /    %d CR" % sector.credits
 
 
@@ -268,6 +311,8 @@ func _process(_delta: float) -> void:
 	refresh_inventory()
 	update_stats()
 	var blocked := StationUi.blocker(sector)
+	activate_button.disabled = not blocked.is_empty() or ship_choice.selected < 0 or owned_ships[ship_choice.selected] == inventory()["active_ship"]
+	activate_button.tooltip_text = blocked if not blocked.is_empty() else "Switch for free. Fittings and cargo stay with each ship; switching does not repair hull or recharge shields."
 	remove_button.disabled = selected_item.is_empty() or not reason(selected_item, "").is_empty()
 	remove_button.tooltip_text = "Select an installed item to remove it." if selected_item.is_empty() else reason(selected_item, "")
 	status.text = blocked if not blocked.is_empty() else (drop_hint if not drop_hint.is_empty() else combat.station_message)
