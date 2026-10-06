@@ -14,6 +14,7 @@ var master_label: Label
 var effects_label: Label
 var mute: CheckButton
 var fullscreen: CheckButton
+var vsync: CheckButton
 var quality: OptionButton
 var performance: CheckButton
 var resolution: OptionButton
@@ -261,6 +262,11 @@ func build_graphics(rows: VBoxContainer) -> void:
 		sector.settings.fullscreen = value
 		sector.apply_graphics(false)
 		sector.settings.save())
+	vsync = checkbox(rows, "VSync", func(value: bool):
+		sector.settings.vsync = value
+		sector.apply_graphics(false)
+		sector.settings.save())
+	label(rows, "Sync frames to your screen's refresh rate to reduce tearing. Off by default.", 14)
 	label(rows, "Antialiasing")
 	quality = OptionButton.new()
 	quality.add_item("Off")
@@ -336,6 +342,7 @@ func sync_controls() -> void:
 	effects.set_value_no_signal(sector.audio.effects * 100.0)
 	mute.set_pressed_no_signal(sector.audio.muted)
 	fullscreen.set_pressed_no_signal(sector.settings.fullscreen)
+	vsync.set_pressed_no_signal(sector.settings.vsync)
 	quality.select(0 if sector.low_quality else 1)
 	performance.set_pressed_no_signal(sector.show_performance)
 	sync_resolution()

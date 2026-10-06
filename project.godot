@@ -8,6 +8,7 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 config/description="A first playable space encounter."
 
 [display]
+window/vsync/vsync_mode=0
 window/size/viewport_width=1440
 window/size/viewport_height=900
 window/size/window_width_override=1440
