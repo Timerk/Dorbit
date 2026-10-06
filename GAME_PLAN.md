@@ -167,28 +167,49 @@ The first Milestone 3 equipment slice added fittings for the Liberator starter. 
 - Lasers add damage, shield generators add shield capacity, and engines add speed. Damage, capacity and speed bonuses stack by addition. Shield absorption is the capacity-weighted average of installed shield generators, never the sum of their percentages. Hull and base movement belong to the ship; empty slots never prevent flight.
 - New pilots receive one laser, one shield generator and one engine installed. Existing saves receive the same starter fitting exactly once, retaining credits and unrelated progression fields.
 - Press B near the station for the shop and I for a separate ship equipment screen. Both use the repair checks: alive, within 60 m, speed at most 8 m/s, and at least five seconds since damage. The server checks every action again.
-- The shop has category navigation, a two-column item catalog, a selected-item preview and a purchase summary. Weapons contain lasers; generators have shield and engine submenus. All equipment shows the existing three models together. Ships lists all twelve modeled base hulls with stats, credits and ownership. Selecting categories or items never purchases anything. Equipment uses the same artwork as inventory; ships use their saved model renders.
+- The shop has category navigation, a scrollable two-column item catalog, a selected-item preview and a purchase summary. Weapons contain lasers; generators have shield and engine submenus. All equipment shows 18 reference models: five lasers, seven shields and six engines, including unavailable LF-4 and SG3N-B00 previews. Ships lists all twelve modeled base hulls with stats, credits and ownership. Selecting categories or items never purchases anything. Equipment uses the same artwork as inventory; ships use their saved model renders.
 - The shop shows visual item cards, prices and credits, and delivers equipment to inventory and empty hulls to the hangar. The equipment screen shows the active ship's model preview and an owned-ship selector on the left, its actual laser and shared generator slots in the middle, and scrollable storage inventory on the right. Activate an owned hull for free at the station; switching preserves absolute hull, shield charge, boost energy and cooldowns, clamped to the new fitting. Drag items to compatible empty slots to install them, or back to inventory to remove them. Selecting an item and clicking an empty slot, plus a removal button, also supports keyboard use. Occupied slots require removal first.
 - Current and proposed damage, shield capacity, absorption, cruise and boost speeds remain visible. Unavailable purchases and fitting actions explain why. B, I and C switch station screens; Esc returns to flight. Generated item art and a temporary ship preview do not depend on the final ship models.
 - Fitting changes never repair hull, refill shields or boost energy, or reset weapon cooldowns. Added shield capacity starts empty and recovers through the normal shield regeneration rules. Removing capacity discards excess charge.
 - The server commits a purchase's credit deduction, new item and request sequence together. Successful requests cannot run again, even after restart. A new intentional purchase uses the next sequence. Inventory and fittings survive death, reconnects and server restarts.
-- No equipment selling, trading, rarity, equipment leveling or further tiers are included. Resource cargo and sales are described below.
+- No equipment selling, trading, rarity, equipment leveling, loot acquisition or assembly are included. Resource cargo and sales are described below.
 
-Provisional equipment values:
+### DarkOrbit reference equipment catalog
+
+The user requested the models in four supplied screenshots, with their damage, shield, absorption and speed values. All purchases use credits: multiply a DarkOrbit Uridium price by **100**. Screenshot values take precedence over older FAQ entries (SG3N-A03 costs 128,000 credits; SG3N-B01 has 9,500 capacity). LF-4 and SG3N-B00 show their stats but remain unavailable until a future loot/assembly system, as explicitly chosen by the user. The server rejects their purchase intents; neither is a free item.
 
 | Model | Price | Bonus per installed item |
 | --- | --- | --- |
-| Pulse laser | 3,000 CR | +65 damage per shot (LF-1 baseline) |
-| Shield generator | 2,400 CR | +1,000 shield capacity / 40% absorption (SG3N-A01 baseline) |
-| Ion engine | 2,400 CR | +8 m/s cruise and boost speed |
+| LF-1 | 10,000 CR | +65 damage per shot |
+| MP-1 | 40,000 CR | +70 damage per shot |
+| LF-2 | 500,000 CR (5,000 U) | +140 damage per shot |
+| LF-3 | 1,000,000 CR (10,000 U) | +175 damage per shot; +15% for this laser against aliens (201.25 total) |
+| LF-4 | Unavailable: future loot/assembly | +200 damage per shot |
+| SG3N-A01 | 8,000 CR | +1,000 shield / 40% absorption |
+| SG3N-A02 | 16,000 CR | +2,000 shield / 50% absorption |
+| FS-01 | 256,000 CR | +3,200 shield / 70% absorption; +6.25% shield regeneration |
+| SG3N-A03 | 128,000 CR | +5,000 shield / 60% absorption |
+| SG3N-B00 | Unavailable: future assembly | +9,000 shield / 70% absorption |
+| SG3N-B01 | 250,000 CR (2,500 U) | +9,500 shield / 70% absorption |
+| SG3N-B02 | 1,000,000 CR (10,000 U) | +10,000 shield / 80% absorption |
+| G3N-1010 | 2,000 CR | +2 m/s cruise and boost |
+| G3N-2010 | 4,000 CR | +3 m/s cruise and boost |
+| G3N-3210 | 8,000 CR | +4 m/s cruise and boost |
+| G3N-3310 | 16,000 CR | +5 m/s cruise and boost |
+| G3N-6900 | 100,000 CR (1,000 U) | +7 m/s cruise and boost |
+| G3N-7900 | 200,000 CR (2,000 U) | +10 m/s cruise and boost |
+
+Missing laser damage comes from the official [assembly/upgrading balance FAQ](https://board-en.darkorbit.com/threads/new-assembly-upgrading-system-faq.124627/) (LF-1 65, MP-1 70, LF-2 140) and the newer [equipment FAQ](https://board-es.darkorbit.com/threads/faqs-objetos-de-equipamiento-armas-generadores-y-extras.147201/) (LF-3 175 plus 15% against NPCs, LF-4 200). Published FAQs differ for MP-1; the balance update's 70 is used. The newer equipment table clarifies that LF-3's bonus is a percentage, resolving the older English FAQ's ambiguous flat 15. The older [generator FAQ](https://board-en.darkorbit.com/threads/generators-faq.968/) supplies former Uridium shop prices for B01/B02 and explains cumulative fusion regeneration. The screenshots govern the updated shield capacities and listed credit prices. These reference prices replace the former provisional shop prices; progression speed needs playtesting.
 
 The starter uses the regular Liberator's 116,000 hull and 4 laser / 6 generator / 2 extra slots, confirmed by the [official ship FAQ](https://board-es.darkorbit.com/threads/faqs-naves-y-disenos.147561/). The user chose the regular ship rather than the supplied Liberator Plus hull. The persisted `pathfinder` model ID stays unchanged so existing equipment, ownership and cargo need no destructive migration; the UI calls it Liberator. The subsequent ship integration expands Liberator cargo to its reference 400 units without losing saved cargo.
 
-Empty Liberator fittings have no laser damage or shield capacity, 33 m/s cruise and 75 m/s boost (330 DarkOrbit units converted at 0.1 m/s per unit). New pilots still receive one laser, one shield and one engine, for 65 damage, 1,000 shield with 40% absorption, 41 m/s cruise and 83 m/s boost. Existing pilots keep their purchases and slot assignments; newly available slots start empty. Four starter lasers deal 260 per shot. Six shields provide 6,000 capacity with 40% absorption. Engines retain +8 m/s per copy by the user's final speed preference; all flight values are expressed in m/s. Acceleration remains 40 m/s² and laser interval remains 0.42 seconds. Only the current three equipment models are sold; higher tiers and extra-slot items follow later.
+Empty Liberator fittings have no laser damage or shield capacity, 33 m/s cruise and 75 m/s boost (330 DarkOrbit units converted at 0.1 m/s per unit). New pilots retain the agreed starter fitting: one LF-1, one SG3N-A01 and one original Ion engine, for 65 damage, 1,000 shield with 40% absorption, 41 m/s cruise and 83 m/s boost. Persisted `laser` and `shield` IDs now display LF-1 and SG3N-A01; the original `engine` ID remains valid with its +8 m/s bonus. Original Ion engines stay owned and transferable but are hidden from the shop and cannot be purchased. Existing purchases and assignments are preserved without a save migration. Four starter lasers deal 260 per shot. Six starter shields provide 6,000 capacity with 40% absorption. New G3N models use the screenshot bonuses in m/s for both cruise and boost. Acceleration remains 40 m/s² and laser interval remains 0.42 seconds. Extra-slot items follow later.
+
+Installed LF-3 bonuses add 26.25 damage per copy (15% of 175) only when shooting an alien, on top of additive base laser damage; they never multiply other installed lasers. Each installed FS-01 adds 6.25 percentage points to the regeneration bonus (two give +12.5%); the multiplier applies to the normal capacity-based recovery rate, retains Dorbit's existing six-second recovery delay, and caps at maximum shield. Removing or storing either model removes its special bonus. Fitting never grants charge. Current fitting and proposed changes display both bonuses. Equipment remains server-authoritative, with both additional stats replicated to clients. Network schema 5 includes hull model, maximum hull and both equipment bonuses, and requires matching client/server builds; save schema 3 is unchanged. Updated provisioning tools accept every reference model and preserve them during credential rotation.
 
 For 80% absorption, a 100-damage hit takes 80 shield and 20 hull. With only 30 shield remaining it takes 30 shield and 70 hull. No shield means the entire hit damages hull. Starter shields use 40%; all current aliens use 80%. Hull can reach zero while shield remains. Shield recovery waits six seconds without damage, then restores one twelfth of maximum capacity per second. Station fitting never refills charge. Repairs cost `ceil(missing hull fraction × 14.4)` credits, capped at the wallet, preserving the old full-hull price of 15 CR at the new scale; rescue still costs up to 10 CR.
 
-Alien values are Dorbit playtesting choices, not copied DarkOrbit alien stats. With continuous in-range fire and no regeneration, one starter laser kills a Scout in about 9.7 seconds; three lasers kill a Sentinel in about 12.6 seconds; four lasers kill a Heavy in about 23.9 seconds. Scouts suit starter solo hunts, Sentinels reward filling laser slots, and Heavy damage encourages a group. Prices, kill pools, contracts and resource payouts stay unchanged. The former 15–30 minute purchase estimates no longer describe this balance; actual progression timing and multi-pilot encounters need human playtesting.
+Alien values are Dorbit playtesting choices, not copied DarkOrbit alien stats. With continuous in-range fire and no regeneration, one starter laser kills a Scout in about 9.7 seconds; three lasers kill a Sentinel in about 12.6 seconds; four lasers kill a Heavy in about 23.9 seconds. Scouts suit starter solo hunts, Sentinels reward filling laser slots, and Heavy damage encourages a group. Kill pools, contracts and resource payouts stay unchanged. The former 15–30 minute purchase estimates no longer describe this balance; actual progression timing and multi-pilot encounters need human playtesting.
 
 ### Enemy resources, cargo and station sales
 

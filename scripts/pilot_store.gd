@@ -138,8 +138,9 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 	if sequence != equipment["revision"] + 1 or sequence > MAX_CREDITS:
 		return "Inventory changed. Review it and try again."
 	if action == "buy":
-		if not Equipment.MODELS.has(subject):
-			return "Unknown equipment model."
+		var blocker := Equipment.purchase_blocker(subject)
+		if not blocker.is_empty():
+			return blocker
 		var price: int = Equipment.MODELS[subject]["price"]
 		if equipment["items"].has("purchase-%d" % sequence):
 			fail("Equipment item ID conflicts with its transaction sequence.")

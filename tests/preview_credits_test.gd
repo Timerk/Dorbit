@@ -92,11 +92,11 @@ func run() -> void:
 	client.shop.buys["laser"].pressed.emit()
 	await settle()
 	await replicate(server)
-	check(client.credits == 97000 and client.session.combat.inventory["items"].has("purchase-2"), "Granted credits buy real equipment with the next sequence")
+	check(client.credits == 90000 and client.session.combat.inventory["items"].has("purchase-2"), "Granted credits buy real equipment with the next sequence")
 	client.shop.test_credits_button.pressed.emit()
 	await settle()
 	await replicate(server)
-	check(client.credits == 197000 and store.pilots["pilot0"]["equipment"]["revision"] == 3, "Pilot can deliberately grant another budget without restarting")
+	check(client.credits == 190000 and store.pilots["pilot0"]["equipment"]["revision"] == 3, "Pilot can deliberately grant another budget without restarting")
 	client.get_viewport().size = Vector2i(960, 600)
 	client.get_viewport().render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	if DisplayServer.get_name() != "headless":

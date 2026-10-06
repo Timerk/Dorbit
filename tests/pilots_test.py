@@ -44,6 +44,18 @@ class ProvisioningTest(unittest.TestCase):
             candidate[model]["prometium"] += 1
             self.assertFalse(pilots.valid_cargo(candidate, equipment))
 
+    def test_reference_models(self):
+        for model in pilots.LASER_MODELS | pilots.GENERATOR_MODELS:
+            with self.subTest(model=model):
+                equipment = pilots.starter_equipment()
+                equipment["items"]["reference"] = {"model": model, "ship": "", "slot": ""}
+                self.assertTrue(pilots.valid_equipment(equipment))
+                item = equipment["items"]["reference"]
+                item.update(ship="starter", slot="laser2" if model in pilots.LASER_MODELS else "generator3")
+                self.assertTrue(pilots.valid_equipment(equipment))
+                item["slot"] = "generator3" if model in pilots.LASER_MODELS else "laser2"
+                self.assertFalse(pilots.valid_equipment(equipment))
+
     def test_expanded_slots(self):
         equipment = pilots.starter_equipment()
         equipment["items"]["starter-laser"]["slot"] = "laser4"
@@ -64,6 +76,8 @@ class ProvisioningTest(unittest.TestCase):
                 if version >= 2:
                     record["equipment"] = pilots.starter_equipment()
                     record["equipment"]["items"]["starter-laser"].update(ship="", slot="")
+                    for model in pilots.LASER_MODELS | pilots.GENERATOR_MODELS:
+                        record["equipment"]["items"][model] = {"model": model, "ship": "", "slot": ""}
                 if version == 3:
                     record["cargo"] = {"starter": {"seprom": 2}}
                 path = root / "pilots.json"
