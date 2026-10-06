@@ -31,7 +31,11 @@ steering, and small arrows show contacts above or below. Green marks Outpost 01,
 cyan marks other pilots, and aliens use their type colors. A white ring identifies
 your destination. Use **− / +** to change range from 250 m to 2.4 km.
 Press **M** or click Map for a larger sector overview. Click a contact or its row
-to select a destination; drag right mouse on the plot to rotate the height view.
+to select a destination. Markers, names and height lines are clickable directly
+on the map and highlight under the pointer. Hold left mouse and drag to rotate
+horizontally or vertically; a short click selects instead of rotating. Right-mouse
+drag also rotates. **Ctrl + mouse wheel** zooms around the cursor, from 0.6× to
+3×. **Reset view** restores rotation and zoom.
 Choosing an alien also selects it for combat. Choosing the outpost or another
 pilot clears the combat target. M or Esc returns to flight. Multiplayer keeps
 running while the overview is open.
@@ -60,7 +64,9 @@ server/client builds; clients from before the map update cannot connect.
 
 Review the [960×600 radar and guidance](docs/feedback/map-navigation-960.png),
 [1440×900 layout](docs/feedback/map-navigation-1440.png) and
-[sector overview](docs/feedback/map-overview-960.png), plus the
+[sector overview](docs/feedback/map-overview-960.png),
+[rotated view](docs/feedback/map-overview-rotated-960.png) and
+[zoomed view](docs/feedback/map-overview-zoom-960.png), plus the
 [radiation alert](docs/feedback/map-radiation.png).
 The map integration fixture (`tests/map_layout_test.gd`) checks 100 random homes,
 respawn and late-join replication, every boundary axis, increasing authoritative
