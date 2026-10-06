@@ -174,6 +174,30 @@ equipment and contract progress. Production does not enable these tools. Seeded
 wallets are for testing equipment behavior, not measuring the economy's progression
 speed. See README.md for configuration and use.
 
+### Docked main menu and launch
+
+Normal clients connect to the persistent server into a docked pilot console before
+entering the map. The user requested a station-console layout inspired by the
+supplied reference, with a central green Start button, blue navigation panels,
+saved credits and active-ship preparation. Hangar, shop, quests (the existing
+hunting contracts), cargo trading, settings and connection management use the
+existing screens. Skylab and Galaxy Gates are visible coming-soon pages; their
+gameplay is not implemented in this milestone.
+
+Docked pilots can buy ships/equipment, activate owned hulls, fit items, trade saved
+cargo and accept or abandon hunts through the same server-validated persistence
+paths. Their internal ship state is hidden from other pilots and has no collision,
+movement, fire, alien targeting or loot pickup until Start is acknowledged by the
+server. Fitting and launch preserve current health, charge and cooldowns. Esc and
+screen Back actions return to the console without launching. Start closes station
+pages and launches the selected hull at the existing station spawn. Reconnection
+requires a fresh explicit launch; saved progression is retained. Menus opened
+after launch retain the existing live-world station and pause behavior.
+
+The console fits 960 x 600 through 1440 x 900 and larger windows; station panels
+scale to leave its persistent launch/navigation header accessible. Client and
+server builds must match (network schema 5 adds docked state and launch RPCs).
+
 ### First station equipment shop and fitting
 
 The first Milestone 3 equipment slice added fittings for the Liberator starter. It now supports the twelve modeled hulls, each with its own slot counts, owned equipment and cargo.
