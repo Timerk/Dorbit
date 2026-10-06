@@ -255,6 +255,7 @@ func apply_graphics(resize_window: bool = true) -> void:
 			var pixels := settings.resolution.min((usable.size - Vector2i(32, 64)).max(Vector2i(960, 600)))
 			DisplayServer.window_set_size(pixels)
 			DisplayServer.window_set_position(usable.position + (usable.size - pixels) / 2)
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if settings.vsync else DisplayServer.VSYNC_DISABLED)
 
 
 func _physics_process(delta: float) -> void:

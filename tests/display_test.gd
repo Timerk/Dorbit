@@ -9,6 +9,9 @@ func run() -> void:
 	await sync_physics()
 	var menu := sector.settings_menu
 	if "--restart" in OS.get_cmdline_user_args():
+		check(sector.settings.vsync, "VSync preference survives a new process")
+		if DisplayServer.get_name() != "headless":
+			check(DisplayServer.window_get_vsync_mode() == DisplayServer.VSYNC_ENABLED, "Saved VSync is applied at startup")
 		check(is_equal_approx(sector.player.mouse_sensitivity, 0.006), "Sensitivity survives a new process")
 		check(sector.settings.bindings.fire == KEY_G and sector.settings.bindings.forward == KEY_S, "Bindings survive a new process")
 		check(sector.low_quality and sector.show_performance, "Graphics preferences survive a new process")
@@ -25,6 +28,19 @@ func run() -> void:
 	check(sector.session.menu.visible, "Normal client starts at the connection menu")
 	menu.open(true)
 	await process_frame
+	check(not sector.settings.vsync and not menu.vsync.button_pressed, "VSync is off by default in settings and the menu")
+	check(ProjectSettings.get_setting("display/window/vsync/vsync_mode") == DisplayServer.VSYNC_DISABLED, "Project starts with VSync disabled")
+	if DisplayServer.get_name() != "headless":
+		check(DisplayServer.window_get_vsync_mode() == DisplayServer.VSYNC_DISABLED, "Default VSync is applied to the window")
+	menu.vsync.button_pressed = true
+	if DisplayServer.get_name() != "headless":
+		check(DisplayServer.window_get_vsync_mode() == DisplayServer.VSYNC_ENABLED, "VSync toggle enables synchronization immediately")
+	menu.vsync.button_pressed = false
+	if DisplayServer.get_name() != "headless":
+		check(DisplayServer.window_get_vsync_mode() == DisplayServer.VSYNC_DISABLED, "VSync toggle disables synchronization immediately")
+	menu.vsync.button_pressed = true
+	menu.sync_controls()
+	check(sector.settings.vsync and menu.vsync.button_pressed, "Menu reflects the enabled VSync preference")
 	check(menu.panel.visible and not sector.session.menu.visible and sector.paused, "Settings can open before connecting")
 	await tap_key(KEY_ESCAPE)
 	check(not menu.panel.visible and sector.session.menu.visible, "Escape returns settings to the connection menu")
@@ -116,11 +132,17 @@ func run() -> void:
 	invalid.set_value("controls", "sensitivity", "bad")
 	invalid.set_value("bindings", "fire", KEY_ESCAPE)
 	invalid.set_value("graphics", "fullscreen", "yes")
+	invalid.set_value("graphics", "vsync", "yes")
 	invalid.set_value("graphics", "resolution", Vector2i(-1, -1))
 	invalid.save("user://invalid-settings.cfg")
 	var loaded := GameSettings.new()
 	loaded.load_from("user://invalid-settings.cfg")
 	check(loaded.sensitivity == GameSettings.DEFAULT_SENSITIVITY and loaded.bindings.fire == KEY_SPACE and not loaded.fullscreen and loaded.resolution == Vector2i(1440, 900), "Malformed preferences retain usable defaults")
+	check(not loaded.vsync, "Malformed VSync preference retains the disabled default")
+	invalid.erase_section_key("graphics", "vsync")
+	invalid.save("user://invalid-settings.cfg")
+	loaded.load_from("user://invalid-settings.cfg")
+	check(not loaded.vsync, "Older profiles without VSync retain the disabled default")
 	loaded.save("user://missing-directory/settings.cfg")
 	check(loaded.save_failed, "Failed preference writes are reported")
 	sector.settings.configure_input()
@@ -159,6 +181,7 @@ func run() -> void:
 		menu.resolution.item_selected.emit(0)
 		await create_timer(0.2).timeout
 		check(DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_WINDOWED and DisplayServer.window_get_size() == menu.resolutions[0], "Resolution selection returns to a sized window")
+		check(DisplayServer.window_get_vsync_mode() == DisplayServer.VSYNC_ENABLED, "VSync stays enabled through fullscreen and resolution changes")
 	sector.settings.save()
 	finish()
 
