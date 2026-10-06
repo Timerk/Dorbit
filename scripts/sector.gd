@@ -7,19 +7,17 @@ const SPAWN_POSITION := Vector3(0.0, 0.0, 45.0)
 const REPAIR_RADIUS: float = 60.0
 const KILL_REWARD: int = 75
 const RESPAWN_FEE: int = 10
+const MAP_RADIUS: float = 1200.0
+const BOUNDARY_WARNING_DISTANCE: float = 120.0
+const RADIATION_BASE_RATE: float = 0.01
+const RADIATION_RAMP_RATE: float = 0.005
 const WINDOW_RESOLUTIONS: Array[Vector2i] = [
 	Vector2i(960, 600), Vector2i(1280, 720), Vector2i(1440, 900),
 	Vector2i(1920, 1080), Vector2i(2560, 1440), Vector2i(3840, 2160),
 ]
 
-# Fixed slots bound the population. Slot 0 remains the reference Sentinel for development fixtures.
-const ALIEN_SPAWNS := [
-	{"kind": "Sentinel", "home": Vector3(0, 8, -440)},
-	{"kind": "Scout", "home": Vector3(-85, 8, -150)},
-	{"kind": "Scout", "home": Vector3(85, -12, -175)},
-	{"kind": "Sentinel", "home": Vector3(-230, 35, -430)},
-	{"kind": "Heavy", "home": Vector3(320, 15, -390)},
-]
+# Stable IDs/types bound population; the authority chooses homes at startup and respawn.
+const ALIEN_KINDS: Array[String] = ["Sentinel", "Scout", "Scout", "Sentinel", "Heavy"]
 var player: Pilot
 var aliens: Dictionary[int, Alien] = {}
 var alien: Alien:
@@ -50,9 +48,11 @@ var server_port: int = FlightSession.PORT
 var audio: FeedbackAudio
 var settings := GameSettings.new()
 var settings_menu: SettingsMenu
+var spawn_rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
+	spawn_rng.randomize()
 	dedicated_server = dedicated_server or "--server" in OS.get_cmdline_user_args()
 	client_only = client_only and not "--offline" in OS.get_cmdline_user_args()
 	if not dedicated_server:
@@ -70,16 +70,18 @@ func _ready() -> void:
 		toast = "Welcome to Outpost 01. Hold %s to steer." % GameSettings.binding_text("steer")
 		player.destroyed.connect(on_destroyed)
 		player.fired.connect(on_laser)
-	for id in range(ALIEN_SPAWNS.size()):
+	for id in range(ALIEN_KINDS.size()):
 		var enemy := Alien.new()
 		enemy.alien_id = id
 		enemy.name = "Alien%d" % id
-		enemy.kind = ALIEN_SPAWNS[id]["kind"]
-		enemy.home_position = ALIEN_SPAWNS[id]["home"]
+		enemy.kind = ALIEN_KINDS[id]
+		enemy.home_position = Vector3.ZERO
 		enemy.position = enemy.home_position
 		enemy.render_enabled = not dedicated_server
 		aliens[id] = enemy
 		add_child(enemy)
+		if dedicated_server or not client_only:
+			relocate_alien(enemy)
 		enemy.destroyed.connect(on_destroyed)
 		enemy.fired.connect(on_laser)
 	if not dedicated_server:
@@ -271,10 +273,7 @@ func _physics_process(delta: float) -> void:
 	player.tick_combat(delta)
 	if player.alive:
 		player.fly(delta)
-		if player.position.length() > 700.0:
-			player.position = player.position.normalized() * 699.0
-			player.velocity = Vector3.ZERO
-			notify("Sector boundary. Turn back toward the outpost.")
+		tick_radiation(player, delta)
 		if objective_stage == 0 and player.position.distance_to(STATION_POSITION) > 75.0:
 			objective_stage = 1
 		if auto_fire and is_instance_valid(target):
@@ -290,7 +289,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			enemy.respawn = maxf(0.0, enemy.respawn - delta)
 			if enemy.respawn <= 0.0:
-				enemy.position = enemy.home_position
+				relocate_alien(enemy)
 				enemy.returning = false
 				enemy.reset_encounter()
 	weapon_status = player.firing_blocker(target)
@@ -300,6 +299,49 @@ func _physics_process(delta: float) -> void:
 func _process(_delta: float) -> void:
 	if is_instance_valid(hud):
 		hud.queue_redraw()
+
+
+func tick_radiation(ship: Pilot, delta: float) -> void:
+	if not ship.simulation_authority:
+		return
+	if not ship.alive or ship.position.length() <= MAP_RADIUS:
+		ship.radiation_exposure = 0.0
+		return
+	# Integrate the increasing rate so damage does not depend on tick frequency.
+	var exposure := ship.radiation_exposure
+	ship.radiation_exposure += delta
+	var fraction := RADIATION_BASE_RATE * delta + RADIATION_RAMP_RATE * (exposure * delta + delta * delta * 0.5)
+	ship.take_damage(ship.max_hull * fraction, null)
+
+
+func alien_home_clear(point: Vector3, enemy: Alien) -> bool:
+	if point.length() > MAP_RADIUS - float(enemy.tuning()["leash"]) - 35.0:
+		return false
+	if point.distance_to(STATION_POSITION) < float(enemy.tuning()["detection"]) + 90.0:
+		return false
+	for other: Alien in aliens.values():
+		if other != enemy and point.distance_to(other.home_position) < 180.0:
+			return false
+	# Use built collider dimensions; this also works before the first physics tick.
+	for child in get_children():
+		if child is StaticBody3D:
+			for collider in child.get_children():
+				if collider is CollisionShape3D and collider.shape is SphereShape3D:
+					if point.distance_to(child.position + collider.position) < collider.shape.radius + 35.0:
+						return false
+	return true
+
+
+func relocate_alien(enemy: Alien) -> void:
+	# Fixed identities/types bound population; each life gets a new server-owned home.
+	var radius := MAP_RADIUS - float(enemy.tuning()["leash"]) - 35.0
+	for attempt in range(256):
+		var point := Vector3(spawn_rng.randf_range(-radius, radius), spawn_rng.randf_range(-radius, radius), spawn_rng.randf_range(-radius, radius))
+		if alien_home_clear(point, enemy):
+			enemy.home_position = point
+			enemy.position = point
+			return
+	push_warning("No clear random home found; retaining alien %d home" % enemy.alien_id)
 
 
 func set_paused(value: bool) -> void:
@@ -315,7 +357,7 @@ func set_paused(value: bool) -> void:
 func pick_target(screen_position: Vector2) -> void:
 	var camera := player.camera
 	var start := camera.project_ray_origin(screen_position)
-	var finish := start + camera.project_ray_normal(screen_position) * 1500.0
+	var finish := start + camera.project_ray_normal(screen_position) * MAP_RADIUS * 3.0
 	var query := PhysicsRayQueryParameters3D.create(start, finish, 3)
 	query.exclude = [player.get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)

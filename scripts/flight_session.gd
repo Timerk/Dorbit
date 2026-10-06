@@ -522,7 +522,7 @@ func tick(delta: float) -> void:
 				if fresh:
 					ship.rotation = command["rotation"]
 				ship.fly_command(delta, command["movement"] if fresh else Vector3.ZERO, command["boost"] if fresh else false)
-			bound_ship(ship)
+			sector.tick_radiation(ship, delta)
 		combat.tick(delta)
 		if send_clock >= 0.05:
 			send_clock = 0.0
@@ -535,7 +535,6 @@ func tick(delta: float) -> void:
 			return
 		if sector.player.alive:
 			sector.player.fly_command(delta, movement, boost)
-		bound_ship(sector.player)
 		if send_clock >= 0.05:
 			send_clock = 0.0
 			var enemy := sector.target as Alien
@@ -566,12 +565,6 @@ func send_snapshot() -> void:
 		snapshot.rpc(state, {}, snapshot_sequence)
 	for enemy: Alien in sector.aliens.values():
 		snapshot.rpc({}, combat.pack_alien(enemy), snapshot_sequence)
-
-
-func bound_ship(ship: Pilot) -> void:
-	if ship.position.length() > 700.0:
-		ship.position = ship.position.normalized() * 699.0
-		ship.velocity = Vector3.ZERO
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered", 1)

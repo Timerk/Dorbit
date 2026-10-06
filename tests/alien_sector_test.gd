@@ -156,6 +156,8 @@ func run() -> void:
 		enemy.position = enemy.home_position
 		enemy.returning = false
 		enemy.reset_health()
+	# Random homes can be behind the camera; arrange an on-screen targeting fixture.
+	control.aliens[2].position = control.player.position + Vector3(20, 0, -150)
 	var cursor := control.player.camera.unproject_position(control.aliens[2].global_position)
 	control.cycle_target(cursor)
 	check(control.target == control.aliens[2], "Tab selects the available enemy nearest the cursor")
