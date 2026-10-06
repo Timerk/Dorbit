@@ -23,6 +23,8 @@ var time_since_hit: float = 100.0
 var model: Node3D
 var simulation_authority: bool = true
 var render_enabled: bool = true
+var npc_laser_damage: float = 0.0
+var shield_regen_bonus: float = 0.0
 
 
 func _ready() -> void:
@@ -46,7 +48,7 @@ func tick_combat(delta: float) -> void:
 	shot_cooldown = maxf(0.0, shot_cooldown - delta)
 	time_since_hit += delta
 	if alive and time_since_hit >= 6.0:
-		shield = minf(max_shield, shield + delta * max_shield / 12.0)
+		shield = minf(max_shield, shield + delta * max_shield / 12.0 * (1.0 + shield_regen_bonus))
 
 
 func reset_health() -> void:
@@ -112,5 +114,5 @@ func try_fire(target: SpaceShip) -> bool:
 	shot_cooldown = laser_interval
 	var endpoint := target.global_position
 	fired.emit(global_position - global_basis.z * 3.0, endpoint, hostile)
-	target.take_damage(laser_damage, self)
+	target.take_damage(laser_damage + (npc_laser_damage if target is Alien else 0.0), self)
 	return true

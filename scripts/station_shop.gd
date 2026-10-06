@@ -4,9 +4,9 @@ extends PanelContainer
 
 const CATEGORIES := {"all": "All equipment", "ships": "Ships", "weapons": "Weapons", "generators": "Generators", "shields": "Shields", "engines": "Engines"}
 const DESCRIPTIONS := {
-	"laser": "A tracking pulse laser for alien hunting. Each installed laser adds damage to every shot.",
-	"shield": "A defensive generator that adds shield capacity. Added capacity recharges through normal shield recovery.",
-	"engine": "An ion drive that raises both cruise and boost speed. Acceleration stays the same.",
+	"weapons": "A tracking laser for alien hunting. Each installed laser adds damage to every shot.",
+	"shields": "A defensive generator that adds shield capacity. Added capacity recharges through normal shield recovery.",
+	"engines": "A drive that raises both cruise and boost speed. Acceleration stays the same.",
 }
 
 var sector: Sector
@@ -54,7 +54,8 @@ var products: Dictionary = {}
 func catalog() -> Dictionary:
 	if not products.is_empty():
 		return products
-	products = Equipment.MODELS.duplicate()
+	for model: String in Equipment.catalog_models():
+		products[model] = Equipment.MODELS[model]
 	for id: String in ShipCatalog.MODELS:
 		products[id] = ShipCatalog.info(id).duplicate()
 		products[id]["price"] = ShipCatalog.price(id)
@@ -251,14 +252,15 @@ func build_catalog(parent: Node) -> void:
 		var card := button(grid, "", func(): select_model(model))
 		card.custom_minimum_size = Vector2(102, 142)
 		card.toggle_mode = true
-		card.tooltip_text = "%s / %s CR" % [info["name"], credits_text(info["price"])]
+		var offer := "%s CR" % credits_text(info["price"]) if ShipCatalog.MODELS.has(model) or Equipment.purchase_blocker(model).is_empty() else "Unavailable"
+		card.tooltip_text = "%s / %s\n%s" % [info["name"], offer, StationUi.bonus(model) if Equipment.MODELS.has(model) else "%s hull" % credits_text(int(info["hull"]))]
 		var content := padded_rows(card, 8)
 		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var title := text(content, info["name"], 12)
 		title.custom_minimum_size.y = 34
 		var art := StationUi.art(content, model, Vector2(0, 60))
 		art.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		text(content, "%s CR" % credits_text(info["price"]), 12, FlightHud.CYAN)
+		text(content, offer, 12, FlightHud.CYAN)
 		cards[model] = card
 	empty_catalog = text(rows, "No items in this category.", 14, FlightHud.MUTED)
 	empty_catalog.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -384,8 +386,8 @@ func models_in_category(id: String) -> Array[String]:
 		for model: String in ShipCatalog.MODELS:
 			result.append(model)
 		return result
-	for model: String in Equipment.MODELS:
-		if id == "all" or (id == "weapons" and model == "laser") or (id == "generators" and Equipment.MODELS[model]["kind"] == "generator") or (id == "shields" and model == "shield") or (id == "engines" and model == "engine"):
+	for model: String in Equipment.catalog_models():
+		if id == "all" or id == Equipment.category(model) or (id == "generators" and Equipment.MODELS[model]["kind"] == "generator"):
 			result.append(model)
 	return result
 
@@ -412,19 +414,19 @@ func select_model(model: String) -> void:
 	product_art.texture = StationUi.texture(model if available else "ship")
 	product_title.text = catalog()[model]["name"] if available else "No selection"
 	var is_ship := ShipCatalog.MODELS.has(model)
-	description.text = "An owned hull with its own fitting and cargo. Purchases do not switch your active ship." if is_ship else DESCRIPTIONS.get(model, "")
+	description.text = "An owned hull with its own fitting and cargo. Purchases do not switch your active ship." if is_ship else (DESCRIPTIONS[Equipment.category(model)] if available else "")
 	if is_ship:
 		var entry := ShipCatalog.info(model)
 		bonus.text = "%s hull\n%d m/s base cruise\n%d cargo units" % [credits_text(int(entry["hull"])), entry["speed"] * ShipCatalog.SPEED_SCALE, entry["cargo"]]
 		slot_hint.text = "%d laser / %d shared generator / %d extra slots" % [entry["lasers"], entry["generators"], entry["extras"]]
 	elif available:
 		bonus.text = StationUi.bonus(model)
-		slot_hint.text = "Laser slot. Bonuses stack per installed item." if model == "laser" else "Generator slot. Shields and engines share these slots."
+		slot_hint.text = "Laser slot. Bonuses stack per installed item." if Equipment.MODELS[model]["kind"] == "laser" else "Generator slot. Shields and engines share these slots."
 	else:
 		bonus.text = ""
 		slot_hint.text = ""
 	order_title.text = product_title.text
-	price.text = "%s CR" % credits_text(int(catalog()[model]["price"])) if available else ""
+	price.text = ("%s CR" % credits_text(int(catalog()[model]["price"])) if is_ship or Equipment.purchase_blocker(model).is_empty() else "Not for sale") if available else ""
 	refresh()
 
 
@@ -436,6 +438,9 @@ func purchase(model: String) -> void:
 
 
 func purchase_blocker(model: String) -> String:
+	var supply := "" if ShipCatalog.MODELS.has(model) else Equipment.purchase_blocker(model)
+	if not supply.is_empty():
+		return supply
 	if not sector.session.active or sector.session.combat.inventory.is_empty():
 		return "Connect to a persistent server."
 	if sector.session.combat.station_pending:
@@ -532,7 +537,8 @@ func refresh() -> void:
 		availability.text = reason if not reason.is_empty() else "Ready to purchase"
 		availability.add_theme_color_override("font_color", FlightHud.MUTED if not owned.is_empty() else (FlightHud.RED if not reason.is_empty() else FlightHud.GREEN))
 	else:
-		delivery.text = "1 item to storage"
+		var for_sale := Equipment.purchase_blocker(selected_model).is_empty()
+		delivery.text = "1 item to storage" if for_sale else "Not available"
 		var stored := 0
 		var installed := 0
 		for item: Dictionary in combat.inventory.get("items", {}).values():
@@ -543,7 +549,9 @@ func refresh() -> void:
 					installed += 1
 		ownership.text = "OWNED %d\n%d in storage\n%d installed" % [stored + installed, stored, installed]
 		var remaining := sector.credits - int(Equipment.MODELS[selected_model]["price"])
-		balance.text = "Wallet: %s CR\nAfter: %s" % [credits_text(sector.credits), "%s CR" % credits_text(remaining) if remaining >= 0 else "Insufficient funds"]
+		balance.text = "Wallet: %s CR" % credits_text(sector.credits)
+		if for_sale:
+			balance.text += "\nAfter: %s" % ("%s CR" % credits_text(remaining) if remaining >= 0 else "Insufficient funds")
 		var reason := purchase_blocker(selected_model)
 		availability.text = reason if not reason.is_empty() else "Ready to purchase"
 		availability.add_theme_color_override("font_color", FlightHud.RED if not reason.is_empty() else FlightHud.GREEN)

@@ -86,7 +86,8 @@ static func texture(model: String) -> Texture2D:
 		atlas = load("res://assets/ui/equipment-atlas.png")
 	var value := AtlasTexture.new()
 	value.atlas = atlas
-	var index: int = {"laser": 0, "shield": 1, "engine": 2, "ship": 3}.get(model, 0)
+	var group := Equipment.category(model) if Equipment.MODELS.has(model) else model
+	var index: int = {"weapons": 0, "laser": 0, "shields": 1, "shield": 1, "engines": 2, "engine": 2, "ship": 3}.get(group, 0)
 	var cell := atlas.get_size() / 2
 	value.region = Rect2(Vector2(index % 2, index / 2) * cell, cell)
 	return value
@@ -106,15 +107,16 @@ static func art(parent: Node, model: String, minimum: Vector2) -> TextureRect:
 
 static func bonus(model: String) -> String:
 	var info: Dictionary = Equipment.MODELS[model]
-	if model == "laser":
-		return "+%d damage / shot" % info["damage"]
-	if model == "shield":
-		return "+%d shield / %d%% absorption" % [info["shield"], roundi(info["absorption"] * 100)]
+	if info["kind"] == "laser":
+		return "+%d damage / shot" % info["damage"] + ("\n+%d%% damage against aliens" % roundi(info["npc_bonus"] * 100) if info.has("npc_bonus") else "")
+	if info["shield"] > 0.0:
+		return "+%d shield / %d%% absorption" % [info["shield"], roundi(info["absorption"] * 100)] + ("\n+%.2f%% shield regeneration" % (info["regen_bonus"] * 100) if info.has("regen_bonus") else "")
 	return "+%d m/s cruise & boost" % info["speed"]
 
 
 static func accent(model: String) -> Color:
-	return Color("f4c778") if model == "laser" else (FlightHud.CYAN if model == "shield" else Color("9aafff"))
+	var group := Equipment.category(model)
+	return Color("f4c778") if group == "weapons" else (FlightHud.CYAN if group == "shields" else Color("9aafff"))
 
 
 static func can_open(sector: Sector) -> bool:

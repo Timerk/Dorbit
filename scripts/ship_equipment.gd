@@ -211,6 +211,10 @@ func refresh_inventory() -> void:
 func update_stats() -> void:
 	var values := Equipment.stats(inventory())
 	ship_stats.text = "CURRENT FITTING\n%d hull / %d cargo\n%d damage / shot\n%d shield / %d%% absorption\n%d m/s cruise / %d boost" % [values["hull"], CargoResources.capacity(inventory()), values["damage"], values["shield"], roundi(values["absorption"] * 100), values["speed"], values["boost"]]
+	if values["npc_damage"] > 0.0:
+		ship_stats.text += "\n+%.2f damage against aliens" % values["npc_damage"]
+	if values["regen_bonus"] > 0.0:
+		ship_stats.text += "\n+%.2f%% shield regeneration" % (values["regen_bonus"] * 100)
 	summary.text = "OUTPOST 01 / SHIP EQUIPMENT    /    %d CR" % sector.credits
 
 
@@ -258,6 +262,10 @@ func show_proposal(id: String, slot: String) -> void:
 	proposed["items"][id]["slot"] = slot
 	var values := Equipment.stats(proposed)
 	preview.text = "After %s: %d damage / %d shield (%d%%) / %d m/s cruise / %d m/s boost" % ["install" if not slot.is_empty() else "removal", values["damage"], values["shield"], roundi(values["absorption"] * 100), values["speed"], values["boost"]]
+	if values["npc_damage"] > 0.0:
+		preview.text += " / +%.2f alien damage" % values["npc_damage"]
+	if values["regen_bonus"] > 0.0:
+		preview.text += " / +%.2f%% shield regeneration" % (values["regen_bonus"] * 100)
 
 
 func valid_drag(data: Variant) -> bool:
