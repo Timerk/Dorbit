@@ -24,11 +24,11 @@ func run() -> void:
 	var ship := server.session.ships[id]
 	var store := server.session.store
 	var combat := server.session.combat
-	check(client.cargo.is_empty() and client.cargo_capacity == 200, "Existing pilot migrates to an empty Pathfinder hold")
+	check(client.cargo.is_empty() and client.cargo_capacity == 400, "Existing pilot migrates to an empty Liberator hold")
 	var owned := Equipment.starter()
 	owned["ships"]["spare"] = "pathfinder"
 	check(CargoResources.valid({"starter": {"seprom": 2}, "spare": {}}, owned), "Cargo belongs to individual owned ships")
-	check(not CargoResources.valid({"starter": {"seprom": 201}, "spare": {}}, owned), "Each ship has its own capacity limit")
+	check(not CargoResources.valid({"starter": {"seprom": 401}, "spare": {}}, owned), "Each ship has its own capacity limit")
 	ship.position = Vector3(0, 100, 0)
 	for slot in [1, 0, 4]:
 		var alien: Alien = server.aliens[slot]
@@ -59,32 +59,32 @@ func run() -> void:
 	check(late.loot.drops.has(100) and late.loot.drops[100]["resources"] == {"prometium": 10, "seprom": 2}, "Late join receives current uncollected loot")
 	var late_id := late.multiplayer.get_unique_id()
 	var other := server.session.ships[late_id]
-	var holds := {"starter": {"endurium": 197}}
+	var holds := {"starter": {"endurium": 397}}
 	store.commit({}, {}, {"pilot0": holds})
 	combat.cargo_holds[id] = holds.duplicate(true)
 	ship.position = location
 	other.position = location + Vector3(0, 0, 1)
 	combat.collect_loot()
 	await settle()
-	check(client.cargo == {"endurium": 197, "seprom": 2, "prometium": 1}, "Nearest pilot takes exactly its free capacity, valuable resources first")
+	check(client.cargo == {"endurium": 397, "seprom": 2, "prometium": 1}, "Nearest pilot takes exactly its free capacity, valuable resources first")
 	check(late.cargo == {"prometium": 9}, "Second nearby pilot takes the remainder without duplication")
 	check(not server.loot.drops.has(100) and not client.loot.drops.has(100) and not late.loot.drops.has(100), "Empty boxes disappear for all peers")
 	server.loot.change(101, {"position": location, "resources": {"duranium": 3}, "ttl": 180.0})
 	other.position = Sector.SPAWN_POSITION
 	combat.collect_loot()
 	check(server.loot.drops[101]["resources"] == {"duranium": 3}, "Full cargo leaves resources in space")
-	holds = {"starter": {"endurium": 199}}
+	holds = {"starter": {"endurium": 399}}
 	store.commit({}, {}, {"pilot0": holds})
 	combat.cargo_holds[id] = holds.duplicate(true)
 	combat.collect_loot()
 	await settle()
-	check(client.cargo == {"endurium": 199, "duranium": 1} and server.loot.drops[101]["resources"] == {"duranium": 2}, "Partial pickup preserves every excess unit")
+	check(client.cargo == {"endurium": 399, "duranium": 1} and server.loot.drops[101]["resources"] == {"duranium": 2}, "Partial pickup preserves every excess unit")
 	ship.take_damage(ship.max_hull + ship.max_shield + 1.0, server.alien)
 	combat.collect_loot()
 	check(server.loot.drops[101]["resources"] == {"duranium": 2}, "Destroyed ships cannot collect")
 	combat.tick(3.1)
 	await replicate(server)
-	check(client.cargo == {"endurium": 199, "duranium": 1}, "Rescue preserves cargo")
+	check(client.cargo == {"endurium": 399, "duranium": 1}, "Rescue preserves cargo")
 	client.get_viewport().size = Vector2i(960, 600)
 	client.get_viewport().render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	client.shop.open()
@@ -92,24 +92,24 @@ func run() -> void:
 	client.shop.cargo_page.show()
 	await settle()
 	await screenshot(client, "resources-full-hold")
-	check(client.shop.sell_all.text.contains("414 CR") and not client.shop.sell_all.disabled, "Cargo panel displays exact value and enables selling")
+	check(client.shop.sell_all.text.contains("814 CR") and not client.shop.sell_all.disabled, "Cargo panel displays exact value and enables selling")
 	for reason in ["distance", "speed", "damage", "life"]:
 		ship.position = location if reason == "distance" else combat.records[id]["spawn"]
 		ship.velocity = Vector3(10, 0, 0) if reason == "speed" else Vector3.ZERO
 		ship.time_since_hit = 0 if reason == "damage" else 5
 		await request(client, 1, "sell", "all", "", "", 99 if reason == "life" else 1)
-		check(store.pilots["pilot0"]["equipment"]["revision"] == 0 and CargoResources.units(store.pilots["pilot0"]["cargo"]["starter"]) == 200, "Server rejects sale for " + reason)
+		check(store.pilots["pilot0"]["equipment"]["revision"] == 0 and CargoResources.units(store.pilots["pilot0"]["cargo"]["starter"]) == 400, "Server rejects sale for " + reason)
 	ship.time_since_hit = 5
 	await request(client, 1, "sell", "unknown", "", "", 1)
 	check(client.session.combat.station_message.contains("Unknown"), "Unknown resource grants no money")
 	var balance: int = store.pilots["pilot0"]["credits"]
 	await request(client, 1, "sell", "duranium", "", "", 1)
-	check(client.cargo == {"endurium": 199} and store.pilots["pilot0"]["credits"] == balance + 16, "Individual sale credits the exact price and preserves other resources")
+	check(client.cargo == {"endurium": 399} and store.pilots["pilot0"]["credits"] == balance + 16, "Individual sale credits the exact price and preserves other resources")
 	await request(client, 1, "sell", "duranium", "", "", 1)
 	check(store.pilots["pilot0"]["credits"] == balance + 16, "Duplicate sale pays only once")
 	client.shop.sell_all.pressed.emit()
 	await settle()
-	check(client.cargo.is_empty() and store.pilots["pilot0"]["credits"] == balance + 414, "Sell-all button atomically clears cargo and credits its entire value")
+	check(client.cargo.is_empty() and store.pilots["pilot0"]["credits"] == balance + 814, "Sell-all button atomically clears cargo and credits its entire value")
 	await screenshot(client, "resources-sold")
 	await request(client, 3, "sell", "all", "", "", 1)
 	check(client.session.combat.inventory["revision"] == 2 and client.session.combat.station_message.contains("No resources"), "Empty sale does not advance the revision")
@@ -136,9 +136,9 @@ func run() -> void:
 	client.session.join("127.0.0.1", 24732)
 	await settle(0.5)
 	await replicate(server)
-	check(client.cargo == {"duranium": 2} and client.credits == balance + 414 and client.loot.drops.is_empty(), "Restart preserves cargo and sales; uncollected loot is session state")
+	check(client.cargo == {"duranium": 2} and client.credits == balance + 814 and client.loot.drops.is_empty(), "Restart preserves cargo and sales; uncollected loot is session state")
 	await request(client, 2, "sell", "all")
-	check(client.cargo == {"duranium": 2} and client.credits == balance + 414, "Restart retains duplicate-sale protection")
+	check(client.cargo == {"duranium": 2} and client.credits == balance + 814, "Restart retains duplicate-sale protection")
 	store = server.session.store
 	id = client.multiplayer.get_unique_id()
 	store.commit({"pilot0": PilotStore.MAX_CREDITS - 1})

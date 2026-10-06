@@ -310,7 +310,7 @@ func _draw() -> void:
 	draw_line(center + Vector2(3, 0), center + Vector2(8, 0), Color(0.7, 0.85, 0.95, 0.5), 1.0)
 	draw_circle(center, 1.0, CYAN)
 	panel(Rect2(32, height - 245, 290, 174))
-	text_at(Vector2(50, height - 218), "LIBERATOR  /  LIGHT FIGHTER", 12, CYAN)
+	text_at(Vector2(50, height - 218), "%s  /  ACTIVE SHIP" % ShipCatalog.info(sector.player.ship_model)["name"].to_upper(), 12, CYAN)
 	meter(Vector2(50, height - 190), "SHIELD", player.shield, player.max_shield, CYAN)
 	meter(Vector2(50, height - 145), "HULL", player.hull, player.max_hull, GREEN if player.hull > player.max_hull * 0.3 else RED)
 	meter(Vector2(50, height - 100), "BOOST", player.energy, 100.0, Color("e3b777"))

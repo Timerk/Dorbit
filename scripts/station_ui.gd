@@ -79,7 +79,9 @@ static func navigation(parent: Node, sector: Sector, current: String, close: Cal
 	button(bar, "Back to flight [Esc]", close)
 
 
-static func texture(model: String) -> AtlasTexture:
+static func texture(model: String) -> Texture2D:
+	if model == "ship" or ShipCatalog.MODELS.has(model):
+		return load("res://assets/ui/ships/%s.png" % ("liberator" if model == "ship" else model))
 	if atlas == null:
 		atlas = load("res://assets/ui/equipment-atlas.png")
 	var value := AtlasTexture.new()
