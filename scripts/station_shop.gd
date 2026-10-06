@@ -86,7 +86,7 @@ func _ready() -> void:
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	navigation.add_child(spacer)
-	button(navigation, "Back to flight [Esc]", close)
+	button(navigation, "Back [Esc]", close)
 	var body := HBoxContainer.new()
 	equipment_page = body
 	body.add_theme_constant_override("separation", 10)
@@ -301,6 +301,11 @@ func build_order(parent: Node) -> void:
 
 
 func layout() -> void:
+	if sector.preflight and is_instance_valid(sector.main_menu):
+		sector.main_menu.fit_panel(self, Vector2(920, 550))
+		return
+	scale = Vector2.ONE
+	set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	var dimensions := get_viewport_rect().size - Vector2(32, 32)
 	dimensions.x = minf(dimensions.x, 1160)
 	dimensions.y = minf(dimensions.y, 680)
@@ -470,6 +475,7 @@ func open() -> void:
 	sector.session.menu.hide()
 	sector.hud.contract_panel.hide()
 	sector.set_paused(true)
+	layout()
 	show()
 	refresh()
 

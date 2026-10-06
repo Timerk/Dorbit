@@ -19,6 +19,9 @@ func run() -> void:
 		clients[index].session.credential_token = test_token(index)
 		clients[index].session.join("127.0.0.1", 24683)
 	await settle(0.5)
+	var admission_deadline := Time.get_ticks_msec() + 8000
+	while server.session.ships.size() < 2 and Time.get_ticks_msec() < admission_deadline:
+		await process_frame
 	check(server.session.ships.size() == 2, "Two authenticated pilots join the hunt")
 	if server.session.ships.size() != 2:
 		await finish()

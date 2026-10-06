@@ -17,6 +17,8 @@ func replicate(host: Sector) -> void:
 				if peer.session.alien_sequences.get(alien_id, -1) < expected:
 					complete = false
 			for id: int in host.session.ships:
+				if host.session.ships[id].get_meta("docked", false) and id != peer.multiplayer.get_unique_id():
+					continue
 				if peer.session.player_sequences.get(id, -1) < expected:
 					complete = false
 		if complete:
@@ -118,6 +120,8 @@ func run() -> void:
 	await settle(0.5)
 	await replicate(server)
 	check(client.session.ships.size() == 1 and client.session.received_snapshot, "A player reconnects to the still-running server")
+	client.session.launch()
+	await settle()
 	check(client.credits == 63, "Reconnect restores the authenticated pilot's saved credits")
 	server.session.disconnect_session("Test shutdown")
 	await settle(0.5)

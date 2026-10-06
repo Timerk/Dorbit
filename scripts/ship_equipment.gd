@@ -102,6 +102,10 @@ func _ready() -> void:
 
 
 func fit_window() -> void:
+	if sector.preflight and is_instance_valid(sector.main_menu):
+		sector.main_menu.fit_panel(self, Vector2(920, 550))
+		return
+	scale = Vector2.ONE
 	var dimensions := (get_viewport_rect().size - Vector2(40, 40)).clamp(Vector2(920, 550), Vector2(1160, 660))
 	StationUi.frame(self, dimensions)
 
@@ -155,6 +159,7 @@ func open() -> void:
 	sector.hud.contract_panel.hide()
 	sector.session.menu.hide()
 	sector.set_paused(true)
+	fit_window()
 	show()
 	refresh_inventory()
 

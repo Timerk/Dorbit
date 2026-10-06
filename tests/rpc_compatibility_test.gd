@@ -74,6 +74,8 @@ func run() -> void:
 	await replicate(server)
 	check(client.session.active and server.session.ships.size() == 1, "Matching builds connect after mismatch rejection")
 	if client.session.active:
+		client.session.launch()
+		await settle()
 		var pilot: Pilot = server.session.ships[client.multiplayer.get_unique_id()]
 		pilot.position = Vector3(0, 100, 0)
 		server.alien.position = Vector3(0, 100, -100)

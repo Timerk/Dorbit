@@ -76,7 +76,7 @@ static func navigation(parent: Node, sector: Sector, current: String, close: Cal
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar.add_child(spacer)
-	button(bar, "Back to flight [Esc]", close)
+	button(bar, "Back [Esc]", close)
 
 
 static func texture(model: String) -> Texture2D:

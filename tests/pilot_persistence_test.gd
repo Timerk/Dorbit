@@ -53,6 +53,9 @@ func run() -> void:
 	attacker.session.disconnect_session("Adversarial test complete")
 	await settle(0.3)
 	var combat := server.session.combat
+	await replicate(server)
+	client.session.launch()
+	await settle()
 	server.session.ships[id].position = Vector3(0, 100, -200)
 	server.alien.take_damage(server.alien.max_hull + server.alien.max_shield + 1.0, server.session.ships[id])
 	await replicate(server)
