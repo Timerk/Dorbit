@@ -270,6 +270,26 @@ The precise visual style and detailed asset pipeline remain open. Improve models
 
 The user requested a separate Blender review collection of recognizable DarkOrbit ships. Following review, the broad first collection was removed and replaced with detailed base Aegis and Goliath models using the supplied image catalogue. The user approved that style and requested ten additional base hulls: Bigboy, Defcom, Leonov, Liberator, Nostromo, Phoenix, Piranha, Spearhead, Vengeance and Yamato. Subsequent reviews requested a Liberator shape correction and closer geometry, colors and detail across the collection. The user selected Aegis as the finished-quality benchmark; preserve that model while refining the other eleven against their supplied references. This reference-based art study lives in `art/ship-review`, outside Godot's imported assets. It does not add ships to gameplay or change the current progression milestone. Final production art remains subject to review.
 
+### Outpost 01 environment art
+
+The user requested a DarkOrbit-inspired map art pass during Milestone 3. The current
+sector uses original blue/violet nebulae, a starfield, an ocean planet with cloud
+cover and atmospheric shading, textured irregular asteroids, an industrial docking
+station and distant derelict freighters. DarkOrbit map screenshots inform the
+composition; no DarkOrbit assets are included.
+
+Blender-generated GLBs and seamless stone textures are committed with their
+generator. Godot remains the runtime and uses the existing Compatibility renderer.
+Static nebula calculations bake into the sky cubemap; the background asteroid belt
+uses three instanced meshes. Distant scenery is outside the 700 m flight boundary
+and has no collision or interaction. Dedicated servers create only the existing
+obstacle physics. The original 24 asteroid positions/radii, station colliders,
+station services, five alien homes and sector boundary remain unchanged.
+
+This is a visual pass on the current huntable sector. Connected maps, jump gates,
+new ships and encounters remain separate work. Visual density and performance on
+the group's devices still need human playtesting.
+
 ## Development milestones
 
 ### Milestone 1: Flight and one complete combat encounter

@@ -1,0 +1,12 @@
+{
+	"adapter": "AMD Radeon(TM) Graphics",
+	"average_fps": 157.372405404431,
+	"draw_calls": 178.0,
+	"frames": 240,
+	"msaa": "4x",
+	"note": "Single local rendered sector; five patrolling aliens. Not a multiplayer capacity benchmark.",
+	"p95_ms": 9.227,
+	"renderer": "GL Compatibility",
+	"resolution": "(1440.0, 900.0)",
+	"vsync": "disabled"
+}

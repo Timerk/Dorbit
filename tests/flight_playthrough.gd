@@ -68,12 +68,14 @@ func snapshot(label: String) -> void:
 func run() -> void:
 	if rendered:
 		root.content_scale_size = Vector2i(2560, 1440)
-		root.size = Vector2i(2560, 1440)
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	sector = preload("res://scenes/sector.tscn").instantiate()
 	sector.client_only = false
 	root.add_child(sector)
 	current_scene = sector
+	if rendered:
+		# Sector startup applies saved window settings; set the replay size afterwards.
+		root.size = Vector2i(2560, 1440)
 	await create_timer(1.0).timeout
 	sector.set_paused(false)
 	sector.show_performance = true
@@ -126,6 +128,9 @@ func feedback_checks() -> void:
 		var click := InputEventMouseButton.new()
 		click.button_index = MOUSE_BUTTON_LEFT
 		click.position = sector.player.camera.unproject_position(sector.alien.position)
+		# Selection reads the viewport cursor; an injected event does not move it.
+		root.warp_mouse(click.position)
+		await process_frame
 		click.pressed = true
 		Input.parse_input_event(click)
 		await create_timer(0.1).timeout
