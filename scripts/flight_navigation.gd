@@ -273,7 +273,8 @@ func _draw() -> void:
 
 
 func draw_guidance(selected: Dictionary, local: Vector3) -> void:
-	var origin := Vector2(size.x * 0.5 - 140, size.y - (158 if size.x < 1100 else 245))
+	# All three flight panels end 71 pixels above the bottom of the viewport.
+	var origin := Vector2(size.x * 0.5 - 140, size.y - 185)
 	draw_style_box(FlightHud.panel_style(), Rect2(origin, Vector2(280, 114)))
 	var color: Color = selected["color"]
 	label_at(self, origin + Vector2(12, 23), "DESTINATION / " + selected["name"].to_upper(), 12, color)

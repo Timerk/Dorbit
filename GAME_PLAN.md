@@ -119,6 +119,8 @@ The edge has no movement clamp. Within 120 m of it, the HUD warns of radiation a
 
 Following playtesting, the user approved replacing the paired world-axis maps with ship-relative navigation. One local radar keeps forward at the top, left/right aligned with steering, and height arrows for contacts above or below. Its range buttons select 250, 500, 1,000 or 2,400 m. A destination compass shows turn guidance, distance and relative height; forward contacts use a filled dot and contacts behind use a hollow dot. Manual alien selection updates the waypoint. Radiation temporarily guides toward the nearest safe re-entry point, then restores the chosen destination.
 
+The user accepted the current map and navigation after playtesting. The center destination panel aligns its bottom with the ship-health and selected-enemy panels at every supported window size.
+
 M opens a larger sector overview with a rotatable height projection and contact list. Clicking a contact or its row sets the destination and returns to flight; alien destinations also use normal combat selection, while outpost/friendly destinations clear the combat target. M or Esc closes it. Opening releases steering and disables automatic fire. Solo simulation pauses; multiplayer and radiation continue on the server. Rescue and disconnect close the overview, and missing contacts fall back to the outpost. This adds navigation controls within the current sector, with no fog of war or arbitrary-coordinate waypoints. Network schema 6 adds exposure and random home state and deliberately rejects older builds, including PR 34's schema 4.
 
 ### Death and recovery
