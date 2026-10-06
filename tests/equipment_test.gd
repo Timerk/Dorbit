@@ -52,6 +52,20 @@ func drag(client: Sector, source: Control, target_control: Control) -> void:
 	await settle()
 
 
+func click_item(client: Sector, tile: EquipmentTile, shift: bool = true, clicks: int = 1) -> void:
+	var point := tile.get_global_rect().get_center()
+	for click in range(clicks):
+		for pressed: bool in [true, false]:
+			var event := InputEventMouseButton.new()
+			event.button_index = MOUSE_BUTTON_LEFT
+			event.button_mask = MOUSE_BUTTON_MASK_LEFT if pressed else 0
+			event.pressed = pressed
+			event.shift_pressed = shift
+			event.position = point
+			client.get_viewport().push_input(event)
+	await settle()
+
+
 func check_inventory_layout(client: Sector) -> void:
 	# Presentation-only fixture; real ownership transactions are exercised in run().
 	var combat := client.session.combat
@@ -62,13 +76,36 @@ func check_inventory_layout(client: Sector) -> void:
 	combat.inventory = fixture
 	await settle()
 	var fitting := client.equipment_menu
-	check(fitting.stored.size() == 31 and fitting.storage_grid.columns == 3, "Large inventory renders each owned stored instance in a three-column grid")
-	var scroll := fitting.storage_grid.get_parent() as ScrollContainer
+	check(fitting.stored.size() == 31, "Large inventory renders each owned stored instance")
+	var categories: Array[String] = []
+	for tile: EquipmentTile in fitting.stored.values():
+		var category := fitting.storage_category(fixture["items"][tile.item_id]["model"])
+		if categories.is_empty() or categories.back() != category:
+			categories.append(category)
+	check(categories == ["weapon", "shield", "engine"], "Interleaved inventory is grouped as weapons, shields, then speed generators")
+	for child in fitting.storage_groups.get_children():
+		if child is GridContainer:
+			check(child.columns == 3, "Each category uses a three-column grid")
+	var scroll := fitting.storage_groups.get_parent() as ScrollContainer
 	scroll.scroll_vertical = 1000
 	await settle()
 	check(scroll.scroll_vertical > 0, "Inventory scrolls to items beyond the first visible rows")
-	check(fitting.storage_grid.get_rect().size.x <= scroll.size.x, "Inventory grid fits its available width at 960 pixels")
+	check(fitting.storage_groups.get_rect().size.x <= scroll.size.x, "Inventory groups fit their available width at 960 pixels")
 	await screenshot(client, "equipment-inventory-scroll")
+	for index in range(1, 5):
+		fitting.storage_filter.item_selected.emit(index)
+		await settle()
+		var category: String = fitting.STORAGE_CATEGORIES.keys()[index - 1]
+		check(fitting.stored.values().all(func(tile: EquipmentTile): return fitting.storage_category(fixture["items"][tile.item_id]["model"]) == category), "Filter shows only " + category)
+		check(fitting.stored.size() == (11 if category == "weapon" else (0 if category == "extra" else 10)), "Filter retains all stored instances for " + category)
+		check(fitting.empty_storage.visible == (category == "extra"), "Empty extras filter explains that no items match")
+	check(combat.inventory == fixture, "Filtering never changes ownership or fitting")
+	fitting.set_filter("all")
+	fitting.select_item("layout-0")
+	fitting.set_filter("shield")
+	check(fitting.selected_item.is_empty(), "Filtering out a stored selection clears it")
+	await screenshot(client, "equipment-inventory-filter")
+	fitting.set_filter("all")
 	var payload := {"equipment_item": "starter-engine", "screen": fitting}
 	combat.station_pending = true
 	check(not fitting.can_drop(payload, "") and fitting.preview.text.contains("Waiting"), "Pending request blocks further fitting and explains why")
@@ -83,6 +120,72 @@ func check_inventory_layout(client: Sector) -> void:
 	await screenshot(client, "equipment-large-window")
 	client.get_viewport().size = Vector2i(960, 600)
 	combat.inventory = committed
+	await settle()
+
+
+func check_quick_equip() -> void:
+	var server := make_sector("QuickEquipServer", true, 24739)
+	check(server.session.store.commit({"pilot0": 40000}), "Fund isolated quick-equip pilot")
+	var client := make_sector("QuickEquipClient")
+	client.session.credential_id = "pilot0"
+	client.session.credential_token = test_token(0)
+	client.session.join("127.0.0.1", 24739)
+	await settle(0.5)
+	await replicate(server)
+	client.get_viewport().size = Vector2i(960, 600)
+	client.get_viewport().render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	var combat := client.session.combat
+	var models := ["laser", "laser", "laser", "laser", "shield", "shield", "shield", "engine", "engine"]
+	for index in range(models.size()):
+		await request(client, index + 1, "buy", models[index])
+	client.equipment_menu.open()
+	await settle()
+	var fitting := client.equipment_menu
+	await click_item(client, fitting.stored["purchase-1"], false)
+	check(fitting.selected_item == "purchase-1" and combat.inventory["revision"] == 9, "Plain mouse click still selects without equipping")
+	combat.station_pending = true
+	await click_item(client, fitting.stored["purchase-1"])
+	check(combat.inventory["revision"] == 9, "Shift-click cannot equip while a request is pending")
+	combat.station_pending = false
+	client.player.time_since_hit = 0
+	await click_item(client, fitting.stored["purchase-1"])
+	check(combat.inventory["revision"] == 9, "Shift-click respects station damage restrictions")
+	client.player.time_since_hit = 5
+	await click_item(client, fitting.stored["purchase-1"], true, 2)
+	check(combat.inventory["revision"] == 10 and fitting.slots["laser2"].item_id == "purchase-1", "Rapid Shift-clicks commit once into the first empty laser slot")
+	for index in [2, 3]:
+		await click_item(client, fitting.stored["purchase-%d" % index])
+		check(fitting.slots["laser%d" % (index + 1)].item_id == "purchase-%d" % index, "Shift-click fills the next empty weapon slot")
+	var before := combat.inventory.duplicate(true)
+	await click_item(client, fitting.stored["purchase-4"])
+	check(combat.inventory == before and fitting.preview.text.contains("No compatible empty slot"), "Full weapon slots leave inventory unchanged and explain why")
+	fitting.set_filter("shield")
+	await settle()
+	await click_item(client, fitting.stored["purchase-5"])
+	check(fitting.slots["generator3"].item_id == "purchase-5" and fitting.filter_category == "shield" and fitting.stored.size() == 2, "Shield Shift-click uses first empty shared generator slot and preserves the filter after the reply")
+	fitting.set_filter("engine")
+	await settle()
+	await click_item(client, fitting.stored["purchase-8"])
+	check(fitting.slots["generator4"].item_id == "purchase-8", "Speed generator uses the next empty shared generator slot")
+	fitting.set_filter("shield")
+	await settle()
+	await click_item(client, fitting.stored["purchase-6"])
+	fitting.set_filter("engine")
+	await settle()
+	await click_item(client, fitting.stored["purchase-9"])
+	check(fitting.slots["generator5"].item_id == "purchase-6" and fitting.slots["generator6"].item_id == "purchase-9", "Both generator categories fill the shared pool without replacing items")
+	fitting.set_filter("shield")
+	await settle()
+	before = combat.inventory.duplicate(true)
+	await click_item(client, fitting.stored["purchase-7"])
+	check(combat.inventory == before and fitting.preview.text.contains("No compatible empty slot"), "Full shared generator slots do not fall back to extra or laser slots")
+	await click_item(client, fitting.slots["laser1"])
+	check(combat.inventory == before and fitting.selected_item == "starter-laser", "Shift-clicking installed equipment only selects it")
+	var saved: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(server.session.store.path))["pilots"]["pilot0"]["equipment"]
+	check(int(saved["revision"]) == combat.inventory["revision"] and saved["items"] == combat.inventory["items"] and saved["active_ship"] == combat.inventory["active_ship"], "Quick-equip results persist through normal server transactions")
+	await screenshot(client, "equipment-quick-equip")
+	client.session.disconnect_session("Quick equip complete")
+	server.session.disconnect_session("Quick equip complete")
 	await settle()
 
 
@@ -311,4 +414,8 @@ func run() -> void:
 	file.close()
 	check(not migration.open(migration_dir), "Current saves with missing equipment fail instead of granting replacements")
 	migration.close()
+	client.session.disconnect_session("Equipment test complete")
+	server.session.disconnect_session("Equipment test complete")
+	await settle()
+	await check_quick_equip()
 	finish()

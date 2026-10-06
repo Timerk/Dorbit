@@ -58,11 +58,17 @@ func refresh() -> void:
 		artwork.modulate = Color.WHITE
 		artwork.texture = StationUi.texture(model)
 		caption.text = "ION" if model == "engine" else Equipment.MODELS[model]["name"]
-		tooltip_text = "%s\n%s\n%s" % [Equipment.MODELS[model]["name"], StationUi.bonus(model), "In inventory" if slot.is_empty() else slot.capitalize()]
+		tooltip_text = "%s\n%s\n%s" % [Equipment.MODELS[model]["name"], StationUi.bonus(model), "In inventory / Shift-click to equip" if slot.is_empty() else slot.capitalize()]
 		add_theme_stylebox_override("normal", StationUi.style(Color("102235"), StationUi.accent(model).darkened(0.5)))
 	# The selected tile keeps a visible outline after focus moves to a destination.
 	if not item_id.is_empty() and item_id == screen.selected_item:
 		add_theme_stylebox_override("normal", StationUi.style(Color("1a3547"), FlightHud.CYAN))
+
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and event.shift_pressed and slot.is_empty() and not item_id.is_empty():
+		screen.quick_equip(item_id)
+		accept_event()
 
 
 func _get_drag_data(_position: Vector2) -> Variant:

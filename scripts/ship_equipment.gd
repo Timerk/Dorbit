@@ -2,6 +2,8 @@ class_name ShipEquipment
 extends PanelContainer
 ## Visual fitting for the active hull; authoritative inventory changes only on reply.
 
+const STORAGE_CATEGORIES := {"weapon": "Weapons", "shield": "Shield generators", "engine": "Speed generators", "extra": "Extras"}
+
 var sector: Sector
 var summary: Label
 var ship_stats: Label
@@ -10,7 +12,9 @@ var detail: Label
 var preview: Label
 var status: Label
 var storage_panel: PanelContainer
-var storage_grid: GridContainer
+var storage_groups: VBoxContainer
+var storage_filter: OptionButton
+var filter_category: String = "all"
 var empty_storage: Label
 var remove_button: Button
 var slots: Dictionary[String, EquipmentTile] = {}
@@ -70,25 +74,30 @@ func _ready() -> void:
 	storage_panel.set_drag_forwarding(Callable(), storage_can_drop, storage_drop)
 	var storage_rows := StationUi.rows(storage_panel, 10)
 	storage_count = StationUi.text(storage_rows, "INVENTORY", 17)
+	storage_filter = OptionButton.new()
+	storage_filter.add_item("All equipment")
+	for title: String in STORAGE_CATEGORIES.values():
+		storage_filter.add_item(title)
+	storage_filter.item_selected.connect(func(index: int): set_filter("all" if index == 0 else STORAGE_CATEGORIES.keys()[index - 1]))
+	storage_rows.add_child(storage_filter)
 	StationUi.text(storage_rows, "Drop installed items here to remove them.", 12, FlightHud.MUTED)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	storage_rows.add_child(scroll)
-	storage_grid = GridContainer.new()
-	storage_grid.columns = 3
-	storage_grid.add_theme_constant_override("h_separation", 6)
-	storage_grid.add_theme_constant_override("v_separation", 6)
-	scroll.add_child(storage_grid)
+	storage_groups = VBoxContainer.new()
+	storage_groups.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	storage_groups.add_theme_constant_override("separation", 8)
+	scroll.add_child(storage_groups)
 	empty_storage = StationUi.text(storage_rows, "Inventory empty.\nBuy items in the station shop or drag an installed item here.", 14, FlightHud.MUTED)
 	empty_storage.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	# Forward drops across the whole inventory, including its caption and empty area.
-	for control: Control in [storage_rows.get_parent(), storage_rows, scroll, storage_grid, storage_count, empty_storage]:
+	for control: Control in [storage_rows.get_parent(), storage_rows, scroll, storage_groups, storage_count, empty_storage]:
 		control.set_drag_forwarding(Callable(), storage_can_drop, storage_drop)
 	var footer := HBoxContainer.new()
 	rows.add_child(footer)
-	detail = StationUi.text(footer, "Drag an item to a ship slot, or select it and click a slot.", 13, FlightHud.MUTED)
+	detail = StationUi.text(footer, "Drag to a slot, select then click a slot, or Shift-click an inventory item to equip.", 13, FlightHud.MUTED)
 	detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	remove_button = StationUi.button(footer, "Remove selected", func(): move_item(selected_item, ""))
 	remove_button.mouse_entered.connect(preview_removal)
@@ -188,29 +197,98 @@ func refresh_inventory() -> void:
 			ship_choice.select(owned_ships.size() - 1)
 	if not data["items"].has(selected_item):
 		selected_item = ""
-	for tile: EquipmentTile in stored.values():
-		storage_grid.remove_child(tile)
-		tile.queue_free()
-	stored.clear()
 	for slot: String in slots:
 		slots[slot].item_id = ""
 	for id: String in data["items"]:
 		var item: Dictionary = data["items"][id]
 		if item["ship"] == data["active_ship"]:
 			slots[item["slot"]].item_id = id
-		elif item["ship"].is_empty():
-			var tile := EquipmentTile.new()
-			tile.screen = self
-			tile.item_id = id
-			storage_grid.add_child(tile)
-			stored[id] = tile
 	for tile: EquipmentTile in slots.values():
 		tile.refresh()
-	storage_count.text = "INVENTORY / %d" % stored.size()
-	empty_storage.visible = stored.is_empty()
+	refresh_storage()
 	update_stats()
 	drop_hint = ""
 	preview.text = ""
+
+
+func storage_category(model: String) -> String:
+	var info: Dictionary = Equipment.MODELS[model]
+	if info["kind"] == "laser":
+		return "weapon"
+	if info["kind"] == "generator":
+		return "shield" if info["shield"] > 0 else "engine"
+	return "extra"
+
+
+func set_filter(category: String) -> void:
+	filter_category = category
+	storage_filter.select(0 if category == "all" else STORAGE_CATEGORIES.keys().find(category) + 1)
+	var selected: Dictionary = inventory().get("items", {}).get(selected_item, {})
+	if not selected.is_empty() and selected["ship"].is_empty() and category != "all" and storage_category(selected["model"]) != category:
+		selected_item = ""
+		detail.text = "Shift-click an inventory item to equip it in a compatible empty slot."
+	preview.text = ""
+	drop_hint = ""
+	refresh_storage()
+	(storage_groups.get_parent() as ScrollContainer).scroll_vertical = 0
+
+
+func refresh_storage() -> void:
+	for child in storage_groups.get_children():
+		storage_groups.remove_child(child)
+		child.queue_free()
+	stored.clear()
+	var groups: Dictionary = {}
+	var total := 0
+	for id: String in inventory().get("items", {}):
+		var item: Dictionary = inventory()["items"][id]
+		if not item["ship"].is_empty():
+			continue
+		total += 1
+		var category := storage_category(item["model"])
+		if filter_category != "all" and category != filter_category:
+			continue
+		if not groups.has(category):
+			groups[category] = []
+		groups[category].append(id)
+	for category: String in STORAGE_CATEGORIES:
+		if not groups.has(category):
+			continue
+		var heading := StationUi.text(storage_groups, "%s / %d" % [STORAGE_CATEGORIES[category].to_upper(), groups[category].size()], 12, FlightHud.CYAN)
+		heading.set_drag_forwarding(Callable(), storage_can_drop, storage_drop)
+		var grid := GridContainer.new()
+		grid.columns = 3
+		grid.add_theme_constant_override("h_separation", 6)
+		grid.add_theme_constant_override("v_separation", 6)
+		storage_groups.add_child(grid)
+		grid.set_drag_forwarding(Callable(), storage_can_drop, storage_drop)
+		for id: String in groups[category]:
+			var tile := EquipmentTile.new()
+			tile.screen = self
+			tile.item_id = id
+			grid.add_child(tile)
+			stored[id] = tile
+	storage_count.text = "INVENTORY / %d" % total if filter_category == "all" else "INVENTORY / %d OF %d" % [stored.size(), total]
+	empty_storage.visible = stored.is_empty()
+	empty_storage.text = "Inventory empty.\nBuy items in the station shop or drag an installed item here." if total == 0 else "No %s in inventory.\nChoose another filter to see your items." % STORAGE_CATEGORIES.get(filter_category, "items").to_lower()
+
+
+func quick_equip(id: String) -> void:
+	var blocked := StationUi.blocker(sector)
+	if not blocked.is_empty():
+		drop_hint = blocked
+		return
+	var data := inventory()
+	var item: Dictionary = data.get("items", {}).get(id, {})
+	if item.is_empty() or not item["ship"].is_empty():
+		return
+	select_item(id)
+	for slot: String in Equipment.slots(data):
+		if Equipment.fitting_blocker(data, id, data["active_ship"], slot).is_empty():
+			move_item(id, slot)
+			return
+	drop_hint = "No compatible empty slot on the active ship."
+	preview.text = drop_hint
 
 
 func update_stats() -> void:
