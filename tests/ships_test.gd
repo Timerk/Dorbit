@@ -8,6 +8,8 @@ func transaction(client: Sector, action: String, subject: String, ship: String =
 
 func run() -> void:
 	check(ShipCatalog.MODELS.size() == 12, "Exactly the twelve PR 14 hulls are playable")
+	for model: String in ["yamato", "defcom"]:
+		check(ShipCatalog.price(model) == 150000 and ShipCatalog.price(model) > ShipCatalog.price("piranha") and ShipCatalog.price(model) < ShipCatalog.price("nostromo"), model + " costs 150,000 credits between Piranha and Nostromo")
 	var server := make_sector("ShipServer", true, 24736)
 	check(server.session.store.commit({"pilot0": 100000000}), "Seed ship purchase budget")
 	var client := make_sector("ShipPilot")
