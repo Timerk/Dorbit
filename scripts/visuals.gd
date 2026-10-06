@@ -120,7 +120,7 @@ static func environment(parent: Node3D, render: bool = true) -> void:
 		var planet_surface := ShaderMaterial.new()
 		planet_surface.shader = preload("res://shaders/planet.gdshader")
 		mesh(parent, planet, Vector3(1350, 480, -2500), planet_surface)
-		# Distant scenery sits beyond the 700 m flight boundary and has no colliders.
+		# Distant scenery sits beyond the safe sector and has no colliders.
 		distant_scenery(parent)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7301
@@ -176,7 +176,7 @@ static func distant_scenery(parent: Node3D) -> void:
 	# Three derelict silhouettes frame the outer hunting grounds without fake service markers.
 	for location in [Vector3(-800, -190, -840), Vector3(920, 110, -900), Vector3(-580, 360, 750)]:
 		var wreck := (load("res://assets/sector/derelict.glb") as PackedScene).instantiate() as Node3D
-		wreck.position = location
+		wreck.position = location * 1.7
 		wreck.rotation_degrees = Vector3(12, 32, -18)
 		root.add_child(wreck)
 	# A distant belt adds scale and parallax for three draw calls, outside playable space.
@@ -191,7 +191,7 @@ static func distant_scenery(parent: Node3D) -> void:
 		instances.mesh = shape
 		instances.instance_count = 20
 		for index in range(instances.instance_count):
-			var location := Vector3(rng.randf_range(-1600, 1600), rng.randf_range(-410, -200), rng.randf_range(-1800, -950))
+			var location := Vector3(rng.randf_range(-1600, 1600), rng.randf_range(-410, -200), rng.randf_range(-1800, -950)) * 1.7
 			var radius := rng.randf_range(12, 38)
 			var basis := Basis.from_euler(Vector3(rng.randf(), rng.randf(), rng.randf())).scaled(Vector3.ONE * radius)
 			instances.set_instance_transform(index, Transform3D(basis, location))

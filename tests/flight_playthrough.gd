@@ -85,6 +85,9 @@ func run() -> void:
 		enemy.damaged.connect(capture_impact)
 	flight_replay_running = true
 	sampling = true
+	# Keep this short combat replay independent of the randomized navigation trip.
+	sector.aliens[1].home_position = Vector3(-85, 8, -150)
+	sector.aliens[1].position = sector.aliens[1].home_position
 	await target_with_tab(sector.aliens[1])
 	var expected_reward: int = (sector.target as Alien).tuning()["reward"]
 	await press(KEY_SPACE)

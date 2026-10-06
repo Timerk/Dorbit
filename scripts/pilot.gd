@@ -16,6 +16,7 @@ var camera: Camera3D
 var arm: SpringArm3D
 var pending_look: Vector2 = Vector2.ZERO
 var ship_model: String = "liberator"
+var radiation_exposure: float = 0.0
 
 
 func set_ship_model(value: String) -> void:
@@ -56,6 +57,7 @@ func _ready() -> void:
 func reset_health() -> void:
 	super.reset_health()
 	pending_look = Vector2.ZERO
+	radiation_exposure = 0.0
 
 
 func handle_mouse(event: InputEvent) -> void:

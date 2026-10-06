@@ -30,9 +30,9 @@ var contract_abandon: Button
 
 const CONTRACT_GOLD := Color("f4cf65")
 const CONTRACT_BRIEFINGS: Dictionary = {
-	"scout": "Scout patrols are closing in on the station approach. Clear these light contacts to keep the route to Outpost 01 open. A good first assignment for the Liberator.",
-	"sentinel": "Sentinels hold the deeper hunting grounds. Break their patrol to give our pilots room to operate. Expect stronger shields and sustained laser fire.",
-	"heavy": "A Heavy guards the outer flank. Bring upgraded equipment or fly with allies to take down this armored contact. Every contributing pilot advances their own hunt.",
+	"scout": "Scouts patrol the sector. Locate their numbered contacts on the navigation maps and clear these light encounters. A good first assignment for the Liberator.",
+	"sentinel": "Sentinels patrol the hunting grounds. Use the navigation maps to find them. Expect stronger shields and sustained laser fire.",
+	"heavy": "A Heavy roams the sector. Find its purple contact on the navigation maps. Bring upgraded equipment or allies to take down this armored encounter.",
 }
 
 
@@ -317,6 +317,7 @@ func _draw() -> void:
 	text_at(Vector2(343, height - 100), "%03d" % roundi(player.velocity.length()), 32)
 	text_at(Vector2(343, height - 79), "m/s  /  " + ("BOOST" if player.boosting else "FLIGHT ASSIST"), 10, MUTED)
 	draw_target_panel(width, height)
+	draw_navigation()
 	var distance := player.global_position.distance_to(Sector.STATION_POSITION)
 	if distance <= Sector.REPAIR_RADIUS and player.alive:
 		if shared:
@@ -342,6 +343,7 @@ func _draw() -> void:
 		text_at(center + Vector2(-150, 15), "Returning to the outpost in %d..." % ceili(sector.player_respawn), 17)
 	if sector.paused:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.006, 0.012, 0.025, 0.88))
+	draw_boundary_warning()
 
 
 func draw_target_panel(width: float, height: float) -> void:
@@ -351,7 +353,7 @@ func draw_target_panel(width: float, height: float) -> void:
 		text_at(origin, "NO TARGET", 13, MUTED)
 		text_at(origin + Vector2(0, 34), "%s or %s to lock" % [GameSettings.binding_text("cycle_target"), GameSettings.binding_text("select_target")], 15)
 		text_at(origin + Vector2(0, 64), "%02d  ALIENS DESTROYED" % sector.kills, 12, MUTED)
-		text_at(origin + Vector2(0, 104), "Scouts near the station approach", 13, CYAN)
+		text_at(origin + Vector2(0, 104), "Find contacts on the navigation maps", 12, CYAN)
 		return
 	var enemy := sector.target as Alien
 	text_at(origin, "%s %d / %d m" % [enemy.kind.to_upper(), enemy.alien_id + 1, sector.player.global_position.distance_to(enemy.global_position)], 12, enemy.tuning()["color"])
@@ -362,6 +364,78 @@ func draw_target_panel(width: float, height: float) -> void:
 
 func alien_marker(enemy: Alien) -> void:
 	marker(enemy.global_position, "HOSTILE %s %d%s" % [enemy.kind.to_upper(), enemy.alien_id + 1, " / RETURNING" if enemy.returning else ""], enemy.tuning()["color"], sector.target == enemy, null, sector.target == enemy)
+
+
+static func map_projection(location: Vector3, side_view: bool) -> Vector2:
+	# Fixed world axes avoid a map that flips when the pilot pitches or turns.
+	return Vector2(location.x, -location.y if side_view else location.z) / Sector.MAP_RADIUS
+
+
+func map_contact(center: Vector2, location: Vector3, side_view: bool, color: Color, label: String = "", selected: bool = false) -> void:
+	var point := center + map_projection(location, side_view).limit_length() * 53.0
+	draw_circle(point, 3.0, color)
+	if selected:
+		draw_arc(point, 6.0, 0, TAU, 24, Color.WHITE, 1.5, true)
+	if not label.is_empty():
+		text_at(point + Vector2(5, -3), label, 10, color)
+
+
+func draw_navigation() -> void:
+	var origin := Vector2(size.x - 322, 96)
+	panel(Rect2(origin, Vector2(290, 182)))
+	text_at(origin + Vector2(14, 20), "SECTOR MAP / %.1f km ACROSS" % (Sector.MAP_RADIUS * 0.002), 11, CYAN)
+	for side_view: bool in [false, true]:
+		var center := origin + Vector2(76 if not side_view else 214, 88)
+		draw_circle(center, 54, Color(0.07, 0.12, 0.17, 0.8))
+		draw_arc(center, 54, 0, TAU, 64, MUTED, 1, true)
+		draw_line(center - Vector2(54, 0), center + Vector2(54, 0), Color(MUTED, 0.2))
+		draw_line(center - Vector2(0, 54), center + Vector2(0, 54), Color(MUTED, 0.2))
+		text_at(center + Vector2(-48, -40), "+Y" if side_view else "-Z", 9, MUTED)
+		text_at(center + Vector2(36, 10), "+X", 9, MUTED)
+		map_contact(center, Sector.STATION_POSITION, side_view, GREEN, "+")
+		for enemy: Alien in sector.aliens.values():
+			if enemy.alive and enemy.visible:
+				map_contact(center, enemy.position, side_view, enemy.tuning()["color"], str(enemy.alien_id + 1), sector.target == enemy)
+		if sector.session.active:
+			for ship: Pilot in sector.session.ships.values():
+				if ship != sector.player and ship.alive:
+					map_contact(center, ship.position, side_view, CYAN)
+		var player_point := center + map_projection(sector.player.position, side_view).limit_length() * 53.0
+		var forward := map_projection(-sector.player.global_basis.z, side_view).normalized()
+		if forward.length_squared() > 0.01:
+			var side := forward.orthogonal() * 3.5
+			draw_colored_polygon(PackedVector2Array([player_point + forward * 6, player_point - forward * 4 + side, player_point - forward * 4 - side]), Color.WHITE)
+		else:
+			draw_circle(player_point, 4, Color.WHITE)
+		text_at(center + Vector2(-42, 68), "SIDE / X-Y" if side_view else "TOP / X-Z", 10, MUTED)
+	var altitude := "Y %+.0f m" % sector.player.position.y
+	if is_instance_valid(sector.target):
+		altitude += " / target %+.0f m" % (sector.target.position.y - sector.player.position.y)
+	text_at(origin + Vector2(14, 176), "YOU: white  BASE: green  " + altitude, 10, INK)
+
+
+func draw_boundary_warning() -> void:
+	var player := sector.player
+	if not player.alive or (sector.client_only and not sector.session.active):
+		return
+	var remaining := Sector.MAP_RADIUS - player.position.length()
+	if remaining > Sector.BOUNDARY_WARNING_DISTANCE:
+		return
+	var outside := remaining < 0.0
+	var color := RED if outside else Color("e3b777")
+	if outside:
+		# One soft pulse per second keeps the scene and instruments readable.
+		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * TAU / 1000.0)
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0.8, 0.01, 0.02, 0.025 + pulse * 0.09))
+		draw_rect(Rect2(3, 3, size.x - 6, size.y - 6), Color(RED, 0.35 + pulse * 0.6), false, 6)
+	var rect := Rect2(maxf(32, (size.x - 764) * 0.5), 220, 410, 62 if outside else 42)
+	panel(rect, color)
+	text_at(rect.position + Vector2(14, 23), "RADIATION ZONE / RETURN TO SAFE SPACE" if outside else "SECTOR EDGE / %d m / RADIATION AHEAD" % ceili(remaining), 15, color)
+	if outside:
+		var rate := (Sector.RADIATION_BASE_RATE + Sector.RADIATION_RAMP_RATE * player.radiation_exposure) * 100.0
+		text_at(rect.position + Vector2(14, 46), "%d m outside / %.1f s exposed / %.1f%% max hull/s" % [ceili(-remaining), player.radiation_exposure, rate], 12, INK)
+		var safe_point := player.position.normalized() * (Sector.MAP_RADIUS - 50.0)
+		marker(safe_point, "RETURN TO SAFE SPACE", RED, false)
 
 
 func marker(location: Vector3, label: String, color: Color, selected: bool, teammate: Pilot = null, priority: bool = true) -> void:

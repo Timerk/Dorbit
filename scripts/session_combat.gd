@@ -28,6 +28,8 @@ func begin() -> void:
 		sector.player.simulation_authority = multiplayer.is_server()
 	for alien: Alien in sector.aliens.values():
 		alien.simulation_authority = multiplayer.is_server()
+		if multiplayer.is_server():
+			sector.relocate_alien(alien)
 		alien.position = alien.home_position
 		alien.patrol_time = 0.0
 		alien.life = 0
@@ -41,7 +43,7 @@ func begin() -> void:
 		alien.visible = multiplayer.is_server()
 		if not alien.damaged.is_connected(record_damage):
 			alien.damaged.connect(record_damage)
-	sector.notify("Scouts near the approach. Sentinels ahead. Heavy on the right flank.")
+	sector.notify("Alien contacts scattered across the sector. Use the top and side maps to navigate.")
 
 
 func add_player(id: int, location: Vector3) -> void:
@@ -115,7 +117,7 @@ func tick(delta: float) -> void:
 		else:
 			alien.respawn = maxf(0.0, alien.respawn - delta)
 			if alien.respawn <= 0.0:
-				alien.position = alien.home_position
+				sector.relocate_alien(alien)
 				alien.returning = false
 				alien.reset_encounter()
 	if records.has(1):
@@ -323,12 +325,13 @@ func pack_player(id: int) -> Dictionary:
 	data["max_hull"] = ship.max_hull
 	data["npc_damage"] = ship.npc_laser_damage
 	data["regen_bonus"] = ship.shield_regen_bonus
+	data["radiation"] = ship.radiation_exposure
 	return data
 
 
 func pack_alien(alien: Alien) -> Dictionary:
 	var data := health(alien)
-	data.merge({"id": alien.alien_id, "kind": alien.kind, "position": alien.position, "rotation": alien.rotation, "respawn": alien.respawn, "encounter": alien.life, "returning": alien.returning, "engaged": alien.engaged})
+	data.merge({"id": alien.alien_id, "kind": alien.kind, "home": alien.home_position, "position": alien.position, "rotation": alien.rotation, "respawn": alien.respawn, "encounter": alien.life, "returning": alien.returning, "engaged": alien.engaged})
 	return data
 
 
@@ -356,6 +359,7 @@ func apply_player(id: int, data: Dictionary) -> bool:
 	var stats: Vector4 = data["stats"]
 	Equipment.apply_stats(ship, {"model": data["model"], "hull": data["max_hull"], "npc_damage": data["npc_damage"], "regen_bonus": data["regen_bonus"], "damage": stats.x, "shield": stats.y, "absorption": data["absorption"], "speed": stats.z, "boost": stats.w})
 	apply_health(ship, data)
+	ship.radiation_exposure = data.get("radiation", 0.0)
 	if ship == session.sector.player:
 		update_local(data)
 		if reset:
@@ -387,6 +391,7 @@ func apply_alien(data: Dictionary) -> void:
 		alien.position = data["position"]
 		alien.rotation = data["rotation"]
 	alien.life = data["encounter"]
+	alien.home_position = data["home"]
 	alien.returning = data["returning"]
 	alien.engaged = data["engaged"]
 	alien.respawn = data["respawn"]
