@@ -1,0 +1,98 @@
+{
+  "created": "2026-10-07",
+  "generator": "built-in image_gen",
+  "use_case": "stylized-concept",
+  "input_images": [
+    {
+      "file": "liberator-style-reference.png",
+      "role": "user-supplied finish reference; primary Liberator design"
+    },
+    {
+      "file": "catalogue-roster-reference.jpg",
+      "role": "existing catalogue and Blender roster; silhouette and base colors"
+    }
+  ],
+  "prompts": "prompts.json",
+  "ships": [
+    "Aegis",
+    "Bigboy",
+    "Defcom",
+    "Goliath",
+    "Leonov",
+    "Liberator",
+    "Nostromo",
+    "Phoenix",
+    "Piranha",
+    "Spearhead",
+    "Vengeance",
+    "Yamato"
+  ],
+  "views_requested": [
+    "perspective",
+    "top",
+    "side",
+    "front",
+    "rear",
+    "underside",
+    "rear three-quarter"
+  ],
+  "limitations": "Generated angles are design guidance, not calibrated projections. Hidden construction is inferred; actual Blender mesh renders establish consistent geometry.",
+  "files": {
+    "aegis.png": {
+      "sha256": "2ce033637ff72ae125b7fdb81edd3319c7b7306723309908b5f7e9327e40d3ff",
+      "bytes": 1882985
+    },
+    "bigboy.png": {
+      "sha256": "b29491a741fe01507331b993f5c7ee22313896322326a03a023e373501f5f7ff",
+      "bytes": 2251642
+    },
+    "catalogue-roster-reference.jpg": {
+      "sha256": "ab0cafbfa46aaa72c86287b990dcd8d2a899e1ce50ff1e468d5e194e2b5fff37",
+      "bytes": 571773
+    },
+    "defcom.png": {
+      "sha256": "6e7851ec709982c272bac860ae56b665b8fb39a0845354a72142122a24e099be",
+      "bytes": 2220852
+    },
+    "goliath.png": {
+      "sha256": "dac770deb5881c9aecd11423cb9595c499b80577e24c3a375bcbd775cf24613a",
+      "bytes": 2099580
+    },
+    "leonov.png": {
+      "sha256": "2fc47e69511abe8cd769c691048c15bdcf4127b2ac60bddccbe837d9b865f373",
+      "bytes": 2209440
+    },
+    "liberator-style-reference.png": {
+      "sha256": "c782da495546fc4474a143aba1c0a0e507b4517a5e9e1c8e7e7a3ae71d0ecdad",
+      "bytes": 2309857
+    },
+    "liberator.png": {
+      "sha256": "e93af88969e3945608d0d7c0d908e9e9101e4cc86d5286ea3c1f1d17d83eadbe",
+      "bytes": 2202277
+    },
+    "nostromo.png": {
+      "sha256": "c56dc3e04b97df823264d77f97e1ca71f4de4b6fa7cd09b766982f3fb765bdfe",
+      "bytes": 2154241
+    },
+    "phoenix.png": {
+      "sha256": "230a51f885812f1decd2a26e396bdf2c38cd4b8e83b49dc534307d2bb76dabfe",
+      "bytes": 2035524
+    },
+    "piranha.png": {
+      "sha256": "32e8537f035be231d205e544880afd2c1348f2a22f7714503aa9b5a75d4efc06",
+      "bytes": 2080295
+    },
+    "spearhead.png": {
+      "sha256": "bde0703620e2392fbcaddf3c379ae6ac28b2abbd154713276cfc500966cc7ca7",
+      "bytes": 1955426
+    },
+    "vengeance.png": {
+      "sha256": "70d498307e821f9ae0167ffb78249bd1f1a28ecb743fa85d2cba89a19deca1a0",
+      "bytes": 2259449
+    },
+    "yamato.png": {
+      "sha256": "dd685d0c340780530e1620e81379cfef8ff6ae39df1ce74573c13df4d683834c",
+      "bytes": 2145103
+    }
+  }
+}
