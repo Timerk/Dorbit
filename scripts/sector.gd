@@ -41,6 +41,7 @@ var weapon_status: String = "NO TARGET"
 var session: FlightSession
 var shop: StationShop
 var equipment_menu: ShipEquipment
+var resource_workshop: ResourceWorkshop
 var dedicated_server: bool = false
 var client_only: bool = true
 var offline: bool = false
@@ -115,6 +116,9 @@ func _ready() -> void:
 		equipment_menu.sector = self
 		shop_layer.add_child(shop)
 		shop_layer.add_child(equipment_menu)
+		resource_workshop = ResourceWorkshop.new()
+		resource_workshop.sector = self
+		shop_layer.add_child(resource_workshop)
 	if not dedicated_server:
 		apply_graphics()
 		var layer := CanvasLayer.new()
@@ -220,6 +224,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if shop.visible:
 			shop.close()
+			return
+		if resource_workshop.visible:
+			resource_workshop.close()
 			return
 		session.menu.hide()
 		set_paused(not paused)

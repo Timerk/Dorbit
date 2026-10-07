@@ -11,6 +11,8 @@ var station_pending: bool = false
 var station_message: String = ""
 var preview_tools_available: bool = false
 var ammo_sequence: int = -1
+var boost_save_clock: float = 0.0
+var boost_sequence: int = -1
 
 
 func begin() -> void:
@@ -24,6 +26,8 @@ func begin() -> void:
 	sector.loot.clear()
 	cargo_holds.clear()
 	records.clear()
+	boost_save_clock = 0.0
+	boost_sequence = -1
 	sector.credits = 0
 	sector.kills = 0
 	sector.objective_stage = 0
@@ -65,8 +69,32 @@ func add_player(id: int, location: Vector3) -> void:
 			cargo_holds[id] = session.store.pilots[session.pilot_ids[id]]["cargo"].duplicate(true)
 			records[id]["credits"] = session.store.pilots[session.pilot_ids[id]]["credits"]
 			records[id]["contracts"] = session.store.pilots[session.pilot_ids[id]]["contracts"].duplicate(true)
-			Equipment.apply_stats(ship, Equipment.stats(session.store.pilots[session.pilot_ids[id]]["equipment"]))
+			apply_equipment(id)
 			ship.reset_health() # Initial spawn, not a fitting change.
+
+
+func apply_equipment(id: int) -> void:
+	var pilot: Dictionary = session.store.pilots[session.pilot_ids[id]]
+	var ship := session.ships[id]
+	ship.resource_boosts = pilot["boosts"][pilot["equipment"]["active_ship"]].duplicate(true)
+	Equipment.apply_stats(ship, ResourceBoosts.stats(Equipment.stats(pilot["equipment"]), ship.resource_boosts))
+
+
+func flush_boosts(ids: Array = []) -> bool:
+	if not session.active or not session.sector.dedicated_server or session.store == null or session.store.failed:
+		return true
+	var saved := {}
+	for id: int in (records.keys() if ids.is_empty() else ids):
+		if not session.pilot_ids.has(id) or not session.ships.has(id):
+			continue
+		var pilot_id: String = session.pilot_ids[id]
+		var pilot: Dictionary = session.store.pilots[pilot_id]
+		var next: Dictionary = pilot["boosts"].duplicate(true)
+		var ship: String = pilot["equipment"]["active_ship"]
+		if next[ship] != session.ships[id].resource_boosts:
+			next[ship] = session.ships[id].resource_boosts.duplicate(true)
+			saved[pilot_id] = next
+	return saved.is_empty() or session.store.commit({}, {}, {}, {}, saved)
 
 
 func remove_player(id: int) -> void:
@@ -78,9 +106,20 @@ func remove_player(id: int) -> void:
 
 func debit_ammo(id: int) -> bool:
 	var ship := session.ships[id]
-	var next := ship.ammo.duplicate()
-	next[ship.ammo_type] -= ship.laser_count
-	if session.store.commit({}, {}, {}, {session.pilot_ids[id]: next}):
+	var pilot_id: String = session.pilot_ids[id]
+	var pilot: Dictionary = session.store.pilots[pilot_id]
+	var next_ammo := ship.ammo.duplicate()
+	next_ammo[ship.ammo_type] -= ship.laser_count
+	var next_boosts: Dictionary = pilot["boosts"].duplicate(true)
+	var boost: Dictionary = ship.resource_boosts.duplicate(true)
+	next_boosts[pilot["equipment"]["active_ship"]] = boost
+	if boost.has("lasers"):
+		boost["lasers"]["remaining"] = maxi(0, int(boost["lasers"]["remaining"]) - ship.laser_count)
+		if boost["lasers"]["remaining"] == 0:
+			boost.erase("lasers")
+	# One write commits ammunition, laser reserve and live timed reserves together.
+	if session.store.commit({}, {}, {}, {pilot_id: next_ammo}, {pilot_id: next_boosts}):
+		ship.resource_boosts = boost.duplicate(true)
 		return true
 	session.stop_for_save_failure()
 	return false
@@ -116,6 +155,7 @@ func record_damage(ship: SpaceShip, attacker: SpaceShip) -> void:
 
 func tick(delta: float) -> void:
 	var sector := session.sector
+	boost_save_clock += delta
 	for alien: Alien in sector.aliens.values():
 		alien.check_retreat(choose_target(alien))
 		if sector.target == alien and not alien.available():
@@ -126,6 +166,18 @@ func tick(delta: float) -> void:
 	for id: int in records:
 		pay_pending_contracts(id)
 		var ship := session.ships[id]
+		if sector.dedicated_server:
+			var expired := false
+			for group: String in ["shields", "engines"]:
+				if not ship.resource_boosts.has(group):
+					continue
+				ship.resource_boosts[group]["remaining"] = maxf(0, ResourceBoosts.remaining(ship.resource_boosts, group) - delta)
+				if ResourceBoosts.remaining(ship.resource_boosts, group) <= 0:
+					ship.resource_boosts.erase(group)
+					expired = true
+			if expired:
+				var pilot: Dictionary = session.store.pilots[session.pilot_ids[id]]
+				Equipment.apply_stats(ship, ResourceBoosts.stats(Equipment.stats(pilot["equipment"]), ship.resource_boosts))
 		ship.tick_combat(delta)
 		if not ship.alive:
 			records[id]["respawn"] = maxf(0.0, records[id]["respawn"] - delta)
@@ -162,6 +214,11 @@ func tick(delta: float) -> void:
 				alien.reset_encounter()
 	if records.has(1):
 		update_local(records[1])
+	if sector.dedicated_server and boost_save_clock >= 5.0:
+		boost_save_clock = 0.0
+		if not flush_boosts():
+			session.stop_for_save_failure()
+			return
 	sector.loot.tick(delta)
 
 
@@ -513,6 +570,7 @@ func finish() -> void:
 	station_pending = false
 	station_message = ""
 	ammo_sequence = -1
+	boost_sequence = -1
 	if not solo.is_empty():
 		session.sector.credits = solo["credits"]
 		session.sector.kills = solo["kills"]
@@ -530,6 +588,7 @@ func finish() -> void:
 		alien.simulation_authority = true
 	if not session.sector.dedicated_server:
 		session.sector.player.simulation_authority = true
+		session.sector.player.resource_boosts.clear()
 		Equipment.apply_stats(session.sector.player, Equipment.stats(Equipment.starter()))
 
 
@@ -557,7 +616,7 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 	var pilot_id := session.pilot_ids[id]
 	var previous_revision: int = session.store.pilots[pilot_id]["equipment"]["revision"]
 	var previous_ship: String = session.store.pilots[pilot_id]["equipment"]["active_ship"]
-	var result := session.store.transact(pilot_id, sequence, action, subject, ship, slot, session.can_grant_test_credits(id))
+	var result := session.store.transact(pilot_id, sequence, action, subject, ship, slot, session.can_grant_test_credits(id), session.ships[id].resource_boosts)
 	if session.store.failed:
 		session.stop_for_save_failure()
 		return
@@ -565,7 +624,8 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 	records[id]["credits"] = pilot["credits"]
 	session.ships[id].ammo = pilot["ammo"].duplicate()
 	cargo_holds[id] = pilot["cargo"].duplicate(true)
-	Equipment.apply_stats(session.ships[id], Equipment.stats(pilot["equipment"]))
+	if pilot["equipment"]["revision"] > previous_revision:
+		apply_equipment(id)
 	if previous_ship != pilot["equipment"]["active_ship"]:
 		# Switching is not a repair. Keep absolute hull/shield charge (clamped by
 		# the new fitting), boost energy, cooldowns and damage timer.
@@ -574,20 +634,24 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 		session.commands.erase(id)
 		session.ships[id].velocity = Vector3.ZERO
 	publish_inventory(id, result)
-	if action in ["buy", "buy_ship", "buy_ammo", "sell"] and pilot["equipment"]["revision"] > previous_revision:
+	if action in ["buy", "buy_ship", "buy_ammo", "sell", "refine", "boost", "replace_boost"] and pilot["equipment"]["revision"] > previous_revision:
 		message(id, result, "purchase")
 
 
 func publish_inventory(id: int, result: String = "") -> void:
 	if session.sector.dedicated_server:
 		var pilot: Dictionary = session.store.pilots[session.pilot_ids[id]]
-		station_result.rpc_id(id, pilot["equipment"], result, session.can_grant_test_credits(id), pilot["cargo"], pilot["credits"], pilot["ammo"], session.snapshot_sequence)
+		station_result.rpc_id(id, pilot["equipment"], result, session.can_grant_test_credits(id), pilot["cargo"], pilot["credits"], pilot["ammo"], session.snapshot_sequence, session.ships[id].resource_boosts)
 
 
 @rpc("authority", "call_remote", "reliable")
-func station_result(data: Dictionary, result: String, test_credits_allowed: bool = false, holds: Dictionary = {}, credits: int = -1, ammo: Dictionary = {}, sequence: int = -1) -> void:
+func station_result(data: Dictionary, result: String, test_credits_allowed: bool = false, holds: Dictionary = {}, credits: int = -1, ammo: Dictionary = {}, sequence: int = -1, boosts: Dictionary = {}) -> void:
 	if session.active:
+		var new_revision := int(data["revision"]) > int(inventory.get("revision", -1))
 		inventory = data
+		if new_revision or sequence >= boost_sequence:
+			session.sector.player.resource_boosts = boosts.duplicate(true)
+			boost_sequence = maxi(boost_sequence, sequence)
 		session.sector.player.laser_count = Equipment.stats(data)["laser_count"]
 		if not ammo.is_empty():
 			# A delayed purchase reply must not restore ammunition spent afterward.
@@ -602,6 +666,15 @@ func station_result(data: Dictionary, result: String, test_credits_allowed: bool
 		preview_tools_available = test_credits_allowed
 		station_pending = false
 		station_message = result
+
+
+@rpc("authority", "call_remote", "unreliable_ordered", 2)
+func boost_state(data: Dictionary, sequence: int, revision: int) -> void:
+	# Separate owner packets preserve the world-snapshot size budget. Reliable
+	# station replies supersede older packets, including those from another hull.
+	if session.active and sequence > boost_sequence and revision == int(inventory.get("revision", -1)):
+		boost_sequence = sequence
+		session.sector.player.resource_boosts = data.duplicate(true)
 
 func collect_loot() -> void:
 	if not multiplayer.is_server():

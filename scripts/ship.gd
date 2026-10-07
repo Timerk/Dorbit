@@ -111,12 +111,13 @@ func firing_blocker(target: SpaceShip) -> String:
 func try_fire(target: SpaceShip) -> bool:
 	if not simulation_authority or shot_cooldown > 0.0 or not firing_blocker(target).is_empty():
 		return false
+	var damage := shot_damage(target)
 	if not spend_ammo():
 		return false
 	shot_cooldown = laser_interval
 	var endpoint := target.global_position
 	fired.emit(global_position - global_basis.z * 3.0, endpoint, hostile)
-	target.take_damage(shot_damage(target), self)
+	target.take_damage(damage, self)
 	return true
 
 

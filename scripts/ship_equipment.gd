@@ -312,7 +312,7 @@ func quick_equip(id: String) -> void:
 
 
 func update_stats() -> void:
-	var values := Equipment.stats(inventory())
+	var values := ResourceBoosts.stats(Equipment.stats(inventory()), sector.player.resource_boosts)
 	stat_values["hull"].text = StationShop.credits_text(int(values["hull"]))
 	stat_values["shield"].text = StationShop.credits_text(int(values["shield"]))
 	stat_values["damage"].text = str(int(values["damage"]))
@@ -370,7 +370,7 @@ func show_proposal(id: String, slot: String) -> void:
 	var proposed := inventory().duplicate(true)
 	proposed["items"][id]["ship"] = proposed["active_ship"] if not slot.is_empty() else ""
 	proposed["items"][id]["slot"] = slot
-	var values := Equipment.stats(proposed)
+	var values := ResourceBoosts.stats(Equipment.stats(proposed), sector.player.resource_boosts)
 	preview.text = "After %s: %d damage / %d shield (%d%%) / %d m/s cruise / %d m/s boost" % ["install" if not slot.is_empty() else "removal", values["damage"], values["shield"], roundi(values["absorption"] * 100), values["speed"], values["boost"]]
 	if values["npc_damage"] > 0.0:
 		preview.text += " / +%.2f alien damage" % values["npc_damage"]

@@ -4,6 +4,7 @@
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -81,6 +82,29 @@ def valid_cargo(data: object, equipment: dict) -> bool:
     return True
 
 
+def valid_boosts(data: object, equipment: dict) -> bool:
+    groups = {"prometid": {"lasers", "rockets"}, "duranium": {"shields", "engines"},
+              "promerium": {"lasers", "rockets", "shields", "engines"},
+              "seprom": {"lasers", "rockets", "shields"}}
+    if not isinstance(data, dict) or data.keys() != equipment["ships"].keys():
+        return False
+    for boost in data.values():
+        if not isinstance(boost, dict):
+            return False
+        for group, entry in boost.items():
+            if (not isinstance(entry, dict) or entry.keys() != {"resource", "remaining"}
+                    or not isinstance(entry["resource"], str)
+                    or group not in groups.get(entry["resource"], set())):
+                return False
+            remaining = entry["remaining"]
+            maximum = 2_000_000_000
+            if (type(remaining) not in (int, float) or not math.isfinite(remaining)
+                    or not 0 < remaining <= maximum
+                    or group in ("lasers", "rockets") and remaining != int(remaining)):
+                return False
+    return True
+
+
 def write_new(path: Path, data: dict) -> None:
     # Exclusive creation preserves interrupted files and existing credentials.
     with path.open("x", encoding="utf-8") as file:
@@ -109,10 +133,10 @@ def main() -> None:
         if args.init:
             if path.exists() or args.rotate:
                 parser.error("--init requires a new ledger and cannot be combined with --rotate")
-            data = {"version": 4, "pilots": {}}
+            data = {"version": 5, "pilots": {}}
         else:
             data = json.loads(path.read_text(encoding="utf-8"))
-            if data.get("version") not in (1, 2, 3, 4) or not isinstance(data.get("pilots"), dict) or not data["pilots"]:
+            if data.get("version") not in (1, 2, 3, 4, 5) or not isinstance(data.get("pilots"), dict) or not data["pilots"]:
                 parser.error("Invalid ledger; preserve it and recover from backup")
             for pilot, record in data["pilots"].items():
                 if (not re.fullmatch(r"[a-z0-9_-]{1,32}", pilot)
@@ -134,19 +158,25 @@ def main() -> None:
                     record["cargo"] = {ship: {} for ship in record["equipment"]["ships"]}
                 elif not valid_cargo(record.get("cargo"), record["equipment"]):
                     parser.error("Invalid cargo; preserve it and recover from backup")
-                if data["version"] < 4:
-                    if "ammo" in record:
-                        parser.error("Unexpected ammunition in legacy ledger; preserve it and recover")
+                if data["version"] == 4 and "ammo" not in record and "boosts" not in record:
+                    parser.error("Missing schema-4 progression; preserve it and recover")
+                if data["version"] < 4 and "ammo" in record:
+                    parser.error("Unexpected ammunition in legacy ledger; preserve it and recover")
+                if "ammo" not in record and data["version"] < 5:
                     record["ammo"] = starter_ammo()
                 elif not valid_ammo(record.get("ammo")):
                     parser.error("Invalid ammunition; preserve it and recover from backup")
-            data["version"] = 4
+                if "boosts" not in record and data["version"] < 5:
+                    record["boosts"] = {ship: {} for ship in record["equipment"]["ships"]}
+                elif not valid_boosts(record.get("boosts"), record["equipment"]):
+                    parser.error("Invalid resource boosts; preserve it and recover from backup")
+            data["version"] = 5
         exists = args.pilot in data["pilots"]
         if exists != args.rotate:
             parser.error("Use --rotate for an existing pilot; omit it for a new pilot")
         token = secrets.token_hex(32)
         credits = data["pilots"].get(args.pilot, {}).get("credits", 0)
-        record = data["pilots"].setdefault(args.pilot, {"credits": credits, "equipment": starter_equipment(), "cargo": {"starter": {}}, "ammo": starter_ammo()})
+        record = data["pilots"].setdefault(args.pilot, {"credits": credits, "equipment": starter_equipment(), "cargo": {"starter": {}}, "ammo": starter_ammo(), "boosts": {"starter": {}}})
         record["verifier"] = hashlib.sha256(token.encode()).hexdigest()
         temporary = path.with_name("pilots.json.tmp")
         if temporary.exists():

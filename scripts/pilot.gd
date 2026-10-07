@@ -22,6 +22,9 @@ var ammo_type: String = "x1"
 var laser_count: int = 1 # Offline starter fitting; server fittings update this.
 var ammo_debit: Callable # Dedicated server commits consumption before firing.
 
+var resource_boosts: Dictionary = {}
+var laser_loadout: Array = []
+
 
 func firing_blocker(target: SpaceShip) -> String:
 	var reason := super.firing_blocker(target)
@@ -40,7 +43,10 @@ func spend_ammo() -> bool:
 
 
 func shot_damage(target: SpaceShip) -> float:
-	return super.shot_damage(target) * int(Ammunition.TYPES[ammo_type]["multiplier"])
+	var damage := super.shot_damage(target)
+	if ResourceBoosts.remaining(resource_boosts, "lasers") > 0:
+		damage = ResourceBoosts.laser_damage(laser_loadout, target is Alien, resource_boosts)
+	return damage * int(Ammunition.TYPES[ammo_type]["multiplier"])
 
 
 func set_ship_model(value: String) -> void:

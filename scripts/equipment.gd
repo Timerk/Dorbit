@@ -118,14 +118,17 @@ static func stats(data: Dictionary, ship: String = "") -> Dictionary:
 	var model: String = ShipCatalog.canonical(data["ships"][ship])
 	var hull := ShipCatalog.info(model)
 	var speed: float = hull["speed"] * ShipCatalog.SPEED_SCALE
-	var result := {"model": model, "hull": float(hull["hull"]), "damage": 0.0, "npc_damage": 0.0, "shield": 0.0, "absorption": 0.0, "regen_bonus": 0.0, "speed": speed, "boost": speed + ShipCatalog.BOOST_BONUS}
+	var result := {"model": model, "hull": float(hull["hull"]), "damage": 0.0, "npc_damage": 0.0, "shield": 0.0, "absorption": 0.0, "regen_bonus": 0.0, "speed": speed, "boost": speed + ShipCatalog.BOOST_BONUS, "lasers": []}
 	result["laser_count"] = 0
-	for item: Dictionary in data["items"].values():
+	var installed: Array = data["items"].values()
+	installed.sort_custom(func(a: Dictionary, b: Dictionary): return a["slot"].naturalnocasecmp_to(b["slot"]) < 0)
+	for item: Dictionary in installed:
 		if item["ship"] != ship:
 			continue
 		var item_model: Dictionary = MODELS[item["model"]]
 		if item_model["kind"] == "laser":
 			result["laser_count"] += 1
+			result["lasers"].append({"damage": item_model["damage"], "npc_damage": item_model["damage"] * item_model.get("npc_bonus", 0.0)})
 		for stat in ["damage", "shield", "speed"]:
 			result[stat] += item_model[stat]
 		result["boost"] += item_model["speed"]
@@ -148,6 +151,8 @@ static func apply_stats(ship: Pilot, values: Dictionary) -> void:
 	ship.laser_damage = values["damage"]
 	if values.has("laser_count"):
 		ship.laser_count = values["laser_count"]
+	if values.has("lasers"):
+		ship.laser_loadout = values["lasers"].duplicate(true)
 	ship.npc_laser_damage = values["npc_damage"]
 	ship.max_shield = values["shield"]
 	ship.shield_absorption = values["absorption"]

@@ -82,6 +82,8 @@ class ProvisioningTest(unittest.TestCase):
                     record["cargo"] = {"starter": {"seprom": 2}}
                 if version == 4:
                     record["ammo"] = {"x1": 4321, "x2": 45, "x3": 123, "x4": 7}
+                    record["boosts"] = {"starter": {"lasers": {"resource": "seprom", "remaining": 7},
+                                                      "shields": {"resource": "duranium", "remaining": 600.25}}}
                 path = root / "pilots.json"
                 path.write_text(json.dumps({"version": version, "pilots": {"test": record}}))
                 result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
@@ -91,7 +93,8 @@ class ProvisioningTest(unittest.TestCase):
                 self.assertEqual(saved["version"], 4)
                 expected = record | {"equipment": record.get("equipment", pilots.starter_equipment()),
                                      "cargo": record.get("cargo", {"starter": {}}),
-                                     "ammo": record.get("ammo", pilots.starter_ammo())}
+                                     "ammo": record.get("ammo", pilots.starter_ammo()),
+                                     "boosts": record.get("boosts", {"starter": {}})}
                 expected["verifier"] = saved["pilots"]["test"]["verifier"]
                 self.assertEqual(saved["pilots"]["test"], expected)
 
@@ -135,6 +138,23 @@ class ProvisioningTest(unittest.TestCase):
                 path = root / "pilots.json"
                 original = json.dumps({"version": 3, "pilots": {"test": {
                     "verifier": "a" * 64, "credits": 1, "equipment": pilots.starter_equipment(), "cargo": cargo}}})
+                path.write_text(original)
+                result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
+                                         str(root / "credential.json"), "--rotate"], capture_output=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(path.read_text(), original)
+                self.assertFalse((root / "credential.json").exists())
+
+    def test_invalid_boosts_preserved(self):
+        for boosts in ({}, {"starter": {"engines": {"resource": "seprom", "remaining": 1}}},
+                       {"starter": {"lasers": {"resource": "promerium", "remaining": 1.5}}},
+                       {"starter": {"shields": {"resource": "duranium", "remaining": -1}}}):
+            with self.subTest(boosts=boosts), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                path = root / "pilots.json"
+                original = json.dumps({"version": 4, "pilots": {"test": {
+                    "verifier": "a" * 64, "credits": 1, "equipment": pilots.starter_equipment(),
+                    "cargo": {"starter": {}}, "boosts": boosts}}})
                 path.write_text(original)
                 result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
                                          str(root / "credential.json"), "--rotate"], capture_output=True)

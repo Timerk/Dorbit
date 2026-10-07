@@ -16,7 +16,7 @@ func run() -> void:
 		push_error("Exported offline Overview did not load its starter ship and Start.")
 		quit(1)
 		return
-	for page: String in ["hangar", "shop", "cargo", "quests", "settings", "connection", "skylab", "gates"]:
+	for page: String in ["hangar", "shop", "cargo", "refining", "quests", "settings", "connection", "skylab", "gates"]:
 		menu.select_page(page)
 		await process_frame
 		await process_frame
@@ -24,6 +24,7 @@ func run() -> void:
 		match page:
 			"hangar": panel = sector.equipment_menu
 			"shop", "cargo": panel = sector.shop
+			"refining": panel = sector.resource_workshop
 			"quests": panel = sector.hud.contract_panel
 			"settings": panel = sector.settings_menu.panel
 			"connection": panel = sector.session.menu
@@ -50,7 +51,7 @@ func run() -> void:
 		push_error("Exported offline Start did not enter solo flight.")
 		quit(1)
 		return
-	for page: String in ["hangar", "shop", "cargo", "quests", "settings", "connection", "skylab", "gates", "overview"]:
+	for page: String in ["hangar", "shop", "cargo", "refining", "quests", "settings", "connection", "skylab", "gates", "overview"]:
 		menu.select_page(page)
 		await process_frame
 		await process_frame
