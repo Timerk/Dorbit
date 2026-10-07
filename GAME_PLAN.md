@@ -239,10 +239,17 @@ active hull, current hull health, fitted shield capacity, damage, cruise speed
 and cargo usage read the synchronized game state. Start appears only on Overview;
 the left navigation and top-right wallet remain available on station pages.
 Flight instructions and permanent preparation prose are omitted; contextual
-station feedback remains available. Other page interiors retain their existing
-functional UI pending their own implementation, including the future full-width
-Hangar specifications strip. Saved concepts remain references, rather than
-runtime UI screenshots. See [concept notes and prompts](docs/menu-design/README.md).
+station feedback remains available. Hangar now uses owned-ship selection, a sharp
+ship preview, real fitting slots and storage inventory above its full-width
+specifications strip. Shop uses horizontal categories, a scrollable catalog and
+one product/purchase panel. Cargo Trade keeps seven resource cards and quantity
+controls. Quests shows the real encounter model, objectives, progress and rewards.
+Controls, Audio and Graphics share a minimal settings panel; Connection keeps
+editable or locked endpoint fields and contextual session status. Skylab and
+Galaxy Gates show only their icon and Coming soon. Existing station authority,
+settings persistence and connection behavior remain unchanged. Saved concepts
+remain references, alongside separate native runtime screenshots. See
+[concept notes and prompts](docs/menu-design/README.md).
 
 ### First station equipment shop and fitting
 

@@ -22,6 +22,7 @@ var ship_title: Label
 var notice: Label
 var placeholder: PanelContainer
 var placeholder_title: Label
+var placeholder_icon: TextureRect
 var selected_page := "overview"
 var last_model := ""
 var canvas: Control
@@ -75,12 +76,19 @@ func _ready() -> void:
 		button.add_theme_constant_override("icon_max_width", 16)
 	build_home()
 	placeholder = PanelContainer.new()
-	placeholder.add_theme_stylebox_override("panel", surface(Color("0c1217")))
+	placeholder.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	add_child(placeholder)
 	var future := StationUi.rows(placeholder, 32)
-	placeholder_title = StationUi.text(future, "", 32)
-	StationUi.text(future, "COMING SOON", 18, MUTED)
-	StationUi.button(future, "Back to overview", show_home)
+	var upper := Control.new()
+	upper.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	future.add_child(upper)
+	placeholder_icon = StationUi.art(future, "ship", Vector2(96, 96))
+	placeholder_icon.modulate = Color("60717e")
+	placeholder_title = StationUi.text(future, "COMING SOON", 24, MUTED)
+	placeholder_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var lower := Control.new()
+	lower.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	future.add_child(lower)
 	placeholder.hide()
 	hide()
 
@@ -177,7 +185,8 @@ func build_home() -> void:
 	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	home.add_child(background)
+	canvas.add_child(background)
+	canvas.move_child(background, 0)
 	ship_shadow = TextureRect.new()
 	var gradient := Gradient.new()
 	gradient.set_color(0, Color(0, 0, 0, 0.65))
@@ -305,7 +314,7 @@ func select_page(page: String) -> void:
 		"settings": sector.settings_menu.open()
 		"connection": sector.session.open_menu()
 		"skylab", "gates":
-			placeholder_title.text = "SKYLAB" if page == "skylab" else "GALAXY GATES"
+			placeholder_icon.texture = load("res://assets/ui/menu/%s.svg" % page)
 			placeholder.show()
 	if not home.visible:
 		navigation[page].grab_focus()
@@ -352,6 +361,7 @@ func layout() -> void:
 	home.position = Vector2(SIDEBAR_WIDTH, HEADER_HEIGHT)
 	# A subpixel inset avoids extending beyond the viewport after scaling.
 	home.size = canvas.size - home.position - Vector2(0.1, 0.1)
+	background.position = home.position
 	background.size = home.size
 	var footer_y := home.size.y - 170
 	ship_art.position = Vector2(home.size.x * 0.17, 140)
@@ -431,4 +441,4 @@ func _process(_delta: float) -> void:
 		stat_values["cargo"].text = "%d / %d" % [CargoResources.units(sector.cargo), sector.cargo_capacity]
 	for panel: Control in [placeholder, sector.shop, sector.equipment_menu, sector.hud.contract_panel]:
 		if panel.visible:
-			fit_panel(panel, Vector2(920, 550))
+			fit_panel(panel, Vector2(1150, 690))
