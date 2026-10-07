@@ -1,7 +1,19 @@
 # Resource artwork
 
-These seven 88 x 88 PNGs are lossless crops of the colored ore illustrations in the two resource-list screenshots supplied by the user for PR #28. They retain the original pixels, glow and dark background; no replacement artwork was generated.
+These seven 1254 x 1254 RGBA PNGs were generated with the built-in ImageGen tool
+for the cargo trading menu. They replace the earlier 88 x 88 screenshot crops.
+Each is a single sharp mineral specimen with transparent padding, without a
+backdrop, floor, shadow or bloom. The generated alpha and original resolution
+are preserved; Godot imports them losslessly and generates mipmaps for clean
+downscaling inside the native resource cards.
 
-The first screenshot provides Prometium, Endurium and Terbium. The second provides Prometid, Duranium, Promerium and Seprom. Their background is `#182730`, matching the ore card interiors. The separate trading screenshot is the reference for the horizontal cards, price readouts, quantity controls, sale totals and Sell buttons.
+The material colors retain the supplied reference direction: red-orange
+Prometium, icy-blue Endurium, yellow-green Terbium, pink Prometid, green Duranium,
+amber Promerium and purple Seprom. Resource identities, prices and gameplay
+remain in `scripts/cargo_resources.gd`; these files only replace presentation.
 
-These are reference assets for the current private prototype. Their source is the user-supplied DarkOrbit screenshots; they have no newly established redistribution license and need licensed replacements for a public release.
+Runtime paths are `res://assets/ui/resources/<resource-id>.png`.
+The exact final prompts and transparency option are saved in
+[resource-generation-prompts.json](../../../docs/menu-design/resource-generation-prompts.json).
+Each material used its own built-in generation call, with consistent studio
+lighting, crisp fractured detail and no text or interface graphics.

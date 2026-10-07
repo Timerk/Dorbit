@@ -143,7 +143,7 @@ After connecting, the **main menu** keeps your pilot docked before entering the
 map. Visit **Shop** to buy ships and equipment, **Hangar** to activate a hull and
 equip it, **Quests** to accept hunting contracts, or **Cargo trade** to sell saved
 resources. **Settings** and **Connection** are also available. **Skylab** and
-**Galaxy Gates** open coming-soon pages. Choose the central green **Start** button
+**Galaxy Gates** open coming-soon pages. Choose the amber **START** button on Overview
 to spawn at Outpost 01 with your selected ship and fitting. Esc or Back returns to
 the overview; these actions do not launch. Docked ships are hidden from other
 pilots and cannot move, fight or collect loot. Each reconnect returns to this menu
@@ -157,7 +157,7 @@ refill the ship. Normal shield recovery and service cooldowns continue. If rescu
 is pending, it finishes in the menu before Start becomes available. **Quit to
 desktop** remains a separate action.
 
-[Review the flight menu](docs/feedback/quit-to-menu.png) at 960 x 600.
+[Review the native menus and offline instructions](docs/menu-design/implementation.md).
 
 The menu integration replay runs in both check commands and exercises actual
 ENet admission, purchases, fitting, quests, launch, observer visibility and
@@ -165,9 +165,9 @@ reconnects. Run Godot with `--path . --script res://tests/main_menu_test.gd` in 
 rendered window to capture the overview and station pages at 960 x 600 and
 1440 x 900 under `build/validation/main-menu-*.png`.
 
-[Main menu](docs/feedback/main-menu.png),
-[docked shop](docs/feedback/main-menu-shop.png), and
-[docked hangar](docs/feedback/main-menu-hangar.png) show the current layout.
+[Overview](docs/menu-design/overview-implemented.png),
+[Shop](docs/menu-design/shop-implemented.png), and
+[Hangar](docs/menu-design/hangar-implemented.png) show the current layout.
 
 Downloading an artifact from the validation workflow does not deploy its server. To playtest an open PR, run **Actions > Deploy preview** for that PR, download the Windows client from that preview run and connect to the preview address and UDP port. See [preview playtesting](DEPLOYMENT.md#preview-a-pr-before-merging) for setup. Production uses its own matching release client. Incompatible client/server RPC definitions are rejected during connection with a build-mismatch message, before combat starts. This handshake requires both sides to be updated; older servers are rejected too.
 
@@ -196,7 +196,7 @@ Other living pilots have cyan markers with shield and hull bars and current/maxi
 
 Each alien kill splits its credit pool among connected pilots who damaged that alien in its current life; integer shares differ by at most one credit. Dead contributors remain eligible while connected. Spectators receive no reward. Each contributor receives one kill. Leash returns reset health and contribution eligibility; returning aliens cannot be damaged. Station protection blocks combat in both directions. Repairs and the up-to-10-credit rescue fee are charged to the requesting pilot's saved server balance. Credits are capped at 2 billion.
 
-Credits survive disconnects and server restarts. Ship position, health, kills and encounter objectives reset on a new connection. The former solo/listen-host modes are development fixtures with temporary wallets, accessible by launching with `--offline` after Godot's `--` separator or `Dorbit.exe -- --offline`. Offline mode opens the main menu: START enters the solo encounter, and the Esc menu's Quit to main menu returns to it. Settings and connection controls are available; shop, hangar, cargo trade and quests require a dedicated server connection. Offline fixtures cannot read or transfer the dedicated server's wallets.
+Credits survive disconnects and server restarts. Ship position, health, kills and encounter objectives reset on a new connection. The former solo/listen-host modes are development fixtures with temporary wallets, accessible by launching with `--offline` after Godot's `--` separator or `Dorbit.exe -- --offline`. Offline mode opens the main menu: START enters the solo encounter, and the Esc menu's Quit to main menu returns to it. Every page can be browsed offline before and after launch, including all three Settings tabs. During flight, use **Esc > Ship menus**, or **B** (Shop), **I** (Hangar), **C** (Quests) and **F7** (Connection). These open the same header and sidebar without docking. **Resume flight** or **Esc** closes the menus; START is shown only on the preflight Overview. Hangar shows the solo starter fitting; catalog and quest selections are local previews. Buying, selling, fitting, hull activation and accepting or abandoning quests stay disabled until connected to a dedicated server. Offline fixtures cannot read or transfer the dedicated server's wallets.
 
 ### Hunting contracts
 
@@ -248,9 +248,9 @@ Distribute the new file and restart. The old token no longer works. To revoke ac
 
 Press **B** within 60 m of Outpost 01 while moving at most 8 m/s and five seconds clear of damage to open the station shop. Purchases go into inventory. Press **I** for ship equipment, with the active hull's model preview and owned-ship selector on the left, its laser, shared generator and reserved extra slots in the middle, and scrollable inventory on the right. Drag an item into a compatible empty slot to equip it, or from a slot back into inventory to remove it for free. Shields and engines share generator slots. Remove an installed item before replacing it. You can also select an item and click an empty slot, or use Tab and Enter with the slot and removal controls. The screen previews resulting stats and explains blocked actions. The server keeps running while it is open.
 
-B, I and C switch between shop, ship equipment and contracts. The same screens are available through station navigation buttons. Only one station panel is visible at a time; Esc resumes flight and F7 opens the session menu. Pause-menu volume controls stay hidden while any station panel is open.
+B, I and C switch between Shop, Hangar and Quests in the shared sidebar. Only one page is visible at a time; Esc resumes flight and F7 opens Connection. The flight pause popup stays hidden while browsing menus.
 
-The shop has a category sidebar, a scrollable item grid, a large item preview and a purchase summary. Browse Weapons, Generators or their Shields and Engines submenus, select a card, then use Buy item to purchase one copy into storage. All equipment shows 18 reference models: five lasers, seven shields and six engines. LF-4 and SG3N-B00 show their stats but remain unavailable until future loot/assembly. Ships lists all twelve modeled hulls with their stats, credit prices and ownership. Buy ship delivers an empty hull to the hangar. Choose it in Ship equipment and press Activate selected ship at the station; fittings and cargo stay with their hulls, and switching does not repair or refill them. Each model can be owned once, including the free Phoenix; the starter Liberator counts as already owned. See [playable ships](docs/ships.md) for the roster, prices and reference sources. The summary shows owned copies, the price, the remaining balance and any purchase blocker. Purchases do not equip items or change ship stats.
+The shop has category tabs, a scrollable item grid, a large item preview and a purchase summary. Browse Weapons, Generators, Shields or Engines, select a card, then use BUY to purchase one copy into storage. All equipment shows 18 reference models: five lasers, seven shields and six engines. LF-4 and SG3N-B00 show their stats but remain unavailable until future loot/assembly. Ships lists all twelve modeled hulls with their stats, credit prices and ownership. Buy ship delivers an empty hull to the hangar. Choose it in Ship equipment and press ACTIVATE at the station; fittings and cargo stay with their hulls, and switching does not repair or refill them. Each model can be owned once, including the free Phoenix; the starter Liberator counts as already owned. See [playable ships](docs/ships.md) for the roster, prices and reference sources. The summary shows owned copies, the price, the remaining balance and any purchase blocker. Purchases do not equip items or change ship stats.
 
 Review the new [lasers](docs/feedback/darkorbit-lasers.png), [shields](docs/feedback/darkorbit-shields.png), [engines](docs/feedback/darkorbit-engines.png), [unavailable LF-4](docs/feedback/darkorbit-unavailable.png) and [mixed fitting](docs/feedback/darkorbit-fitting.png) at 960 x 600. The shop test covers category filters, catalog scrolling, real mouse card selection, B/I/C navigation, authenticated purchases, double-click blocking, ownership updates, insufficient funds, station restrictions and layout with preview tools at 960 x 600 and 1440 x 900. It runs in both standard check commands. To capture fresh shop screenshots, run Godot with `--path . --script res://tests/shop_test.gd` in a rendered window.
 
