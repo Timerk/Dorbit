@@ -2,7 +2,7 @@
 
 ![Graphite-and-amber flight HUD concept](flight-hud-concept.png)
 
-First proposal for the user's requested HUD redesign. Pending user review;
+Revised proposal for the user's requested HUD redesign. Pending user review;
 this is a generated reference image, not an implemented or approved screen.
 No gameplay code or agreed game-plan requirements change in this branch.
 
@@ -28,9 +28,13 @@ shields, green healthy hull/friendly contacts and red hostile hull/danger.
 Retain the top-right forward-up radar, its range controls, contact height
 arrows, Map action and small active-only autopilot label. Keep ship status,
 destination compass and target status along the bottom, with aligned bottom
-edges. Put concise active-contract progress at top left, cargo/connection/
-credits at top right, and control hints on a quiet bottom strip. Leave the
-central flight view open. No docked menu sidebar or Start action appears.
+edges. Put concise active-contract progress at top left and control hints on a
+quiet bottom strip. Leave the central flight view open.
+
+Following user review, remove the entire full-width header and extend the space
+background to the top edge. The logo, header outpost label, cargo count, pilot
+count and wallet are removed from this concept without relocating them. Keep
+the remaining HUD panels in place. No docked menu sidebar or Start action appears.
 
 Numbers illustrate existing game states; they do not change starter ownership,
 prices, tuning or saved progression. Three contracts show concurrent progress.
@@ -49,10 +53,13 @@ visual direction; it does not validate native layout or interactions.
 
 Generated with the built-in ImageGen tool using the three referenced local
 images: existing flight screenshot, PR 42 implemented Overview, and PR 41
-approved main-menu concept. The [exact prompt](flight-hud-generation-prompt.txt)
-is saved alongside the image. This directory is excluded from Godot imports.
+approved main-menu concept. The [original prompt](flight-hud-generation-prompt.txt)
+is saved alongside the image. A subsequent built-in ImageGen edit removed the
+header at the user's request; its [exact edit prompt](flight-hud-header-removal-prompt.txt)
+supersedes the original prompt's header instruction. This directory is excluded
+from Godot imports.
 
 Visually inspected the concept for graphite/amber styling, retained health,
-radar/navigation/target/contract information and aligned bottom panels. PNG
-integrity and documentation/diff checks apply. Gameplay and runtime layout
+radar/navigation/target/contract information, aligned bottom panels and header
+removal. PNG integrity and documentation/diff checks apply. Gameplay and runtime layout
 testing belong to the subsequent implementation, after concept review.
