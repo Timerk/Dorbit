@@ -1,16 +1,44 @@
 # Menu design references
 
 These raster concepts were generated with the built-in ImageGen tool. They guide
-future native Godot UI work; they are not runtime UI assets or playable screens.
+the native Godot UI; they are not runtime UI assets or playable screens.
 
 Overview is now implemented with native controls and synchronized ship/wallet
-values. The shared top bar and left navigation lead to the existing functional
-pages; their interior redesigns, including Hangar's full-width specifications
-strip, remain follow-up work. See [runtime asset provenance](../../assets/ui/menu/README.md).
+values. The remaining station pages now use the same graphite/amber presentation,
+including Hangar's full-width specifications strip. Shop, Cargo Trade, Quests,
+Connection and all three Settings tabs retain their native actions and validation.
+Skylab and Galaxy Gates remain placeholders. See
+[runtime asset provenance](../../assets/ui/menu/README.md).
 
 [In-game Overview screenshot at 1440 × 900](overview-implemented.png) (rendered
 from the authenticated main-menu validation fixture, with live starter fitting
 and a seeded 19,000-credit test budget).
+
+Native runtime screenshots at 1440 × 900:
+
+| Page | Screenshot |
+| --- | --- |
+| Hangar | [hangar-implemented.png](hangar-implemented.png) |
+| Shop | [shop-implemented.png](shop-implemented.png) |
+| Cargo Trade | [cargo-trade-implemented.png](cargo-trade-implemented.png) |
+| Quests | [quests-implemented.png](quests-implemented.png) |
+| Controls | [settings-controls-implemented.png](settings-controls-implemented.png) |
+| Audio | [settings-audio-implemented.png](settings-audio-implemented.png) |
+| Graphics | [settings-graphics-implemented.png](settings-graphics-implemented.png) |
+| Connection | [connection-implemented.png](connection-implemented.png) |
+| Skylab | [skylab-implemented.png](skylab-implemented.png) |
+| Galaxy Gates | [galaxy-gates-implemented.png](galaxy-gates-implemented.png) |
+
+These captures use the authenticated local-server fixture and actual starter
+ownership, so the initial Hangar inventory and cargo are empty. Quests renders
+the existing procedural alien with its real type-specific scale and armor in an
+isolated 3D viewport. Equipment and resource artwork is reused from the game;
+no additional generated artwork or gameplay systems were introduced.
+
+The fixture exercises every page at 960 × 600 and 1440 × 900, including navigation,
+footer visibility, purchases, fitting, ship activation, quest acceptance and
+launch. Existing focused tests cover drag/drop, quantities, blocked actions,
+settings persistence and connection timeout/reconnect behavior.
 
 ## Review status
 

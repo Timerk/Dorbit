@@ -49,6 +49,9 @@ var availability: Label
 var delivery: Label
 var equipment_button: Button
 var products: Dictionary = {}
+var navigation_bar: HBoxContainer
+var product_rows: VBoxContainer
+var page_title: Label
 
 
 func catalog() -> Dictionary:
@@ -63,55 +66,38 @@ func catalog() -> Dictionary:
 
 
 func _ready() -> void:
-	set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	add_theme_stylebox_override("panel", style(Color("111c29"), Color("526779"), 2))
-	add_theme_color_override("font_color", FlightHud.INK)
-	var rows := padded_rows(self, 8)
+	StationUi.frame(self, Vector2(1150, 690))
+	var rows := padded_rows(self, 16)
 	var header := HBoxContainer.new()
 	rows.add_child(header)
-	var heading := VBoxContainer.new()
-	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(heading)
-	text(heading, "OUTPOST 01 / STATION SERVICES", 11, FlightHud.MUTED)
-	text(heading, "STATION SHOP", 26)
-	summary = text(header, "", 19, FlightHud.CYAN)
-	summary.custom_minimum_size.x = 150
-	summary.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	var navigation := HBoxContainer.new()
-	rows.add_child(navigation)
-	catalog_button = button(navigation, "Equipment", func(): equipment_page.show(); cargo_page.hide())
-	equipment_button = button(navigation, "Ship equipment [I]", open_equipment)
-	button(navigation, "Contracts [C]", sector.hud.toggle_contracts)
-	cargo_button = button(navigation, "Trade raw materials", func(): equipment_page.hide(); cargo_page.show())
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	navigation.add_child(spacer)
-	button(navigation, "Back [Esc]", close)
-	var body := HBoxContainer.new()
-	equipment_page = body
-	body.add_theme_constant_override("separation", 10)
-	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	rows.add_child(body)
-	build_categories(body)
-	build_catalog(body)
-	build_product(body)
-	build_order(body)
+	page_title = text(header, "SHOP", 28)
+	page_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	summary = text(header, "", 19, StationUi.AMBER)
+	navigation_bar = HBoxContainer.new()
+	rows.add_child(navigation_bar)
+	catalog_button = button(navigation_bar, "Shop", func(): equipment_page.show(); cargo_page.hide())
+	equipment_button = button(navigation_bar, "Hangar [I]", open_equipment)
+	button(navigation_bar, "Quests [C]", sector.hud.toggle_contracts)
+	cargo_button = button(navigation_bar, "Cargo Trade", func(): equipment_page.hide(); cargo_page.show())
+	button(navigation_bar, "Back [Esc]", close)
+	equipment_page = HBoxContainer.new()
+	equipment_page.add_theme_constant_override("separation", 16)
+	equipment_page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rows.add_child(equipment_page)
+	build_catalog(equipment_page)
+	build_product(equipment_page)
+	build_order(product_rows)
 	cargo_page = VBoxContainer.new()
+	cargo_page.add_theme_constant_override("separation", 14)
 	cargo_page.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rows.add_child(cargo_page)
-	cargo_summary = StationUi.text(cargo_page, "")
+	cargo_summary = StationUi.text(cargo_page, "", 20, StationUi.MUTED)
 	build_resource_cards()
-	var trading_note := StationUi.text(cargo_page, "This location offers free ore trading. Select a quantity to sell.", 14, FlightHud.MUTED)
-	trading_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sell_all = StationUi.button(cargo_page, "", func(): sector.session.combat.request_station("sell", "all"))
+	StationUi.primary(sell_all)
 	cargo_page.hide()
-	status = text(rows, "", 13, FlightHud.CYAN)
-	status.custom_minimum_size.y = 22
-	var footer := HBoxContainer.new()
-	rows.add_child(footer)
-	var note := text(footer, "Equipment goes to storage; ships go to the hangar. Activate and fit in Ship equipment.", 12, FlightHud.MUTED)
-	note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	test_credits_button = button(footer, "Preview: +100,000 CR", func(): sector.session.combat.request_station("test_credits", ""))
+	status = text(rows, "", 16, StationUi.AMBER)
+	test_credits_button = button(rows, "Preview: +100,000 CR", func(): sector.session.combat.request_station("test_credits", ""))
 	test_credits_button.tooltip_text = "Adds 100,000 saved test credits on an authorized preview server."
 	test_credits_button.hide()
 	get_viewport().size_changed.connect(layout)
@@ -129,15 +115,16 @@ func build_resource_cards() -> void:
 		var info: Dictionary = CargoResources.TYPES[resource]
 		var card := StationUi.card(catalog)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var frame := StationUi.style(Color("182730"), Color("7a8790"))
-		frame.set_border_width_all(2)
+		var frame := StationUi.style(Color("0c1217"), StationUi.LINE)
+		frame.set_border_width_all(1)
 		frame.set_content_margin_all(4)
 		card.add_theme_stylebox_override("panel", frame)
 		var content := VBoxContainer.new()
 		content.add_theme_constant_override("separation", 4)
 		card.add_child(content)
-		trade_readout(content, "%d CR / unit" % info["price"], 12)
-		var name_label := StationUi.text(content, info["name"].to_upper(), 12, info["color"])
+		var unit_price := trade_readout(content, "%d CR / unit" % info["price"], 16)
+		unit_price.add_theme_color_override("font_color", StationUi.MUTED)
+		var name_label := StationUi.text(content, info["name"].to_upper(), 18, info["color"])
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		var image := TextureRect.new()
@@ -148,7 +135,7 @@ func build_resource_cards() -> void:
 		image.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		content.add_child(image)
-		held[resource] = StationUi.text(content, "", 12, FlightHud.MUTED)
+		held[resource] = StationUi.text(content, "", 18, StationUi.MUTED)
 		held[resource].horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		var controls := HBoxContainer.new()
 		controls.add_theme_constant_override("separation", 2)
@@ -161,7 +148,7 @@ func build_resource_cards() -> void:
 		input.add_theme_constant_override("minimum_character_width", 2)
 		input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		input.add_theme_font_size_override("font_size", 14)
-		var input_frame := StationUi.style(Color("060d12"), Color("63717b"))
+		var input_frame := StationUi.style(Color("0b1115"), StationUi.LINE)
 		input_frame.set_content_margin_all(3)
 		input.add_theme_stylebox_override("normal", input_frame)
 		input.add_theme_stylebox_override("read_only", input_frame)
@@ -174,15 +161,14 @@ func build_resource_cards() -> void:
 		input.text_changed.connect(func(value: String): edit_quantity(resource, value))
 		input.focus_exited.connect(func(): input.text = str(selected[resource]))
 		increases[resource] = quantity_button(controls, "+", func(): set_quantity(resource, selected[resource] + 1))
-		totals[resource] = trade_readout(content, "0 CR", 14)
+		totals[resource] = trade_readout(content, "0 CR", 22)
 		sells[resource] = StationUi.button(content, "SELL", func(): sector.session.combat.request_station("sell", "%s:%d" % [resource, selected[resource]]))
-		sells[resource].add_theme_stylebox_override("normal", StationUi.style(Color("354650"), Color("9ca6ad")))
-		sells[resource].add_theme_stylebox_override("disabled", StationUi.style(Color("222e36"), Color("46525b")))
+		sells[resource].custom_minimum_size.y = 42
 
 
 func trade_readout(parent: Node, content: String, font_size: int) -> Label:
 	var panel := PanelContainer.new()
-	var frame := StationUi.style(Color("060d12"), Color("63717b"))
+	var frame := StationUi.style(Color("0b1115"), StationUi.LINE)
 	frame.set_content_margin_all(3)
 	panel.add_theme_stylebox_override("panel", frame)
 	parent.add_child(panel)
@@ -196,7 +182,7 @@ func quantity_button(parent: Node, caption: String, action: Callable) -> Button:
 	var button := StationUi.button(parent, caption, action)
 	button.custom_minimum_size = Vector2(22, 28)
 	for state in ["normal", "hover", "disabled", "focus"]:
-		var frame := StationUi.style(Color("172c36"), Color("63717b"))
+		var frame := StationUi.style(Color("111a20"), StationUi.LINE)
 		frame.set_content_margin_all(2)
 		button.add_theme_stylebox_override(state, frame)
 	return button
@@ -217,112 +203,88 @@ func edit_quantity(resource: String, value: String) -> void:
 
 
 func build_categories(parent: Node) -> void:
-	var rows := column(parent, 132)
-	text(rows, "CATEGORIES", 11, FlightHud.MUTED)
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 2)
+	parent.add_child(tabs)
 	for id: String in CATEGORIES:
-		var title: String = CATEGORIES[id]
-		if id in ["shields", "engines"]:
-			title = "   / " + title
-		var entry := button(rows, title, func(): select_category(id))
-		entry.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		var entry := button(tabs, "All" if id == "all" else CATEGORIES[id], func(): select_category(id))
+		entry.add_theme_font_size_override("font_size", 16)
 		entry.toggle_mode = true
-		entry.custom_minimum_size.y = 34
+		entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		categories[id] = entry
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	rows.add_child(spacer)
-	text(rows, "LOCAL SUPPLY", 11, FlightHud.CYAN)
 
 
 func build_catalog(parent: Node) -> void:
-	var rows := column(parent, 244)
+	var rows := column(parent, 540, true)
+	build_categories(rows)
 	catalog_title = text(rows, "", 16)
-	catalog_count = text(rows, "", 11, FlightHud.MUTED)
+	catalog_count = text(rows, "", 11, StationUi.MUTED)
+	catalog_title.hide()
+	catalog_count.hide()
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rows.add_child(scroll)
 	grid = GridContainer.new()
 	grid.columns = 2
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
 	scroll.add_child(grid)
 	for model: String in catalog():
 		var info: Dictionary = catalog()[model]
 		var card := button(grid, "", func(): select_model(model))
-		card.custom_minimum_size = Vector2(102, 142)
+		card.custom_minimum_size = Vector2(230, 190)
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		card.toggle_mode = true
 		var offer := "%s CR" % credits_text(info["price"]) if ShipCatalog.MODELS.has(model) or Equipment.purchase_blocker(model).is_empty() else "Unavailable"
 		card.tooltip_text = "%s / %s\n%s" % [info["name"], offer, StationUi.bonus(model) if Equipment.MODELS.has(model) else "%s hull" % credits_text(int(info["hull"]))]
 		var content := padded_rows(card, 8)
 		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var title := text(content, info["name"], 12)
+		var title := text(content, info["name"], 20)
 		title.custom_minimum_size.y = 34
 		var art := StationUi.art(content, model, Vector2(0, 60))
 		art.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		text(content, offer, 12, FlightHud.CYAN)
+		text(content, offer, 20, StationUi.AMBER)
 		cards[model] = card
 	empty_catalog = text(rows, "No items in this category.", 14, FlightHud.MUTED)
 	empty_catalog.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 
 func build_product(parent: Node) -> void:
-	var rows := column(parent, 210, true)
-	text(rows, "ITEM PREVIEW", 11, FlightHud.MUTED)
-	product_title = text(rows, "", 22)
-	product_art = StationUi.art(rows, "laser", Vector2(0, 100))
+	product_rows = column(parent, 360, true)
+	product_title = text(product_rows, "", 30)
+	product_art = StationUi.art(product_rows, "laser", Vector2(0, 160))
 	product_art.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	description = text(rows, "", 14, FlightHud.MUTED)
-	bonus = text(rows, "", 18, FlightHud.CYAN)
-	slot_hint = text(rows, "", 12, FlightHud.MUTED)
+	description = text(product_rows, "", 14, StationUi.MUTED)
+	description.hide()
+	bonus = text(product_rows, "", 22)
+	slot_hint = text(product_rows, "", 16, StationUi.MUTED)
+	slot_hint.hide()
 
 
 func build_order(parent: Node) -> void:
-	var rows := column(parent, 180)
-	text(rows, "ORDER SUMMARY", 11, FlightHud.MUTED)
-	order_title = text(rows, "", 17)
-	price = text(rows, "", 23, FlightHud.GREEN)
-	ownership = text(rows, "", 12, FlightHud.MUTED)
-	rows.add_child(HSeparator.new())
-	balance = text(rows, "", 13)
-	text(rows, "DELIVERY", 11, FlightHud.MUTED)
-	delivery = text(rows, "1 item to storage", 13)
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	rows.add_child(spacer)
-	availability = text(rows, "", 13, FlightHud.MUTED)
-	availability.custom_minimum_size.y = 34
+	order_title = text(parent, "", 17)
+	order_title.hide()
+	parent.add_child(HSeparator.new())
+	price = text(parent, "", 30, StationUi.AMBER)
+	ownership = text(parent, "", 16, StationUi.MUTED)
+	balance = text(parent, "", 18, StationUi.MUTED)
+	delivery = text(parent, "", 13)
+	delivery.hide()
+	availability = text(parent, "", 16, StationUi.MUTED)
 	for model: String in catalog():
-		var buy := button(rows, "Buy ship" if ShipCatalog.MODELS.has(model) else "Buy item", func(): purchase(model))
-		buy.custom_minimum_size.y = 44
-		buy.add_theme_stylebox_override("normal", style(Color("264e34"), Color("79c888")))
-		buy.add_theme_stylebox_override("hover", style(Color("356545"), FlightHud.GREEN))
+		var buy := button(parent, "BUY", func(): purchase(model))
+		StationUi.primary(buy)
 		buys[model] = buy
 
 
 func layout() -> void:
 	if sector.preflight and is_instance_valid(sector.main_menu):
-		sector.main_menu.fit_panel(self, Vector2(920, 550))
+		sector.main_menu.fit_panel(self, Vector2(1150, 690))
 		return
-	scale = Vector2.ONE
-	set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	var dimensions := get_viewport_rect().size - Vector2(32, 32)
-	dimensions.x = minf(dimensions.x, 1160)
-	dimensions.y = minf(dimensions.y, 680)
-	offset_left = -dimensions.x / 2
-	offset_right = dimensions.x / 2
-	offset_top = -dimensions.y / 2
-	offset_bottom = dimensions.y / 2
+	StationUi.centered(self, Vector2(1150, 690))
 
-
-static func style(background: Color, border: Color, width: int = 1) -> StyleBoxFlat:
-	var result := StyleBoxFlat.new()
-	result.bg_color = background
-	result.border_color = border
-	result.set_border_width_all(width)
-	result.set_corner_radius_all(3)
-	result.set_content_margin_all(6)
-	return result
 
 
 static func padded_rows(parent: Node, padding: int) -> VBoxContainer:
@@ -344,7 +306,7 @@ static func column(parent: Node, minimum: float, expand: bool = false) -> VBoxCo
 	panel.custom_minimum_size.x = minimum
 	if expand:
 		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.add_theme_stylebox_override("panel", style(Color("09131f"), Color("2d4356")))
+	panel.add_theme_stylebox_override("panel", StationUi.style(StationUi.SURFACE, StationUi.LINE))
 	parent.add_child(panel)
 	return padded_rows(panel, 8)
 
@@ -364,12 +326,7 @@ static func button(parent: Node, content: String, action: Callable) -> Button:
 	var result := Button.new()
 	result.text = content
 	result.custom_minimum_size.y = 32
-	result.add_theme_font_size_override("font_size", 13)
-	result.add_theme_stylebox_override("normal", style(Color("192838"), Color("3c5163")))
-	result.add_theme_stylebox_override("hover", style(Color("233c50"), FlightHud.CYAN))
-	result.add_theme_stylebox_override("pressed", style(Color("164358"), FlightHud.CYAN, 2))
-	result.add_theme_stylebox_override("focus", style(Color(0, 0, 0, 0), FlightHud.CYAN))
-	result.add_theme_stylebox_override("disabled", style(Color("111e2a"), Color("293b4b")))
+	result.add_theme_font_size_override("font_size", 18)
 	result.pressed.connect(action)
 	parent.add_child(result)
 	return result
@@ -491,6 +448,10 @@ func _process(_delta: float) -> void:
 	if not sector.session.active or sector.session.menu.visible or sector.session.combat.inventory.is_empty():
 		hide()
 		return
+	navigation_bar.visible = not sector.preflight
+	summary.visible = not sector.preflight
+	page_title.text = "CARGO TRADE" if cargo_page.visible else "SHOP"
+	layout()
 	refresh()
 
 
@@ -509,7 +470,7 @@ func refresh() -> void:
 		var info: Dictionary = CargoResources.TYPES[resource]
 		var amount := int(sector.cargo.get(resource, 0))
 		var proceeds := selected[resource] * int(info["price"])
-		held[resource].text = "In hold: %d" % amount
+		held[resource].text = "%d held" % amount
 		totals[resource].text = "%d CR" % proceeds
 		quantities[resource].editable = blocked.is_empty() and amount > 0
 		decreases[resource].disabled = not blocked.is_empty() or selected[resource] == 0
@@ -553,7 +514,7 @@ func refresh() -> void:
 					stored += 1
 				else:
 					installed += 1
-		ownership.text = "OWNED %d\n%d in storage\n%d installed" % [stored + installed, stored, installed]
+		ownership.text = "OWNED %d   /   %d in storage   /   %d installed" % [stored + installed, stored, installed]
 		var remaining := sector.credits - int(Equipment.MODELS[selected_model]["price"])
 		balance.text = "Wallet: %s CR" % credits_text(sector.credits)
 		if for_sale:
@@ -562,3 +523,12 @@ func refresh() -> void:
 		availability.text = reason if not reason.is_empty() else "Ready to purchase"
 		availability.add_theme_color_override("font_color", FlightHud.RED if not reason.is_empty() else FlightHud.GREEN)
 	status.text = blocked if not blocked.is_empty() else combat.station_message
+	status.visible = not status.text.is_empty()
+	availability.visible = not selected_model.is_empty() and not purchase_blocker(selected_model).is_empty()
+	# The docked header already shows the wallet; keep only the purchase result here.
+	if sector.preflight:
+		var lines := balance.text.split("\n")
+		balance.text = lines[1] if lines.size() > 1 else ""
+	balance.visible = not balance.text.is_empty()
+	product_title.tooltip_text = description.text + "\n" + slot_hint.text + "\n" + delivery.text
+	product_title.mouse_filter = Control.MOUSE_FILTER_PASS
