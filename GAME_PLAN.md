@@ -442,6 +442,11 @@ across the remaining roster. All twelve hulls use portable surface maps, coated
 colored armor, exposed metal and dark tinted cockpit glazing; Godot review views
 and shop thumbnails show the actual game finishes.
 
+Following size review, the Phoenix is the smallest hull. Its exported visual
+bounding diameter is 3.5 m, half the other hulls' 7 m default, with the same
+scale used in flight, the hangar and shop previews. Catalog `visual_diameter`
+controls export size independently of the shared gameplay collision sphere.
+
 This is presentation work on the existing roster within the current milestone.
 Ship statistics, collision size, equipment, ownership and progression retain
 their agreed behavior. Art acceptance and performance on representative

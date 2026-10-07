@@ -3,7 +3,8 @@
 Run Blender in background mode with --python tools/export_ships.py.
 One mesh per hull, material surfaces, reduced bevel tessellation, no studio or
 references. glTF converts Z-up to Y-up; rotate the Blender -Y nose to +Y first
-so the imported Godot nose points -Z. All hulls fit a 7 m bounding diameter.
+so the imported Godot nose points -Z. Catalog visual diameters default to 7 m;
+the Phoenix uses 3.5 m to remain the smallest ship. Collision sizes are separate.
 """
 import json
 import math
@@ -18,6 +19,7 @@ sys.path.insert(0, str(ROOT / 'tools'))
 from ship_surface_atlas import SurfaceAtlas, deduplicate_textures
 REVIEW = ROOT / "art/ship-review"
 OUTPUT = ROOT / "assets/ships"
+catalog = json.loads((OUTPUT / 'catalog.json').read_text())
 OUTPUT.mkdir(parents=True, exist_ok=True)
 (ROOT / "assets/ui/ships").mkdir(parents=True, exist_ok=True)
 requested = set(sys.argv[sys.argv.index('--') + 1:]) if '--' in sys.argv else set()
@@ -65,7 +67,7 @@ for source in sources:
     low = Vector(tuple(min(vertex[axis] for vertex in vertices) for axis in range(3)))
     high = Vector(tuple(max(vertex[axis] for vertex in vertices) for axis in range(3)))
     center = (low + high) / 2
-    scale = 7 / (high - low).length
+    scale = catalog[source.stem].get('visual_diameter', 7.0) / (high - low).length
     rotation = Matrix.Rotation(math.pi, 3, "Z")
     data = bpy.data.meshes.new(source.stem)
     data.from_pydata([rotation @ ((vertex - center) * scale) for vertex in vertices], [], faces)
