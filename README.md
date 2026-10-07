@@ -106,7 +106,7 @@ radiation tuning remain pending; Linux execution is left to PR CI.
 ### Preview test credits
 
 On a preview server with test tools enabled, press **B** at Outpost 01 and choose
-**Preview: add 100,000 test credits**. You can repeat this when you need another
+**Preview: +100,000,000 CR**. You can repeat this when you need another
 shopping budget, without disconnecting or restarting the server. Credits save
 immediately, can buy normal equipment, and survive reconnects and restarts.
 Seeded sessions test item behavior; use an unseeded pilot to evaluate progression

@@ -3,7 +3,7 @@ extends RefCounted
 ## One server-owned ledger for the private group. Never creates or repairs saves implicitly.
 
 const MAX_CREDITS: int = 2_000_000_000
-const PREVIEW_CREDIT_GRANT: int = 100_000
+const PREVIEW_CREDIT_GRANT: int = 100_000_000
 var path: String
 var error: String = ""
 var pilots: Dictionary = {}

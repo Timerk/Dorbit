@@ -111,8 +111,8 @@ func _ready() -> void:
 	rows.add_child(footer)
 	var note := text(footer, "Equipment goes to storage; ships go to the hangar. Activate and fit in Ship equipment.", 12, FlightHud.MUTED)
 	note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	test_credits_button = button(footer, "Preview: +100,000 CR", func(): sector.session.combat.request_station("test_credits", ""))
-	test_credits_button.tooltip_text = "Adds 100,000 saved test credits on an authorized preview server."
+	test_credits_button = button(footer, "Preview: +100,000,000 CR", func(): sector.session.combat.request_station("test_credits", ""))
+	test_credits_button.tooltip_text = "Adds 100,000,000 saved test credits on an authorized preview server."
 	test_credits_button.hide()
 	get_viewport().size_changed.connect(layout)
 	layout()
