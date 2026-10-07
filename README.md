@@ -196,7 +196,7 @@ Other living pilots have cyan markers with shield and hull bars and current/maxi
 
 Each alien kill splits its credit pool among connected pilots who damaged that alien in its current life; integer shares differ by at most one credit. Dead contributors remain eligible while connected. Spectators receive no reward. Each contributor receives one kill. Leash returns reset health and contribution eligibility; returning aliens cannot be damaged. Station protection blocks combat in both directions. Repairs and the up-to-10-credit rescue fee are charged to the requesting pilot's saved server balance. Credits are capped at 2 billion.
 
-Credits survive disconnects and server restarts. Ship position, health, kills and encounter objectives reset on a new connection. The former solo/listen-host modes are development fixtures with temporary wallets, accessible by launching with `--offline` after Godot's `--` separator or `Dorbit.exe -- --offline`. They cannot read or transfer the dedicated server's wallets.
+Credits survive disconnects and server restarts. Ship position, health, kills and encounter objectives reset on a new connection. The former solo/listen-host modes are development fixtures with temporary wallets, accessible by launching with `--offline` after Godot's `--` separator or `Dorbit.exe -- --offline`. Offline mode opens the main menu: START enters the solo encounter, and the Esc menu's Quit to main menu returns to it. Settings and connection controls are available; shop, hangar, cargo trade and quests require a dedicated server connection. Offline fixtures cannot read or transfer the dedicated server's wallets.
 
 ### Hunting contracts
 

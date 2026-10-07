@@ -205,6 +205,7 @@ func host(port: int = PORT) -> Error:
 	multiplayer.server_relay = false
 	multiplayer.multiplayer_peer = peer
 	host_port = port
+	sector.preflight = false
 	start_flight()
 	if not sector.dedicated_server:
 		spawn(1, Sector.SPAWN_POSITION)
@@ -401,6 +402,9 @@ func start_flight() -> void:
 	# Players cannot push each other, but can block weapon line of sight.
 	sector.player.collision_mask = 1
 	sector.set_paused(sector.preflight)
+	if not sector.preflight:
+		sector.main_menu.hide()
+		sector.main_menu.hide_pages()
 	menu.hide()
 
 
@@ -475,14 +479,36 @@ func spawn(id: int, location: Vector3, docked: bool = false) -> void:
 
 
 func launch() -> void:
+	if offline_main_menu() and sector.preflight and sector.player.alive:
+		sector.preflight = false
+		sector.main_menu.hide()
+		sector.main_menu.hide_pages()
+		menu.hide()
+		sector.set_paused(false)
+		return
 	if active and sector.preflight and sector.player.alive and received_snapshot and not combat.inventory.is_empty() and not combat.station_pending:
 		launch_request.rpc_id(1)
 
 
 func quit_to_menu() -> void:
+	if offline_main_menu():
+		open_offline_main_menu()
+		return
 	if active and not sector.preflight and not multiplayer.is_server():
 		sector.set_paused(true)
 		dock_request.rpc_id(1)
+
+
+func offline_main_menu() -> bool:
+	return sector.offline and not active and not connecting
+
+
+func open_offline_main_menu() -> void:
+	sector.preflight = true
+	sector.select_target(null)
+	sector.set_paused(true)
+	menu.hide()
+	sector.main_menu.show_home()
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -765,6 +791,8 @@ func disconnect_session(message: String) -> void:
 	sector.respawn_player()
 	status = message
 	join_button.disabled = false
+	if sector.offline:
+		open_offline_main_menu()
 	open_menu()
 
 

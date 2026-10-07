@@ -399,7 +399,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
-	main_menu_button.visible = sector.client_only and sector.session.active
+	main_menu_button.visible = (sector.client_only and sector.session.active) or sector.session.offline_main_menu()
 	var show_pause := sector.paused and not sector.preflight and not sector.session.menu.visible and not panel.visible and not sector.shop.visible and not sector.equipment_menu.visible and not sector.hud.contract_panel.visible and not sector.hud.navigation.overview.visible
 	if show_pause and not pause_panel.visible:
 		pause_panel.show()
