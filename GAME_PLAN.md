@@ -222,11 +222,14 @@ the flight-preparation instruction panel removed during concept review. Provide
 contextual help or blocked-action reasons when needed instead of permanent
 instruction paragraphs.
 
-The [hangar draft](docs/menu-design/hangar-draft.png) carries this style into owned-ship
-selection, equipment slots and storage inventory. It awaits user review. The
-inventory contents shown are illustrative; actual ownership and fitting remain
-server-authoritative. Saved images are visual references for future implementation,
-not implemented menu screens. See [concept notes and prompts](docs/menu-design/README.md).
+The user also approved the [hangar concept](docs/menu-design/hangar-approved.png),
+which carries this style into owned-ship selection, equipment slots and storage
+inventory. Matching drafts now cover Quests, Shop, Cargo Trade, Connection, all
+three Settings tabs and the Skylab/Galaxy Gates coming-soon placeholders; these
+new drafts await review. The displayed inventory, quest state, connection address
+and settings are illustrative; actual ownership and fitting remain server-authoritative.
+Saved images are visual references for future implementation, not implemented
+menu screens. See [concept notes and prompts](docs/menu-design/README.md).
 
 ### First station equipment shop and fitting
 
