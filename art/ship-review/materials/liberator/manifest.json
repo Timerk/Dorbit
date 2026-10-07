@@ -13,6 +13,12 @@
       "part": "Central blue cockpit fairing canopy glazing",
       "tile": 0,
       "material": "Blue cockpit glazing",
+      "role": "glass",
+      "base_color_linear": [
+        0.004,
+        0.012,
+        0.02
+      ],
       "metallic": 0.0,
       "roughness": 0.11
     },
@@ -20,6 +26,12 @@
       "part": "Central blue cockpit fairing canopy glazing.001",
       "tile": 1,
       "material": "Blue cockpit glazing",
+      "role": "glass",
+      "base_color_linear": [
+        0.004,
+        0.012,
+        0.02
+      ],
       "metallic": 0.0,
       "roughness": 0.11
     },
@@ -27,6 +39,12 @@
       "part": "Central blue cockpit fairing canopy glazing.002",
       "tile": 2,
       "material": "Blue cockpit glazing",
+      "role": "glass",
+      "base_color_linear": [
+        0.004,
+        0.012,
+        0.02
+      ],
       "metallic": 0.0,
       "roughness": 0.11
     },
@@ -34,6 +52,12 @@
       "part": "Central blue cockpit fairing canopy glazing.003",
       "tile": 3,
       "material": "Blue cockpit glazing",
+      "role": "glass",
+      "base_color_linear": [
+        0.004,
+        0.012,
+        0.02
+      ],
       "metallic": 0.0,
       "roughness": 0.11
     },
@@ -41,6 +65,12 @@
       "part": "Central blue cockpit fairing canopy glazing.004",
       "tile": 4,
       "material": "Blue cockpit glazing",
+      "role": "glass",
+      "base_color_linear": [
+        0.004,
+        0.012,
+        0.02
+      ],
       "metallic": 0.0,
       "roughness": 0.11
     },
@@ -48,6 +78,12 @@
       "part": "Central blue cockpit fairing canopy glazing.005",
       "tile": 5,
       "material": "Blue cockpit glazing",
+      "role": "glass",
+      "base_color_linear": [
+        0.004,
+        0.012,
+        0.02
+      ],
       "metallic": 0.0,
       "roughness": 0.11
     },
@@ -55,6 +91,12 @@
       "part": "Central blue cockpit fairing curved armor",
       "tile": 6,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2625
     },
@@ -62,6 +104,12 @@
       "part": "Central blue cockpit fairing curved armor.001",
       "tile": 7,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3078
     },
@@ -69,6 +117,12 @@
       "part": "Central blue cockpit fairing curved armor.002",
       "tile": 8,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3034
     },
@@ -76,6 +130,12 @@
       "part": "Central blue cockpit fairing curved armor.003",
       "tile": 9,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2931
     },
@@ -83,6 +143,12 @@
       "part": "Central blue cockpit fairing curved armor.004",
       "tile": 10,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2642
     },
@@ -90,6 +156,12 @@
       "part": "Central blue cockpit fairing curved armor.005",
       "tile": 11,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3222
     },
@@ -97,6 +169,12 @@
       "part": "Central blue cockpit fairing curved armor.006",
       "tile": 12,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2954
     },
@@ -104,6 +182,12 @@
       "part": "Central blue cockpit fairing curved armor.007",
       "tile": 13,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2617
     },
@@ -111,6 +195,12 @@
       "part": "Central blue cockpit fairing curved armor.008",
       "tile": 14,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3146
     },
@@ -118,6 +208,12 @@
       "part": "Central blue cockpit fairing curved armor.009",
       "tile": 15,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2815
     },
@@ -125,6 +221,12 @@
       "part": "Central blue cockpit fairing curved armor.010",
       "tile": 16,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2628
     },
@@ -132,6 +234,12 @@
       "part": "Central blue cockpit fairing curved armor.011",
       "tile": 17,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3027
     },
@@ -139,6 +247,12 @@
       "part": "Central blue cockpit fairing curved armor.012",
       "tile": 18,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2845
     },
@@ -146,6 +260,12 @@
       "part": "Central blue cockpit fairing curved armor.013",
       "tile": 19,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3121
     },
@@ -153,6 +273,12 @@
       "part": "Central blue cockpit fairing curved armor.014",
       "tile": 20,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2931
     },
@@ -160,6 +286,12 @@
       "part": "Central blue cockpit fairing curved armor.015",
       "tile": 21,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2773
     },
@@ -167,6 +299,12 @@
       "part": "Central blue cockpit fairing curved armor.016",
       "tile": 22,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2639
     },
@@ -174,6 +312,12 @@
       "part": "Central blue cockpit fairing curved armor.017",
       "tile": 23,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2666
     },
@@ -181,6 +325,12 @@
       "part": "Central blue cockpit fairing curved chassis",
       "tile": 24,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4621
     },
@@ -188,6 +338,12 @@
       "part": "Central blue cockpit fairing fitted glazing rim",
       "tile": 25,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2441
     },
@@ -195,6 +351,12 @@
       "part": "Central blue cockpit fairing fitted glazing rim.001",
       "tile": 26,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2391
     },
@@ -202,6 +364,12 @@
       "part": "Central blue cockpit fairing glazing end frame",
       "tile": 27,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2326
     },
@@ -209,6 +377,12 @@
       "part": "Central blue cockpit fairing glazing end frame.001",
       "tile": 28,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2783
     },
@@ -216,6 +390,12 @@
       "part": "Channel aft bridge",
       "tile": 29,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.215
     },
@@ -223,6 +403,12 @@
       "part": "Channel aft bridge.001",
       "tile": 30,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2582
     },
@@ -230,6 +416,12 @@
       "part": "Channel forward copper marking",
       "tile": 31,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.2788
     },
@@ -237,6 +429,12 @@
       "part": "Channel forward copper marking.001",
       "tile": 32,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.2772
     },
@@ -244,6 +442,12 @@
       "part": "Channel raised edge dorsal armor",
       "tile": 33,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3064
     },
@@ -251,6 +455,12 @@
       "part": "Channel raised edge dorsal armor.001",
       "tile": 34,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3221
     },
@@ -258,6 +468,12 @@
       "part": "Channel raised edge dorsal armor.002",
       "tile": 35,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.262
     },
@@ -265,6 +481,12 @@
       "part": "Channel raised edge dorsal armor.003",
       "tile": 36,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3198
     },
@@ -272,6 +494,12 @@
       "part": "Channel raised edge dorsal armor.004",
       "tile": 37,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2786
     },
@@ -279,6 +507,12 @@
       "part": "Channel raised edge dorsal armor.005",
       "tile": 38,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3031
     },
@@ -286,6 +520,12 @@
       "part": "Channel raised edge dorsal armor.006",
       "tile": 39,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2987
     },
@@ -293,6 +533,12 @@
       "part": "Channel raised edge dorsal armor.007",
       "tile": 40,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2771
     },
@@ -300,6 +546,12 @@
       "part": "Channel raised edge dorsal armor.008",
       "tile": 41,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3104
     },
@@ -307,6 +559,12 @@
       "part": "Channel raised edge dorsal armor.009",
       "tile": 42,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3013
     },
@@ -314,6 +572,12 @@
       "part": "Channel raised edge dorsal armor.010",
       "tile": 43,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3066
     },
@@ -321,6 +585,12 @@
       "part": "Channel raised edge dorsal armor.011",
       "tile": 44,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2801
     },
@@ -328,6 +598,12 @@
       "part": "Channel raised edge dorsal armor.012",
       "tile": 45,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2761
     },
@@ -335,6 +611,12 @@
       "part": "Channel raised edge dorsal armor.013",
       "tile": 46,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2897
     },
@@ -342,6 +624,12 @@
       "part": "Channel raised edge dorsal armor.014",
       "tile": 47,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2671
     },
@@ -349,6 +637,12 @@
       "part": "Channel raised edge dorsal armor.015",
       "tile": 48,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2876
     },
@@ -356,6 +650,12 @@
       "part": "Channel raised edge dorsal armor.016",
       "tile": 49,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3233
     },
@@ -363,6 +663,12 @@
       "part": "Channel raised edge dorsal armor.017",
       "tile": 50,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3014
     },
@@ -370,6 +676,12 @@
       "part": "Channel raised edge dorsal armor.018",
       "tile": 51,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3145
     },
@@ -377,6 +689,12 @@
       "part": "Channel raised edge dorsal armor.019",
       "tile": 52,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2559
     },
@@ -384,6 +702,12 @@
       "part": "Channel raised edge dorsal armor.020",
       "tile": 53,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.28
     },
@@ -391,6 +715,12 @@
       "part": "Channel raised edge dorsal armor.021",
       "tile": 54,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2719
     },
@@ -398,6 +728,12 @@
       "part": "Channel raised edge dorsal armor.022",
       "tile": 55,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2669
     },
@@ -405,6 +741,12 @@
       "part": "Channel raised edge dorsal armor.023",
       "tile": 56,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.311
     },
@@ -412,6 +754,12 @@
       "part": "Channel raised edge inner hull",
       "tile": 57,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4562
     },
@@ -419,6 +767,12 @@
       "part": "Channel raised edge inner hull.001",
       "tile": 58,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4224
     },
@@ -426,6 +780,12 @@
       "part": "Channel raised edge inner hull.002",
       "tile": 59,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4636
     },
@@ -433,6 +793,12 @@
       "part": "Channel raised edge inner hull.003",
       "tile": 60,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4113
     },
@@ -440,6 +806,12 @@
       "part": "Channel raised edge shoulder bevel armor",
       "tile": 61,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2918
     },
@@ -447,6 +819,12 @@
       "part": "Channel raised edge shoulder bevel armor.001",
       "tile": 62,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2858
     },
@@ -454,6 +832,12 @@
       "part": "Channel raised edge shoulder bevel armor.002",
       "tile": 63,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3241
     },
@@ -461,6 +845,12 @@
       "part": "Channel raised edge shoulder bevel armor.003",
       "tile": 64,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3224
     },
@@ -468,6 +858,12 @@
       "part": "Channel raised edge shoulder bevel armor.004",
       "tile": 65,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2771
     },
@@ -475,6 +871,12 @@
       "part": "Channel raised edge shoulder bevel armor.005",
       "tile": 66,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2742
     },
@@ -482,6 +884,12 @@
       "part": "Channel raised edge shoulder bevel armor.006",
       "tile": 67,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.271
     },
@@ -489,6 +897,12 @@
       "part": "Channel raised edge shoulder bevel armor.007",
       "tile": 68,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2606
     },
@@ -496,6 +910,12 @@
       "part": "Channel raised edge shoulder bevel armor.008",
       "tile": 69,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3072
     },
@@ -503,6 +923,12 @@
       "part": "Channel raised edge shoulder bevel armor.009",
       "tile": 70,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2615
     },
@@ -510,6 +936,12 @@
       "part": "Channel raised edge shoulder bevel armor.010",
       "tile": 71,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2991
     },
@@ -517,6 +949,12 @@
       "part": "Channel raised edge shoulder bevel armor.011",
       "tile": 72,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2554
     },
@@ -524,6 +962,12 @@
       "part": "Channel raised edge shoulder bevel armor.012",
       "tile": 73,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2959
     },
@@ -531,6 +975,12 @@
       "part": "Channel raised edge shoulder bevel armor.013",
       "tile": 74,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3089
     },
@@ -538,6 +988,12 @@
       "part": "Channel raised edge shoulder bevel armor.014",
       "tile": 75,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3013
     },
@@ -545,6 +1001,12 @@
       "part": "Channel raised edge shoulder bevel armor.015",
       "tile": 76,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3015
     },
@@ -552,6 +1014,12 @@
       "part": "Channel raised edge shoulder bevel armor.016",
       "tile": 77,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2867
     },
@@ -559,6 +1027,12 @@
       "part": "Channel raised edge shoulder bevel armor.017",
       "tile": 78,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2615
     },
@@ -566,6 +1040,12 @@
       "part": "Channel raised edge shoulder bevel armor.018",
       "tile": 79,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2956
     },
@@ -573,6 +1053,12 @@
       "part": "Channel raised edge shoulder bevel armor.019",
       "tile": 80,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3195
     },
@@ -580,6 +1066,12 @@
       "part": "Channel raised edge shoulder bevel armor.020",
       "tile": 81,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2989
     },
@@ -587,6 +1079,12 @@
       "part": "Channel raised edge shoulder bevel armor.021",
       "tile": 82,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.262
     },
@@ -594,6 +1092,12 @@
       "part": "Channel raised edge shoulder bevel armor.022",
       "tile": 83,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.257
     },
@@ -601,6 +1105,12 @@
       "part": "Channel raised edge shoulder bevel armor.023",
       "tile": 84,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2885
     },
@@ -608,6 +1118,12 @@
       "part": "Channel silver guide",
       "tile": 85,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2187
     },
@@ -615,6 +1131,12 @@
       "part": "Channel silver guide.001",
       "tile": 86,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2184
     },
@@ -622,6 +1144,12 @@
       "part": "Channel silver guide.002",
       "tile": 87,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2702
     },
@@ -629,6 +1157,12 @@
       "part": "Channel silver guide.003",
       "tile": 88,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2207
     },
@@ -636,6 +1170,12 @@
       "part": "Concept aft circular drive emitter",
       "tile": 89,
       "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
       "metallic": 0.0,
       "roughness": 0.35
     },
@@ -643,6 +1183,12 @@
       "part": "Concept aft circular drive emitter.001",
       "tile": 90,
       "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
       "metallic": 0.0,
       "roughness": 0.35
     },
@@ -650,6 +1196,12 @@
       "part": "Concept aft circular drive housing",
       "tile": 91,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4638
     },
@@ -657,6 +1209,12 @@
       "part": "Concept aft circular drive housing.001",
       "tile": 92,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4561
     },
@@ -664,6 +1222,12 @@
       "part": "Concept aft circular drive machined lip",
       "tile": 93,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2633
     },
@@ -671,6 +1235,12 @@
       "part": "Concept aft circular drive machined lip.001",
       "tile": 94,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2648
     },
@@ -678,6 +1248,12 @@
       "part": "Concept aft circular drive nozzle vane",
       "tile": 95,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2347
     },
@@ -685,6 +1261,12 @@
       "part": "Concept aft circular drive nozzle vane.001",
       "tile": 96,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2547
     },
@@ -692,6 +1274,12 @@
       "part": "Concept aft circular drive nozzle vane.002",
       "tile": 97,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2176
     },
@@ -699,6 +1287,12 @@
       "part": "Concept aft circular drive nozzle vane.003",
       "tile": 98,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2814
     },
@@ -706,6 +1300,12 @@
       "part": "Concept aft circular drive nozzle vane.004",
       "tile": 99,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2601
     },
@@ -713,6 +1313,12 @@
       "part": "Concept aft circular drive nozzle vane.005",
       "tile": 100,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2332
     },
@@ -720,6 +1326,12 @@
       "part": "Concept aft circular drive nozzle vane.006",
       "tile": 101,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2789
     },
@@ -727,6 +1339,12 @@
       "part": "Concept aft circular drive nozzle vane.007",
       "tile": 102,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2456
     },
@@ -734,6 +1352,12 @@
       "part": "Concept aft circular drive nozzle vane.008",
       "tile": 103,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2834
     },
@@ -741,6 +1365,12 @@
       "part": "Concept aft circular drive nozzle vane.009",
       "tile": 104,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2223
     },
@@ -748,6 +1378,12 @@
       "part": "Concept aft circular drive nozzle vane.010",
       "tile": 105,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2552
     },
@@ -755,6 +1391,12 @@
       "part": "Concept aft circular drive nozzle vane.011",
       "tile": 106,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2509
     },
@@ -762,6 +1404,12 @@
       "part": "Concept aft circular drive nozzle vane.012",
       "tile": 107,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2265
     },
@@ -769,6 +1417,12 @@
       "part": "Concept aft circular drive nozzle vane.013",
       "tile": 108,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2612
     },
@@ -776,6 +1430,12 @@
       "part": "Concept aft circular drive nozzle vane.014",
       "tile": 109,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2816
     },
@@ -783,6 +1443,12 @@
       "part": "Concept aft circular drive nozzle vane.015",
       "tile": 110,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2798
     },
@@ -790,6 +1456,12 @@
       "part": "Concept aft circular drive nozzle vane.016",
       "tile": 111,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2518
     },
@@ -797,6 +1469,12 @@
       "part": "Concept aft circular drive nozzle vane.017",
       "tile": 112,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2686
     },
@@ -804,6 +1482,12 @@
       "part": "Concept aft circular drive nozzle vane.018",
       "tile": 113,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2842
     },
@@ -811,6 +1495,12 @@
       "part": "Concept aft circular drive nozzle vane.019",
       "tile": 114,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2179
     },
@@ -818,6 +1508,12 @@
       "part": "Concept aft circular drive nozzle vane.020",
       "tile": 115,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2567
     },
@@ -825,6 +1521,12 @@
       "part": "Concept aft circular drive nozzle vane.021",
       "tile": 116,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2825
     },
@@ -832,6 +1534,12 @@
       "part": "Concept aft circular drive nozzle vane.022",
       "tile": 117,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2454
     },
@@ -839,6 +1547,12 @@
       "part": "Concept aft circular drive nozzle vane.023",
       "tile": 118,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2737
     },
@@ -846,6 +1560,12 @@
       "part": "Concept aft circular drive recessed well",
       "tile": 119,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.4535
     },
@@ -853,6 +1573,12 @@
       "part": "Concept aft circular drive recessed well.001",
       "tile": 120,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.4399
     },
@@ -860,6 +1586,12 @@
       "part": "Concept blue fuselage shoulder hatch captive latch",
       "tile": 121,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2556
     },
@@ -867,6 +1599,12 @@
       "part": "Concept blue fuselage shoulder hatch captive latch.001",
       "tile": 122,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2563
     },
@@ -874,6 +1612,12 @@
       "part": "Concept blue fuselage shoulder hatch recessed seat",
       "tile": 123,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.4483
     },
@@ -881,6 +1625,12 @@
       "part": "Concept blue fuselage shoulder hatch recessed seat.001",
       "tile": 124,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.3998
     },
@@ -888,6 +1638,12 @@
       "part": "Concept blue fuselage shoulder hatch removable plate",
       "tile": 125,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2662
     },
@@ -895,6 +1651,12 @@
       "part": "Concept blue fuselage shoulder hatch removable plate.001",
       "tile": 126,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.284
     },
@@ -902,6 +1664,12 @@
       "part": "Concept channel drive backbone",
       "tile": 127,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2612
     },
@@ -909,6 +1677,12 @@
       "part": "Concept channel drive backbone.001",
       "tile": 128,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2612
     },
@@ -916,6 +1690,12 @@
       "part": "Concept drive copper collar",
       "tile": 129,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.2718
     },
@@ -923,6 +1703,12 @@
       "part": "Concept drive copper collar.001",
       "tile": 130,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.245
     },
@@ -930,6 +1716,12 @@
       "part": "Concept drive copper collar.002",
       "tile": 131,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.266
     },
@@ -937,6 +1729,12 @@
       "part": "Concept drive copper collar.003",
       "tile": 132,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.2607
     },
@@ -944,6 +1742,12 @@
       "part": "Concept drive copper collar.004",
       "tile": 133,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.2587
     },
@@ -951,6 +1755,12 @@
       "part": "Concept drive copper collar.005",
       "tile": 134,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.2469
     },
@@ -958,6 +1768,12 @@
       "part": "Concept drive copper collar.006",
       "tile": 135,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.2704
     },
@@ -965,6 +1781,12 @@
       "part": "Concept drive copper collar.007",
       "tile": 136,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.2706
     },
@@ -972,6 +1794,12 @@
       "part": "Concept drive cowl silver joint",
       "tile": 137,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2649
     },
@@ -979,6 +1807,12 @@
       "part": "Concept drive cowl silver joint.001",
       "tile": 138,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2208
     },
@@ -986,6 +1820,12 @@
       "part": "Concept drive cowl silver joint.002",
       "tile": 139,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2373
     },
@@ -993,6 +1833,12 @@
       "part": "Concept drive cowl silver joint.003",
       "tile": 140,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.269
     },
@@ -1000,6 +1846,12 @@
       "part": "Concept drive cowl silver joint.004",
       "tile": 141,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2487
     },
@@ -1007,6 +1859,12 @@
       "part": "Concept drive cowl silver joint.005",
       "tile": 142,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2511
     },
@@ -1014,6 +1872,12 @@
       "part": "Concept drive cowl silver joint.006",
       "tile": 143,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2623
     },
@@ -1021,6 +1885,12 @@
       "part": "Concept drive cowl silver joint.007",
       "tile": 144,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2565
     },
@@ -1028,6 +1898,12 @@
       "part": "Concept drive dark sleeve",
       "tile": 145,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2405
     },
@@ -1035,6 +1911,12 @@
       "part": "Concept drive dark sleeve.001",
       "tile": 146,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2801
     },
@@ -1042,6 +1924,12 @@
       "part": "Concept exposed drive cooling fin",
       "tile": 147,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2799
     },
@@ -1049,6 +1937,12 @@
       "part": "Concept exposed drive cooling fin.001",
       "tile": 148,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2279
     },
@@ -1056,6 +1950,12 @@
       "part": "Concept exposed drive cooling fin.002",
       "tile": 149,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2667
     },
@@ -1063,6 +1963,12 @@
       "part": "Concept exposed drive cooling fin.003",
       "tile": 150,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2501
     },
@@ -1070,6 +1976,12 @@
       "part": "Concept exposed drive cooling fin.004",
       "tile": 151,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2285
     },
@@ -1077,6 +1989,12 @@
       "part": "Concept exposed drive cooling fin.005",
       "tile": 152,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2254
     },
@@ -1084,6 +2002,12 @@
       "part": "Concept exposed drive cooling fin.006",
       "tile": 153,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2777
     },
@@ -1091,6 +2015,12 @@
       "part": "Concept exposed drive cooling fin.007",
       "tile": 154,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2332
     },
@@ -1098,6 +2028,12 @@
       "part": "Concept exposed drive cooling fin.008",
       "tile": 155,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2378
     },
@@ -1105,6 +2041,12 @@
       "part": "Concept exposed drive cooling fin.009",
       "tile": 156,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2381
     },
@@ -1112,6 +2054,12 @@
       "part": "Concept exposed drive cooling fin.010",
       "tile": 157,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.243
     },
@@ -1119,6 +2067,12 @@
       "part": "Concept exposed drive cooling fin.011",
       "tile": 158,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2573
     },
@@ -1126,6 +2080,12 @@
       "part": "Concept exposed drive cooling fin.012",
       "tile": 159,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.264
     },
@@ -1133,6 +2093,12 @@
       "part": "Concept exposed drive cooling fin.013",
       "tile": 160,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2576
     },
@@ -1140,6 +2106,12 @@
       "part": "Concept nose fine copper coachline",
       "tile": 161,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.2408
     },
@@ -1147,6 +2119,12 @@
       "part": "Concept nose fine copper coachline.001",
       "tile": 162,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.2215
     },
@@ -1154,6 +2132,12 @@
       "part": "Concept pod amber identification",
       "tile": 163,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.2735
     },
@@ -1161,6 +2145,12 @@
       "part": "Concept pod amber identification.001",
       "tile": 164,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.2204
     },
@@ -1168,6 +2158,12 @@
       "part": "Concept pod amber identification.002",
       "tile": 165,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.2271
     },
@@ -1175,6 +2171,12 @@
       "part": "Concept pod amber identification.003",
       "tile": 166,
       "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
       "metallic": 0.95,
       "roughness": 0.2151
     },
@@ -1182,6 +2184,12 @@
       "part": "Concept pod lower bumper",
       "tile": 167,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.232
     },
@@ -1189,6 +2197,12 @@
       "part": "Concept pod lower bumper.001",
       "tile": 168,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.231
     },
@@ -1196,6 +2210,12 @@
       "part": "Concept segmented blue drive cowl",
       "tile": 169,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2746
     },
@@ -1203,6 +2223,12 @@
       "part": "Concept segmented blue drive cowl.001",
       "tile": 170,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2674
     },
@@ -1210,6 +2236,12 @@
       "part": "Concept segmented blue drive cowl.002",
       "tile": 171,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3233
     },
@@ -1217,6 +2249,12 @@
       "part": "Concept segmented blue drive cowl.003",
       "tile": 172,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.322
     },
@@ -1224,6 +2262,12 @@
       "part": "Concept segmented blue drive cowl.004",
       "tile": 173,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3152
     },
@@ -1231,6 +2275,12 @@
       "part": "Concept segmented blue drive cowl.005",
       "tile": 174,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2909
     },
@@ -1238,6 +2288,12 @@
       "part": "Concept segmented blue drive cowl.006",
       "tile": 175,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2906
     },
@@ -1245,6 +2301,12 @@
       "part": "Concept segmented blue drive cowl.007",
       "tile": 176,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2806
     },
@@ -1252,6 +2314,12 @@
       "part": "Concept streamlined needle fuselage curved armor",
       "tile": 177,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2637
     },
@@ -1259,6 +2327,12 @@
       "part": "Concept streamlined needle fuselage curved armor.001",
       "tile": 178,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.285
     },
@@ -1266,6 +2340,12 @@
       "part": "Concept streamlined needle fuselage curved armor.002",
       "tile": 179,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3044
     },
@@ -1273,6 +2353,12 @@
       "part": "Concept streamlined needle fuselage curved armor.003",
       "tile": 180,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2718
     },
@@ -1280,6 +2366,12 @@
       "part": "Concept streamlined needle fuselage curved armor.004",
       "tile": 181,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2957
     },
@@ -1287,6 +2379,12 @@
       "part": "Concept streamlined needle fuselage curved armor.005",
       "tile": 182,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3247
     },
@@ -1294,6 +2392,12 @@
       "part": "Concept streamlined needle fuselage curved armor.006",
       "tile": 183,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2577
     },
@@ -1301,6 +2405,12 @@
       "part": "Concept streamlined needle fuselage curved armor.007",
       "tile": 184,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2699
     },
@@ -1308,6 +2418,12 @@
       "part": "Concept streamlined needle fuselage curved armor.008",
       "tile": 185,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3131
     },
@@ -1315,6 +2431,12 @@
       "part": "Concept streamlined needle fuselage curved armor.009",
       "tile": 186,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3019
     },
@@ -1322,6 +2444,12 @@
       "part": "Concept streamlined needle fuselage curved armor.010",
       "tile": 187,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3175
     },
@@ -1329,6 +2457,12 @@
       "part": "Concept streamlined needle fuselage curved armor.011",
       "tile": 188,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2764
     },
@@ -1336,6 +2470,12 @@
       "part": "Concept streamlined needle fuselage curved armor.012",
       "tile": 189,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.309
     },
@@ -1343,6 +2483,12 @@
       "part": "Concept streamlined needle fuselage curved armor.013",
       "tile": 190,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2892
     },
@@ -1350,6 +2496,12 @@
       "part": "Concept streamlined needle fuselage curved armor.014",
       "tile": 191,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2862
     },
@@ -1357,6 +2509,12 @@
       "part": "Concept streamlined needle fuselage curved armor.015",
       "tile": 192,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3082
     },
@@ -1364,6 +2522,12 @@
       "part": "Concept streamlined needle fuselage curved armor.016",
       "tile": 193,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2746
     },
@@ -1371,6 +2535,12 @@
       "part": "Concept streamlined needle fuselage curved armor.017",
       "tile": 194,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3248
     },
@@ -1378,6 +2548,12 @@
       "part": "Concept streamlined needle fuselage curved armor.018",
       "tile": 195,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2818
     },
@@ -1385,6 +2561,12 @@
       "part": "Concept streamlined needle fuselage curved armor.019",
       "tile": 196,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2938
     },
@@ -1392,6 +2574,12 @@
       "part": "Concept streamlined needle fuselage curved armor.020",
       "tile": 197,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2872
     },
@@ -1399,6 +2587,12 @@
       "part": "Concept streamlined needle fuselage curved armor.021",
       "tile": 198,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2641
     },
@@ -1406,6 +2600,12 @@
       "part": "Concept streamlined needle fuselage curved armor.022",
       "tile": 199,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2906
     },
@@ -1413,6 +2613,12 @@
       "part": "Concept streamlined needle fuselage curved armor.023",
       "tile": 200,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3169
     },
@@ -1420,6 +2626,12 @@
       "part": "Concept streamlined needle fuselage curved armor.024",
       "tile": 201,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3098
     },
@@ -1427,6 +2639,12 @@
       "part": "Concept streamlined needle fuselage curved armor.025",
       "tile": 202,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3016
     },
@@ -1434,6 +2652,12 @@
       "part": "Concept streamlined needle fuselage curved armor.026",
       "tile": 203,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2585
     },
@@ -1441,6 +2665,12 @@
       "part": "Concept streamlined needle fuselage curved armor.027",
       "tile": 204,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2616
     },
@@ -1448,6 +2678,12 @@
       "part": "Concept streamlined needle fuselage curved armor.028",
       "tile": 205,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3221
     },
@@ -1455,6 +2691,12 @@
       "part": "Concept streamlined needle fuselage curved armor.029",
       "tile": 206,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2951
     },
@@ -1462,6 +2704,12 @@
       "part": "Concept streamlined needle fuselage curved armor.030",
       "tile": 207,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2564
     },
@@ -1469,6 +2717,12 @@
       "part": "Concept streamlined needle fuselage curved armor.031",
       "tile": 208,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2598
     },
@@ -1476,6 +2730,12 @@
       "part": "Concept streamlined needle fuselage curved armor.032",
       "tile": 209,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2982
     },
@@ -1483,6 +2743,12 @@
       "part": "Concept streamlined needle fuselage curved armor.033",
       "tile": 210,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3184
     },
@@ -1490,6 +2756,12 @@
       "part": "Concept streamlined needle fuselage curved armor.034",
       "tile": 211,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3079
     },
@@ -1497,6 +2769,12 @@
       "part": "Concept streamlined needle fuselage curved armor.035",
       "tile": 212,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3201
     },
@@ -1504,6 +2782,12 @@
       "part": "Concept streamlined needle fuselage curved armor.036",
       "tile": 213,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.298
     },
@@ -1511,6 +2795,12 @@
       "part": "Concept streamlined needle fuselage curved armor.037",
       "tile": 214,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2651
     },
@@ -1518,6 +2808,12 @@
       "part": "Concept streamlined needle fuselage curved armor.038",
       "tile": 215,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3222
     },
@@ -1525,6 +2821,12 @@
       "part": "Concept streamlined needle fuselage curved armor.039",
       "tile": 216,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2792
     },
@@ -1532,6 +2834,12 @@
       "part": "Concept streamlined needle fuselage curved chassis",
       "tile": 217,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.431
     },
@@ -1539,6 +2847,12 @@
       "part": "Concept turbine pod armor sector",
       "tile": 218,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3136
     },
@@ -1546,6 +2860,12 @@
       "part": "Concept turbine pod armor sector.001",
       "tile": 219,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2218
     },
@@ -1553,6 +2873,12 @@
       "part": "Concept turbine pod armor sector.002",
       "tile": 220,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2324
     },
@@ -1560,6 +2886,12 @@
       "part": "Concept turbine pod armor sector.003",
       "tile": 221,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2269
     },
@@ -1567,6 +2899,12 @@
       "part": "Concept turbine pod armor sector.004",
       "tile": 222,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2663
     },
@@ -1574,6 +2912,12 @@
       "part": "Concept turbine pod armor sector.005",
       "tile": 223,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2333
     },
@@ -1581,6 +2925,12 @@
       "part": "Concept turbine pod armor sector.006",
       "tile": 224,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.232
     },
@@ -1588,6 +2938,12 @@
       "part": "Concept turbine pod armor sector.007",
       "tile": 225,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2735
     },
@@ -1595,6 +2951,12 @@
       "part": "Concept turbine pod armor sector.008",
       "tile": 226,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3011
     },
@@ -1602,6 +2964,12 @@
       "part": "Concept turbine pod armor sector.009",
       "tile": 227,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2649
     },
@@ -1609,6 +2977,12 @@
       "part": "Concept turbine pod armor sector.010",
       "tile": 228,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.281
     },
@@ -1616,6 +2990,12 @@
       "part": "Concept turbine pod armor sector.011",
       "tile": 229,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2209
     },
@@ -1623,6 +3003,12 @@
       "part": "Concept turbine pod armor sector.012",
       "tile": 230,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.2815
     },
@@ -1630,6 +3016,12 @@
       "part": "Concept turbine pod armor sector.013",
       "tile": 231,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2282
     },
@@ -1637,6 +3029,12 @@
       "part": "Concept turbine pod armor sector.014",
       "tile": 232,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2229
     },
@@ -1644,6 +3042,12 @@
       "part": "Concept turbine pod armor sector.015",
       "tile": 233,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2632
     },
@@ -1651,6 +3055,12 @@
       "part": "Concept turbine pod armor sector.016",
       "tile": 234,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3231
     },
@@ -1658,6 +3068,12 @@
       "part": "Concept turbine pod armor sector.017",
       "tile": 235,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2686
     },
@@ -1665,6 +3081,12 @@
       "part": "Concept turbine pod armor sector.018",
       "tile": 236,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2767
     },
@@ -1672,6 +3094,12 @@
       "part": "Concept turbine pod armor sector.019",
       "tile": 237,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.248
     },
@@ -1679,6 +3107,12 @@
       "part": "Concept turbine pod armor sector.020",
       "tile": 238,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.277
     },
@@ -1686,6 +3120,12 @@
       "part": "Concept turbine pod armor sector.021",
       "tile": 239,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2564
     },
@@ -1693,6 +3133,12 @@
       "part": "Concept turbine pod armor sector.022",
       "tile": 240,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2231
     },
@@ -1700,6 +3146,12 @@
       "part": "Concept turbine pod armor sector.023",
       "tile": 241,
       "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
       "metallic": 0.95,
       "roughness": 0.2231
     },
@@ -1707,6 +3159,12 @@
       "part": "Concept turbine pod structural sector",
       "tile": 242,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.46
     },
@@ -1714,6 +3172,12 @@
       "part": "Concept turbine pod structural sector.001",
       "tile": 243,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.45
     },
@@ -1721,6 +3185,12 @@
       "part": "Concept turbine pod structural sector.002",
       "tile": 244,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4603
     },
@@ -1728,6 +3198,12 @@
       "part": "Concept turbine pod structural sector.003",
       "tile": 245,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4164
     },
@@ -1735,6 +3211,12 @@
       "part": "Concept turbine pod structural sector.004",
       "tile": 246,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.3971
     },
@@ -1742,6 +3224,12 @@
       "part": "Concept turbine pod structural sector.005",
       "tile": 247,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4574
     },
@@ -1749,6 +3237,12 @@
       "part": "Concept turbine pod structural sector.006",
       "tile": 248,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4162
     },
@@ -1756,6 +3250,12 @@
       "part": "Concept turbine pod structural sector.007",
       "tile": 249,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.3991
     },
@@ -1763,6 +3263,12 @@
       "part": "Concept turbine pod structural sector.008",
       "tile": 250,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4612
     },
@@ -1770,6 +3276,12 @@
       "part": "Concept turbine pod structural sector.009",
       "tile": 251,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4176
     },
@@ -1777,6 +3289,12 @@
       "part": "Concept turbine pod structural sector.010",
       "tile": 252,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4574
     },
@@ -1784,6 +3302,12 @@
       "part": "Concept turbine pod structural sector.011",
       "tile": 253,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4396
     },
@@ -1791,6 +3315,12 @@
       "part": "Concept turbine pod structural sector.012",
       "tile": 254,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4483
     },
@@ -1798,6 +3328,12 @@
       "part": "Concept turbine pod structural sector.013",
       "tile": 255,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4566
     },
@@ -1805,6 +3341,12 @@
       "part": "Concept turbine pod structural sector.014",
       "tile": 256,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.415
     },
@@ -1812,6 +3354,12 @@
       "part": "Concept turbine pod structural sector.015",
       "tile": 257,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4525
     },
@@ -1819,6 +3367,12 @@
       "part": "Concept turbine pod structural sector.016",
       "tile": 258,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4123
     },
@@ -1826,6 +3380,12 @@
       "part": "Concept turbine pod structural sector.017",
       "tile": 259,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4007
     },
@@ -1833,6 +3393,12 @@
       "part": "Concept turbine pod structural sector.018",
       "tile": 260,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4595
     },
@@ -1840,6 +3406,12 @@
       "part": "Concept turbine pod structural sector.019",
       "tile": 261,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4429
     },
@@ -1847,6 +3419,12 @@
       "part": "Concept turbine pod structural sector.020",
       "tile": 262,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4636
     },
@@ -1854,6 +3432,12 @@
       "part": "Concept turbine pod structural sector.021",
       "tile": 263,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4558
     },
@@ -1861,6 +3445,12 @@
       "part": "Concept turbine pod structural sector.022",
       "tile": 264,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4053
     },
@@ -1868,6 +3458,12 @@
       "part": "Concept turbine pod structural sector.023",
       "tile": 265,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4316
     },
@@ -1875,6 +3471,12 @@
       "part": "Concept ventral removable service cover captive latch",
       "tile": 266,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.268
     },
@@ -1882,6 +3484,12 @@
       "part": "Concept ventral removable service cover recessed seat",
       "tile": 267,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.4155
     },
@@ -1889,6 +3497,12 @@
       "part": "Concept ventral removable service cover removable plate",
       "tile": 268,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.273
     },
@@ -1896,6 +3510,12 @@
       "part": "Deep channel bed",
       "tile": 269,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.4168
     },
@@ -1903,6 +3523,12 @@
       "part": "Deep channel bed.001",
       "tile": 270,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.4363
     },
@@ -1910,6 +3536,12 @@
       "part": "Low swept pod attachment fastener seat",
       "tile": 271,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.462
     },
@@ -1917,6 +3549,12 @@
       "part": "Low swept pod attachment fastener seat.001",
       "tile": 272,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.4588
     },
@@ -1924,6 +3562,12 @@
       "part": "Low swept pod attachment fastener seat.002",
       "tile": 273,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.4492
     },
@@ -1931,6 +3575,12 @@
       "part": "Low swept pod attachment fastener seat.003",
       "tile": 274,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.45
     },
@@ -1938,6 +3588,12 @@
       "part": "Low swept pod attachment fastener seat.004",
       "tile": 275,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.4374
     },
@@ -1945,6 +3601,12 @@
       "part": "Low swept pod attachment fastener seat.005",
       "tile": 276,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.4084
     },
@@ -1952,6 +3614,12 @@
       "part": "Low swept pod attachment fastener socket",
       "tile": 277,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2706
     },
@@ -1959,6 +3627,12 @@
       "part": "Low swept pod attachment fastener socket.001",
       "tile": 278,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.251
     },
@@ -1966,6 +3640,12 @@
       "part": "Low swept pod attachment fastener socket.002",
       "tile": 279,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.256
     },
@@ -1973,6 +3653,12 @@
       "part": "Low swept pod attachment fastener socket.003",
       "tile": 280,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2451
     },
@@ -1980,6 +3666,12 @@
       "part": "Low swept pod attachment fastener socket.004",
       "tile": 281,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2516
     },
@@ -1987,6 +3679,12 @@
       "part": "Low swept pod attachment fastener socket.005",
       "tile": 282,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2279
     },
@@ -1994,6 +3692,12 @@
       "part": "Low swept pod attachment inset armor",
       "tile": 283,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2728
     },
@@ -2001,6 +3705,12 @@
       "part": "Low swept pod attachment inset armor.001",
       "tile": 284,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.263
     },
@@ -2008,6 +3718,12 @@
       "part": "Low swept pod attachment leading edge",
       "tile": 285,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2579
     },
@@ -2015,6 +3731,12 @@
       "part": "Low swept pod attachment leading edge.001",
       "tile": 286,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2358
     },
@@ -2022,6 +3744,12 @@
       "part": "Low swept pod attachment structure",
       "tile": 287,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4292
     },
@@ -2029,6 +3757,12 @@
       "part": "Low swept pod attachment structure.001",
       "tile": 288,
       "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
       "metallic": 0.35,
       "roughness": 0.4079
     },
@@ -2036,6 +3770,12 @@
       "part": "Needle inset stripe",
       "tile": 289,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2361
     },
@@ -2043,6 +3783,12 @@
       "part": "Needle inset stripe.001",
       "tile": 290,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2274
     },
@@ -2050,6 +3796,12 @@
       "part": "Outboard fin edge",
       "tile": 291,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.3046
     },
@@ -2057,6 +3809,12 @@
       "part": "Outboard fin edge.001",
       "tile": 292,
       "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
       "metallic": 0.18,
       "roughness": 0.311
     },
@@ -2064,6 +3822,12 @@
       "part": "Pod circular machined rim",
       "tile": 293,
       "material": "Pale metal details",
+      "role": "metal",
+      "base_color_linear": [
+        0.65,
+        0.69,
+        0.72
+      ],
       "metallic": 0.95,
       "roughness": 0.254
     },
@@ -2071,6 +3835,12 @@
       "part": "Pod circular machined rim.001",
       "tile": 294,
       "material": "Pale metal details",
+      "role": "metal",
+      "base_color_linear": [
+        0.65,
+        0.69,
+        0.72
+      ],
       "metallic": 0.95,
       "roughness": 0.2447
     },
@@ -2078,6 +3848,12 @@
       "part": "Pod circular machinery well",
       "tile": 295,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.4169
     },
@@ -2085,6 +3861,12 @@
       "part": "Pod circular machinery well.001",
       "tile": 296,
       "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
       "metallic": 0.35,
       "roughness": 0.4565
     },
@@ -2092,6 +3874,12 @@
       "part": "Pod hub",
       "tile": 297,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2477
     },
@@ -2099,6 +3887,12 @@
       "part": "Pod hub.001",
       "tile": 298,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.268
     },
@@ -2106,6 +3900,12 @@
       "part": "Pod inner bearing",
       "tile": 299,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2449
     },
@@ -2113,6 +3913,12 @@
       "part": "Pod inner bearing.001",
       "tile": 300,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2553
     },
@@ -2120,6 +3926,12 @@
       "part": "Pod radial mechanism",
       "tile": 301,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2742
     },
@@ -2127,6 +3939,12 @@
       "part": "Pod radial mechanism.001",
       "tile": 302,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2394
     },
@@ -2134,6 +3952,12 @@
       "part": "Pod radial mechanism.002",
       "tile": 303,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2187
     },
@@ -2141,6 +3965,12 @@
       "part": "Pod radial mechanism.003",
       "tile": 304,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2356
     },
@@ -2148,6 +3978,12 @@
       "part": "Pod radial mechanism.004",
       "tile": 305,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.225
     },
@@ -2155,6 +3991,12 @@
       "part": "Pod radial mechanism.005",
       "tile": 306,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2317
     },
@@ -2162,6 +4004,12 @@
       "part": "Pod radial mechanism.006",
       "tile": 307,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2581
     },
@@ -2169,6 +4017,12 @@
       "part": "Pod radial mechanism.007",
       "tile": 308,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2201
     },
@@ -2176,6 +4030,12 @@
       "part": "Pod radial mechanism.008",
       "tile": 309,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2842
     },
@@ -2183,6 +4043,12 @@
       "part": "Pod radial mechanism.009",
       "tile": 310,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2688
     },
@@ -2190,6 +4056,12 @@
       "part": "Pod radial mechanism.010",
       "tile": 311,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2701
     },
@@ -2197,6 +4069,12 @@
       "part": "Pod radial mechanism.011",
       "tile": 312,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2747
     },
@@ -2204,6 +4082,12 @@
       "part": "Pod radial mechanism.012",
       "tile": 313,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2273
     },
@@ -2211,6 +4095,12 @@
       "part": "Pod radial mechanism.013",
       "tile": 314,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2681
     },
@@ -2218,6 +4108,12 @@
       "part": "Pod radial mechanism.014",
       "tile": 315,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2712
     },
@@ -2225,6 +4121,12 @@
       "part": "Pod radial mechanism.015",
       "tile": 316,
       "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
       "metallic": 0.95,
       "roughness": 0.2249
     },
@@ -2232,6 +4134,12 @@
       "part": "Small outboard rear stabilizer",
       "tile": 317,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2321
     },
@@ -2239,6 +4147,12 @@
       "part": "Small outboard rear stabilizer.001",
       "tile": 318,
       "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
       "metallic": 0.95,
       "roughness": 0.2522
     }

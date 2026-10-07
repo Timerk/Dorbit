@@ -4,7 +4,7 @@ extends EditorScenePostImport
 
 
 func _post_import(scene: Node) -> Object:
-	print("Liberator import: share finish atlases and enable paint clearcoat")
+	print("Ship import: share finish atlases and enable paint clearcoat")
 	var shared: Dictionary[int, Texture2D] = {}
 	for node: Node in scene.find_children("*", "MeshInstance3D", true, false):
 		var instance := node as MeshInstance3D
@@ -17,7 +17,7 @@ func _post_import(scene: Node) -> Object:
 					material.set_texture(channel, shared[channel])
 				else:
 					shared[channel] = material.get_texture(channel)
-			if material.resource_name == "Blue grey armor":
+			if material.resource_name in ["Blue grey armor", "Muted green grey armor", "Cobalt enamel", "Aegis green enamel", "Defcom green enamel", "Phoenix red enamel"]:
 				material.clearcoat_enabled = true
 				material.clearcoat = .32
 				material.clearcoat_roughness = .22

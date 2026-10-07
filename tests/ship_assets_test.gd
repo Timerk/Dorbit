@@ -1,75 +1,77 @@
 extends SceneTree
-## Run against the exported main pack to catch missing dynamically loaded assets.
+## Run against source or the exported main pack to catch missing ship finishes.
+
+const PAINT := ["Blue grey armor", "Muted green grey armor", "Cobalt enamel",
+	"Aegis green enamel", "Defcom green enamel", "Phoenix red enamel"]
+
 
 func _initialize() -> void:
-	var liberator_textures := {}
-	var liberator_finish: Dictionary[String, Color] = {}
 	if ShipCatalog.MODELS.size() != 12:
-		push_error("Exported ship catalog must contain twelve hulls.")
-		quit(1)
+		fail("Exported ship catalog must contain twelve hulls.")
 		return
 	for id: String in ShipCatalog.MODELS:
 		var hull := ShipCatalog.model_scene(id)
 		if hull == null or StationUi.texture(id) == null:
-			push_error("Missing packaged ship assets for " + id)
-			quit(1)
+			fail("Missing packaged ship assets for " + id)
 			return
 		var meshes := hull.find_children("*", "MeshInstance3D", true, false)
 		if meshes.size() != 1 or not hull.find_children("*", "Camera3D", true, false).is_empty() or not hull.find_children("*", "Light3D", true, false).is_empty():
-			push_error("Ship export must contain one mesh and no studio: " + id)
-			quit(1)
+			fail("Ship export must contain one mesh and no studio: " + id)
 			return
-		var instance := meshes[0] as MeshInstance3D
-		var bounds := instance.mesh.get_aabb()
+		var mesh := (meshes[0] as MeshInstance3D).mesh
+		var bounds := mesh.get_aabb()
 		if absf(bounds.size.length() - 7.0) > 0.01 or bounds.get_center().length() > 0.01:
-			push_error("Ship export must preserve its centered 7 m bounding diameter: " + id)
-			quit(1)
+			fail("Ship export must preserve its centered 7 m bounding diameter: " + id)
 			return
-		for surface in instance.mesh.get_surface_count():
-			var arrays := instance.mesh.surface_get_arrays(surface)
-			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-			if id == "liberator":
-				var material := instance.mesh.surface_get_material(surface) as BaseMaterial3D
-				var uv: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
-				if uv.size() != vertices.size() or material == null or material.get_texture(BaseMaterial3D.TEXTURE_ALBEDO) == null or material.get_texture(BaseMaterial3D.TEXTURE_ROUGHNESS) == null or material.get_texture(BaseMaterial3D.TEXTURE_NORMAL) == null:
-					push_error("Liberator must package UVs and its color, roughness and normal maps.")
-					quit(1)
-					return
-				for channel in [BaseMaterial3D.TEXTURE_ALBEDO, BaseMaterial3D.TEXTURE_ROUGHNESS, BaseMaterial3D.TEXTURE_NORMAL]:
-					liberator_textures[material.get_texture(channel).get_instance_id()] = true
-				if material.resource_name == "Blue grey armor" and not material.clearcoat_enabled:
-					push_error("Liberator's painted armor must retain its clearcoat.")
-					quit(1)
-					return
-				if material.resource_name in ["Blue cockpit glazing", "Blue grey armor"]:
-					liberator_finish[material.resource_name] = surface_texel(instance.mesh, surface, BaseMaterial3D.TEXTURE_ALBEDO)
-					liberator_finish[material.resource_name + " ORM"] = surface_texel(instance.mesh, surface, BaseMaterial3D.TEXTURE_ROUGHNESS)
-			if vertices.is_empty() or instance.mesh.surface_get_material(surface) == null:
-				push_error("Empty geometry or missing PBR material: " + id)
-				quit(1)
-				return
-			for vertex in vertices:
-				if not vertex.is_finite():
-					push_error("Non-finite exported geometry: " + id)
-					quit(1)
-					return
+		if not check_finish(id, mesh):
+			return
 		hull.free()
-	if liberator_textures.size() != 3:
-		push_error("Liberator's ten surfaces must share three atlas textures.")
-		quit(1)
-		return
-	if not liberator_finish.has("Blue cockpit glazing") or not liberator_finish.has("Blue grey armor") or liberator_finish["Blue cockpit glazing"].get_luminance() >= liberator_finish["Blue grey armor"].get_luminance() * .55:
-		push_error("Liberator cockpit glazing must remain visibly darker than the blue armor.")
-		quit(1)
-		return
-	var glass_orm := liberator_finish["Blue cockpit glazing ORM"]
-	if glass_orm.g >= liberator_finish["Blue grey armor ORM"].g or glass_orm.b > .05:
-		push_error("Liberator glazing must be smoother than armor and retain a dielectric glass finish.")
-		quit(1)
-		return
-	print("Packaged ship assets: 12 centered 7 m hulls with finite geometry, PBR materials, previews and no studio")
-	print("Liberator finish: UVs, 3 shared PBR atlases, coated paint and distinct smooth cockpit glass retained")
+	print("Packaged ship assets: 12 centered 7 m hulls with finite geometry, previews and no studio")
+	print("Roster finish: every hull retains UVs, 3 shared PBR atlases, coated paint and distinct smooth cockpit glass")
 	quit()
+
+
+func check_finish(id: String, mesh: Mesh) -> bool:
+	var textures := {}
+	var glass: Array[Color] = []
+	var brightest_armor := 0.0
+	for surface in mesh.get_surface_count():
+		var arrays := mesh.surface_get_arrays(surface)
+		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		var material := mesh.surface_get_material(surface) as BaseMaterial3D
+		var uv: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
+		if vertices.is_empty() or material == null or uv.size() != vertices.size():
+			return fail("Missing geometry, material or UVs: " + id)
+		for vertex in vertices:
+			if not vertex.is_finite():
+				return fail("Non-finite exported geometry: " + id)
+		for channel in [BaseMaterial3D.TEXTURE_ALBEDO, BaseMaterial3D.TEXTURE_ROUGHNESS, BaseMaterial3D.TEXTURE_NORMAL]:
+			var texture := material.get_texture(channel)
+			if texture == null or texture.get_size() != Vector2(2048, 2048):
+				return fail("Missing full-resolution PBR atlas: " + id)
+			textures[texture.get_instance_id()] = true
+		if material.get_texture(BaseMaterial3D.TEXTURE_METALLIC) != material.get_texture(BaseMaterial3D.TEXTURE_ROUGHNESS):
+			return fail("Metal and roughness must share the ORM map: " + id)
+		var color := surface_texel(mesh, surface, BaseMaterial3D.TEXTURE_ALBEDO)
+		var orm := surface_texel(mesh, surface, BaseMaterial3D.TEXTURE_ROUGHNESS)
+		var glazing := material.resource_name.to_lower().contains("glass") or material.resource_name.to_lower().contains("glazing")
+		if glazing:
+			glass.append(color)
+			if color.get_luminance() > .18 or orm.g > .14 or orm.b > .05:
+				return fail("Cockpit glass must retain a dark, smooth dielectric finish: " + id)
+		elif PAINT.has(material.resource_name):
+			brightest_armor = maxf(brightest_armor, color.get_luminance())
+			if not material.clearcoat_enabled or orm.b > .25 or orm.g < .20:
+				return fail("Colored armor must retain coated paint rather than bare metal: " + id)
+		if material.resource_name in ["Ion blue", "Green reactor lens"] and not material.emission_enabled:
+			return fail("Ship lights must preserve emission: " + id)
+	if textures.size() != 3 or glass.is_empty():
+		return fail("Each hull must share three atlases and retain cockpit glass: " + id)
+	for color in glass:
+		if brightest_armor > 0 and color.get_luminance() >= brightest_armor * .65:
+			return fail("Cockpit glazing must contrast with colored armor: " + id)
+	print("FINISH ", id, ": ", mesh.get_surface_count(), " surfaces, 3 shared maps, ", glass.size(), " glass materials")
+	return true
 
 
 func surface_texel(mesh: Mesh, surface: int, channel: int) -> Color:
@@ -82,3 +84,9 @@ func surface_texel(mesh: Mesh, surface: int, channel: int) -> Color:
 	if pixels.is_compressed():
 		pixels.decompress()
 	return pixels.get_pixelv(Vector2i(sample_uv * Vector2(pixels.get_size())))
+
+
+func fail(message: String) -> bool:
+	push_error(message)
+	quit(1)
+	return false

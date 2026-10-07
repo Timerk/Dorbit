@@ -1,0 +1,5174 @@
+{
+  "size": 2048,
+  "grid": 20,
+  "padding_pixels": 8,
+  "source": "tools/ship_surface_atlas.py; deterministic per-component finish",
+  "channels": {
+    "albedo": "sRGB hull colors and subtle finish variation",
+    "orm": "R: 1 (no AO bake), G: roughness, B: metallic",
+    "normal": "tangent-space +Y micrograin; no baked lighting"
+  },
+  "parts": [
+    {
+      "part": "Aft rail equipment well",
+      "tile": 0,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4334
+    },
+    {
+      "part": "Aft rail equipment well.001",
+      "tile": 1,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4495
+    },
+    {
+      "part": "Aft rail equipment well.002",
+      "tile": 2,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4215
+    },
+    {
+      "part": "Aft rail equipment well.003",
+      "tile": 3,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4033
+    },
+    {
+      "part": "Aft rail well rim",
+      "tile": 4,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2277
+    },
+    {
+      "part": "Aft rail well rim.001",
+      "tile": 5,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2656
+    },
+    {
+      "part": "Aft rail well rim.002",
+      "tile": 6,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2184
+    },
+    {
+      "part": "Aft rail well rim.003",
+      "tile": 7,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2797
+    },
+    {
+      "part": "Aft rail well rim.004",
+      "tile": 8,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2814
+    },
+    {
+      "part": "Aft rail well rim.005",
+      "tile": 9,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2158
+    },
+    {
+      "part": "Aft rail well rim.006",
+      "tile": 10,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2348
+    },
+    {
+      "part": "Aft rail well rim.007",
+      "tile": 11,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2344
+    },
+    {
+      "part": "Bridge side sensor",
+      "tile": 12,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2199
+    },
+    {
+      "part": "Bridge side sensor.001",
+      "tile": 13,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2585
+    },
+    {
+      "part": "Central spine dorsal armor",
+      "tile": 14,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2691
+    },
+    {
+      "part": "Central spine dorsal armor.001",
+      "tile": 15,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2485
+    },
+    {
+      "part": "Central spine dorsal armor.002",
+      "tile": 16,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2758
+    },
+    {
+      "part": "Central spine dorsal armor.003",
+      "tile": 17,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2558
+    },
+    {
+      "part": "Central spine dorsal armor.004",
+      "tile": 18,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2623
+    },
+    {
+      "part": "Central spine dorsal armor.005",
+      "tile": 19,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2233
+    },
+    {
+      "part": "Central spine dorsal armor.006",
+      "tile": 20,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2309
+    },
+    {
+      "part": "Central spine dorsal armor.007",
+      "tile": 21,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2633
+    },
+    {
+      "part": "Central spine fastener seat",
+      "tile": 22,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4502
+    },
+    {
+      "part": "Central spine fastener seat.001",
+      "tile": 23,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4316
+    },
+    {
+      "part": "Central spine fastener seat.002",
+      "tile": 24,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.444
+    },
+    {
+      "part": "Central spine fastener seat.003",
+      "tile": 25,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4518
+    },
+    {
+      "part": "Central spine fastener seat.004",
+      "tile": 26,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4015
+    },
+    {
+      "part": "Central spine fastener seat.005",
+      "tile": 27,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4074
+    },
+    {
+      "part": "Central spine fastener socket",
+      "tile": 28,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2237
+    },
+    {
+      "part": "Central spine fastener socket.001",
+      "tile": 29,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2231
+    },
+    {
+      "part": "Central spine fastener socket.002",
+      "tile": 30,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.254
+    },
+    {
+      "part": "Central spine fastener socket.003",
+      "tile": 31,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.236
+    },
+    {
+      "part": "Central spine fastener socket.004",
+      "tile": 32,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2618
+    },
+    {
+      "part": "Central spine fastener socket.005",
+      "tile": 33,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2156
+    },
+    {
+      "part": "Central spine inner hull",
+      "tile": 34,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.426
+    },
+    {
+      "part": "Central spine shoulder bevel armor",
+      "tile": 35,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.268
+    },
+    {
+      "part": "Central spine shoulder bevel armor.001",
+      "tile": 36,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2171
+    },
+    {
+      "part": "Central spine shoulder bevel armor.002",
+      "tile": 37,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2317
+    },
+    {
+      "part": "Central spine shoulder bevel armor.003",
+      "tile": 38,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2842
+    },
+    {
+      "part": "Central spine shoulder bevel armor.004",
+      "tile": 39,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2454
+    },
+    {
+      "part": "Central spine shoulder bevel armor.005",
+      "tile": 40,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2574
+    },
+    {
+      "part": "Central spine shoulder bevel armor.006",
+      "tile": 41,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2322
+    },
+    {
+      "part": "Central spine shoulder bevel armor.007",
+      "tile": 42,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2816
+    },
+    {
+      "part": "Compact aft drive aft emitter",
+      "tile": 43,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Compact aft drive aft emitter.001",
+      "tile": 44,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Compact aft drive aft housing",
+      "tile": 45,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.446
+    },
+    {
+      "part": "Compact aft drive aft housing.001",
+      "tile": 46,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4622
+    },
+    {
+      "part": "Compact aft drive aft machined lip",
+      "tile": 47,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2744
+    },
+    {
+      "part": "Compact aft drive aft machined lip.001",
+      "tile": 48,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2744
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane",
+      "tile": 49,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2492
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.001",
+      "tile": 50,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2271
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.002",
+      "tile": 51,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2158
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.003",
+      "tile": 52,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2397
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.004",
+      "tile": 53,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2621
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.005",
+      "tile": 54,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2232
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.006",
+      "tile": 55,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.233
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.007",
+      "tile": 56,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2548
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.008",
+      "tile": 57,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2762
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.009",
+      "tile": 58,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2239
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.010",
+      "tile": 59,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2454
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.011",
+      "tile": 60,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2733
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.012",
+      "tile": 61,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.254
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.013",
+      "tile": 62,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2503
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.014",
+      "tile": 63,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2747
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.015",
+      "tile": 64,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.28
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.016",
+      "tile": 65,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2293
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.017",
+      "tile": 66,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2589
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.018",
+      "tile": 67,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2745
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.019",
+      "tile": 68,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2756
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.020",
+      "tile": 69,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2426
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.021",
+      "tile": 70,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2552
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.022",
+      "tile": 71,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2244
+    },
+    {
+      "part": "Compact aft drive aft nozzle vane.023",
+      "tile": 72,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2669
+    },
+    {
+      "part": "Compact aft drive aft recessed well",
+      "tile": 73,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4197
+    },
+    {
+      "part": "Compact aft drive aft recessed well.001",
+      "tile": 74,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4221
+    },
+    {
+      "part": "Compact aft drive armor band",
+      "tile": 75,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2663
+    },
+    {
+      "part": "Compact aft drive armor band.001",
+      "tile": 76,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2605
+    },
+    {
+      "part": "Compact aft drive armor band.002",
+      "tile": 77,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2386
+    },
+    {
+      "part": "Compact aft drive armor band.003",
+      "tile": 78,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2386
+    },
+    {
+      "part": "Compact aft drive armor band.004",
+      "tile": 79,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2825
+    },
+    {
+      "part": "Compact aft drive armor band.005",
+      "tile": 80,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2152
+    },
+    {
+      "part": "Compact aft drive casing rail",
+      "tile": 81,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2456
+    },
+    {
+      "part": "Compact aft drive casing rail.001",
+      "tile": 82,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2584
+    },
+    {
+      "part": "Compact aft drive casing rail.002",
+      "tile": 83,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2286
+    },
+    {
+      "part": "Compact aft drive casing rail.003",
+      "tile": 84,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2183
+    },
+    {
+      "part": "Compact aft drive core",
+      "tile": 85,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4283
+    },
+    {
+      "part": "Compact aft drive core.001",
+      "tile": 86,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4117
+    },
+    {
+      "part": "Compact aft drive fastener seat",
+      "tile": 87,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4168
+    },
+    {
+      "part": "Compact aft drive fastener seat.001",
+      "tile": 88,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4573
+    },
+    {
+      "part": "Compact aft drive fastener seat.002",
+      "tile": 89,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4002
+    },
+    {
+      "part": "Compact aft drive fastener seat.003",
+      "tile": 90,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4113
+    },
+    {
+      "part": "Compact aft drive fastener seat.004",
+      "tile": 91,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4154
+    },
+    {
+      "part": "Compact aft drive fastener seat.005",
+      "tile": 92,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.3984
+    },
+    {
+      "part": "Compact aft drive fastener seat.006",
+      "tile": 93,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4326
+    },
+    {
+      "part": "Compact aft drive fastener seat.007",
+      "tile": 94,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4374
+    },
+    {
+      "part": "Compact aft drive fastener socket",
+      "tile": 95,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2468
+    },
+    {
+      "part": "Compact aft drive fastener socket.001",
+      "tile": 96,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2808
+    },
+    {
+      "part": "Compact aft drive fastener socket.002",
+      "tile": 97,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2776
+    },
+    {
+      "part": "Compact aft drive fastener socket.003",
+      "tile": 98,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2792
+    },
+    {
+      "part": "Compact aft drive fastener socket.004",
+      "tile": 99,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2351
+    },
+    {
+      "part": "Compact aft drive fastener socket.005",
+      "tile": 100,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2241
+    },
+    {
+      "part": "Compact aft drive fastener socket.006",
+      "tile": 101,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2652
+    },
+    {
+      "part": "Compact aft drive fastener socket.007",
+      "tile": 102,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2413
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile",
+      "tile": 103,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2297
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.001",
+      "tile": 104,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2527
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.002",
+      "tile": 105,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2275
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.003",
+      "tile": 106,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2535
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.004",
+      "tile": 107,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2221
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.005",
+      "tile": 108,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2699
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.006",
+      "tile": 109,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2637
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.007",
+      "tile": 110,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2815
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.008",
+      "tile": 111,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2416
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.009",
+      "tile": 112,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2382
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.010",
+      "tile": 113,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2814
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.011",
+      "tile": 114,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2665
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.012",
+      "tile": 115,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2328
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.013",
+      "tile": 116,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2377
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.014",
+      "tile": 117,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2628
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.015",
+      "tile": 118,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.26
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.016",
+      "tile": 119,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2304
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.017",
+      "tile": 120,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2516
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.018",
+      "tile": 121,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2697
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.019",
+      "tile": 122,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2173
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.020",
+      "tile": 123,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2733
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.021",
+      "tile": 124,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2294
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.022",
+      "tile": 125,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2199
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.023",
+      "tile": 126,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2375
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.024",
+      "tile": 127,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2188
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.025",
+      "tile": 128,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2198
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.026",
+      "tile": 129,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2823
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.027",
+      "tile": 130,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2154
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.028",
+      "tile": 131,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2217
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.029",
+      "tile": 132,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.248
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.030",
+      "tile": 133,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2371
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.031",
+      "tile": 134,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2461
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.032",
+      "tile": 135,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2371
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.033",
+      "tile": 136,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2251
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.034",
+      "tile": 137,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2709
+    },
+    {
+      "part": "Compact aft drive fitted cowl tile.035",
+      "tile": 138,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2573
+    },
+    {
+      "part": "Compact aft drive inlet shadow",
+      "tile": 139,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4442
+    },
+    {
+      "part": "Compact aft drive inlet shadow.001",
+      "tile": 140,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4204
+    },
+    {
+      "part": "Compact aft drive intake emitter",
+      "tile": 141,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Compact aft drive intake emitter.001",
+      "tile": 142,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Compact aft drive intake housing",
+      "tile": 143,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.441
+    },
+    {
+      "part": "Compact aft drive intake housing.001",
+      "tile": 144,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4126
+    },
+    {
+      "part": "Compact aft drive intake machined lip",
+      "tile": 145,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2841
+    },
+    {
+      "part": "Compact aft drive intake machined lip.001",
+      "tile": 146,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2689
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane",
+      "tile": 147,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2205
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.001",
+      "tile": 148,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2178
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.002",
+      "tile": 149,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2442
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.003",
+      "tile": 150,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2232
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.004",
+      "tile": 151,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2325
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.005",
+      "tile": 152,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2426
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.006",
+      "tile": 153,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2789
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.007",
+      "tile": 154,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2265
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.008",
+      "tile": 155,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2184
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.009",
+      "tile": 156,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2843
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.010",
+      "tile": 157,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2533
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.011",
+      "tile": 158,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2263
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.012",
+      "tile": 159,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2624
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.013",
+      "tile": 160,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2311
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.014",
+      "tile": 161,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2672
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.015",
+      "tile": 162,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.267
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.016",
+      "tile": 163,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2574
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.017",
+      "tile": 164,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2775
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.018",
+      "tile": 165,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2201
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.019",
+      "tile": 166,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2365
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.020",
+      "tile": 167,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2275
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.021",
+      "tile": 168,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.259
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.022",
+      "tile": 169,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.284
+    },
+    {
+      "part": "Compact aft drive intake nozzle vane.023",
+      "tile": 170,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2688
+    },
+    {
+      "part": "Compact aft drive intake recessed well",
+      "tile": 171,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4352
+    },
+    {
+      "part": "Compact aft drive intake recessed well.001",
+      "tile": 172,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.406
+    },
+    {
+      "part": "Compact aft drive joint",
+      "tile": 173,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4395
+    },
+    {
+      "part": "Compact aft drive joint.001",
+      "tile": 174,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4624
+    },
+    {
+      "part": "Compact aft drive joint.002",
+      "tile": 175,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.443
+    },
+    {
+      "part": "Compact aft drive joint.003",
+      "tile": 176,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4272
+    },
+    {
+      "part": "Compact aft drive joint.004",
+      "tile": 177,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.408
+    },
+    {
+      "part": "Compact aft drive joint.005",
+      "tile": 178,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4601
+    },
+    {
+      "part": "Compact aft drive rear casing tie",
+      "tile": 179,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.271
+    },
+    {
+      "part": "Compact aft drive rear casing tie.001",
+      "tile": 180,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2248
+    },
+    {
+      "part": "Compact aft drive rear casing tie.002",
+      "tile": 181,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2367
+    },
+    {
+      "part": "Compact aft drive rear casing tie.003",
+      "tile": 182,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2699
+    },
+    {
+      "part": "Compact aft drive rear casing tie.004",
+      "tile": 183,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2237
+    },
+    {
+      "part": "Compact aft drive rear casing tie.005",
+      "tile": 184,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2661
+    },
+    {
+      "part": "Compact aft drive rear casing tie.006",
+      "tile": 185,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2791
+    },
+    {
+      "part": "Compact aft drive rear casing tie.007",
+      "tile": 186,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2612
+    },
+    {
+      "part": "Compact aft drive rear casing tie.008",
+      "tile": 187,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2572
+    },
+    {
+      "part": "Compact aft drive rear casing tie.009",
+      "tile": 188,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2644
+    },
+    {
+      "part": "Compact aft drive rear casing tie.010",
+      "tile": 189,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2184
+    },
+    {
+      "part": "Compact aft drive rear casing tie.011",
+      "tile": 190,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2568
+    },
+    {
+      "part": "Compact aft drive rear casing tie.012",
+      "tile": 191,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2339
+    },
+    {
+      "part": "Compact aft drive rear casing tie.013",
+      "tile": 192,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2825
+    },
+    {
+      "part": "Compact aft drive rear casing tie.014",
+      "tile": 193,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2791
+    },
+    {
+      "part": "Compact aft drive rear casing tie.015",
+      "tile": 194,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2442
+    },
+    {
+      "part": "Compact aft drive top radiator rib",
+      "tile": 195,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2521
+    },
+    {
+      "part": "Compact aft drive top radiator rib.001",
+      "tile": 196,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2389
+    },
+    {
+      "part": "Compact aft drive top radiator rib.002",
+      "tile": 197,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2417
+    },
+    {
+      "part": "Compact aft drive top radiator rib.003",
+      "tile": 198,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2375
+    },
+    {
+      "part": "Compact aft drive top radiator rib.004",
+      "tile": 199,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2757
+    },
+    {
+      "part": "Compact aft drive top radiator rib.005",
+      "tile": 200,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2593
+    },
+    {
+      "part": "Compact aft drive top radiator rib.006",
+      "tile": 201,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2335
+    },
+    {
+      "part": "Compact aft drive top radiator rib.007",
+      "tile": 202,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2383
+    },
+    {
+      "part": "Compact aft drive top service recess",
+      "tile": 203,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4378
+    },
+    {
+      "part": "Compact aft drive top service recess.001",
+      "tile": 204,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4497
+    },
+    {
+      "part": "Concept fork floating silver cheek",
+      "tile": 205,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2645
+    },
+    {
+      "part": "Concept fork floating silver cheek.001",
+      "tile": 206,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2301
+    },
+    {
+      "part": "Concept fork recessed coolant coupling",
+      "tile": 207,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2553
+    },
+    {
+      "part": "Concept fork recessed coolant coupling.001",
+      "tile": 208,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2646
+    },
+    {
+      "part": "Concept split arrow rear access captive latch",
+      "tile": 209,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2664
+    },
+    {
+      "part": "Concept split arrow rear access captive latch.001",
+      "tile": 210,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2831
+    },
+    {
+      "part": "Concept split arrow rear access recessed seat",
+      "tile": 211,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4211
+    },
+    {
+      "part": "Concept split arrow rear access recessed seat.001",
+      "tile": 212,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.431
+    },
+    {
+      "part": "Concept split arrow rear access removable plate",
+      "tile": 213,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2293
+    },
+    {
+      "part": "Concept split arrow rear access removable plate.001",
+      "tile": 214,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.22
+    },
+    {
+      "part": "Concept ventral removable service cover captive latch",
+      "tile": 215,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.268
+    },
+    {
+      "part": "Concept ventral removable service cover recessed seat",
+      "tile": 216,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4155
+    },
+    {
+      "part": "Concept ventral removable service cover removable plate",
+      "tile": 217,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.273
+    },
+    {
+      "part": "Fork dark channel",
+      "tile": 218,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2755
+    },
+    {
+      "part": "Fork dark channel.001",
+      "tile": 219,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2212
+    },
+    {
+      "part": "Fork dark inset edge",
+      "tile": 220,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4601
+    },
+    {
+      "part": "Fork dark inset edge.001",
+      "tile": 221,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4332
+    },
+    {
+      "part": "Fork flank mechanics coolant line",
+      "tile": 222,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2565
+    },
+    {
+      "part": "Fork flank mechanics coolant line.001",
+      "tile": 223,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2834
+    },
+    {
+      "part": "Fork flank mechanics edge rail",
+      "tile": 224,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2361
+    },
+    {
+      "part": "Fork flank mechanics edge rail.001",
+      "tile": 225,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2202
+    },
+    {
+      "part": "Fork flank mechanics edge rail.002",
+      "tile": 226,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2653
+    },
+    {
+      "part": "Fork flank mechanics edge rail.003",
+      "tile": 227,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2276
+    },
+    {
+      "part": "Fork flank mechanics inset unit",
+      "tile": 228,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2526
+    },
+    {
+      "part": "Fork flank mechanics inset unit.001",
+      "tile": 229,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2377
+    },
+    {
+      "part": "Fork flank mechanics inset unit.002",
+      "tile": 230,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2703
+    },
+    {
+      "part": "Fork flank mechanics inset unit.003",
+      "tile": 231,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2259
+    },
+    {
+      "part": "Fork flank mechanics inset unit.004",
+      "tile": 232,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2605
+    },
+    {
+      "part": "Fork flank mechanics inset unit.005",
+      "tile": 233,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2718
+    },
+    {
+      "part": "Fork flank mechanics inset unit.006",
+      "tile": 234,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2766
+    },
+    {
+      "part": "Fork flank mechanics inset unit.007",
+      "tile": 235,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2375
+    },
+    {
+      "part": "Fork flank mechanics inset unit.008",
+      "tile": 236,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2371
+    },
+    {
+      "part": "Fork flank mechanics inset unit.009",
+      "tile": 237,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2509
+    },
+    {
+      "part": "Fork flank mechanics rib",
+      "tile": 238,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2734
+    },
+    {
+      "part": "Fork flank mechanics rib.001",
+      "tile": 239,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.281
+    },
+    {
+      "part": "Fork flank mechanics rib.002",
+      "tile": 240,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2248
+    },
+    {
+      "part": "Fork flank mechanics rib.003",
+      "tile": 241,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2649
+    },
+    {
+      "part": "Fork flank mechanics rib.004",
+      "tile": 242,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2418
+    },
+    {
+      "part": "Fork flank mechanics rib.005",
+      "tile": 243,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2588
+    },
+    {
+      "part": "Fork flank mechanics rib.006",
+      "tile": 244,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2715
+    },
+    {
+      "part": "Fork flank mechanics rib.007",
+      "tile": 245,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2562
+    },
+    {
+      "part": "Fork flank mechanics rib.008",
+      "tile": 246,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2741
+    },
+    {
+      "part": "Fork flank mechanics rib.009",
+      "tile": 247,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2734
+    },
+    {
+      "part": "Fork flank mechanics shadow",
+      "tile": 248,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4175
+    },
+    {
+      "part": "Fork flank mechanics shadow.001",
+      "tile": 249,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4501
+    },
+    {
+      "part": "Fork second silver rail",
+      "tile": 250,
+      "material": "Pale metal details",
+      "role": "metal",
+      "base_color_linear": [
+        0.65,
+        0.69,
+        0.72
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2247
+    },
+    {
+      "part": "Fork second silver rail.001",
+      "tile": 251,
+      "material": "Pale metal details",
+      "role": "metal",
+      "base_color_linear": [
+        0.65,
+        0.69,
+        0.72
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2664
+    },
+    {
+      "part": "Fork segmented plate",
+      "tile": 252,
+      "material": "Pale metal details",
+      "role": "metal",
+      "base_color_linear": [
+        0.65,
+        0.69,
+        0.72
+      ],
+      "metallic": 0.95,
+      "roughness": 0.257
+    },
+    {
+      "part": "Fork segmented plate.001",
+      "tile": 253,
+      "material": "Pale metal details",
+      "role": "metal",
+      "base_color_linear": [
+        0.65,
+        0.69,
+        0.72
+      ],
+      "metallic": 0.95,
+      "roughness": 0.268
+    },
+    {
+      "part": "Fork segmented plate.002",
+      "tile": 254,
+      "material": "Pale metal details",
+      "role": "metal",
+      "base_color_linear": [
+        0.65,
+        0.69,
+        0.72
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2252
+    },
+    {
+      "part": "Fork segmented plate.003",
+      "tile": 255,
+      "material": "Pale metal details",
+      "role": "metal",
+      "base_color_linear": [
+        0.65,
+        0.69,
+        0.72
+      ],
+      "metallic": 0.95,
+      "roughness": 0.228
+    },
+    {
+      "part": "Fork segmented plate.004",
+      "tile": 256,
+      "material": "Pale metal details",
+      "role": "metal",
+      "base_color_linear": [
+        0.65,
+        0.69,
+        0.72
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2712
+    },
+    {
+      "part": "Fork segmented plate.005",
+      "tile": 257,
+      "material": "Pale metal details",
+      "role": "metal",
+      "base_color_linear": [
+        0.65,
+        0.69,
+        0.72
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2369
+    },
+    {
+      "part": "Forward fork black recess",
+      "tile": 258,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.464
+    },
+    {
+      "part": "Forward fork black recess.001",
+      "tile": 259,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4584
+    },
+    {
+      "part": "Long forward fork dorsal armor",
+      "tile": 260,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2826
+    },
+    {
+      "part": "Long forward fork dorsal armor.001",
+      "tile": 261,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2243
+    },
+    {
+      "part": "Long forward fork dorsal armor.002",
+      "tile": 262,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.276
+    },
+    {
+      "part": "Long forward fork dorsal armor.003",
+      "tile": 263,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2231
+    },
+    {
+      "part": "Long forward fork dorsal armor.004",
+      "tile": 264,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2798
+    },
+    {
+      "part": "Long forward fork dorsal armor.005",
+      "tile": 265,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2756
+    },
+    {
+      "part": "Long forward fork dorsal armor.006",
+      "tile": 266,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.268
+    },
+    {
+      "part": "Long forward fork dorsal armor.007",
+      "tile": 267,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2244
+    },
+    {
+      "part": "Long forward fork dorsal armor.008",
+      "tile": 268,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2702
+    },
+    {
+      "part": "Long forward fork dorsal armor.009",
+      "tile": 269,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2453
+    },
+    {
+      "part": "Long forward fork dorsal armor.010",
+      "tile": 270,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2793
+    },
+    {
+      "part": "Long forward fork dorsal armor.011",
+      "tile": 271,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2314
+    },
+    {
+      "part": "Long forward fork dorsal armor.012",
+      "tile": 272,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.245
+    },
+    {
+      "part": "Long forward fork dorsal armor.013",
+      "tile": 273,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2725
+    },
+    {
+      "part": "Long forward fork dorsal armor.014",
+      "tile": 274,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.277
+    },
+    {
+      "part": "Long forward fork dorsal armor.015",
+      "tile": 275,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2429
+    },
+    {
+      "part": "Long forward fork fastener seat",
+      "tile": 276,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4113
+    },
+    {
+      "part": "Long forward fork fastener seat.001",
+      "tile": 277,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4573
+    },
+    {
+      "part": "Long forward fork fastener seat.002",
+      "tile": 278,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4633
+    },
+    {
+      "part": "Long forward fork fastener seat.003",
+      "tile": 279,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4637
+    },
+    {
+      "part": "Long forward fork fastener socket",
+      "tile": 280,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2221
+    },
+    {
+      "part": "Long forward fork fastener socket.001",
+      "tile": 281,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2847
+    },
+    {
+      "part": "Long forward fork fastener socket.002",
+      "tile": 282,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2504
+    },
+    {
+      "part": "Long forward fork fastener socket.003",
+      "tile": 283,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2818
+    },
+    {
+      "part": "Long forward fork inner hull",
+      "tile": 284,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4078
+    },
+    {
+      "part": "Long forward fork inner hull.001",
+      "tile": 285,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4375
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor",
+      "tile": 286,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2688
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.001",
+      "tile": 287,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2375
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.002",
+      "tile": 288,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2685
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.003",
+      "tile": 289,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2745
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.004",
+      "tile": 290,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2251
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.005",
+      "tile": 291,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2621
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.006",
+      "tile": 292,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2479
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.007",
+      "tile": 293,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2482
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.008",
+      "tile": 294,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2719
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.009",
+      "tile": 295,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2277
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.010",
+      "tile": 296,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2634
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.011",
+      "tile": 297,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2257
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.012",
+      "tile": 298,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2258
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.013",
+      "tile": 299,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2157
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.014",
+      "tile": 300,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2436
+    },
+    {
+      "part": "Long forward fork shoulder bevel armor.015",
+      "tile": 301,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2397
+    },
+    {
+      "part": "Open fork channel rung",
+      "tile": 302,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2545
+    },
+    {
+      "part": "Open fork channel rung.001",
+      "tile": 303,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2296
+    },
+    {
+      "part": "Open fork channel rung.002",
+      "tile": 304,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2415
+    },
+    {
+      "part": "Open fork channel rung.003",
+      "tile": 305,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2187
+    },
+    {
+      "part": "Open fork channel rung.004",
+      "tile": 306,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2503
+    },
+    {
+      "part": "Open fork channel rung.005",
+      "tile": 307,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2449
+    },
+    {
+      "part": "Open fork channel rung.006",
+      "tile": 308,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2406
+    },
+    {
+      "part": "Open fork channel rung.007",
+      "tile": 309,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2194
+    },
+    {
+      "part": "Open fork channel rung.008",
+      "tile": 310,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2472
+    },
+    {
+      "part": "Open fork channel rung.009",
+      "tile": 311,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2759
+    },
+    {
+      "part": "Open fork channel rung.010",
+      "tile": 312,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2302
+    },
+    {
+      "part": "Open fork channel rung.011",
+      "tile": 313,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2842
+    },
+    {
+      "part": "Open fork channel rung.012",
+      "tile": 314,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.238
+    },
+    {
+      "part": "Open fork channel rung.013",
+      "tile": 315,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.258
+    },
+    {
+      "part": "Outer fork shoulder fastener seat",
+      "tile": 316,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.3998
+    },
+    {
+      "part": "Outer fork shoulder fastener seat.001",
+      "tile": 317,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4091
+    },
+    {
+      "part": "Outer fork shoulder fastener seat.002",
+      "tile": 318,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.408
+    },
+    {
+      "part": "Outer fork shoulder fastener seat.003",
+      "tile": 319,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4409
+    },
+    {
+      "part": "Outer fork shoulder fastener socket",
+      "tile": 320,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2648
+    },
+    {
+      "part": "Outer fork shoulder fastener socket.001",
+      "tile": 321,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2718
+    },
+    {
+      "part": "Outer fork shoulder fastener socket.002",
+      "tile": 322,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2644
+    },
+    {
+      "part": "Outer fork shoulder fastener socket.003",
+      "tile": 323,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2447
+    },
+    {
+      "part": "Outer fork shoulder inset armor",
+      "tile": 324,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2504
+    },
+    {
+      "part": "Outer fork shoulder inset armor.001",
+      "tile": 325,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2241
+    },
+    {
+      "part": "Outer fork shoulder leading edge",
+      "tile": 326,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2603
+    },
+    {
+      "part": "Outer fork shoulder leading edge.001",
+      "tile": 327,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2747
+    },
+    {
+      "part": "Outer fork shoulder structure",
+      "tile": 328,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4317
+    },
+    {
+      "part": "Outer fork shoulder structure.001",
+      "tile": 329,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4313
+    },
+    {
+      "part": "Outer shoulder angular inset",
+      "tile": 330,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4099
+    },
+    {
+      "part": "Outer shoulder angular inset.001",
+      "tile": 331,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4171
+    },
+    {
+      "part": "Rear access bezel",
+      "tile": 332,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2257
+    },
+    {
+      "part": "Rear access bezel.001",
+      "tile": 333,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2209
+    },
+    {
+      "part": "Rear open outrigger dorsal armor",
+      "tile": 334,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2286
+    },
+    {
+      "part": "Rear open outrigger dorsal armor.001",
+      "tile": 335,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2321
+    },
+    {
+      "part": "Rear open outrigger dorsal armor.002",
+      "tile": 336,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2601
+    },
+    {
+      "part": "Rear open outrigger dorsal armor.003",
+      "tile": 337,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2648
+    },
+    {
+      "part": "Rear open outrigger dorsal armor.004",
+      "tile": 338,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2799
+    },
+    {
+      "part": "Rear open outrigger dorsal armor.005",
+      "tile": 339,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2296
+    },
+    {
+      "part": "Rear open outrigger dorsal armor.006",
+      "tile": 340,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.245
+    },
+    {
+      "part": "Rear open outrigger dorsal armor.007",
+      "tile": 341,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2557
+    },
+    {
+      "part": "Rear open outrigger inner hull",
+      "tile": 342,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4371
+    },
+    {
+      "part": "Rear open outrigger inner hull.001",
+      "tile": 343,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4008
+    },
+    {
+      "part": "Rear open outrigger shoulder bevel armor",
+      "tile": 344,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2624
+    },
+    {
+      "part": "Rear open outrigger shoulder bevel armor.001",
+      "tile": 345,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2299
+    },
+    {
+      "part": "Rear open outrigger shoulder bevel armor.002",
+      "tile": 346,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2176
+    },
+    {
+      "part": "Rear open outrigger shoulder bevel armor.003",
+      "tile": 347,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2414
+    },
+    {
+      "part": "Rear open outrigger shoulder bevel armor.004",
+      "tile": 348,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2607
+    },
+    {
+      "part": "Rear open outrigger shoulder bevel armor.005",
+      "tile": 349,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2377
+    },
+    {
+      "part": "Rear open outrigger shoulder bevel armor.006",
+      "tile": 350,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2428
+    },
+    {
+      "part": "Rear open outrigger shoulder bevel armor.007",
+      "tile": 351,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2755
+    },
+    {
+      "part": "Rear outrigger access well",
+      "tile": 352,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4499
+    },
+    {
+      "part": "Rear outrigger access well.001",
+      "tile": 353,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4539
+    },
+    {
+      "part": "Rear outrigger slots inset",
+      "tile": 354,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4028
+    },
+    {
+      "part": "Rear outrigger slots inset.001",
+      "tile": 355,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4459
+    },
+    {
+      "part": "Rear outrigger slots louver",
+      "tile": 356,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.226
+    },
+    {
+      "part": "Rear outrigger slots louver.001",
+      "tile": 357,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2446
+    },
+    {
+      "part": "Rear outrigger slots louver.002",
+      "tile": 358,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.257
+    },
+    {
+      "part": "Rear outrigger slots louver.003",
+      "tile": 359,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2528
+    },
+    {
+      "part": "Rear outrigger slots louver.004",
+      "tile": 360,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2191
+    },
+    {
+      "part": "Rear outrigger slots louver.005",
+      "tile": 361,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2475
+    },
+    {
+      "part": "Rear outrigger slots louver.006",
+      "tile": 362,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2668
+    },
+    {
+      "part": "Rear outrigger slots louver.007",
+      "tile": 363,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2412
+    },
+    {
+      "part": "Rear outrigger slots louver.008",
+      "tile": 364,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2356
+    },
+    {
+      "part": "Rear outrigger slots louver.009",
+      "tile": 365,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2296
+    },
+    {
+      "part": "Rounded bridge shell canopy glazing",
+      "tile": 366,
+      "material": "Dark sensor glass",
+      "role": "glass",
+      "base_color_linear": [
+        0.005,
+        0.014375,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Rounded bridge shell canopy glazing.001",
+      "tile": 367,
+      "material": "Dark sensor glass",
+      "role": "glass",
+      "base_color_linear": [
+        0.005,
+        0.014375,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Rounded bridge shell canopy glazing.002",
+      "tile": 368,
+      "material": "Dark sensor glass",
+      "role": "glass",
+      "base_color_linear": [
+        0.005,
+        0.014375,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Rounded bridge shell canopy glazing.003",
+      "tile": 369,
+      "material": "Dark sensor glass",
+      "role": "glass",
+      "base_color_linear": [
+        0.005,
+        0.014375,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Rounded bridge shell curved armor",
+      "tile": 370,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2211
+    },
+    {
+      "part": "Rounded bridge shell curved armor.001",
+      "tile": 371,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2375
+    },
+    {
+      "part": "Rounded bridge shell curved armor.002",
+      "tile": 372,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2153
+    },
+    {
+      "part": "Rounded bridge shell curved armor.003",
+      "tile": 373,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2205
+    },
+    {
+      "part": "Rounded bridge shell curved armor.004",
+      "tile": 374,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2702
+    },
+    {
+      "part": "Rounded bridge shell curved armor.005",
+      "tile": 375,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.233
+    },
+    {
+      "part": "Rounded bridge shell curved armor.006",
+      "tile": 376,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2422
+    },
+    {
+      "part": "Rounded bridge shell curved armor.007",
+      "tile": 377,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.256
+    },
+    {
+      "part": "Rounded bridge shell curved armor.008",
+      "tile": 378,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.245
+    },
+    {
+      "part": "Rounded bridge shell curved armor.009",
+      "tile": 379,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2675
+    },
+    {
+      "part": "Rounded bridge shell curved armor.010",
+      "tile": 380,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2586
+    },
+    {
+      "part": "Rounded bridge shell curved armor.011",
+      "tile": 381,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.242
+    },
+    {
+      "part": "Rounded bridge shell curved armor.012",
+      "tile": 382,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2493
+    },
+    {
+      "part": "Rounded bridge shell curved armor.013",
+      "tile": 383,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2819
+    },
+    {
+      "part": "Rounded bridge shell curved armor.014",
+      "tile": 384,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2318
+    },
+    {
+      "part": "Rounded bridge shell curved armor.015",
+      "tile": 385,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2764
+    },
+    {
+      "part": "Rounded bridge shell curved armor.016",
+      "tile": 386,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2375
+    },
+    {
+      "part": "Rounded bridge shell curved armor.017",
+      "tile": 387,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2808
+    },
+    {
+      "part": "Rounded bridge shell curved armor.018",
+      "tile": 388,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2445
+    },
+    {
+      "part": "Rounded bridge shell curved armor.019",
+      "tile": 389,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2278
+    },
+    {
+      "part": "Rounded bridge shell curved chassis",
+      "tile": 390,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.396
+    },
+    {
+      "part": "Rounded bridge shell fitted glazing rim",
+      "tile": 391,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2428
+    },
+    {
+      "part": "Rounded bridge shell fitted glazing rim.001",
+      "tile": 392,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2369
+    },
+    {
+      "part": "Rounded bridge shell glazing end frame",
+      "tile": 393,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2369
+    },
+    {
+      "part": "Rounded bridge shell glazing end frame.001",
+      "tile": 394,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2789
+    },
+    {
+      "part": "Shoulder recessed hatch",
+      "tile": 395,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4435
+    },
+    {
+      "part": "Shoulder recessed hatch.001",
+      "tile": 396,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.451
+    }
+  ]
+}
