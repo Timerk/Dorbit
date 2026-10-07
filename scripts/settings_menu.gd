@@ -17,6 +17,7 @@ var fullscreen: CheckButton
 var vsync: CheckButton
 var quality: OptionButton
 var graphics_options: Dictionary[String, OptionButton] = {}
+var filtering_status: Label
 var bloom: CheckButton
 var ssao: CheckButton
 var performance: CheckButton
@@ -265,20 +266,9 @@ func build_graphics(rows: VBoxContainer) -> void:
 		sector.apply_graphics(false)
 		sector.settings.save())
 	vsync.tooltip_text = "Sync frames to the screen to reduce tearing."
-	var quality_row := HBoxContainer.new()
-	rows.add_child(quality_row)
-	var quality_label := label(quality_row, "Antialiasing")
-	quality_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	quality_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	quality = OptionButton.new()
-	quality.custom_minimum_size.x = 240
-	quality.add_item("Off")
-	quality.add_item("4x MSAA")
-	quality_row.add_child(quality)
-	quality.item_selected.connect(func(index: int):
-		sector.settings.low_quality = index == 0
-		sector.apply_graphics(false)
-		sector.settings.save())
+	graphics_choice(rows, "msaa_3d", "Antialiasing", ["Off", "2x MSAA", "4x MSAA", "8x MSAA"],
+		"Smooths geometry edges. Higher levels increase GPU and memory use.")
+	quality = graphics_options.msaa_3d
 	performance = checkbox(rows, "Show performance overlay", func(value: bool):
 		sector.settings.show_performance = value
 		sector.apply_graphics(false)
@@ -287,8 +277,9 @@ func build_graphics(rows: VBoxContainer) -> void:
 	rows.add_theme_constant_override("separation", 4)
 	graphics_choice(rows, "render_scale", "3D render scale", ["Off / Native (100%)", "85%", "75%", "50%"],
 		"Lower scales improve GPU performance. Menus and HUD stay sharp.")
-	graphics_choice(rows, "anisotropic_filtering", "Anisotropic filtering", ["Off", "16x"],
-		"Sharpens textures viewed at an angle. Low performance cost.")
+	graphics_choice(rows, "anisotropic_filtering", "Anisotropic filtering", ["Off", "2x", "4x", "8x", "16x"],
+		"Sharpens angled textures. Strength changes require a restart; Off applies immediately.")
+	filtering_status = label(rows, "", 14)
 	bloom = checkbox(rows, "Bloom / glow", func(value: bool):
 		sector.settings.bloom = value
 		save_graphics())
@@ -324,11 +315,23 @@ func graphics_choice(rows: VBoxContainer, setting: String, title: String, choice
 func save_graphics() -> void:
 	sector.apply_graphics(false)
 	sector.settings.save()
+	sync_filtering_status()
+
+
+func sync_filtering_status() -> void:
+	var requested := sector.settings.anisotropic_filtering
+	var active := GameSettings.startup_filtering_level()
+	if requested == 0:
+		filtering_status.text = "Filtering is off."
+	elif requested == active:
+		filtering_status.text = "Active filtering: %dx." % (1 << active)
+	else:
+		filtering_status.text = "Restart to apply %dx filtering (currently %dx)." % [1 << requested, 1 << active]
 
 
 func section(parent: Node, title: String) -> VBoxContainer:
 	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", style(Color("091522"), Color("263e53")))
+	card.add_theme_stylebox_override("panel", StationUi.style(StationUi.SURFACE, StationUi.LINE))
 	parent.add_child(card)
 	var rows := content(card)
 	rows.add_theme_constant_override("separation", 8)
@@ -385,9 +388,9 @@ func sync_controls() -> void:
 	mute.set_pressed_no_signal(sector.audio.muted)
 	fullscreen.set_pressed_no_signal(sector.settings.fullscreen)
 	vsync.set_pressed_no_signal(sector.settings.vsync)
-	quality.select(0 if sector.low_quality else 1)
 	for setting: String in graphics_options:
 		graphics_options[setting].select(GameSettings.GRAPHICS_LEVELS[setting].find(sector.settings.get(setting)))
+	sync_filtering_status()
 	bloom.set_pressed_no_signal(sector.settings.bloom)
 	ssao.set_pressed_no_signal(sector.settings.ssao)
 	performance.set_pressed_no_signal(sector.show_performance)

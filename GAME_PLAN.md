@@ -67,15 +67,16 @@ guidance takes priority until safe re-entry, then restores the chosen destinatio
 If no clear route exists, it cancels with feedback. Arrival distances, turn speed
 and clearance remain playtesting settings.
 
-Settings are available from the connection menu and the Esc flight menu. Players can adjust mouse sensitivity, master/effects volume and mute, and rebind flight and combat actions to a single key or mouse button. Assigning an occupied binding swaps the actions; default controls can be restored. Fullscreen, window resolution, VSync, antialiasing and the performance overlay live on the Graphics tab. VSync is disabled by default and can be enabled to synchronize rendering with the screen's refresh rate. Changes apply immediately and persist on the device. Menu shortcuts remain fixed so settings and navigation stay accessible. In multiplayer, menus stop the local pilot's input and fire while the server continues running.
+Settings are available from the connection menu and the Esc flight menu. Players can adjust mouse sensitivity, master/effects volume and mute, and rebind flight and combat actions to a single key or mouse button. Assigning an occupied binding swaps the actions; default controls can be restored. Fullscreen, window resolution, VSync, antialiasing and the performance overlay live on the Graphics tab. VSync is disabled by default and can be enabled to synchronize rendering with the screen's refresh rate. Changes apply immediately and persist on the device, except anisotropic strength changes that require restarting the Compatibility renderer. Menu shortcuts remain fixed so settings and navigation stay accessible. In multiplayer, menus stop the local pilot's input and fire while the server continues running.
 
 Original flight tuning before the ship roster: 36 m/s cruise, 78 m/s boost, 40 m/s² acceleration, 60 m/s² braking, 80 m/s² counter-thrust, and a 65 ms mouse-steering response time constant. From cruise, release stops the ship in about 0.6 seconds; mouse steering completes about 95% of a turn command within 0.2 seconds. These values remain tuning decisions.
 
-The user approved six independent Graphics controls while retaining the
-Compatibility renderer: 3D render scale (Off/native, 85%, 75%, 50%), anisotropic
-filtering (Off, 16x), bloom and ambient occlusion toggles, shadow
+The user approved six independent Graphics controls and additional antialiasing
+levels while retaining the Compatibility renderer: 3D render scale (Off/native, 85%, 75%, 50%), anisotropic
+filtering (Off, 2x, 4x, 8x, 16x), antialiasing (Off, 2x, 4x, 8x MSAA), bloom and
+ambient occlusion toggles, shadow
 quality (Off, Low, Medium, High), and combat effects (Off, Low, High). Changes
-apply immediately and persist across restarts. Native rendering, disabled
+persist across restarts. Native rendering, 4x MSAA, disabled
 filtering/bloom/occlusion/shadows and High combat effects remain the defaults for
 existing profiles. Render scaling leaves menus and HUD at native resolution.
 Effects Off removes visual laser, impact and destruction feedback while retaining
@@ -84,8 +85,11 @@ to 32 meshes; High preserves the existing 64/80 limits. Shadows apply only to th
 sun, with bounded distances; distant scenery and transient effects do not cast
 shadows. Effect appearance and quality budgets remain playtesting settings; menu
 performance costs are estimates, not hardware benchmark results.
-Compatibility does not implement runtime anisotropy levels: the engine starts
-with a 16x maximum and the menu switches material filtering Off/16x immediately.
+Compatibility does not implement runtime anisotropy strengths. The selected
+strength is saved as a device-local engine override and takes effect after
+restarting; the menu displays the current strength and pending restart. Filtering
+Off and all other graphics changes apply immediately. Existing antialiasing
+profiles retain Off/4x behavior, and F4 remains an Off/4x shortcut.
 
 ## Combat
 

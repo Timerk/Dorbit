@@ -215,24 +215,30 @@ Esc opens the flight menu and releases the mouse. Choose **Settings** there or i
 
 The Audio tab has master/effects volume, mute and a test sound. The Graphics tab contains fullscreen, VSync, antialiasing, the performance overlay and window resolution. VSync is off by default; enable it to synchronize rendering with your screen's refresh rate and reduce tearing. Resolution choices fit the current screen with room for borders and the taskbar. Selecting one switches to windowed mode; fullscreen uses the desktop resolution. You can also resize the window manually. Mouse steering uses unscaled screen motion so viewport scaling does not change sensitivity.
 
-Changes apply immediately. Controls and graphics persist in `user://settings.cfg`, and existing audio preferences remain in `user://audio.cfg`. Esc returns to the previous menu. Fixed shortcuts remain available outside settings: F11 toggles fullscreen, F3 shows performance, F4 toggles antialiasing, and F5/F6 cycle resolutions while paused. F10 quits from a menu. The server keeps running while menus are open; losing focus releases your controls, but incoming damage can continue.
+Changes apply immediately except anisotropic strength changes, which require restarting the game. Controls and graphics persist in `user://settings.cfg`, and existing audio preferences remain in `user://audio.cfg`. Esc returns to the previous menu. Fixed shortcuts remain available outside settings: F11 toggles fullscreen, F3 shows performance, F4 toggles antialiasing, and F5/F6 cycle resolutions while paused. F10 quits from a menu. The server keeps running while menus are open; losing focus releases your controls, but incoming damage can continue.
 
 Graphics also includes 3D render scale (Off/native, 85%, 75%, 50%), anisotropic
-filtering (Off/16x), bloom/glow and ambient occlusion toggles, shadows
-(Off/Low/Medium/High), and combat effects (Off/Low/High). All apply immediately
-and save on this device. Reduced render scale keeps the HUD and menus sharp.
+filtering (Off/2x/4x/8x/16x), bloom/glow and ambient occlusion toggles, shadows
+(Off/Low/Medium/High), and combat effects (Off/Low/High). Antialiasing offers
+Off/2x/4x/8x MSAA. Settings save on this device. Reduced render scale keeps the
+HUD and menus sharp.
 Combat effects Off removes existing and future laser/impact/explosion meshes;
 audio and gameplay continue. Low simplifies effects and caps them at 32 meshes.
 The default remains native rendering, new lighting/filtering options off, and
 High combat effects. The game continues to use Godot's Compatibility renderer.
-Compatibility reads the maximum anisotropy at startup, so Off/16x switches
-material filtering modes immediately rather than changing an ignored viewport
-level. Asteroid textures include mipmaps for filtering.
+Compatibility reads anisotropic strength at startup. Strength choices write
+`user://graphics-renderer.cfg`, loaded by Godot before renderer initialization
+on the next launch; the menu shows the active strength and any pending restart.
+Filtering Off switches material samplers immediately. Ship hulls, previews and
+asteroids follow the filtering mode; asteroid textures include mipmaps. Existing
+Off/4x antialiasing profiles migrate to the corresponding MSAA choice.
 
 Run `tests/graphics_test.gd` headlessly with an isolated APPDATA profile, then
-repeat with `-- --restart`, to check menu application, persistence, malformed
+repeat with `-- --restart` and then `-- --filter-restart 2`,
+`-- --filter-restart 3`, and `-- --filter-restart 4`, to
+check menu application, every startup filtering strength, persistence, malformed
 preferences and effects-independent damage/rewards. `tools/dev.ps1 check`
-includes both runs. Run `tests/graphics_playthrough.gd` with a rendered window
+includes all five runs. Run `tests/graphics_playthrough.gd` with a rendered window
 and an isolated profile to exercise keyboard toggles/popups and capture native
 Graphics menu and effect screenshots under `build/validation/graphics`.
 
