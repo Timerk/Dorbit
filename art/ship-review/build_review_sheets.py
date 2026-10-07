@@ -42,7 +42,7 @@ for name in NAMES:
     if len(sys.argv)>1 and name not in sys.argv[1:]:
         continue
     slug=name.lower()
-    for suffix in ['', '-rear', '-top', '-side', '-front']:
+    for suffix in ['', '-rear', '-top', '-side', '-front', '-underside']:
         path=HERE/'previews'/(slug+suffix+'.png')
         with Image.open(path) as render:
             bounds=render.getchannel('A').getbbox()
@@ -50,7 +50,7 @@ for name in NAMES:
     im=Image.new('RGB',(1800,1080),BG)
     d=ImageDraw.Draw(im)
     label(im,(42,26),name+' / reference comparison',36)
-    label(im,(44,78),'Base appearance reconstruction | editable Blender model',21,MUTED)
+    label(im,(44,78),'Dorbit concept finish | editable Blender model',21,MUTED)
     d.rounded_rectangle((30,135,630,1000),radius=16,fill=CARD)
     d.rounded_rectangle((650,135,1770,1000),radius=16,fill=CARD)
     label(im,(54,155),'SUPPLIED BASE IMAGE',20,MUTED)
@@ -79,28 +79,36 @@ for name in NAMES:
 
     im=Image.new('RGB',(1800,1270),BG)
     d=ImageDraw.Draw(im)
-    label(im,(40,24),name+' / five views',36)
+    label(im,(40,24),name+' / six consistent model views',36)
     label(im,(42,76),'Base hull | -Y forward | Z up | review scale',21,MUTED)
-    views=[('', 'PERSPECTIVE'),('-rear','REAR'),('-top','TOP'),('-side','SIDE'),('-front','FRONT')]
+    views=[('', 'PERSPECTIVE'),('-rear','REAR'),('-top','TOP'),('-side','SIDE'),('-front','FRONT'),('-underside','UNDERSIDE')]
     for i,(suffix,title) in enumerate(views):
         x=30+(i%3)*590
         y=130+(i//3)*540
         d.rounded_rectangle((x,y,x+570,y+515),radius=14,fill=CARD)
         label(im,(x+20,y+17),title,20,MUTED)
         put(im,HERE/'previews'/(slug+suffix+'.png'),(x+15,y+65,540,426),trim=True)
-    x,y=1210,670
-    label(im,(x+10,y+40),'Inspect in Blender',29)
-    for j,text in enumerate(['Middle-drag to orbit','Numpad 7 / 1 / 3 for fixed views','F12 to render','References packed in the file']):
-        label(im,(x+10,y+103+j*48),text,21,MUTED)
     label(im,(42,1220),'Reference study. Underside, internal joints and exact panel depths are inferred.',21,MUTED)
     im.save(HERE/'previews'/(slug+'-views.jpg'),quality=94)
     print('SHEETS',name)
 
 if len(sys.argv)==1:
+    # Contact sheet preserves each complete generated turnaround. The actual
+    # ship views above come from one mesh and are the consistent angle source.
+    concepts=Image.new('RGB',(2400,2200),BG)
+    label(concepts,(38,22),'Dorbit / ship concept turnarounds',36)
+    label(concepts,(40,76),'Generated design references | full sheets and exact prompts in concepts/README.md',22,MUTED)
+    for i,name in enumerate(NAMES):
+        x=20+(i%3)*795
+        y=135+(i//3)*510
+        label(concepts,(x+12,y+8),name,26)
+        put(concepts,HERE/'concepts'/(name.lower()+'.png'),(x+8,y+48,772,446))
+    concepts.save(HERE/'concepts/overview.jpg',quality=94)
+
     im=Image.new('RGB',(2000,2110),BG)
     d=ImageDraw.Draw(im)
     label(im,(36,22),'Twelve base ships / revised Blender model review',36)
-    label(im,(38,79),'Aegis retained as benchmark | Revised geometry, colors and assemblies on the other eleven ships',22,MUTED)
+    label(im,(38,79),'Dorbit concept refinement | Updated geometry and PBR finishes on all twelve hulls',22,MUTED)
     for i,name in enumerate(NAMES):
         x=20+(i%4)*495
         y=140+(i//4)*640

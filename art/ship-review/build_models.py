@@ -11,6 +11,9 @@ import sys
 from pathlib import Path
 from mathutils import Vector
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import concept_refinement
+
 HERE = Path(__file__).resolve().parent
 PARTS = []
 M = {}
@@ -1549,10 +1552,11 @@ def setup(name, draft=False):
                     mesh(obj.name+' mounting recess',verts,
                          [tuple(p.vertices) for p in obj.data.polygons],'recess',.006)
     refine_reference_shapes(name)
+    concept_refinement.apply(sys.modules[__name__], name)
     root=bpy.data.objects.new(name,None)
     scene.collection.objects.link(root)
     root['forward_axis']='-Y, Z up'
-    root['reference_status']='Base catalogue appearance; engineering references and reconstruction notes in README.'
+    root['reference_status']='Dorbit concept refinement; generated turnaround and catalogue images packed. See concepts/README.md.'
     root['inferred_geometry']='Underside, hidden joints, exact panel depths and small fasteners.'
     for obj in PARTS:
         obj.parent=root
@@ -1562,7 +1566,14 @@ def setup(name, draft=False):
     high=Vector(tuple(max(p[i] for p in bounds) for i in range(3)))
     center=(low+high)/2
     extent=max(high-low)
-    scene.render.engine='CYCLES'
+    scene.render.engine='CYCLES' if '--cycles' in sys.argv else 'BLENDER_EEVEE'
+    scene.eevee.use_raytracing=True
+    scene.eevee.use_fast_gi=True
+    scene.eevee.fast_gi_quality=1
+    scene.eevee.fast_gi_ray_count=8
+    scene.eevee.taa_render_samples=64
+    scene.eevee.ray_tracing_options.resolution_scale='1'
+    scene.eevee.ray_tracing_options.screen_trace_quality=1
     if '--gpu' in sys.argv:
         prefs=bpy.context.preferences.addons['cycles'].preferences
         prefs.compute_device_type='OPTIX'
@@ -1586,8 +1597,8 @@ def setup(name, draft=False):
     scene.view_settings.look='AgX - Medium High Contrast'
     group('Studio | cameras and lights')
     cameras={}
-    views={'perspective':(7,-10,10) if name=='Aegis' else ((10,-6,7) if name=='Goliath' else (10,-7,6)),
-           'rear':(-7,10,5),'top':(0,0,15),'side':(15,0,0),'front':(0,-15,0)}
+    views={'perspective':(8,-11,7), 'rear':(0,15,0), 'top':(0,0,15),
+           'side':(15,0,0),'front':(0,-15,0),'underside':(0,0,-15)}
     for view,offset in views.items():
         data=bpy.data.cameras.new(name+' '+view)
         obj=bpy.data.objects.new(name+' '+view,data)
@@ -1596,13 +1607,12 @@ def setup(name, draft=False):
         point_at(obj,center)
         data.type='ORTHO'
         data.ortho_scale=extent*(1.15 if name=='Goliath' else 1.28)
-        if name not in {'Aegis','Goliath'}:
-            # Fit the actual projected corners, including asymmetric long wings.
-            inverse=obj.rotation_euler.to_quaternion().inverted()
-            projected=[inverse @ (p-center) for p in bounds]
-            aspect=scene.render.resolution_x/scene.render.resolution_y
-            data.ortho_scale=max(max(abs(p.y)*2*aspect for p in projected),
-                                max(abs(p.x)*2 for p in projected))*1.12
+        # Fit the actual projected corners, including asymmetric long wings.
+        inverse=obj.rotation_euler.to_quaternion().inverted()
+        projected=[inverse @ (p-center) for p in bounds]
+        aspect=scene.render.resolution_x/scene.render.resolution_y
+        data.ortho_scale=max(max(abs(p.y)*2*aspect for p in projected),
+                            max(abs(p.x)*2 for p in projected))*1.12
         cameras[view]=obj
     for label,loc,power,size,color in [
         ('Large soft key',(-4,-6,9),1500,7,(.92,.96,1)),
@@ -1615,7 +1625,12 @@ def setup(name, draft=False):
     # Pack source images into the .blend. Hidden image empties are available
     # from the Outliner for inspection without needing D: on another machine.
     group('References | hidden, enable for comparison')
-    for path in sorted((HERE/'references').glob(name.lower()+'*')):
+    reference_paths=list((HERE/'references').glob(name.lower()+'*'))
+    reference_paths += [HERE/'concepts'/(name.lower()+'.png'),
+                        HERE/'concepts/liberator-style-reference.png']
+    for path in sorted(set(reference_paths)):
+        if not path.exists():
+            continue
         if path.suffix.lower() not in {'.png','.jpg','.webp'}:
             continue
         img=bpy.data.images.load(str(path)); img.pack()
@@ -1625,10 +1640,11 @@ def setup(name, draft=False):
     notes=bpy.data.texts.new('READ ME - reference study')
     notes.write(name+' base hull. Forward -Y; Z up.\n'
         'Collections separate the editable ship assemblies, studio and packed references.\n'
-        'Five named orthographic cameras are available. F12 renders the current camera.\n'
+        'Six named orthographic cameras include underside. F12 renders the current camera.\n'
         'Reference pictures guided the visible forms. Undersides, internal construction,\n'
         'panel depths and fine fasteners are reconstructed; see the accompanying README.\n'
-        'These are review models, with no game integration or production optimization.\n')
+        'Dorbit concept sheets guide the finish; generated angles can disagree.\n'
+        'Actual mesh renders are the consistent modeling reference. Game exports use tools/export_ships.py.\n')
     for screen in bpy.data.screens:
         for area in screen.areas:
             if area.type=='VIEW_3D':

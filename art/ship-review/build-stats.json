@@ -1,146 +1,158 @@
 {
   "Aegis": {
-    "mesh_components": 475,
-    "base_faces": 31722,
+    "mesh_components": 489,
+    "base_faces": 32596,
     "draft": false,
     "views": [
       "perspective",
       "rear",
       "top",
       "side",
-      "front"
+      "front",
+      "underside"
     ]
   },
   "Goliath": {
-    "mesh_components": 355,
-    "base_faces": 15996,
+    "mesh_components": 351,
+    "base_faces": 14144,
     "draft": false,
     "views": [
       "perspective",
       "rear",
       "top",
       "side",
-      "front"
+      "front",
+      "underside"
     ]
   },
   "Bigboy": {
-    "mesh_components": 453,
-    "base_faces": 22224,
+    "mesh_components": 466,
+    "base_faces": 23838,
     "draft": false,
     "views": [
       "perspective",
       "rear",
       "top",
       "side",
-      "front"
+      "front",
+      "underside"
     ]
   },
   "Defcom": {
-    "mesh_components": 398,
-    "base_faces": 24652,
+    "mesh_components": 411,
+    "base_faces": 24802,
     "draft": false,
     "views": [
       "perspective",
       "rear",
       "top",
       "side",
-      "front"
+      "front",
+      "underside"
     ]
   },
   "Leonov": {
-    "mesh_components": 384,
-    "base_faces": 16342,
+    "mesh_components": 397,
+    "base_faces": 16448,
     "draft": false,
     "views": [
       "perspective",
       "rear",
       "top",
       "side",
-      "front"
+      "front",
+      "underside"
     ]
   },
   "Liberator": {
-    "mesh_components": 336,
-    "base_faces": 11508,
+    "mesh_components": 319,
+    "base_faces": 39174,
     "draft": false,
     "views": [
       "perspective",
       "rear",
       "top",
       "side",
-      "front"
+      "front",
+      "underside"
     ]
   },
   "Nostromo": {
-    "mesh_components": 320,
-    "base_faces": 11258,
+    "mesh_components": 333,
+    "base_faces": 12872,
     "draft": false,
     "views": [
       "perspective",
       "rear",
       "top",
       "side",
-      "front"
+      "front",
+      "underside"
     ]
   },
   "Phoenix": {
-    "mesh_components": 286,
-    "base_faces": 16710,
+    "mesh_components": 295,
+    "base_faces": 16828,
     "draft": false,
     "views": [
       "perspective",
       "rear",
       "top",
       "side",
-      "front"
+      "front",
+      "underside"
     ]
   },
   "Piranha": {
-    "mesh_components": 341,
-    "base_faces": 12612,
+    "mesh_components": 354,
+    "base_faces": 12762,
     "draft": false,
     "views": [
       "perspective",
       "rear",
       "top",
       "side",
-      "front"
+      "front",
+      "underside"
     ]
   },
   "Spearhead": {
-    "mesh_components": 306,
-    "base_faces": 10358,
+    "mesh_components": 321,
+    "base_faces": 10508,
     "draft": false,
     "views": [
       "perspective",
       "rear",
       "top",
       "side",
-      "front"
+      "front",
+      "underside"
     ]
   },
   "Vengeance": {
-    "mesh_components": 310,
-    "base_faces": 23494,
+    "mesh_components": 323,
+    "base_faces": 26632,
     "draft": false,
     "views": [
       "perspective",
       "rear",
       "top",
       "side",
-      "front"
+      "front",
+      "underside"
     ]
   },
   "Yamato": {
-    "mesh_components": 312,
-    "base_faces": 27126,
+    "mesh_components": 325,
+    "base_faces": 27264,
     "draft": false,
     "views": [
       "perspective",
       "rear",
       "top",
       "side",
-      "front"
+      "front",
+      "underside"
     ]
   }
 }
