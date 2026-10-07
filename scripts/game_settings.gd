@@ -4,6 +4,14 @@ extends RefCounted
 
 const PATH := "user://settings.cfg"
 const DEFAULT_SENSITIVITY := 0.003
+# Only supported menu values are accepted from device-local profiles.
+const GRAPHICS_LEVELS := {
+	"render_scale": [1.0, 0.85, 0.75, 0.5],
+	"anisotropic_filtering": [0, 4],
+	"shadow_quality": [0, 1, 2, 3],
+	"effects_quality": [0, 1, 2],
+}
+const GRAPHICS_BOOLEANS := ["fullscreen", "vsync", "low_quality", "show_performance", "bloom", "ssao"]
 const ACTIONS := {
 	"forward": "Move forward", "backward": "Move backward",
 	"strafe_left": "Strafe left", "strafe_right": "Strafe right",
@@ -35,6 +43,12 @@ var vsync: bool = false
 var low_quality: bool = false
 var show_performance: bool = false
 var resolution := Vector2i(1440, 900)
+var render_scale: float = 1.0
+var anisotropic_filtering: int = 0
+var bloom: bool = false
+var ssao: bool = false
+var shadow_quality: int = 0
+var effects_quality: int = 2
 var save_failed: bool = false
 
 
@@ -49,9 +63,16 @@ func load_from(path: String = PATH) -> void:
 		value = config.get_value("bindings", action, bindings[action])
 		if value is int and valid_binding(value):
 			rebind(action, value)
-	for setting in ["fullscreen", "vsync", "low_quality", "show_performance"]:
+	for setting in GRAPHICS_BOOLEANS:
 		value = config.get_value("graphics", setting, get(setting))
 		if value is bool:
+			set(setting, value)
+	for setting: String in GRAPHICS_LEVELS:
+		value = config.get_value("graphics", setting, get(setting))
+		if setting == "render_scale":
+			if (value is float or value is int) and float(value) in GRAPHICS_LEVELS[setting]:
+				render_scale = float(value)
+		elif value is int and value in GRAPHICS_LEVELS[setting]:
 			set(setting, value)
 	value = config.get_value("graphics", "resolution", resolution)
 	if value is Vector2i and value.x >= 960 and value.y >= 600:
@@ -63,7 +84,7 @@ func save(path: String = PATH) -> void:
 	config.set_value("controls", "sensitivity", sensitivity)
 	for action: String in ACTIONS:
 		config.set_value("bindings", action, bindings[action])
-	for setting in ["fullscreen", "vsync", "low_quality", "show_performance", "resolution"]:
+	for setting in GRAPHICS_BOOLEANS + GRAPHICS_LEVELS.keys() + ["resolution"]:
 		config.set_value("graphics", setting, get(setting))
 	save_failed = config.save(path) != OK
 

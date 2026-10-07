@@ -26,6 +26,8 @@ window/size/min_height=600
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/default_filters/use_nearest_mipmap_filter=false
+; Compatibility reads the maximum at startup; materials toggle filtering live.
+textures/default_filters/anisotropic_filtering_level=4
 anti_aliasing/quality/msaa_3d=2
 environment/defaults/default_clear_color=Color(0.008, 0.012, 0.028, 1)
 
