@@ -229,8 +229,10 @@ server builds must match (network schema 7 adds docked state and launch RPCs).
 
 The user approved the [main-menu opening-screen concept](docs/menu-design/main-menu-approved.png).
 Use graphite surfaces, amber accents, a persistent left navigation rail, a large
-active-ship preview, bottom ship statistics and an orange Start action. Align the
-outpost status and credits together at the far right of the top bar.
+active-ship preview, bottom ship statistics and an orange Start action on Overview.
+Start is exclusive to Overview. Hangar retains its ship-specifications strip,
+without Start; all other pages omit both the strip and Start. Align the outpost
+status and credits together at the far right of the top bar.
 
 Keep every menu minimal: short functional labels, necessary values and actions.
 Add text or controls only as needed. Omit slogans, decorative section numbers,
@@ -241,9 +243,10 @@ instruction paragraphs.
 
 The user also approved the [hangar concept](docs/menu-design/hangar-approved.png),
 which carries this style into owned-ship selection, equipment slots and storage
-inventory. Matching drafts now cover Quests, Shop, Cargo Trade, Connection, all
-three Settings tabs and the Skylab/Galaxy Gates coming-soon placeholders; these
-new drafts await review. The displayed inventory, quest state, connection address
+inventory. The user accepted the matching Quests, Shop, Cargo Trade, Connection,
+three Settings tabs and Skylab/Galaxy Gates coming-soon concepts with the footer
+visibility change described above. The saved images incorporate that change.
+The displayed inventory, quest state, connection address
 and settings are illustrative; actual ownership and fitting remain server-authoritative.
 Saved images are visual references for future implementation, not implemented
 menu screens. See [concept notes and prompts](docs/menu-design/README.md).
