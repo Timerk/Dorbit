@@ -31,10 +31,13 @@ for name in names:
         evaluated_faces+=len(data.polygons)
         evaluated.to_mesh_clear()
     cameras=[o for o in bpy.context.scene.objects if o.type=='CAMERA']
-    assert len(cameras)==5,name
+    assert len(cameras)==6,name
     references=[i for i in bpy.data.images if i.source=='FILE']
     assert references and all(i.packed_file for i in references),name
-    for view in ['','-rear','-top','-side','-front']:
+    assert any(Path(bpy.path.abspath(i.filepath)).resolve()==
+               (HERE/'concepts'/(name.lower()+'.png')).resolve()
+               for i in references),'Missing concept: '+name
+    for view in ['','-rear','-top','-side','-front','-underside']:
         preview=HERE/'previews'/(name.lower()+view+'.png')
         assert preview.exists(),name+view
         assert preview.stat().st_mtime>=path.stat().st_mtime,'Stale render: '+str(preview)
@@ -51,6 +54,7 @@ for name in names:
     'Nonempty mesh geometry with materials',
     'Finite base and evaluated vertex coordinates',
     'No zero-area base polygons',
-    'Five cameras and five 1600 x 1440 renders per ship, newer than the saved model',
+    'Six cameras and six 1600 x 1440 renders per ship, newer than the saved model',
+    'Generated concept turnaround packed into each model',
     'All file-based reference images packed into the blend'
 ], 'models':report},indent=2)+'\n')
