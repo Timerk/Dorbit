@@ -68,7 +68,10 @@ func run() -> void:
 	await replicate(server)
 	check(combat.records[first_id]["credits"] == 30 and combat.records[second_id]["credits"] == 0, "Scout pays only its contributor")
 	check(heavy.hull + heavy.shield == heavy_health and heavy.life == heavy_life and heavy.contributors == [second_id], "Scout death preserves Heavy health, life and contributions")
-	check(second.target == second.aliens[4] and second.auto_fire and combat.remote_firing(second_id), "Another alien's death leaves Heavy targeting and fire active")
+	# These clients disable physics/input heartbeats. Snapshot convergence may take
+	# longer than COMMAND_TIMEOUT; check retained intent independently of its age.
+	var heavy_command: Dictionary = server.session.commands.get(second_id, {})
+	check(second.target == second.aliens[4] and second.auto_fire and combat.remote_target(second_id) == heavy and heavy_command.get("fire", false) and heavy_command.get("encounter", -1) == heavy.life, "Another alien's death preserves Heavy targeting and fire intent")
 	var timer := scout.respawn
 	# Crossing the leash invalidates the life before any queued lethal shot can land.
 	heavy.position = heavy.home_position + Vector3(float(heavy.tuning()["leash"]) + 1, 0, 0)
