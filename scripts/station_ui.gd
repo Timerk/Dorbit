@@ -72,14 +72,6 @@ static func primary(button: Button) -> void:
 	button.add_theme_font_size_override("font_size", 24)
 
 
-static func ship_texture(model: String) -> Texture2D:
-	var source: Texture2D = load("res://assets/ui/menu/ships/%s.png" % model)
-	var value := AtlasTexture.new()
-	value.atlas = source
-	value.region = source.get_image().get_used_rect()
-	return value
-
-
 static func frame(panel: Control, dimensions: Vector2) -> void:
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	panel.offset_left = -dimensions.x / 2

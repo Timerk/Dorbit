@@ -206,7 +206,7 @@ func refresh_inventory() -> void:
 	var model_id: String = ShipCatalog.canonical(data["ships"][data["active_ship"]])
 	rebuild_slots(model_id)
 	ship_title.text = ShipCatalog.info(model_id)["name"].to_upper()
-	ship_art.texture = StationUi.ship_texture(model_id)
+	ship_art.texture = StationUi.texture(model_id)
 	ship_choice.clear()
 	owned_ships.clear()
 	for id: String in data["ships"]:
