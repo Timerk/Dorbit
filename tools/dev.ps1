@@ -113,6 +113,8 @@ switch ($Task) {
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/flight_playthrough.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/display_test.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/display_test.gd', '--', '--restart')
+            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/graphics_test.gd')
+            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/graphics_test.gd', '--', '--restart')
         } finally { $env:APPDATA = $previousAppData }
     }
     'build' {
