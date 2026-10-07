@@ -1,4 +1,4 @@
-"""Deterministic Liberator PBR atlases, authored per editable Blender component.
+"""Deterministic ship PBR atlases, authored per editable Blender component.
 
 Run through export_ships.py inside Blender. Box-projected UVs keep every fitted
 part in its own padded tile; brush grain and roughness vary between panels.
@@ -15,6 +15,8 @@ import bpy
 import numpy as np
 
 SIZE = 2048
+PAINT_MATERIALS = {'Blue grey armor', 'Muted green grey armor', 'Cobalt enamel',
+                   'Aegis green enamel', 'Defcom green enamel', 'Phoenix red enamel'}
 
 
 def write_png(path: Path, pixels: np.ndarray) -> None:
@@ -81,13 +83,14 @@ class SurfaceAtlas:
             bsdf = mat.node_tree.nodes.get('Principled BSDF')
             seed = int.from_bytes(hashlib.sha256(obj.name.encode()).digest()[:8], 'little')
             rng = np.random.default_rng(seed)
-            painted = mat.name == 'Blue grey armor'
+            painted = mat.name in PAINT_MATERIALS
             metal = mat.name in {'Brushed titanium', 'Satin silver armor',
                                 'Pale metal details', 'Gunmetal', 'Muted copper fittings'}
             glass = 'glass' in mat.name.lower() or 'glazing' in mat.name.lower()
+            emissive = bsdf.inputs['Emission Strength'].default_value > 0
             metallic = .18 if painted else (.95 if metal else .35)
             roughness = (.29 if painted else .25 if metal else .43) + rng.uniform(-.035, .035)
-            if glass or mat.name == 'Ion blue':
+            if glass or emissive:
                 metallic, roughness = .0, .11 if glass else .35
             grain = rng.random((self.cell, self.cell), dtype=np.float32) - .5
             brush = np.repeat(rng.uniform(-1, 1, (self.cell, 1)), self.cell, axis=1)
@@ -102,17 +105,22 @@ class SurfaceAtlas:
             region = np.s_[row * self.cell:(row + 1) * self.cell,
                            col * self.cell:(col + 1) * self.cell]
             color = np.array(bsdf.inputs['Base Color'].default_value[:3])
+            if glass:
+                # Retain each canopy's tint while separating it from colored armor.
+                color *= min(1.0, .020 / max(float(color.max()), 1e-6))
             albedo[region][:, :, :3] = finish[:, :, None] * color
             orm[region][:, :, 0] = 1  # No invented ambient occlusion.
             orm[region][:, :, 1] = r
             orm[region][:, :, 2] = metallic
             normal[region][:, :, :3] = n * .5 + .5
-            if glass or mat.name == 'Ion blue':
+            if glass or emissive:
                 albedo[region][:, :, :3] = color
                 normal[region][:, :, :3] = (.5, .5, 1)
                 if glass:
                     orm[region][:, :, 1] = roughness
             records.append({'part': obj.name, 'tile': slot, 'material': mat.name,
+                            'role': 'glass' if glass else 'emissive' if emissive else 'paint' if painted else 'metal' if metal else 'structure',
+                            'base_color_linear': [round(float(value), 6) for value in color],
                             'metallic': metallic, 'roughness': round(roughness, 4)})
         self.images = {}
         for name, pixels in [('albedo', albedo), ('orm', orm), ('normal', normal)]:
@@ -169,5 +177,5 @@ class SurfaceAtlas:
         normal = nodes.new('ShaderNodeNormalMap')
         links.new(textures['normal'].outputs['Color'], normal.inputs['Color'])
         links.new(normal.outputs['Normal'], bsdf.inputs['Normal'])
-        bsdf.inputs['Coat Weight'].default_value = .32 if material.name == 'Blue grey armor' else 0
+        bsdf.inputs['Coat Weight'].default_value = .32 if material.name in PAINT_MATERIALS else 0
         bsdf.inputs['Coat Roughness'].default_value = .22

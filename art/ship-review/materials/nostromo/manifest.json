@@ -1,0 +1,4316 @@
+{
+  "size": 2048,
+  "grid": 19,
+  "padding_pixels": 8,
+  "source": "tools/ship_surface_atlas.py; deterministic per-component finish",
+  "channels": {
+    "albedo": "sRGB hull colors and subtle finish variation",
+    "orm": "R: 1 (no AO bake), G: roughness, B: metallic",
+    "normal": "tangent-space +Y micrograin; no baked lighting"
+  },
+  "parts": [
+    {
+      "part": "Broad forward hull dorsal armor",
+      "tile": 0,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4464
+    },
+    {
+      "part": "Broad forward hull dorsal armor.001",
+      "tile": 1,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4234
+    },
+    {
+      "part": "Broad forward hull dorsal armor.002",
+      "tile": 2,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4478
+    },
+    {
+      "part": "Broad forward hull dorsal armor.003",
+      "tile": 3,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.423
+    },
+    {
+      "part": "Broad forward hull dorsal armor.004",
+      "tile": 4,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4407
+    },
+    {
+      "part": "Broad forward hull dorsal armor.005",
+      "tile": 5,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4136
+    },
+    {
+      "part": "Broad forward hull dorsal armor.006",
+      "tile": 6,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4017
+    },
+    {
+      "part": "Broad forward hull dorsal armor.007",
+      "tile": 7,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4483
+    },
+    {
+      "part": "Broad forward hull fastener seat",
+      "tile": 8,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4502
+    },
+    {
+      "part": "Broad forward hull fastener seat.001",
+      "tile": 9,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4056
+    },
+    {
+      "part": "Broad forward hull fastener seat.002",
+      "tile": 10,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4057
+    },
+    {
+      "part": "Broad forward hull fastener seat.003",
+      "tile": 11,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4512
+    },
+    {
+      "part": "Broad forward hull fastener seat.004",
+      "tile": 12,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.463
+    },
+    {
+      "part": "Broad forward hull fastener seat.005",
+      "tile": 13,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4417
+    },
+    {
+      "part": "Broad forward hull fastener seat.006",
+      "tile": 14,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4066
+    },
+    {
+      "part": "Broad forward hull fastener seat.007",
+      "tile": 15,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4158
+    },
+    {
+      "part": "Broad forward hull fastener socket",
+      "tile": 16,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2171
+    },
+    {
+      "part": "Broad forward hull fastener socket.001",
+      "tile": 17,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2332
+    },
+    {
+      "part": "Broad forward hull fastener socket.002",
+      "tile": 18,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.268
+    },
+    {
+      "part": "Broad forward hull fastener socket.003",
+      "tile": 19,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2297
+    },
+    {
+      "part": "Broad forward hull fastener socket.004",
+      "tile": 20,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2693
+    },
+    {
+      "part": "Broad forward hull fastener socket.005",
+      "tile": 21,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2591
+    },
+    {
+      "part": "Broad forward hull fastener socket.006",
+      "tile": 22,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2294
+    },
+    {
+      "part": "Broad forward hull fastener socket.007",
+      "tile": 23,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2531
+    },
+    {
+      "part": "Broad forward hull inner hull",
+      "tile": 24,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4407
+    },
+    {
+      "part": "Broad forward hull shoulder bevel armor",
+      "tile": 25,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4636
+    },
+    {
+      "part": "Broad forward hull shoulder bevel armor.001",
+      "tile": 26,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4593
+    },
+    {
+      "part": "Broad forward hull shoulder bevel armor.002",
+      "tile": 27,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.45
+    },
+    {
+      "part": "Broad forward hull shoulder bevel armor.003",
+      "tile": 28,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.41
+    },
+    {
+      "part": "Broad forward hull shoulder bevel armor.004",
+      "tile": 29,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4282
+    },
+    {
+      "part": "Broad forward hull shoulder bevel armor.005",
+      "tile": 30,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4494
+    },
+    {
+      "part": "Broad forward hull shoulder bevel armor.006",
+      "tile": 31,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.415
+    },
+    {
+      "part": "Broad forward hull shoulder bevel armor.007",
+      "tile": 32,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4445
+    },
+    {
+      "part": "Cheek engraved division",
+      "tile": 33,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4633
+    },
+    {
+      "part": "Cheek engraved division.001",
+      "tile": 34,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4397
+    },
+    {
+      "part": "Cheek slanted exposed rib",
+      "tile": 35,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2787
+    },
+    {
+      "part": "Cheek slanted exposed rib.001",
+      "tile": 36,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2767
+    },
+    {
+      "part": "Cheek slanted exposed rib.002",
+      "tile": 37,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2593
+    },
+    {
+      "part": "Cheek slanted exposed rib.003",
+      "tile": 38,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.217
+    },
+    {
+      "part": "Cheek slanted exposed rib.004",
+      "tile": 39,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.247
+    },
+    {
+      "part": "Cheek slanted exposed rib.005",
+      "tile": 40,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2298
+    },
+    {
+      "part": "Cheek slanted exposed rib.006",
+      "tile": 41,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2331
+    },
+    {
+      "part": "Cheek slanted exposed rib.007",
+      "tile": 42,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.237
+    },
+    {
+      "part": "Cheek slanted exposed rib.008",
+      "tile": 43,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2558
+    },
+    {
+      "part": "Cheek slanted exposed rib.009",
+      "tile": 44,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2237
+    },
+    {
+      "part": "Cheek slanted exposed rib.010",
+      "tile": 45,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2272
+    },
+    {
+      "part": "Cheek slanted exposed rib.011",
+      "tile": 46,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2722
+    },
+    {
+      "part": "Concept graphite nose service armor captive latch",
+      "tile": 47,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2316
+    },
+    {
+      "part": "Concept graphite nose service armor captive latch.001",
+      "tile": 48,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2367
+    },
+    {
+      "part": "Concept graphite nose service armor recessed seat",
+      "tile": 49,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4221
+    },
+    {
+      "part": "Concept graphite nose service armor recessed seat.001",
+      "tile": 50,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4312
+    },
+    {
+      "part": "Concept graphite nose service armor removable plate",
+      "tile": 51,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4458
+    },
+    {
+      "part": "Concept graphite nose service armor removable plate.001",
+      "tile": 52,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4282
+    },
+    {
+      "part": "Concept low turbine mounting saddle",
+      "tile": 53,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2821
+    },
+    {
+      "part": "Concept low turbine mounting saddle.001",
+      "tile": 54,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2366
+    },
+    {
+      "part": "Concept turbine copper service band",
+      "tile": 55,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2246
+    },
+    {
+      "part": "Concept turbine copper service band.001",
+      "tile": 56,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2365
+    },
+    {
+      "part": "Concept ventral removable service cover captive latch",
+      "tile": 57,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.268
+    },
+    {
+      "part": "Concept ventral removable service cover recessed seat",
+      "tile": 58,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4155
+    },
+    {
+      "part": "Concept ventral removable service cover removable plate",
+      "tile": 59,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.273
+    },
+    {
+      "part": "Dorsal central ridge dorsal armor",
+      "tile": 60,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2566
+    },
+    {
+      "part": "Dorsal central ridge dorsal armor.001",
+      "tile": 61,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2734
+    },
+    {
+      "part": "Dorsal central ridge dorsal armor.002",
+      "tile": 62,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2819
+    },
+    {
+      "part": "Dorsal central ridge dorsal armor.003",
+      "tile": 63,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2337
+    },
+    {
+      "part": "Dorsal central ridge dorsal armor.004",
+      "tile": 64,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2635
+    },
+    {
+      "part": "Dorsal central ridge dorsal armor.005",
+      "tile": 65,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2759
+    },
+    {
+      "part": "Dorsal central ridge fastener seat",
+      "tile": 66,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4182
+    },
+    {
+      "part": "Dorsal central ridge fastener seat.001",
+      "tile": 67,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4631
+    },
+    {
+      "part": "Dorsal central ridge fastener socket",
+      "tile": 68,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2162
+    },
+    {
+      "part": "Dorsal central ridge fastener socket.001",
+      "tile": 69,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2304
+    },
+    {
+      "part": "Dorsal central ridge inner hull",
+      "tile": 70,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4646
+    },
+    {
+      "part": "Dorsal central ridge shoulder bevel armor",
+      "tile": 71,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.243
+    },
+    {
+      "part": "Dorsal central ridge shoulder bevel armor.001",
+      "tile": 72,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2316
+    },
+    {
+      "part": "Dorsal central ridge shoulder bevel armor.002",
+      "tile": 73,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2484
+    },
+    {
+      "part": "Dorsal central ridge shoulder bevel armor.003",
+      "tile": 74,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2327
+    },
+    {
+      "part": "Dorsal central ridge shoulder bevel armor.004",
+      "tile": 75,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2159
+    },
+    {
+      "part": "Dorsal central ridge shoulder bevel armor.005",
+      "tile": 76,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2562
+    },
+    {
+      "part": "Hex socket screw",
+      "tile": 77,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2623
+    },
+    {
+      "part": "Hex socket screw.001",
+      "tile": 78,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2704
+    },
+    {
+      "part": "Hex socket screw.002",
+      "tile": 79,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2713
+    },
+    {
+      "part": "Hex socket screw.003",
+      "tile": 80,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2656
+    },
+    {
+      "part": "Hex socket screw.004",
+      "tile": 81,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2539
+    },
+    {
+      "part": "Hex socket screw.005",
+      "tile": 82,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2668
+    },
+    {
+      "part": "Large upper turbine aft emitter",
+      "tile": 83,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Large upper turbine aft emitter.001",
+      "tile": 84,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Large upper turbine aft housing",
+      "tile": 85,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4137
+    },
+    {
+      "part": "Large upper turbine aft housing.001",
+      "tile": 86,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4041
+    },
+    {
+      "part": "Large upper turbine aft machined lip",
+      "tile": 87,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2455
+    },
+    {
+      "part": "Large upper turbine aft machined lip.001",
+      "tile": 88,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2342
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane",
+      "tile": 89,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2619
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.001",
+      "tile": 90,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2835
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.002",
+      "tile": 91,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2377
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.003",
+      "tile": 92,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2342
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.004",
+      "tile": 93,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2674
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.005",
+      "tile": 94,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2223
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.006",
+      "tile": 95,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2776
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.007",
+      "tile": 96,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.24
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.008",
+      "tile": 97,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2312
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.009",
+      "tile": 98,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2639
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.010",
+      "tile": 99,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2364
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.011",
+      "tile": 100,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2402
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.012",
+      "tile": 101,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2531
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.013",
+      "tile": 102,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2436
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.014",
+      "tile": 103,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2746
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.015",
+      "tile": 104,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2742
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.016",
+      "tile": 105,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.245
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.017",
+      "tile": 106,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2691
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.018",
+      "tile": 107,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2739
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.019",
+      "tile": 108,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2196
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.020",
+      "tile": 109,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2686
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.021",
+      "tile": 110,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.226
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.022",
+      "tile": 111,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2652
+    },
+    {
+      "part": "Large upper turbine aft nozzle vane.023",
+      "tile": 112,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2778
+    },
+    {
+      "part": "Large upper turbine aft recessed well",
+      "tile": 113,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.431
+    },
+    {
+      "part": "Large upper turbine aft recessed well.001",
+      "tile": 114,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4581
+    },
+    {
+      "part": "Large upper turbine armor band",
+      "tile": 115,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2349
+    },
+    {
+      "part": "Large upper turbine armor band.001",
+      "tile": 116,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2304
+    },
+    {
+      "part": "Large upper turbine armor band.002",
+      "tile": 117,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2588
+    },
+    {
+      "part": "Large upper turbine armor band.003",
+      "tile": 118,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2515
+    },
+    {
+      "part": "Large upper turbine armor band.004",
+      "tile": 119,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2696
+    },
+    {
+      "part": "Large upper turbine armor band.005",
+      "tile": 120,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2797
+    },
+    {
+      "part": "Large upper turbine casing rail",
+      "tile": 121,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.279
+    },
+    {
+      "part": "Large upper turbine casing rail.001",
+      "tile": 122,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2474
+    },
+    {
+      "part": "Large upper turbine casing rail.002",
+      "tile": 123,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2248
+    },
+    {
+      "part": "Large upper turbine casing rail.003",
+      "tile": 124,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2725
+    },
+    {
+      "part": "Large upper turbine core",
+      "tile": 125,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4516
+    },
+    {
+      "part": "Large upper turbine core.001",
+      "tile": 126,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4095
+    },
+    {
+      "part": "Large upper turbine fastener seat",
+      "tile": 127,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4095
+    },
+    {
+      "part": "Large upper turbine fastener seat.001",
+      "tile": 128,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4488
+    },
+    {
+      "part": "Large upper turbine fastener seat.002",
+      "tile": 129,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4242
+    },
+    {
+      "part": "Large upper turbine fastener seat.003",
+      "tile": 130,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4631
+    },
+    {
+      "part": "Large upper turbine fastener seat.004",
+      "tile": 131,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4238
+    },
+    {
+      "part": "Large upper turbine fastener seat.005",
+      "tile": 132,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4332
+    },
+    {
+      "part": "Large upper turbine fastener seat.006",
+      "tile": 133,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4439
+    },
+    {
+      "part": "Large upper turbine fastener seat.007",
+      "tile": 134,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4647
+    },
+    {
+      "part": "Large upper turbine fastener socket",
+      "tile": 135,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2275
+    },
+    {
+      "part": "Large upper turbine fastener socket.001",
+      "tile": 136,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2344
+    },
+    {
+      "part": "Large upper turbine fastener socket.002",
+      "tile": 137,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2732
+    },
+    {
+      "part": "Large upper turbine fastener socket.003",
+      "tile": 138,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2649
+    },
+    {
+      "part": "Large upper turbine fastener socket.004",
+      "tile": 139,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2244
+    },
+    {
+      "part": "Large upper turbine fastener socket.005",
+      "tile": 140,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.278
+    },
+    {
+      "part": "Large upper turbine fastener socket.006",
+      "tile": 141,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2434
+    },
+    {
+      "part": "Large upper turbine fastener socket.007",
+      "tile": 142,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2523
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile",
+      "tile": 143,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2717
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.001",
+      "tile": 144,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2468
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.002",
+      "tile": 145,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.259
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.003",
+      "tile": 146,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.282
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.004",
+      "tile": 147,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2653
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.005",
+      "tile": 148,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2158
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.006",
+      "tile": 149,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2381
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.007",
+      "tile": 150,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2283
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.008",
+      "tile": 151,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2613
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.009",
+      "tile": 152,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.215
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.010",
+      "tile": 153,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2669
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.011",
+      "tile": 154,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.231
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.012",
+      "tile": 155,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2234
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.013",
+      "tile": 156,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2403
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.014",
+      "tile": 157,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2345
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.015",
+      "tile": 158,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.259
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.016",
+      "tile": 159,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2357
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.017",
+      "tile": 160,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2343
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.018",
+      "tile": 161,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2484
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.019",
+      "tile": 162,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2287
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.020",
+      "tile": 163,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2829
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.021",
+      "tile": 164,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2624
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.022",
+      "tile": 165,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2155
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.023",
+      "tile": 166,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2394
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.024",
+      "tile": 167,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2674
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.025",
+      "tile": 168,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2425
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.026",
+      "tile": 169,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2466
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.027",
+      "tile": 170,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2218
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.028",
+      "tile": 171,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.219
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.029",
+      "tile": 172,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2823
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.030",
+      "tile": 173,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2768
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.031",
+      "tile": 174,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2238
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.032",
+      "tile": 175,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2769
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.033",
+      "tile": 176,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2718
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.034",
+      "tile": 177,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2608
+    },
+    {
+      "part": "Large upper turbine fitted cowl tile.035",
+      "tile": 178,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2773
+    },
+    {
+      "part": "Large upper turbine intake emitter",
+      "tile": 179,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Large upper turbine intake emitter.001",
+      "tile": 180,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Large upper turbine intake housing",
+      "tile": 181,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4332
+    },
+    {
+      "part": "Large upper turbine intake housing.001",
+      "tile": 182,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4173
+    },
+    {
+      "part": "Large upper turbine intake machined lip",
+      "tile": 183,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2823
+    },
+    {
+      "part": "Large upper turbine intake machined lip.001",
+      "tile": 184,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2509
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane",
+      "tile": 185,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2824
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.001",
+      "tile": 186,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2621
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.002",
+      "tile": 187,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2572
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.003",
+      "tile": 188,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2334
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.004",
+      "tile": 189,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2742
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.005",
+      "tile": 190,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.22
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.006",
+      "tile": 191,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2771
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.007",
+      "tile": 192,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2209
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.008",
+      "tile": 193,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2749
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.009",
+      "tile": 194,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2719
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.010",
+      "tile": 195,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2836
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.011",
+      "tile": 196,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2526
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.012",
+      "tile": 197,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2708
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.013",
+      "tile": 198,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2745
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.014",
+      "tile": 199,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.261
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.015",
+      "tile": 200,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2374
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.016",
+      "tile": 201,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2421
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.017",
+      "tile": 202,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2475
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.018",
+      "tile": 203,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2694
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.019",
+      "tile": 204,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2252
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.020",
+      "tile": 205,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.226
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.021",
+      "tile": 206,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2437
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.022",
+      "tile": 207,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2551
+    },
+    {
+      "part": "Large upper turbine intake nozzle vane.023",
+      "tile": 208,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2732
+    },
+    {
+      "part": "Large upper turbine intake recessed well",
+      "tile": 209,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4343
+    },
+    {
+      "part": "Large upper turbine intake recessed well.001",
+      "tile": 210,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4249
+    },
+    {
+      "part": "Large upper turbine joint",
+      "tile": 211,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4463
+    },
+    {
+      "part": "Large upper turbine joint.001",
+      "tile": 212,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4185
+    },
+    {
+      "part": "Large upper turbine joint.002",
+      "tile": 213,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.408
+    },
+    {
+      "part": "Large upper turbine joint.003",
+      "tile": 214,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4187
+    },
+    {
+      "part": "Large upper turbine joint.004",
+      "tile": 215,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4026
+    },
+    {
+      "part": "Large upper turbine joint.005",
+      "tile": 216,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.399
+    },
+    {
+      "part": "Large upper turbine rear casing tie",
+      "tile": 217,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2742
+    },
+    {
+      "part": "Large upper turbine rear casing tie.001",
+      "tile": 218,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2408
+    },
+    {
+      "part": "Large upper turbine rear casing tie.002",
+      "tile": 219,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2154
+    },
+    {
+      "part": "Large upper turbine rear casing tie.003",
+      "tile": 220,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2628
+    },
+    {
+      "part": "Large upper turbine rear casing tie.004",
+      "tile": 221,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2828
+    },
+    {
+      "part": "Large upper turbine rear casing tie.005",
+      "tile": 222,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2504
+    },
+    {
+      "part": "Large upper turbine rear casing tie.006",
+      "tile": 223,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.265
+    },
+    {
+      "part": "Large upper turbine rear casing tie.007",
+      "tile": 224,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2632
+    },
+    {
+      "part": "Large upper turbine rear casing tie.008",
+      "tile": 225,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2432
+    },
+    {
+      "part": "Large upper turbine rear casing tie.009",
+      "tile": 226,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2411
+    },
+    {
+      "part": "Large upper turbine rear casing tie.010",
+      "tile": 227,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2432
+    },
+    {
+      "part": "Large upper turbine rear casing tie.011",
+      "tile": 228,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2151
+    },
+    {
+      "part": "Large upper turbine rear casing tie.012",
+      "tile": 229,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2622
+    },
+    {
+      "part": "Large upper turbine rear casing tie.013",
+      "tile": 230,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2323
+    },
+    {
+      "part": "Large upper turbine rear casing tie.014",
+      "tile": 231,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2309
+    },
+    {
+      "part": "Large upper turbine rear casing tie.015",
+      "tile": 232,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2578
+    },
+    {
+      "part": "Large upper turbine top radiator rib",
+      "tile": 233,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2162
+    },
+    {
+      "part": "Large upper turbine top radiator rib.001",
+      "tile": 234,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2218
+    },
+    {
+      "part": "Large upper turbine top radiator rib.002",
+      "tile": 235,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2508
+    },
+    {
+      "part": "Large upper turbine top radiator rib.003",
+      "tile": 236,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2599
+    },
+    {
+      "part": "Large upper turbine top radiator rib.004",
+      "tile": 237,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2474
+    },
+    {
+      "part": "Large upper turbine top radiator rib.005",
+      "tile": 238,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2344
+    },
+    {
+      "part": "Large upper turbine top radiator rib.006",
+      "tile": 239,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2524
+    },
+    {
+      "part": "Large upper turbine top radiator rib.007",
+      "tile": 240,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2239
+    },
+    {
+      "part": "Large upper turbine top service recess",
+      "tile": 241,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.3973
+    },
+    {
+      "part": "Large upper turbine top service recess.001",
+      "tile": 242,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4477
+    },
+    {
+      "part": "Layered nose cheek",
+      "tile": 243,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.26
+    },
+    {
+      "part": "Layered nose cheek.001",
+      "tile": 244,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2606
+    },
+    {
+      "part": "Long smoked cockpit",
+      "tile": 245,
+      "material": "Dark sensor glass",
+      "role": "glass",
+      "base_color_linear": [
+        0.005,
+        0.014375,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Long smoked cockpit mounting recess",
+      "tile": 246,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4434
+    },
+    {
+      "part": "Low swept outer wing fastener seat",
+      "tile": 247,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4614
+    },
+    {
+      "part": "Low swept outer wing fastener seat.001",
+      "tile": 248,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4209
+    },
+    {
+      "part": "Low swept outer wing fastener seat.002",
+      "tile": 249,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4412
+    },
+    {
+      "part": "Low swept outer wing fastener seat.003",
+      "tile": 250,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4253
+    },
+    {
+      "part": "Low swept outer wing fastener seat.004",
+      "tile": 251,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4341
+    },
+    {
+      "part": "Low swept outer wing fastener seat.005",
+      "tile": 252,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4352
+    },
+    {
+      "part": "Low swept outer wing fastener socket",
+      "tile": 253,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.234
+    },
+    {
+      "part": "Low swept outer wing fastener socket.001",
+      "tile": 254,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2773
+    },
+    {
+      "part": "Low swept outer wing fastener socket.002",
+      "tile": 255,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2504
+    },
+    {
+      "part": "Low swept outer wing fastener socket.003",
+      "tile": 256,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2239
+    },
+    {
+      "part": "Low swept outer wing fastener socket.004",
+      "tile": 257,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2536
+    },
+    {
+      "part": "Low swept outer wing fastener socket.005",
+      "tile": 258,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2635
+    },
+    {
+      "part": "Low swept outer wing inset armor",
+      "tile": 259,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4222
+    },
+    {
+      "part": "Low swept outer wing inset armor.001",
+      "tile": 260,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4164
+    },
+    {
+      "part": "Low swept outer wing leading edge",
+      "tile": 261,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2183
+    },
+    {
+      "part": "Low swept outer wing leading edge.001",
+      "tile": 262,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2843
+    },
+    {
+      "part": "Low swept outer wing structure",
+      "tile": 263,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4468
+    },
+    {
+      "part": "Low swept outer wing structure.001",
+      "tile": 264,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4068
+    },
+    {
+      "part": "Low wing blue vent recess",
+      "tile": 265,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4383
+    },
+    {
+      "part": "Low wing blue vent recess.001",
+      "tile": 266,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4504
+    },
+    {
+      "part": "Nose cooling slots inset",
+      "tile": 267,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4153
+    },
+    {
+      "part": "Nose cooling slots inset.001",
+      "tile": 268,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4097
+    },
+    {
+      "part": "Nose cooling slots louver",
+      "tile": 269,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2485
+    },
+    {
+      "part": "Nose cooling slots louver.001",
+      "tile": 270,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2203
+    },
+    {
+      "part": "Nose cooling slots louver.002",
+      "tile": 271,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2726
+    },
+    {
+      "part": "Nose cooling slots louver.003",
+      "tile": 272,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2257
+    },
+    {
+      "part": "Nose cooling slots louver.004",
+      "tile": 273,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2467
+    },
+    {
+      "part": "Nose cooling slots louver.005",
+      "tile": 274,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2161
+    },
+    {
+      "part": "Nose cooling slots louver.006",
+      "tile": 275,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.277
+    },
+    {
+      "part": "Nose cooling slots louver.007",
+      "tile": 276,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2183
+    },
+    {
+      "part": "Nose cooling slots louver.008",
+      "tile": 277,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2619
+    },
+    {
+      "part": "Nose cooling slots louver.009",
+      "tile": 278,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2288
+    },
+    {
+      "part": "Nose cooling slots louver.010",
+      "tile": 279,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.279
+    },
+    {
+      "part": "Nose cooling slots louver.011",
+      "tile": 280,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2532
+    },
+    {
+      "part": "Nose lateral equipment coolant line",
+      "tile": 281,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2219
+    },
+    {
+      "part": "Nose lateral equipment coolant line.001",
+      "tile": 282,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2615
+    },
+    {
+      "part": "Nose lateral equipment edge rail",
+      "tile": 283,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2282
+    },
+    {
+      "part": "Nose lateral equipment edge rail.001",
+      "tile": 284,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2326
+    },
+    {
+      "part": "Nose lateral equipment edge rail.002",
+      "tile": 285,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2417
+    },
+    {
+      "part": "Nose lateral equipment edge rail.003",
+      "tile": 286,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2229
+    },
+    {
+      "part": "Nose lateral equipment inset unit",
+      "tile": 287,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2581
+    },
+    {
+      "part": "Nose lateral equipment inset unit.001",
+      "tile": 288,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2803
+    },
+    {
+      "part": "Nose lateral equipment inset unit.002",
+      "tile": 289,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2758
+    },
+    {
+      "part": "Nose lateral equipment inset unit.003",
+      "tile": 290,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2363
+    },
+    {
+      "part": "Nose lateral equipment inset unit.004",
+      "tile": 291,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.272
+    },
+    {
+      "part": "Nose lateral equipment inset unit.005",
+      "tile": 292,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2193
+    },
+    {
+      "part": "Nose lateral equipment inset unit.006",
+      "tile": 293,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2602
+    },
+    {
+      "part": "Nose lateral equipment inset unit.007",
+      "tile": 294,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2768
+    },
+    {
+      "part": "Nose lateral equipment inset unit.008",
+      "tile": 295,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2296
+    },
+    {
+      "part": "Nose lateral equipment inset unit.009",
+      "tile": 296,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.14,
+        0.18,
+        0.23
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2295
+    },
+    {
+      "part": "Nose lateral equipment rib",
+      "tile": 297,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2313
+    },
+    {
+      "part": "Nose lateral equipment rib.001",
+      "tile": 298,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2814
+    },
+    {
+      "part": "Nose lateral equipment rib.002",
+      "tile": 299,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2767
+    },
+    {
+      "part": "Nose lateral equipment rib.003",
+      "tile": 300,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2608
+    },
+    {
+      "part": "Nose lateral equipment rib.004",
+      "tile": 301,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2774
+    },
+    {
+      "part": "Nose lateral equipment rib.005",
+      "tile": 302,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2676
+    },
+    {
+      "part": "Nose lateral equipment rib.006",
+      "tile": 303,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2291
+    },
+    {
+      "part": "Nose lateral equipment rib.007",
+      "tile": 304,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.252
+    },
+    {
+      "part": "Nose lateral equipment rib.008",
+      "tile": 305,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2541
+    },
+    {
+      "part": "Nose lateral equipment rib.009",
+      "tile": 306,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2827
+    },
+    {
+      "part": "Nose lateral equipment shadow",
+      "tile": 307,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4334
+    },
+    {
+      "part": "Nose lateral equipment shadow.001",
+      "tile": 308,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.3994
+    },
+    {
+      "part": "Nose shoulder seam",
+      "tile": 309,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.2,
+        0.25,
+        0.3
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2172
+    },
+    {
+      "part": "Nose shoulder seam.001",
+      "tile": 310,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.2,
+        0.25,
+        0.3
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2416
+    },
+    {
+      "part": "Nostromo cheek raised perimeter",
+      "tile": 311,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2824
+    },
+    {
+      "part": "Nostromo cheek raised perimeter.001",
+      "tile": 312,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2466
+    },
+    {
+      "part": "Nostromo dark cheek opening",
+      "tile": 313,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4115
+    },
+    {
+      "part": "Nostromo dark cheek opening.001",
+      "tile": 314,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4291
+    },
+    {
+      "part": "Recessed fastener",
+      "tile": 315,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4405
+    },
+    {
+      "part": "Recessed fastener.001",
+      "tile": 316,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4546
+    },
+    {
+      "part": "Recessed fastener.002",
+      "tile": 317,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4093
+    },
+    {
+      "part": "Recessed fastener.003",
+      "tile": 318,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4045
+    },
+    {
+      "part": "Recessed fastener.004",
+      "tile": 319,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4372
+    },
+    {
+      "part": "Recessed fastener.005",
+      "tile": 320,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4571
+    },
+    {
+      "part": "Shoulder segmented access plate",
+      "tile": 321,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4293
+    },
+    {
+      "part": "Shoulder segmented access plate.001",
+      "tile": 322,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.449
+    },
+    {
+      "part": "Shoulder segmented access plate.002",
+      "tile": 323,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4126
+    },
+    {
+      "part": "Shoulder segmented access plate.003",
+      "tile": 324,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.3965
+    },
+    {
+      "part": "Shoulder segmented access plate.004",
+      "tile": 325,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4556
+    },
+    {
+      "part": "Shoulder segmented access plate.005",
+      "tile": 326,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.421
+    },
+    {
+      "part": "Shoulder segmented access plate.006",
+      "tile": 327,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4157
+    },
+    {
+      "part": "Shoulder segmented access plate.007",
+      "tile": 328,
+      "material": "Graphite nose armor",
+      "role": "structure",
+      "base_color_linear": [
+        0.045,
+        0.06,
+        0.079
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4035
+    },
+    {
+      "part": "Wing root blue panel",
+      "tile": 329,
+      "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2816
+    },
+    {
+      "part": "Wing root blue panel.001",
+      "tile": 330,
+      "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2676
+    }
+  ]
+}

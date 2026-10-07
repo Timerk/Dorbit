@@ -1,0 +1,4238 @@
+{
+  "size": 2048,
+  "grid": 19,
+  "padding_pixels": 8,
+  "source": "tools/ship_surface_atlas.py; deterministic per-component finish",
+  "channels": {
+    "albedo": "sRGB hull colors and subtle finish variation",
+    "orm": "R: 1 (no AO bake), G: roughness, B: metallic",
+    "normal": "tangent-space +Y micrograin; no baked lighting"
+  },
+  "parts": [
+    {
+      "part": "Blunt front inset",
+      "tile": 0,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2281
+    },
+    {
+      "part": "Blunt nose and long chassis dorsal armor",
+      "tile": 1,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3114
+    },
+    {
+      "part": "Blunt nose and long chassis dorsal armor.001",
+      "tile": 2,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2573
+    },
+    {
+      "part": "Blunt nose and long chassis dorsal armor.002",
+      "tile": 3,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2757
+    },
+    {
+      "part": "Blunt nose and long chassis dorsal armor.003",
+      "tile": 4,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2777
+    },
+    {
+      "part": "Blunt nose and long chassis dorsal armor.004",
+      "tile": 5,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2618
+    },
+    {
+      "part": "Blunt nose and long chassis dorsal armor.005",
+      "tile": 6,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2569
+    },
+    {
+      "part": "Blunt nose and long chassis dorsal armor.006",
+      "tile": 7,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3226
+    },
+    {
+      "part": "Blunt nose and long chassis dorsal armor.007",
+      "tile": 8,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2784
+    },
+    {
+      "part": "Blunt nose and long chassis dorsal armor.008",
+      "tile": 9,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2895
+    },
+    {
+      "part": "Blunt nose and long chassis dorsal armor.009",
+      "tile": 10,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3137
+    },
+    {
+      "part": "Blunt nose and long chassis fastener seat",
+      "tile": 11,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4266
+    },
+    {
+      "part": "Blunt nose and long chassis fastener seat.001",
+      "tile": 12,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4174
+    },
+    {
+      "part": "Blunt nose and long chassis fastener seat.002",
+      "tile": 13,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4123
+    },
+    {
+      "part": "Blunt nose and long chassis fastener seat.003",
+      "tile": 14,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4343
+    },
+    {
+      "part": "Blunt nose and long chassis fastener seat.004",
+      "tile": 15,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.3957
+    },
+    {
+      "part": "Blunt nose and long chassis fastener seat.005",
+      "tile": 16,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4203
+    },
+    {
+      "part": "Blunt nose and long chassis fastener seat.006",
+      "tile": 17,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4599
+    },
+    {
+      "part": "Blunt nose and long chassis fastener seat.007",
+      "tile": 18,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.428
+    },
+    {
+      "part": "Blunt nose and long chassis fastener seat.008",
+      "tile": 19,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.3951
+    },
+    {
+      "part": "Blunt nose and long chassis fastener seat.009",
+      "tile": 20,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4208
+    },
+    {
+      "part": "Blunt nose and long chassis fastener socket",
+      "tile": 21,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2817
+    },
+    {
+      "part": "Blunt nose and long chassis fastener socket.001",
+      "tile": 22,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2477
+    },
+    {
+      "part": "Blunt nose and long chassis fastener socket.002",
+      "tile": 23,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2722
+    },
+    {
+      "part": "Blunt nose and long chassis fastener socket.003",
+      "tile": 24,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2791
+    },
+    {
+      "part": "Blunt nose and long chassis fastener socket.004",
+      "tile": 25,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2481
+    },
+    {
+      "part": "Blunt nose and long chassis fastener socket.005",
+      "tile": 26,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2196
+    },
+    {
+      "part": "Blunt nose and long chassis fastener socket.006",
+      "tile": 27,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2532
+    },
+    {
+      "part": "Blunt nose and long chassis fastener socket.007",
+      "tile": 28,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2364
+    },
+    {
+      "part": "Blunt nose and long chassis fastener socket.008",
+      "tile": 29,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2584
+    },
+    {
+      "part": "Blunt nose and long chassis fastener socket.009",
+      "tile": 30,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2333
+    },
+    {
+      "part": "Blunt nose and long chassis inner hull",
+      "tile": 31,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4101
+    },
+    {
+      "part": "Blunt nose and long chassis shoulder bevel armor",
+      "tile": 32,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2846
+    },
+    {
+      "part": "Blunt nose and long chassis shoulder bevel armor.001",
+      "tile": 33,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2763
+    },
+    {
+      "part": "Blunt nose and long chassis shoulder bevel armor.002",
+      "tile": 34,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3117
+    },
+    {
+      "part": "Blunt nose and long chassis shoulder bevel armor.003",
+      "tile": 35,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3166
+    },
+    {
+      "part": "Blunt nose and long chassis shoulder bevel armor.004",
+      "tile": 36,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2938
+    },
+    {
+      "part": "Blunt nose and long chassis shoulder bevel armor.005",
+      "tile": 37,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3185
+    },
+    {
+      "part": "Blunt nose and long chassis shoulder bevel armor.006",
+      "tile": 38,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2615
+    },
+    {
+      "part": "Blunt nose and long chassis shoulder bevel armor.007",
+      "tile": 39,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2951
+    },
+    {
+      "part": "Blunt nose and long chassis shoulder bevel armor.008",
+      "tile": 40,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2895
+    },
+    {
+      "part": "Blunt nose and long chassis shoulder bevel armor.009",
+      "tile": 41,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2831
+    },
+    {
+      "part": "Concept stepped transport cheek door captive latch",
+      "tile": 42,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2823
+    },
+    {
+      "part": "Concept stepped transport cheek door captive latch.001",
+      "tile": 43,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2243
+    },
+    {
+      "part": "Concept stepped transport cheek door recessed seat",
+      "tile": 44,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4603
+    },
+    {
+      "part": "Concept stepped transport cheek door recessed seat.001",
+      "tile": 45,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4152
+    },
+    {
+      "part": "Concept stepped transport cheek door removable plate",
+      "tile": 46,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2989
+    },
+    {
+      "part": "Concept stepped transport cheek door removable plate.001",
+      "tile": 47,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3221
+    },
+    {
+      "part": "Concept transport exposed bright yoke piston",
+      "tile": 48,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2505
+    },
+    {
+      "part": "Concept transport exposed bright yoke piston.001",
+      "tile": 49,
+      "material": "Satin silver armor",
+      "role": "metal",
+      "base_color_linear": [
+        0.37,
+        0.42,
+        0.47
+      ],
+      "metallic": 0.95,
+      "roughness": 0.26
+    },
+    {
+      "part": "Concept transport yoke sleeve",
+      "tile": 50,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2721
+    },
+    {
+      "part": "Concept transport yoke sleeve.001",
+      "tile": 51,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2255
+    },
+    {
+      "part": "Concept ventral removable service cover captive latch",
+      "tile": 52,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.268
+    },
+    {
+      "part": "Concept ventral removable service cover recessed seat",
+      "tile": 53,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4155
+    },
+    {
+      "part": "Concept ventral removable service cover removable plate",
+      "tile": 54,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.273
+    },
+    {
+      "part": "Engine yoke coupling",
+      "tile": 55,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2414
+    },
+    {
+      "part": "Engine yoke coupling.001",
+      "tile": 56,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2404
+    },
+    {
+      "part": "Engine yoke coupling.002",
+      "tile": 57,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2428
+    },
+    {
+      "part": "Engine yoke coupling.003",
+      "tile": 58,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2199
+    },
+    {
+      "part": "Engine yoke coupling.004",
+      "tile": 59,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2562
+    },
+    {
+      "part": "Engine yoke coupling.005",
+      "tile": 60,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2637
+    },
+    {
+      "part": "Hex socket screw",
+      "tile": 61,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2623
+    },
+    {
+      "part": "Hex socket screw.001",
+      "tile": 62,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2704
+    },
+    {
+      "part": "Hex socket screw.002",
+      "tile": 63,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2713
+    },
+    {
+      "part": "Hex socket screw.003",
+      "tile": 64,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2656
+    },
+    {
+      "part": "Hex socket screw.004",
+      "tile": 65,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2539
+    },
+    {
+      "part": "Hex socket screw.005",
+      "tile": 66,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2668
+    },
+    {
+      "part": "Large upper drive pod aft emitter",
+      "tile": 67,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Large upper drive pod aft emitter.001",
+      "tile": 68,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Large upper drive pod aft housing",
+      "tile": 69,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4629
+    },
+    {
+      "part": "Large upper drive pod aft housing.001",
+      "tile": 70,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4006
+    },
+    {
+      "part": "Large upper drive pod aft machined lip",
+      "tile": 71,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2757
+    },
+    {
+      "part": "Large upper drive pod aft machined lip.001",
+      "tile": 72,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2382
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane",
+      "tile": 73,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2642
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.001",
+      "tile": 74,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2634
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.002",
+      "tile": 75,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2766
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.003",
+      "tile": 76,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2544
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.004",
+      "tile": 77,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2837
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.005",
+      "tile": 78,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2636
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.006",
+      "tile": 79,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2586
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.007",
+      "tile": 80,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2605
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.008",
+      "tile": 81,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2463
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.009",
+      "tile": 82,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2619
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.010",
+      "tile": 83,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2343
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.011",
+      "tile": 84,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2205
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.012",
+      "tile": 85,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2563
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.013",
+      "tile": 86,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2732
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.014",
+      "tile": 87,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2275
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.015",
+      "tile": 88,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.252
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.016",
+      "tile": 89,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2335
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.017",
+      "tile": 90,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2491
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.018",
+      "tile": 91,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2324
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.019",
+      "tile": 92,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2738
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.020",
+      "tile": 93,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2792
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.021",
+      "tile": 94,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2312
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.022",
+      "tile": 95,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2843
+    },
+    {
+      "part": "Large upper drive pod aft nozzle vane.023",
+      "tile": 96,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2323
+    },
+    {
+      "part": "Large upper drive pod aft recessed well",
+      "tile": 97,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4127
+    },
+    {
+      "part": "Large upper drive pod aft recessed well.001",
+      "tile": 98,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4348
+    },
+    {
+      "part": "Large upper drive pod casing collar",
+      "tile": 99,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2185
+    },
+    {
+      "part": "Large upper drive pod casing collar.001",
+      "tile": 100,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2721
+    },
+    {
+      "part": "Large upper drive pod casing collar.002",
+      "tile": 101,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2751
+    },
+    {
+      "part": "Large upper drive pod casing collar.003",
+      "tile": 102,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2753
+    },
+    {
+      "part": "Large upper drive pod casing collar.004",
+      "tile": 103,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2582
+    },
+    {
+      "part": "Large upper drive pod casing collar.005",
+      "tile": 104,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2406
+    },
+    {
+      "part": "Large upper drive pod casing collar.006",
+      "tile": 105,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2407
+    },
+    {
+      "part": "Large upper drive pod casing collar.007",
+      "tile": 106,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2354
+    },
+    {
+      "part": "Large upper drive pod dark core",
+      "tile": 107,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.421
+    },
+    {
+      "part": "Large upper drive pod dark core.001",
+      "tile": 108,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4277
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib",
+      "tile": 109,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2313
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.001",
+      "tile": 110,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2642
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.002",
+      "tile": 111,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.279
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.003",
+      "tile": 112,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2312
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.004",
+      "tile": 113,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2563
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.005",
+      "tile": 114,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.265
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.006",
+      "tile": 115,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2498
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.007",
+      "tile": 116,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2398
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.008",
+      "tile": 117,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2376
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.009",
+      "tile": 118,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2258
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.010",
+      "tile": 119,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2503
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.011",
+      "tile": 120,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2267
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.012",
+      "tile": 121,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.266
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.013",
+      "tile": 122,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2298
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.014",
+      "tile": 123,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2848
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.015",
+      "tile": 124,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2403
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.016",
+      "tile": 125,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2417
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.017",
+      "tile": 126,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2814
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.018",
+      "tile": 127,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2572
+    },
+    {
+      "part": "Large upper drive pod exposed waist rib.019",
+      "tile": 128,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2276
+    },
+    {
+      "part": "Large upper drive pod intake rim",
+      "tile": 129,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2786
+    },
+    {
+      "part": "Large upper drive pod intake rim.001",
+      "tile": 130,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2824
+    },
+    {
+      "part": "Large upper drive pod intake shadow",
+      "tile": 131,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4203
+    },
+    {
+      "part": "Large upper drive pod intake shadow.001",
+      "tile": 132,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.431
+    },
+    {
+      "part": "Large upper drive pod recessed intake lens",
+      "tile": 133,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Large upper drive pod recessed intake lens.001",
+      "tile": 134,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Large upper drive pod shoulder armor",
+      "tile": 135,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3106
+    },
+    {
+      "part": "Large upper drive pod shoulder armor.001",
+      "tile": 136,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3227
+    },
+    {
+      "part": "Large upper drive pod shoulder armor.002",
+      "tile": 137,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2961
+    },
+    {
+      "part": "Large upper drive pod shoulder armor.003",
+      "tile": 138,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3239
+    },
+    {
+      "part": "Large upper drive pod stepped casing",
+      "tile": 139,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2665
+    },
+    {
+      "part": "Large upper drive pod stepped casing.001",
+      "tile": 140,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3174
+    },
+    {
+      "part": "Large upper drive pod stepped casing.002",
+      "tile": 141,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4081
+    },
+    {
+      "part": "Large upper drive pod stepped casing.003",
+      "tile": 142,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2716
+    },
+    {
+      "part": "Large upper drive pod stepped casing.004",
+      "tile": 143,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2733
+    },
+    {
+      "part": "Large upper drive pod stepped casing.005",
+      "tile": 144,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2785
+    },
+    {
+      "part": "Large upper drive pod stepped casing.006",
+      "tile": 145,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2698
+    },
+    {
+      "part": "Large upper drive pod stepped casing.007",
+      "tile": 146,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4272
+    },
+    {
+      "part": "Large upper drive pod stepped casing.008",
+      "tile": 147,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3227
+    },
+    {
+      "part": "Large upper drive pod stepped casing.009",
+      "tile": 148,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2648
+    },
+    {
+      "part": "Long aft chassis flank coolant line",
+      "tile": 149,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2228
+    },
+    {
+      "part": "Long aft chassis flank coolant line.001",
+      "tile": 150,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2317
+    },
+    {
+      "part": "Long aft chassis flank edge rail",
+      "tile": 151,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2185
+    },
+    {
+      "part": "Long aft chassis flank edge rail.001",
+      "tile": 152,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2573
+    },
+    {
+      "part": "Long aft chassis flank edge rail.002",
+      "tile": 153,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2504
+    },
+    {
+      "part": "Long aft chassis flank edge rail.003",
+      "tile": 154,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.245
+    },
+    {
+      "part": "Long aft chassis flank inset unit",
+      "tile": 155,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2193
+    },
+    {
+      "part": "Long aft chassis flank inset unit.001",
+      "tile": 156,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2511
+    },
+    {
+      "part": "Long aft chassis flank inset unit.002",
+      "tile": 157,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2568
+    },
+    {
+      "part": "Long aft chassis flank inset unit.003",
+      "tile": 158,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2606
+    },
+    {
+      "part": "Long aft chassis flank inset unit.004",
+      "tile": 159,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2651
+    },
+    {
+      "part": "Long aft chassis flank inset unit.005",
+      "tile": 160,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2499
+    },
+    {
+      "part": "Long aft chassis flank inset unit.006",
+      "tile": 161,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2436
+    },
+    {
+      "part": "Long aft chassis flank inset unit.007",
+      "tile": 162,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2792
+    },
+    {
+      "part": "Long aft chassis flank inset unit.008",
+      "tile": 163,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2473
+    },
+    {
+      "part": "Long aft chassis flank inset unit.009",
+      "tile": 164,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2169
+    },
+    {
+      "part": "Long aft chassis flank rib",
+      "tile": 165,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2675
+    },
+    {
+      "part": "Long aft chassis flank rib.001",
+      "tile": 166,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2825
+    },
+    {
+      "part": "Long aft chassis flank rib.002",
+      "tile": 167,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2777
+    },
+    {
+      "part": "Long aft chassis flank rib.003",
+      "tile": 168,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2808
+    },
+    {
+      "part": "Long aft chassis flank rib.004",
+      "tile": 169,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2474
+    },
+    {
+      "part": "Long aft chassis flank rib.005",
+      "tile": 170,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2677
+    },
+    {
+      "part": "Long aft chassis flank rib.006",
+      "tile": 171,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2421
+    },
+    {
+      "part": "Long aft chassis flank rib.007",
+      "tile": 172,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2768
+    },
+    {
+      "part": "Long aft chassis flank rib.008",
+      "tile": 173,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2645
+    },
+    {
+      "part": "Long aft chassis flank rib.009",
+      "tile": 174,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2254
+    },
+    {
+      "part": "Long aft chassis flank shadow",
+      "tile": 175,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4094
+    },
+    {
+      "part": "Long aft chassis flank shadow.001",
+      "tile": 176,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.3999
+    },
+    {
+      "part": "Long aft radiator inset",
+      "tile": 177,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.448
+    },
+    {
+      "part": "Long aft radiator inset.001",
+      "tile": 178,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4252
+    },
+    {
+      "part": "Long aft radiator louver",
+      "tile": 179,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2622
+    },
+    {
+      "part": "Long aft radiator louver.001",
+      "tile": 180,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2379
+    },
+    {
+      "part": "Long aft radiator louver.002",
+      "tile": 181,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2754
+    },
+    {
+      "part": "Long aft radiator louver.003",
+      "tile": 182,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2414
+    },
+    {
+      "part": "Long aft radiator louver.004",
+      "tile": 183,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2741
+    },
+    {
+      "part": "Long aft radiator louver.005",
+      "tile": 184,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2413
+    },
+    {
+      "part": "Long aft radiator louver.006",
+      "tile": 185,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.245
+    },
+    {
+      "part": "Long aft radiator louver.007",
+      "tile": 186,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2805
+    },
+    {
+      "part": "Long aft radiator louver.008",
+      "tile": 187,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2562
+    },
+    {
+      "part": "Long aft radiator louver.009",
+      "tile": 188,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2323
+    },
+    {
+      "part": "Long aft radiator louver.010",
+      "tile": 189,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2568
+    },
+    {
+      "part": "Long aft radiator louver.011",
+      "tile": 190,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2356
+    },
+    {
+      "part": "Long aft radiator louver.012",
+      "tile": 191,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2781
+    },
+    {
+      "part": "Long aft radiator louver.013",
+      "tile": 192,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2774
+    },
+    {
+      "part": "Long cobalt upper rail",
+      "tile": 193,
+      "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3036
+    },
+    {
+      "part": "Long cobalt upper rail.001",
+      "tile": 194,
+      "material": "Blue grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.052,
+        0.125,
+        0.27
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2605
+    },
+    {
+      "part": "Lower pod support",
+      "tile": 195,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2171
+    },
+    {
+      "part": "Lower pod support.001",
+      "tile": 196,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2588
+    },
+    {
+      "part": "Nose corner navigation lens",
+      "tile": 197,
+      "material": "Blue cockpit glazing",
+      "role": "glass",
+      "base_color_linear": [
+        0.003333,
+        0.01,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Nose corner navigation lens.001",
+      "tile": 198,
+      "material": "Blue cockpit glazing",
+      "role": "glass",
+      "base_color_linear": [
+        0.003333,
+        0.01,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Nose dark angular front",
+      "tile": 199,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4128
+    },
+    {
+      "part": "Nose dark angular front.001",
+      "tile": 200,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4351
+    },
+    {
+      "part": "Nose fine contour",
+      "tile": 201,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2499
+    },
+    {
+      "part": "Nose fine contour.001",
+      "tile": 202,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2703
+    },
+    {
+      "part": "Nose stepped cheek inset",
+      "tile": 203,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2365
+    },
+    {
+      "part": "Nose stepped cheek inset.001",
+      "tile": 204,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2589
+    },
+    {
+      "part": "Rear dorsal rail",
+      "tile": 205,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2738
+    },
+    {
+      "part": "Recessed fastener",
+      "tile": 206,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4405
+    },
+    {
+      "part": "Recessed fastener.001",
+      "tile": 207,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4546
+    },
+    {
+      "part": "Recessed fastener.002",
+      "tile": 208,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4093
+    },
+    {
+      "part": "Recessed fastener.003",
+      "tile": 209,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4045
+    },
+    {
+      "part": "Recessed fastener.004",
+      "tile": 210,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4372
+    },
+    {
+      "part": "Recessed fastener.005",
+      "tile": 211,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4571
+    },
+    {
+      "part": "Separate stepped cockpit pane",
+      "tile": 212,
+      "material": "Dark sensor glass",
+      "role": "glass",
+      "base_color_linear": [
+        0.005,
+        0.014375,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Separate stepped cockpit pane.001",
+      "tile": 213,
+      "material": "Dark sensor glass",
+      "role": "glass",
+      "base_color_linear": [
+        0.005,
+        0.014375,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Separate stepped cockpit pane.002",
+      "tile": 214,
+      "material": "Dark sensor glass",
+      "role": "glass",
+      "base_color_linear": [
+        0.005,
+        0.014375,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Small cobalt drive band",
+      "tile": 215,
+      "material": "Cobalt enamel",
+      "role": "paint",
+      "base_color_linear": [
+        0.025,
+        0.095,
+        0.35
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2575
+    },
+    {
+      "part": "Small cobalt drive band.001",
+      "tile": 216,
+      "material": "Cobalt enamel",
+      "role": "paint",
+      "base_color_linear": [
+        0.025,
+        0.095,
+        0.35
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3237
+    },
+    {
+      "part": "Small low drive pod aft emitter",
+      "tile": 217,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Small low drive pod aft emitter.001",
+      "tile": 218,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Small low drive pod aft housing",
+      "tile": 219,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4258
+    },
+    {
+      "part": "Small low drive pod aft housing.001",
+      "tile": 220,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4351
+    },
+    {
+      "part": "Small low drive pod aft machined lip",
+      "tile": 221,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2261
+    },
+    {
+      "part": "Small low drive pod aft machined lip.001",
+      "tile": 222,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2152
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane",
+      "tile": 223,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.284
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.001",
+      "tile": 224,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.276
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.002",
+      "tile": 225,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2512
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.003",
+      "tile": 226,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.242
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.004",
+      "tile": 227,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.244
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.005",
+      "tile": 228,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2355
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.006",
+      "tile": 229,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2262
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.007",
+      "tile": 230,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2422
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.008",
+      "tile": 231,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2425
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.009",
+      "tile": 232,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2509
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.010",
+      "tile": 233,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2706
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.011",
+      "tile": 234,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2493
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.012",
+      "tile": 235,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2574
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.013",
+      "tile": 236,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2609
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.014",
+      "tile": 237,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2598
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.015",
+      "tile": 238,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2642
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.016",
+      "tile": 239,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2249
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.017",
+      "tile": 240,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2286
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.018",
+      "tile": 241,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2614
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.019",
+      "tile": 242,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2259
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.020",
+      "tile": 243,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2712
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.021",
+      "tile": 244,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.274
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.022",
+      "tile": 245,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2593
+    },
+    {
+      "part": "Small low drive pod aft nozzle vane.023",
+      "tile": 246,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2366
+    },
+    {
+      "part": "Small low drive pod aft recessed well",
+      "tile": 247,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4166
+    },
+    {
+      "part": "Small low drive pod aft recessed well.001",
+      "tile": 248,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4449
+    },
+    {
+      "part": "Small low drive pod casing collar",
+      "tile": 249,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2382
+    },
+    {
+      "part": "Small low drive pod casing collar.001",
+      "tile": 250,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2326
+    },
+    {
+      "part": "Small low drive pod casing collar.002",
+      "tile": 251,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2769
+    },
+    {
+      "part": "Small low drive pod casing collar.003",
+      "tile": 252,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2353
+    },
+    {
+      "part": "Small low drive pod casing collar.004",
+      "tile": 253,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2562
+    },
+    {
+      "part": "Small low drive pod casing collar.005",
+      "tile": 254,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2462
+    },
+    {
+      "part": "Small low drive pod casing collar.006",
+      "tile": 255,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2456
+    },
+    {
+      "part": "Small low drive pod casing collar.007",
+      "tile": 256,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2658
+    },
+    {
+      "part": "Small low drive pod dark core",
+      "tile": 257,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4507
+    },
+    {
+      "part": "Small low drive pod dark core.001",
+      "tile": 258,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4608
+    },
+    {
+      "part": "Small low drive pod exposed waist rib",
+      "tile": 259,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2173
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.001",
+      "tile": 260,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2278
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.002",
+      "tile": 261,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2164
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.003",
+      "tile": 262,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2731
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.004",
+      "tile": 263,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2382
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.005",
+      "tile": 264,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2343
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.006",
+      "tile": 265,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2241
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.007",
+      "tile": 266,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2754
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.008",
+      "tile": 267,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2541
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.009",
+      "tile": 268,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2561
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.010",
+      "tile": 269,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2739
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.011",
+      "tile": 270,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2613
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.012",
+      "tile": 271,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2771
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.013",
+      "tile": 272,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2778
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.014",
+      "tile": 273,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2785
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.015",
+      "tile": 274,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2395
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.016",
+      "tile": 275,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2615
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.017",
+      "tile": 276,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.283
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.018",
+      "tile": 277,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2778
+    },
+    {
+      "part": "Small low drive pod exposed waist rib.019",
+      "tile": 278,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.262
+    },
+    {
+      "part": "Small low drive pod intake rim",
+      "tile": 279,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2711
+    },
+    {
+      "part": "Small low drive pod intake rim.001",
+      "tile": 280,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2419
+    },
+    {
+      "part": "Small low drive pod intake shadow",
+      "tile": 281,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4256
+    },
+    {
+      "part": "Small low drive pod intake shadow.001",
+      "tile": 282,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4444
+    },
+    {
+      "part": "Small low drive pod recessed intake lens",
+      "tile": 283,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Small low drive pod recessed intake lens.001",
+      "tile": 284,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Small low drive pod shoulder armor",
+      "tile": 285,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2846
+    },
+    {
+      "part": "Small low drive pod shoulder armor.001",
+      "tile": 286,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2838
+    },
+    {
+      "part": "Small low drive pod shoulder armor.002",
+      "tile": 287,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2754
+    },
+    {
+      "part": "Small low drive pod shoulder armor.003",
+      "tile": 288,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2845
+    },
+    {
+      "part": "Small low drive pod stepped casing",
+      "tile": 289,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.308
+    },
+    {
+      "part": "Small low drive pod stepped casing.001",
+      "tile": 290,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3076
+    },
+    {
+      "part": "Small low drive pod stepped casing.002",
+      "tile": 291,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4326
+    },
+    {
+      "part": "Small low drive pod stepped casing.003",
+      "tile": 292,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.262
+    },
+    {
+      "part": "Small low drive pod stepped casing.004",
+      "tile": 293,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2387
+    },
+    {
+      "part": "Small low drive pod stepped casing.005",
+      "tile": 294,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3009
+    },
+    {
+      "part": "Small low drive pod stepped casing.006",
+      "tile": 295,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2567
+    },
+    {
+      "part": "Small low drive pod stepped casing.007",
+      "tile": 296,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4323
+    },
+    {
+      "part": "Small low drive pod stepped casing.008",
+      "tile": 297,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2638
+    },
+    {
+      "part": "Small low drive pod stepped casing.009",
+      "tile": 298,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2674
+    },
+    {
+      "part": "Stepped cockpit mounting",
+      "tile": 299,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.278
+    },
+    {
+      "part": "Stepped cockpit mounting.001",
+      "tile": 300,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2705
+    },
+    {
+      "part": "Stepped cockpit mounting.002",
+      "tile": 301,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2151
+    },
+    {
+      "part": "Stepped window surround",
+      "tile": 302,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.246
+    },
+    {
+      "part": "Stepped window surround.001",
+      "tile": 303,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2786
+    },
+    {
+      "part": "Stepped window surround.002",
+      "tile": 304,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2816
+    },
+    {
+      "part": "Upper blue cowl band",
+      "tile": 305,
+      "material": "Cobalt enamel",
+      "role": "paint",
+      "base_color_linear": [
+        0.025,
+        0.095,
+        0.35
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3216
+    },
+    {
+      "part": "Upper blue cowl band.001",
+      "tile": 306,
+      "material": "Cobalt enamel",
+      "role": "paint",
+      "base_color_linear": [
+        0.025,
+        0.095,
+        0.35
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2728
+    },
+    {
+      "part": "Upper blue cowl band.002",
+      "tile": 307,
+      "material": "Cobalt enamel",
+      "role": "paint",
+      "base_color_linear": [
+        0.025,
+        0.095,
+        0.35
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2916
+    },
+    {
+      "part": "Upper blue cowl band.003",
+      "tile": 308,
+      "material": "Cobalt enamel",
+      "role": "paint",
+      "base_color_linear": [
+        0.025,
+        0.095,
+        0.35
+      ],
+      "metallic": 0.18,
+      "roughness": 0.272
+    },
+    {
+      "part": "Upper drive supply line",
+      "tile": 309,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2232
+    },
+    {
+      "part": "Upper drive supply line.001",
+      "tile": 310,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2361
+    },
+    {
+      "part": "Upper engine mounting yoke fastener seat",
+      "tile": 311,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4496
+    },
+    {
+      "part": "Upper engine mounting yoke fastener seat.001",
+      "tile": 312,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4486
+    },
+    {
+      "part": "Upper engine mounting yoke fastener seat.002",
+      "tile": 313,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4148
+    },
+    {
+      "part": "Upper engine mounting yoke fastener seat.003",
+      "tile": 314,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4414
+    },
+    {
+      "part": "Upper engine mounting yoke fastener socket",
+      "tile": 315,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2405
+    },
+    {
+      "part": "Upper engine mounting yoke fastener socket.001",
+      "tile": 316,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2299
+    },
+    {
+      "part": "Upper engine mounting yoke fastener socket.002",
+      "tile": 317,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2345
+    },
+    {
+      "part": "Upper engine mounting yoke fastener socket.003",
+      "tile": 318,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2342
+    },
+    {
+      "part": "Upper engine mounting yoke inset armor",
+      "tile": 319,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2808
+    },
+    {
+      "part": "Upper engine mounting yoke inset armor.001",
+      "tile": 320,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.24
+    },
+    {
+      "part": "Upper engine mounting yoke leading edge",
+      "tile": 321,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.284
+    },
+    {
+      "part": "Upper engine mounting yoke leading edge.001",
+      "tile": 322,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2233
+    },
+    {
+      "part": "Upper engine mounting yoke structure",
+      "tile": 323,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4279
+    },
+    {
+      "part": "Upper engine mounting yoke structure.001",
+      "tile": 324,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4496
+    }
+  ]
+}

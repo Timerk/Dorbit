@@ -1,0 +1,4212 @@
+{
+  "size": 2048,
+  "grid": 18,
+  "padding_pixels": 8,
+  "source": "tools/ship_surface_atlas.py; deterministic per-component finish",
+  "channels": {
+    "albedo": "sRGB hull colors and subtle finish variation",
+    "orm": "R: 1 (no AO bake), G: roughness, B: metallic",
+    "normal": "tangent-space +Y micrograin; no baked lighting"
+  },
+  "parts": [
+    {
+      "part": "Cheek aperture silver rim",
+      "tile": 0,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2765
+    },
+    {
+      "part": "Cheek aperture silver rim.001",
+      "tile": 1,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2408
+    },
+    {
+      "part": "Cheek inset silver contour",
+      "tile": 2,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2743
+    },
+    {
+      "part": "Cheek inset silver contour.001",
+      "tile": 3,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2738
+    },
+    {
+      "part": "Cockpit angular side window",
+      "tile": 4,
+      "material": "Dark sensor glass",
+      "role": "glass",
+      "base_color_linear": [
+        0.005,
+        0.014375,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Cockpit angular side window.001",
+      "tile": 5,
+      "material": "Dark sensor glass",
+      "role": "glass",
+      "base_color_linear": [
+        0.005,
+        0.014375,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Compact Vengeance canopy glass pane",
+      "tile": 6,
+      "material": "Dark sensor glass",
+      "role": "glass",
+      "base_color_linear": [
+        0.005,
+        0.014375,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Compact Vengeance canopy glass pane.001",
+      "tile": 7,
+      "material": "Dark sensor glass",
+      "role": "glass",
+      "base_color_linear": [
+        0.005,
+        0.014375,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Compact Vengeance canopy glass pane.002",
+      "tile": 8,
+      "material": "Dark sensor glass",
+      "role": "glass",
+      "base_color_linear": [
+        0.005,
+        0.014375,
+        0.02
+      ],
+      "metallic": 0.0,
+      "roughness": 0.11
+    },
+    {
+      "part": "Compact Vengeance canopy hoop frame",
+      "tile": 9,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2276
+    },
+    {
+      "part": "Compact Vengeance canopy hoop frame.001",
+      "tile": 10,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2172
+    },
+    {
+      "part": "Compact Vengeance canopy hoop frame.002",
+      "tile": 11,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2622
+    },
+    {
+      "part": "Compact Vengeance canopy hoop frame.003",
+      "tile": 12,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2506
+    },
+    {
+      "part": "Compact Vengeance canopy mounting",
+      "tile": 13,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4499
+    },
+    {
+      "part": "Compact Vengeance canopy sill rim",
+      "tile": 14,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2337
+    },
+    {
+      "part": "Compact Vengeance canopy sill rim.001",
+      "tile": 15,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2428
+    },
+    {
+      "part": "Concept high drive amber collar",
+      "tile": 16,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2185
+    },
+    {
+      "part": "Concept high drive amber collar.001",
+      "tile": 17,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2782
+    },
+    {
+      "part": "Concept interceptor raised cheek armor captive latch",
+      "tile": 18,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2523
+    },
+    {
+      "part": "Concept interceptor raised cheek armor captive latch.001",
+      "tile": 19,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.285
+    },
+    {
+      "part": "Concept interceptor raised cheek armor recessed seat",
+      "tile": 20,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4023
+    },
+    {
+      "part": "Concept interceptor raised cheek armor recessed seat.001",
+      "tile": 21,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4646
+    },
+    {
+      "part": "Concept interceptor raised cheek armor removable plate",
+      "tile": 22,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2995
+    },
+    {
+      "part": "Concept interceptor raised cheek armor removable plate.001",
+      "tile": 23,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2567
+    },
+    {
+      "part": "Concept low drive amber collar",
+      "tile": 24,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2604
+    },
+    {
+      "part": "Concept low drive amber collar.001",
+      "tile": 25,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2561
+    },
+    {
+      "part": "Concept ventral removable service cover captive latch",
+      "tile": 26,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.268
+    },
+    {
+      "part": "Concept ventral removable service cover recessed seat",
+      "tile": 27,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4155
+    },
+    {
+      "part": "Concept ventral removable service cover removable plate",
+      "tile": 28,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.273
+    },
+    {
+      "part": "Dorsal aft slits inset",
+      "tile": 29,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4403
+    },
+    {
+      "part": "Dorsal aft slits inset.001",
+      "tile": 30,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4593
+    },
+    {
+      "part": "Dorsal aft slits louver",
+      "tile": 31,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2666
+    },
+    {
+      "part": "Dorsal aft slits louver.001",
+      "tile": 32,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2659
+    },
+    {
+      "part": "Dorsal aft slits louver.002",
+      "tile": 33,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2232
+    },
+    {
+      "part": "Dorsal aft slits louver.003",
+      "tile": 34,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2423
+    },
+    {
+      "part": "Dorsal aft slits louver.004",
+      "tile": 35,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2653
+    },
+    {
+      "part": "Dorsal aft slits louver.005",
+      "tile": 36,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2485
+    },
+    {
+      "part": "Dorsal aft slits louver.006",
+      "tile": 37,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2732
+    },
+    {
+      "part": "Dorsal aft slits louver.007",
+      "tile": 38,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2447
+    },
+    {
+      "part": "Dorsal aft slits louver.008",
+      "tile": 39,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2682
+    },
+    {
+      "part": "Dorsal aft slits louver.009",
+      "tile": 40,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2203
+    },
+    {
+      "part": "Engine shoulder square unit",
+      "tile": 41,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4262
+    },
+    {
+      "part": "Engine shoulder square unit.001",
+      "tile": 42,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.427
+    },
+    {
+      "part": "Engine shoulder square unit.002",
+      "tile": 43,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4285
+    },
+    {
+      "part": "Engine shoulder square unit.003",
+      "tile": 44,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4595
+    },
+    {
+      "part": "Engine shoulder square unit.004",
+      "tile": 45,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4626
+    },
+    {
+      "part": "Engine shoulder square unit.005",
+      "tile": 46,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4329
+    },
+    {
+      "part": "Engine shoulder unit cap",
+      "tile": 47,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3089
+    },
+    {
+      "part": "Engine shoulder unit cap.001",
+      "tile": 48,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3082
+    },
+    {
+      "part": "Engine shoulder unit cap.002",
+      "tile": 49,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3173
+    },
+    {
+      "part": "Engine shoulder unit cap.003",
+      "tile": 50,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3238
+    },
+    {
+      "part": "Engine shoulder unit cap.004",
+      "tile": 51,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2929
+    },
+    {
+      "part": "Engine shoulder unit cap.005",
+      "tile": 52,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2689
+    },
+    {
+      "part": "Forward cheek dorsal armor",
+      "tile": 53,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.276
+    },
+    {
+      "part": "Forward cheek dorsal armor.001",
+      "tile": 54,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2965
+    },
+    {
+      "part": "Forward cheek dorsal armor.002",
+      "tile": 55,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2758
+    },
+    {
+      "part": "Forward cheek dorsal armor.003",
+      "tile": 56,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2843
+    },
+    {
+      "part": "Forward cheek dorsal armor.004",
+      "tile": 57,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3187
+    },
+    {
+      "part": "Forward cheek dorsal armor.005",
+      "tile": 58,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2635
+    },
+    {
+      "part": "Forward cheek dorsal armor.006",
+      "tile": 59,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.311
+    },
+    {
+      "part": "Forward cheek dorsal armor.007",
+      "tile": 60,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.261
+    },
+    {
+      "part": "Forward cheek dorsal armor.008",
+      "tile": 61,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3099
+    },
+    {
+      "part": "Forward cheek dorsal armor.009",
+      "tile": 62,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.301
+    },
+    {
+      "part": "Forward cheek dorsal armor.010",
+      "tile": 63,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.263
+    },
+    {
+      "part": "Forward cheek dorsal armor.011",
+      "tile": 64,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2978
+    },
+    {
+      "part": "Forward cheek inner hull",
+      "tile": 65,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4203
+    },
+    {
+      "part": "Forward cheek inner hull.001",
+      "tile": 66,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4491
+    },
+    {
+      "part": "Forward cheek raised segment",
+      "tile": 67,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2411
+    },
+    {
+      "part": "Forward cheek raised segment.001",
+      "tile": 68,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2848
+    },
+    {
+      "part": "Forward cheek raised segment.002",
+      "tile": 69,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2622
+    },
+    {
+      "part": "Forward cheek raised segment.003",
+      "tile": 70,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2766
+    },
+    {
+      "part": "Forward cheek raised segment.004",
+      "tile": 71,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2387
+    },
+    {
+      "part": "Forward cheek raised segment.005",
+      "tile": 72,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2562
+    },
+    {
+      "part": "Forward cheek raised segment.006",
+      "tile": 73,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.279
+    },
+    {
+      "part": "Forward cheek raised segment.007",
+      "tile": 74,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2157
+    },
+    {
+      "part": "Forward cheek shoulder bevel armor",
+      "tile": 75,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3219
+    },
+    {
+      "part": "Forward cheek shoulder bevel armor.001",
+      "tile": 76,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2599
+    },
+    {
+      "part": "Forward cheek shoulder bevel armor.002",
+      "tile": 77,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.322
+    },
+    {
+      "part": "Forward cheek shoulder bevel armor.003",
+      "tile": 78,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.286
+    },
+    {
+      "part": "Forward cheek shoulder bevel armor.004",
+      "tile": 79,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2899
+    },
+    {
+      "part": "Forward cheek shoulder bevel armor.005",
+      "tile": 80,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.305
+    },
+    {
+      "part": "Forward cheek shoulder bevel armor.006",
+      "tile": 81,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2819
+    },
+    {
+      "part": "Forward cheek shoulder bevel armor.007",
+      "tile": 82,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3164
+    },
+    {
+      "part": "Forward cheek shoulder bevel armor.008",
+      "tile": 83,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2811
+    },
+    {
+      "part": "Forward cheek shoulder bevel armor.009",
+      "tile": 84,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2833
+    },
+    {
+      "part": "Forward cheek shoulder bevel armor.010",
+      "tile": 85,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3119
+    },
+    {
+      "part": "Forward cheek shoulder bevel armor.011",
+      "tile": 86,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3228
+    },
+    {
+      "part": "Forward nose aperture",
+      "tile": 87,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4152
+    },
+    {
+      "part": "Forward wedge dorsal armor",
+      "tile": 88,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2917
+    },
+    {
+      "part": "Forward wedge dorsal armor.001",
+      "tile": 89,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2771
+    },
+    {
+      "part": "Forward wedge dorsal armor.002",
+      "tile": 90,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2798
+    },
+    {
+      "part": "Forward wedge dorsal armor.003",
+      "tile": 91,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2925
+    },
+    {
+      "part": "Forward wedge dorsal armor.004",
+      "tile": 92,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3068
+    },
+    {
+      "part": "Forward wedge dorsal armor.005",
+      "tile": 93,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2732
+    },
+    {
+      "part": "Forward wedge dorsal armor.006",
+      "tile": 94,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2697
+    },
+    {
+      "part": "Forward wedge dorsal armor.007",
+      "tile": 95,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2875
+    },
+    {
+      "part": "Forward wedge fastener seat",
+      "tile": 96,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.451
+    },
+    {
+      "part": "Forward wedge fastener seat.001",
+      "tile": 97,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4099
+    },
+    {
+      "part": "Forward wedge fastener seat.002",
+      "tile": 98,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4236
+    },
+    {
+      "part": "Forward wedge fastener seat.003",
+      "tile": 99,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4282
+    },
+    {
+      "part": "Forward wedge fastener seat.004",
+      "tile": 100,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.3988
+    },
+    {
+      "part": "Forward wedge fastener seat.005",
+      "tile": 101,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4179
+    },
+    {
+      "part": "Forward wedge fastener socket",
+      "tile": 102,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2822
+    },
+    {
+      "part": "Forward wedge fastener socket.001",
+      "tile": 103,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2431
+    },
+    {
+      "part": "Forward wedge fastener socket.002",
+      "tile": 104,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2389
+    },
+    {
+      "part": "Forward wedge fastener socket.003",
+      "tile": 105,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2409
+    },
+    {
+      "part": "Forward wedge fastener socket.004",
+      "tile": 106,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2567
+    },
+    {
+      "part": "Forward wedge fastener socket.005",
+      "tile": 107,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2534
+    },
+    {
+      "part": "Forward wedge inner hull",
+      "tile": 108,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4042
+    },
+    {
+      "part": "Forward wedge shoulder bevel armor",
+      "tile": 109,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3038
+    },
+    {
+      "part": "Forward wedge shoulder bevel armor.001",
+      "tile": 110,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3212
+    },
+    {
+      "part": "Forward wedge shoulder bevel armor.002",
+      "tile": 111,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3231
+    },
+    {
+      "part": "Forward wedge shoulder bevel armor.003",
+      "tile": 112,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3229
+    },
+    {
+      "part": "Forward wedge shoulder bevel armor.004",
+      "tile": 113,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2797
+    },
+    {
+      "part": "Forward wedge shoulder bevel armor.005",
+      "tile": 114,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2926
+    },
+    {
+      "part": "Forward wedge shoulder bevel armor.006",
+      "tile": 115,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3246
+    },
+    {
+      "part": "Forward wedge shoulder bevel armor.007",
+      "tile": 116,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2684
+    },
+    {
+      "part": "Long cheek aperture",
+      "tile": 117,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4252
+    },
+    {
+      "part": "Long cheek aperture.001",
+      "tile": 118,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4537
+    },
+    {
+      "part": "Lower outboard turbine aft emitter",
+      "tile": 119,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Lower outboard turbine aft emitter.001",
+      "tile": 120,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Lower outboard turbine aft housing",
+      "tile": 121,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4319
+    },
+    {
+      "part": "Lower outboard turbine aft housing.001",
+      "tile": 122,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4341
+    },
+    {
+      "part": "Lower outboard turbine aft machined lip",
+      "tile": 123,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2779
+    },
+    {
+      "part": "Lower outboard turbine aft machined lip.001",
+      "tile": 124,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2443
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane",
+      "tile": 125,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2842
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.001",
+      "tile": 126,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2764
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.002",
+      "tile": 127,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2661
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.003",
+      "tile": 128,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.278
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.004",
+      "tile": 129,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.229
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.005",
+      "tile": 130,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2399
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.006",
+      "tile": 131,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2293
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.007",
+      "tile": 132,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2624
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.008",
+      "tile": 133,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2337
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.009",
+      "tile": 134,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2618
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.010",
+      "tile": 135,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2692
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.011",
+      "tile": 136,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2358
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.012",
+      "tile": 137,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2467
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.013",
+      "tile": 138,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2654
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.014",
+      "tile": 139,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2802
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.015",
+      "tile": 140,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2829
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.016",
+      "tile": 141,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2405
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.017",
+      "tile": 142,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2846
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.018",
+      "tile": 143,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2267
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.019",
+      "tile": 144,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2303
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.020",
+      "tile": 145,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2317
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.021",
+      "tile": 146,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2225
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.022",
+      "tile": 147,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.223
+    },
+    {
+      "part": "Lower outboard turbine aft nozzle vane.023",
+      "tile": 148,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2779
+    },
+    {
+      "part": "Lower outboard turbine aft recessed well",
+      "tile": 149,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4435
+    },
+    {
+      "part": "Lower outboard turbine aft recessed well.001",
+      "tile": 150,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.414
+    },
+    {
+      "part": "Lower outboard turbine casing collar",
+      "tile": 151,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2824
+    },
+    {
+      "part": "Lower outboard turbine casing collar.001",
+      "tile": 152,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2529
+    },
+    {
+      "part": "Lower outboard turbine casing collar.002",
+      "tile": 153,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2292
+    },
+    {
+      "part": "Lower outboard turbine casing collar.003",
+      "tile": 154,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2265
+    },
+    {
+      "part": "Lower outboard turbine casing collar.004",
+      "tile": 155,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2814
+    },
+    {
+      "part": "Lower outboard turbine casing collar.005",
+      "tile": 156,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.251
+    },
+    {
+      "part": "Lower outboard turbine casing collar.006",
+      "tile": 157,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2529
+    },
+    {
+      "part": "Lower outboard turbine casing collar.007",
+      "tile": 158,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2216
+    },
+    {
+      "part": "Lower outboard turbine dark core",
+      "tile": 159,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4086
+    },
+    {
+      "part": "Lower outboard turbine dark core.001",
+      "tile": 160,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.451
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib",
+      "tile": 161,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2725
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.001",
+      "tile": 162,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2497
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.002",
+      "tile": 163,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2414
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.003",
+      "tile": 164,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2633
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.004",
+      "tile": 165,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2247
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.005",
+      "tile": 166,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.282
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.006",
+      "tile": 167,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2298
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.007",
+      "tile": 168,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2475
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.008",
+      "tile": 169,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2577
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.009",
+      "tile": 170,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2805
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.010",
+      "tile": 171,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2531
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.011",
+      "tile": 172,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2479
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.012",
+      "tile": 173,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2658
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.013",
+      "tile": 174,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2164
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.014",
+      "tile": 175,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2711
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.015",
+      "tile": 176,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.266
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.016",
+      "tile": 177,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2344
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.017",
+      "tile": 178,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2413
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.018",
+      "tile": 179,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2818
+    },
+    {
+      "part": "Lower outboard turbine exposed waist rib.019",
+      "tile": 180,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2321
+    },
+    {
+      "part": "Lower outboard turbine intake rim",
+      "tile": 181,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.241
+    },
+    {
+      "part": "Lower outboard turbine intake rim.001",
+      "tile": 182,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2456
+    },
+    {
+      "part": "Lower outboard turbine intake shadow",
+      "tile": 183,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4591
+    },
+    {
+      "part": "Lower outboard turbine intake shadow.001",
+      "tile": 184,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4349
+    },
+    {
+      "part": "Lower outboard turbine recessed intake lens",
+      "tile": 185,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.454
+    },
+    {
+      "part": "Lower outboard turbine recessed intake lens.001",
+      "tile": 186,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4086
+    },
+    {
+      "part": "Lower outboard turbine shoulder armor",
+      "tile": 187,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3173
+    },
+    {
+      "part": "Lower outboard turbine shoulder armor.001",
+      "tile": 188,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3197
+    },
+    {
+      "part": "Lower outboard turbine shoulder armor.002",
+      "tile": 189,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3024
+    },
+    {
+      "part": "Lower outboard turbine shoulder armor.003",
+      "tile": 190,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3239
+    },
+    {
+      "part": "Lower outboard turbine stepped casing",
+      "tile": 191,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3026
+    },
+    {
+      "part": "Lower outboard turbine stepped casing.001",
+      "tile": 192,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2676
+    },
+    {
+      "part": "Lower outboard turbine stepped casing.002",
+      "tile": 193,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4167
+    },
+    {
+      "part": "Lower outboard turbine stepped casing.003",
+      "tile": 194,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2645
+    },
+    {
+      "part": "Lower outboard turbine stepped casing.004",
+      "tile": 195,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2734
+    },
+    {
+      "part": "Lower outboard turbine stepped casing.005",
+      "tile": 196,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2817
+    },
+    {
+      "part": "Lower outboard turbine stepped casing.006",
+      "tile": 197,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.325
+    },
+    {
+      "part": "Lower outboard turbine stepped casing.007",
+      "tile": 198,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4212
+    },
+    {
+      "part": "Lower outboard turbine stepped casing.008",
+      "tile": 199,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2624
+    },
+    {
+      "part": "Lower outboard turbine stepped casing.009",
+      "tile": 200,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2765
+    },
+    {
+      "part": "Lower turbine hardline",
+      "tile": 201,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.264
+    },
+    {
+      "part": "Lower turbine hardline.001",
+      "tile": 202,
+      "material": "Muted copper fittings",
+      "role": "metal",
+      "base_color_linear": [
+        0.4,
+        0.18,
+        0.032
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2262
+    },
+    {
+      "part": "Shoulder curved supply line",
+      "tile": 203,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2709
+    },
+    {
+      "part": "Shoulder curved supply line.001",
+      "tile": 204,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2798
+    },
+    {
+      "part": "Stepped engine vertical frame",
+      "tile": 205,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2661
+    },
+    {
+      "part": "Stepped engine vertical frame.001",
+      "tile": 206,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2607
+    },
+    {
+      "part": "Tall engine shoulder dorsal armor",
+      "tile": 207,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2283
+    },
+    {
+      "part": "Tall engine shoulder dorsal armor.001",
+      "tile": 208,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2607
+    },
+    {
+      "part": "Tall engine shoulder dorsal armor.002",
+      "tile": 209,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.253
+    },
+    {
+      "part": "Tall engine shoulder dorsal armor.003",
+      "tile": 210,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2537
+    },
+    {
+      "part": "Tall engine shoulder dorsal armor.004",
+      "tile": 211,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2614
+    },
+    {
+      "part": "Tall engine shoulder dorsal armor.005",
+      "tile": 212,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.272
+    },
+    {
+      "part": "Tall engine shoulder dorsal armor.006",
+      "tile": 213,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2381
+    },
+    {
+      "part": "Tall engine shoulder dorsal armor.007",
+      "tile": 214,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2413
+    },
+    {
+      "part": "Tall engine shoulder fastener seat",
+      "tile": 215,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4512
+    },
+    {
+      "part": "Tall engine shoulder fastener seat.001",
+      "tile": 216,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4208
+    },
+    {
+      "part": "Tall engine shoulder fastener seat.002",
+      "tile": 217,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4599
+    },
+    {
+      "part": "Tall engine shoulder fastener seat.003",
+      "tile": 218,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.436
+    },
+    {
+      "part": "Tall engine shoulder fastener seat.004",
+      "tile": 219,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4283
+    },
+    {
+      "part": "Tall engine shoulder fastener seat.005",
+      "tile": 220,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4501
+    },
+    {
+      "part": "Tall engine shoulder fastener seat.006",
+      "tile": 221,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4568
+    },
+    {
+      "part": "Tall engine shoulder fastener seat.007",
+      "tile": 222,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4147
+    },
+    {
+      "part": "Tall engine shoulder fastener socket",
+      "tile": 223,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.262
+    },
+    {
+      "part": "Tall engine shoulder fastener socket.001",
+      "tile": 224,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2617
+    },
+    {
+      "part": "Tall engine shoulder fastener socket.002",
+      "tile": 225,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2716
+    },
+    {
+      "part": "Tall engine shoulder fastener socket.003",
+      "tile": 226,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2288
+    },
+    {
+      "part": "Tall engine shoulder fastener socket.004",
+      "tile": 227,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2449
+    },
+    {
+      "part": "Tall engine shoulder fastener socket.005",
+      "tile": 228,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2231
+    },
+    {
+      "part": "Tall engine shoulder fastener socket.006",
+      "tile": 229,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2645
+    },
+    {
+      "part": "Tall engine shoulder fastener socket.007",
+      "tile": 230,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2458
+    },
+    {
+      "part": "Tall engine shoulder inner hull",
+      "tile": 231,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4627
+    },
+    {
+      "part": "Tall engine shoulder inner hull.001",
+      "tile": 232,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.3975
+    },
+    {
+      "part": "Tall engine shoulder shoulder bevel armor",
+      "tile": 233,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2648
+    },
+    {
+      "part": "Tall engine shoulder shoulder bevel armor.001",
+      "tile": 234,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2324
+    },
+    {
+      "part": "Tall engine shoulder shoulder bevel armor.002",
+      "tile": 235,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2771
+    },
+    {
+      "part": "Tall engine shoulder shoulder bevel armor.003",
+      "tile": 236,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2619
+    },
+    {
+      "part": "Tall engine shoulder shoulder bevel armor.004",
+      "tile": 237,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2245
+    },
+    {
+      "part": "Tall engine shoulder shoulder bevel armor.005",
+      "tile": 238,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.242
+    },
+    {
+      "part": "Tall engine shoulder shoulder bevel armor.006",
+      "tile": 239,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2284
+    },
+    {
+      "part": "Tall engine shoulder shoulder bevel armor.007",
+      "tile": 240,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2507
+    },
+    {
+      "part": "Upper outboard turbine aft emitter",
+      "tile": 241,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Upper outboard turbine aft emitter.001",
+      "tile": 242,
+      "material": "Ion blue",
+      "role": "emissive",
+      "base_color_linear": [
+        0.1,
+        0.39,
+        0.72
+      ],
+      "metallic": 0.0,
+      "roughness": 0.35
+    },
+    {
+      "part": "Upper outboard turbine aft housing",
+      "tile": 243,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4249
+    },
+    {
+      "part": "Upper outboard turbine aft housing.001",
+      "tile": 244,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4439
+    },
+    {
+      "part": "Upper outboard turbine aft machined lip",
+      "tile": 245,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2779
+    },
+    {
+      "part": "Upper outboard turbine aft machined lip.001",
+      "tile": 246,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2577
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane",
+      "tile": 247,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2507
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.001",
+      "tile": 248,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2741
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.002",
+      "tile": 249,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2442
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.003",
+      "tile": 250,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2586
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.004",
+      "tile": 251,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2263
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.005",
+      "tile": 252,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2179
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.006",
+      "tile": 253,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2675
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.007",
+      "tile": 254,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2291
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.008",
+      "tile": 255,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2667
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.009",
+      "tile": 256,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2172
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.010",
+      "tile": 257,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2703
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.011",
+      "tile": 258,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2418
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.012",
+      "tile": 259,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2576
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.013",
+      "tile": 260,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2441
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.014",
+      "tile": 261,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2512
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.015",
+      "tile": 262,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2682
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.016",
+      "tile": 263,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2575
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.017",
+      "tile": 264,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2174
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.018",
+      "tile": 265,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2841
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.019",
+      "tile": 266,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2637
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.020",
+      "tile": 267,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.224
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.021",
+      "tile": 268,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2361
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.022",
+      "tile": 269,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2366
+    },
+    {
+      "part": "Upper outboard turbine aft nozzle vane.023",
+      "tile": 270,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.228
+    },
+    {
+      "part": "Upper outboard turbine aft recessed well",
+      "tile": 271,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4116
+    },
+    {
+      "part": "Upper outboard turbine aft recessed well.001",
+      "tile": 272,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4468
+    },
+    {
+      "part": "Upper outboard turbine casing collar",
+      "tile": 273,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.266
+    },
+    {
+      "part": "Upper outboard turbine casing collar.001",
+      "tile": 274,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2226
+    },
+    {
+      "part": "Upper outboard turbine casing collar.002",
+      "tile": 275,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2275
+    },
+    {
+      "part": "Upper outboard turbine casing collar.003",
+      "tile": 276,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2569
+    },
+    {
+      "part": "Upper outboard turbine casing collar.004",
+      "tile": 277,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2692
+    },
+    {
+      "part": "Upper outboard turbine casing collar.005",
+      "tile": 278,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2418
+    },
+    {
+      "part": "Upper outboard turbine casing collar.006",
+      "tile": 279,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2822
+    },
+    {
+      "part": "Upper outboard turbine casing collar.007",
+      "tile": 280,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.266
+    },
+    {
+      "part": "Upper outboard turbine dark core",
+      "tile": 281,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4219
+    },
+    {
+      "part": "Upper outboard turbine dark core.001",
+      "tile": 282,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.3986
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib",
+      "tile": 283,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.256
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.001",
+      "tile": 284,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2224
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.002",
+      "tile": 285,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2504
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.003",
+      "tile": 286,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2748
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.004",
+      "tile": 287,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2164
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.005",
+      "tile": 288,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2341
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.006",
+      "tile": 289,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2228
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.007",
+      "tile": 290,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2801
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.008",
+      "tile": 291,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2683
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.009",
+      "tile": 292,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2676
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.010",
+      "tile": 293,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2447
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.011",
+      "tile": 294,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2418
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.012",
+      "tile": 295,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2404
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.013",
+      "tile": 296,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2528
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.014",
+      "tile": 297,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2638
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.015",
+      "tile": 298,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2335
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.016",
+      "tile": 299,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2576
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.017",
+      "tile": 300,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2429
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.018",
+      "tile": 301,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2605
+    },
+    {
+      "part": "Upper outboard turbine exposed waist rib.019",
+      "tile": 302,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2656
+    },
+    {
+      "part": "Upper outboard turbine intake rim",
+      "tile": 303,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2319
+    },
+    {
+      "part": "Upper outboard turbine intake rim.001",
+      "tile": 304,
+      "material": "Brushed titanium",
+      "role": "metal",
+      "base_color_linear": [
+        0.28,
+        0.34,
+        0.39
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2829
+    },
+    {
+      "part": "Upper outboard turbine intake shadow",
+      "tile": 305,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4111
+    },
+    {
+      "part": "Upper outboard turbine intake shadow.001",
+      "tile": 306,
+      "material": "Deep panel recess",
+      "role": "structure",
+      "base_color_linear": [
+        0.006,
+        0.009,
+        0.011
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4246
+    },
+    {
+      "part": "Upper outboard turbine recessed intake lens",
+      "tile": 307,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4616
+    },
+    {
+      "part": "Upper outboard turbine recessed intake lens.001",
+      "tile": 308,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4366
+    },
+    {
+      "part": "Upper outboard turbine shoulder armor",
+      "tile": 309,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2905
+    },
+    {
+      "part": "Upper outboard turbine shoulder armor.001",
+      "tile": 310,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2866
+    },
+    {
+      "part": "Upper outboard turbine shoulder armor.002",
+      "tile": 311,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.32
+    },
+    {
+      "part": "Upper outboard turbine shoulder armor.003",
+      "tile": 312,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.268
+    },
+    {
+      "part": "Upper outboard turbine stepped casing",
+      "tile": 313,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2668
+    },
+    {
+      "part": "Upper outboard turbine stepped casing.001",
+      "tile": 314,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.321
+    },
+    {
+      "part": "Upper outboard turbine stepped casing.002",
+      "tile": 315,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4464
+    },
+    {
+      "part": "Upper outboard turbine stepped casing.003",
+      "tile": 316,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2756
+    },
+    {
+      "part": "Upper outboard turbine stepped casing.004",
+      "tile": 317,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.231
+    },
+    {
+      "part": "Upper outboard turbine stepped casing.005",
+      "tile": 318,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2594
+    },
+    {
+      "part": "Upper outboard turbine stepped casing.006",
+      "tile": 319,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.3071
+    },
+    {
+      "part": "Upper outboard turbine stepped casing.007",
+      "tile": 320,
+      "material": "Dark mechanical structure",
+      "role": "structure",
+      "base_color_linear": [
+        0.014,
+        0.022,
+        0.029
+      ],
+      "metallic": 0.35,
+      "roughness": 0.4258
+    },
+    {
+      "part": "Upper outboard turbine stepped casing.008",
+      "tile": 321,
+      "material": "Muted green grey armor",
+      "role": "paint",
+      "base_color_linear": [
+        0.15,
+        0.29,
+        0.23
+      ],
+      "metallic": 0.18,
+      "roughness": 0.2595
+    },
+    {
+      "part": "Upper outboard turbine stepped casing.009",
+      "tile": 322,
+      "material": "Gunmetal",
+      "role": "metal",
+      "base_color_linear": [
+        0.066,
+        0.084,
+        0.1
+      ],
+      "metallic": 0.95,
+      "roughness": 0.2736
+    }
+  ]
+}
