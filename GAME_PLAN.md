@@ -214,8 +214,10 @@ The user approved the [main-menu opening-screen concept](docs/menu-design/main-m
 Use graphite surfaces, amber accents, a persistent left navigation rail, a large
 active-ship preview, bottom ship statistics and an orange Start action on Overview.
 Start is exclusive to Overview. Hangar retains its ship-specifications strip,
-without Start; all other pages omit both the strip and Start. Align the outpost
-status and credits together at the far right of the top bar.
+without Start; all other pages omit both the strip and Start. The top bar shows
+credits at the far right with a small wallet icon. The user removed the outpost/docked
+label and green status dot during implementation review; keep synchronization
+and rescue feedback contextual beside the ship instead.
 
 Keep every menu minimal: short functional labels, necessary values and actions.
 Add text or controls only as needed. Omit slogans, decorative section numbers,
@@ -235,7 +237,7 @@ Overview now implements this direction with native Godot controls, a generated
 empty-hangar backdrop and sharp renders of the existing ship models. Credits,
 active hull, current hull health, fitted shield capacity, damage, cruise speed
 and cargo usage read the synchronized game state. Start appears only on Overview;
-the left navigation and top-right readouts remain available on station pages.
+the left navigation and top-right wallet remain available on station pages.
 Flight instructions and permanent preparation prose are omitted; contextual
 station feedback remains available. Other page interiors retain their existing
 functional UI pending their own implementation, including the future full-width

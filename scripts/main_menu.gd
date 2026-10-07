@@ -16,7 +16,6 @@ var sector: Sector
 var start_button: Button
 var navigation: Dictionary[String, Button] = {}
 var wallet: Label
-var connection: Label
 var home: Control
 var ship_art: TextureRect
 var ship_title: Label
@@ -30,7 +29,6 @@ var header: Panel
 var sidebar: Panel
 var background: TextureRect
 var brand: Label
-var dock_icon: TextureRect
 var wallet_icon: TextureRect
 var ship_status: Label
 var ship_ready: Label
@@ -63,8 +61,6 @@ func _ready() -> void:
 	canvas.add_child(header)
 	brand = label(header, "DORBIT", 52, INK, true)
 	label(header, "\\", 34, AMBER).position = Vector2(218, 17)
-	connection = label(header, "SYNCING PILOT...", 20, INK, true)
-	dock_icon = icon(header, "status", Color("a7ee86"))
 	wallet_icon = icon(header, "wallet", AMBER)
 	wallet = label(header, "", 26, AMBER, true)
 	wallet.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -339,12 +335,8 @@ func layout() -> void:
 	var wallet_width := wallet.get_minimum_size().x
 	wallet.position = Vector2(canvas.size.x - wallet_width - 28, 21)
 	wallet.size = Vector2(wallet_width, 40)
-	wallet_icon.position = Vector2(wallet.position.x - 44, 27)
-	wallet_icon.size = Vector2(28, 28)
-	connection.size = connection.get_minimum_size()
-	connection.position = Vector2(wallet_icon.position.x - connection.size.x - 32, 24)
-	dock_icon.position = connection.position - Vector2(28, -7)
-	dock_icon.size = Vector2(12, 12)
+	wallet_icon.position = Vector2(wallet.position.x - 30, 29)
+	wallet_icon.size = Vector2(18, 18)
 	sidebar.position = Vector2(0, HEADER_HEIGHT)
 	sidebar.size = Vector2(SIDEBAR_WIDTH, canvas.size.y - HEADER_HEIGHT)
 	var row_height := (sidebar.size.y - 145) / navigation.size()
@@ -412,10 +404,7 @@ func _process(_delta: float) -> void:
 		if page in ["shop", "hangar", "cargo", "quests"]:
 			navigation[page].disabled = not ready or not sector.player.alive
 	wallet.text = StationShop.credits_text(sector.credits) + " CR"
-	connection.text = "OUTPOST 01 / DOCKED" if ready else "SYNCING PILOT..."
-	if ready and not sector.player.alive:
-		connection.text = "RESCUE IN %d s" % ceili(sector.player_respawn)
-	ship_status.text = "ACTIVE SHIP" if ready and sector.player.alive else ("RESCUE PENDING" if ready else "WAITING FOR SERVER")
+	ship_status.text = "ACTIVE SHIP" if ready and sector.player.alive else ("RESCUE IN %d s" % ceili(sector.player_respawn) if ready else "WAITING FOR SERVER")
 	ship_ready.visible = ready and sector.player.alive
 	notice.text = sector.session.combat.station_message
 	if sector.toast_time > 0:

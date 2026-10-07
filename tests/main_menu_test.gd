@@ -55,7 +55,7 @@ func run() -> void:
 		await capture(client, "main-menu-%d" % dimensions.x)
 		check(server.session.store.commit({"pilot0": PilotStore.MAX_CREDITS}), "Set the supported wallet limit for layout validation")
 		await replicate(server)
-		check(bounds.encloses(menu.wallet.get_global_rect()) and not menu.connection.get_global_rect().intersects(menu.wallet_icon.get_global_rect()), "Large synchronized credit balances fit the header without overlap")
+		check(bounds.encloses(menu.wallet.get_global_rect()) and bounds.encloses(menu.wallet_icon.get_global_rect()) and not menu.wallet.get_global_rect().intersects(menu.wallet_icon.get_global_rect()), "Large synchronized credit balances and the wallet icon fit the header without overlap")
 		check(server.session.store.commit({"pilot0": 19000}), "Restore the preparation budget")
 		await replicate(server)
 		for button: Button in menu.navigation.values():
