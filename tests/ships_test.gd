@@ -97,6 +97,8 @@ func run() -> void:
 			await replicate(server)
 			check(client.player.ship_model == model and observer.session.ships[id].ship_model == model and client.player.max_hull == entry["hull"] and observer.session.ships[id].max_hull == entry["hull"], model + " model and hull replicate to owner and observer")
 			check(client.cargo_capacity == entry["cargo"] and is_equal_approx(remote.cruise_speed, entry["speed"] * 0.1), model + " uses its cargo capacity and proportional flight speed")
+			if model == "nostromo":
+				await screenshot(client, "ships-nostromo-flight")
 			client.equipment_menu.open()
 			await settle()
 			check(client.equipment_menu.slots.size() == available.size() and client.equipment_menu.ship_title.text == entry["name"].to_upper(), model + " fitting screen follows the active hull")

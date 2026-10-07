@@ -83,6 +83,12 @@ new multi-angle design references and updated editable models, guided by the
 user's Liberator hangar image. Six actual mesh renders per ship provide consistent
 angles; generated sheets are design guidance and can disagree in small details.
 
+Following user review, Nostromo's forebody is longer and tapers to a sharper bow.
+Its length relative to wing span increases by about 30%. Armor, cockpit and
+cheek fittings follow the hull, while the paired rear turbines retain their
+round shape. See the [revised model views](../art/ship-review/previews/nostromo-views.jpg)
+and [Nostromo game capture](feedback/refined-nostromo-flight.png).
+
 `tools/export_ships.py` exports the saved `.blend` files without changing
 them. Run Blender in background mode with `--python tools/export_ships.py`.
 The exporter removes the studio and references, consolidates each hull into
@@ -105,7 +111,7 @@ The rendered authenticated ship replay passed 211 checks with no failures or
 stderr errors. See the updated [flight](feedback/refined-ships-flight.png) and
 [shop](feedback/refined-ships-shop.png) captures.
 
-The full roster's base export triangle total rises from 689,638 to 762,286;
+The full roster's base export triangle total rises from 689,638 to 762,142;
 Liberator is now the largest hull at 98,228 triangles. Godot still generates LODs
 on import. These checks establish loading and presentation compatibility, not
 ten-player performance on the reference hardware or final art acceptance.
