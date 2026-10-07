@@ -16,6 +16,9 @@ var mute: CheckButton
 var fullscreen: CheckButton
 var vsync: CheckButton
 var quality: OptionButton
+var graphics_options: Dictionary[String, OptionButton] = {}
+var bloom: CheckButton
+var ssao: CheckButton
 var performance: CheckButton
 var resolution: OptionButton
 var resolutions: Array[Vector2i] = []
@@ -236,6 +239,8 @@ func build_audio(rows: VBoxContainer) -> void:
 
 
 func build_graphics(rows: VBoxContainer) -> void:
+	var page_rows := rows
+	rows = section(rows, "DISPLAY & PERFORMANCE")
 	fullscreen = checkbox(rows, "Fullscreen", func(value: bool):
 		sector.settings.fullscreen = value
 		sector.apply_graphics(false)
@@ -278,6 +283,59 @@ func build_graphics(rows: VBoxContainer) -> void:
 		sector.settings.show_performance = value
 		sector.apply_graphics(false)
 		sector.settings.save())
+	rows = section(page_rows, "IMAGE QUALITY")
+	rows.add_theme_constant_override("separation", 4)
+	graphics_choice(rows, "render_scale", "3D render scale", ["Off / Native (100%)", "85%", "75%", "50%"],
+		"Lower scales improve GPU performance. Menus and HUD stay sharp.")
+	graphics_choice(rows, "anisotropic_filtering", "Anisotropic filtering", ["Off", "16x"],
+		"Sharpens textures viewed at an angle. Low performance cost.")
+	bloom = checkbox(rows, "Bloom / glow", func(value: bool):
+		sector.settings.bloom = value
+		save_graphics())
+	label(rows, "Adds a soft halo around bright lights and lasers. Low to medium cost.", 14)
+	ssao = checkbox(rows, "Ambient occlusion (SSAO)", func(value: bool):
+		sector.settings.ssao = value
+		save_graphics())
+	label(rows, "Shades corners and crevices on ships and structures. Low to medium cost.", 14)
+	graphics_choice(rows, "shadow_quality", "Shadows", ["Off", "Low", "Medium", "High"],
+		"Sunlight casts shadows on nearby objects. Medium to high cost.")
+	graphics_choice(rows, "effects_quality", "Combat effects", ["Off", "Low", "High"],
+		"Controls laser, impact and explosion visuals. Lower levels help in busy fights.")
+
+
+func graphics_choice(rows: VBoxContainer, setting: String, title: String, choices: Array, help: String) -> void:
+	var row := HBoxContainer.new()
+	rows.add_child(row)
+	var caption := label(row, title)
+	caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var choice := OptionButton.new()
+	choice.custom_minimum_size = Vector2(220, 36)
+	for text: String in choices:
+		choice.add_item(text)
+	row.add_child(choice)
+	graphics_options[setting] = choice
+	choice.item_selected.connect(func(index: int):
+		sector.settings.set(setting, GameSettings.GRAPHICS_LEVELS[setting][index])
+		save_graphics())
+	label(rows, help, 14)
+
+
+func save_graphics() -> void:
+	sector.apply_graphics(false)
+	sector.settings.save()
+
+
+func section(parent: Node, title: String) -> VBoxContainer:
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", style(Color("091522"), Color("263e53")))
+	parent.add_child(card)
+	var rows := content(card)
+	rows.add_theme_constant_override("separation", 8)
+	for side in ["left", "right", "top", "bottom"]:
+		rows.get_parent().add_theme_constant_override("margin_" + side, 12)
+	label(rows, title, 11)
+	return rows
 
 
 func open(connection: bool = false) -> void:
@@ -328,6 +386,10 @@ func sync_controls() -> void:
 	fullscreen.set_pressed_no_signal(sector.settings.fullscreen)
 	vsync.set_pressed_no_signal(sector.settings.vsync)
 	quality.select(0 if sector.low_quality else 1)
+	for setting: String in graphics_options:
+		graphics_options[setting].select(GameSettings.GRAPHICS_LEVELS[setting].find(sector.settings.get(setting)))
+	bloom.set_pressed_no_signal(sector.settings.bloom)
+	ssao.set_pressed_no_signal(sector.settings.ssao)
 	performance.set_pressed_no_signal(sector.show_performance)
 	sync_resolution()
 	binding_help.text = ""

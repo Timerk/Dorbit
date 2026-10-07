@@ -14,6 +14,7 @@ static func material(color: Color, glow: bool = false) -> StandardMaterial3D:
 	result.albedo_color = color
 	result.metallic = 0.55 if not glow else 0.0
 	result.roughness = 0.55
+	result.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	if glow:
 		result.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		result.emission_enabled = true
@@ -25,6 +26,8 @@ static func mesh(parent: Node3D, shape: Mesh, position: Vector3, surface: Materi
 	var instance := MeshInstance3D.new()
 	instance.mesh = shape
 	instance.material_override = surface
+	if surface is BaseMaterial3D and surface.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED:
+		instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	instance.position = position
 	parent.add_child(instance)
 	return instance
@@ -69,7 +72,9 @@ static func station(parent: Node3D, location: Vector3, render: bool = true) -> N
 	root.position = location
 	parent.add_child(root)
 	if render:
-		root.add_child((load("res://assets/sector/outpost-01.glb") as PackedScene).instantiate())
+		var model := (load("res://assets/sector/outpost-01.glb") as PackedScene).instantiate()
+		configure_texture_filtering(model)
+		root.add_child(model)
 	# Separate colliders preserve the open docking ring.
 	for side in [-1.0, 1.0]:
 		add_box_collider(root, Vector3(side * 14, 0, 0), Vector3(5, 27, 5))
@@ -94,6 +99,7 @@ static func add_box_collider(parent: Node3D, location: Vector3, size: Vector3) -
 static func environment(parent: Node3D, render: bool = true) -> void:
 	if render:
 		var world := WorldEnvironment.new()
+		world.name = "WorldEnvironment"
 		var settings := Environment.new()
 		settings.background_mode = Environment.BG_SKY
 		settings.sky = Sky.new()
@@ -106,9 +112,14 @@ static func environment(parent: Node3D, render: bool = true) -> void:
 		settings.ambient_light_color = Color("8ca6c4")
 		settings.ambient_light_energy = 0.48
 		settings.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+		settings.glow_hdr_threshold = 0.8
+		settings.glow_intensity = 0.35
+		settings.ssao_radius = 3.0
+		settings.ssao_intensity = 1.2
 		world.environment = settings
 		parent.add_child(world)
 		var sun := DirectionalLight3D.new()
+		sun.name = "Sun"
 		sun.rotation_degrees = Vector3(-30, -35, 0)
 		sun.light_color = Color("ffdfbd")
 		sun.light_energy = 1.55
@@ -125,7 +136,7 @@ static func environment(parent: Node3D, render: bool = true) -> void:
 		planet.rings = 32
 		var planet_surface := ShaderMaterial.new()
 		planet_surface.shader = preload("res://shaders/planet.gdshader")
-		mesh(parent, planet, Vector3(1350, 480, -2500), planet_surface)
+		mesh(parent, planet, Vector3(1350, 480, -2500), planet_surface).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		# Distant scenery sits beyond the safe sector and has no colliders.
 		distant_scenery(parent)
 	var rng := RandomNumberGenerator.new()
@@ -162,6 +173,46 @@ static func apply_surface(node: Node, surface: Material) -> void:
 		apply_surface(child, surface)
 
 
+static func configure_texture_filtering(node: Node, enabled: bool = true) -> void:
+	if node is MeshInstance3D:
+		for index in range(node.mesh.get_surface_count()):
+			var surface := node.get_active_material(index) as BaseMaterial3D
+			if surface != null:
+				surface.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC if enabled else BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	for child in node.get_children():
+		configure_texture_filtering(child, enabled)
+
+
+static func apply_graphics(parent: Node3D, preferences: GameSettings) -> void:
+	var world := parent.get_node_or_null("WorldEnvironment") as WorldEnvironment
+	if world == null:
+		return # Dedicated servers have no environment or presentation settings.
+	# GLES3 ignores runtime Viewport anisotropy levels. Its startup maximum is
+	# 16x; switching material samplers makes the Off/16x choice apply immediately.
+	configure_texture_filtering(parent, preferences.anisotropic_filtering > 0)
+	world.environment.glow_enabled = preferences.bloom
+	world.environment.ssao_enabled = preferences.ssao
+	var sun := parent.get_node("Sun") as DirectionalLight3D
+	sun.shadow_enabled = preferences.shadow_quality > 0
+	if sun.shadow_enabled:
+		RenderingServer.directional_shadow_atlas_set_size([1024, 2048, 4096][preferences.shadow_quality - 1], true)
+		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS if preferences.shadow_quality == 3 else DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+		sun.directional_shadow_max_distance = [180.0, 300.0, 500.0][preferences.shadow_quality - 1]
+	if parent.get_meta("effects_quality", 2) != preferences.effects_quality:
+		for effect in parent.get_tree().get_nodes_in_group("transient_feedback"):
+			if parent.is_ancestor_of(effect):
+				effect.queue_free()
+	parent.set_meta("effects_quality", preferences.effects_quality)
+
+
+static func effects_quality(parent: Node) -> int:
+	while parent != null:
+		if parent is Sector:
+			return parent.settings.effects_quality
+		parent = parent.get_parent()
+	return 2
+
+
 static func asteroid_surface() -> StandardMaterial3D:
 	var surface := material(Color.WHITE)
 	surface.metallic = 0.05
@@ -184,6 +235,9 @@ static func distant_scenery(parent: Node3D) -> void:
 		var wreck := (load("res://assets/sector/derelict.glb") as PackedScene).instantiate() as Node3D
 		wreck.position = location * 1.7
 		wreck.rotation_degrees = Vector3(12, 32, -18)
+		configure_texture_filtering(wreck)
+		for part: MeshInstance3D in wreck.find_children("*", "MeshInstance3D"):
+			part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		root.add_child(wreck)
 	# A distant belt adds scale and parallax for three draw calls, outside playable space.
 	var rng := RandomNumberGenerator.new()
@@ -204,6 +258,7 @@ static func distant_scenery(parent: Node3D) -> void:
 		var belt := MultiMeshInstance3D.new()
 		belt.multimesh = instances
 		belt.material_override = surface
+		belt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		root.add_child(belt)
 		source.free()
 
@@ -231,20 +286,23 @@ static func laser(parent: Node3D, start: Vector3, finish: Vector3, hostile: bool
 	shape.top_radius = 0.055
 	shape.bottom_radius = 0.055
 	shape.height = length
-	shape.radial_segments = 8
+	shape.radial_segments = 4 if effects_quality(parent) == 1 else 8
 	var surface := material(color.lerp(Color.WHITE, 0.85), true)
 	surface.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	surface.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	var beam := mesh(effect, shape, (endpoint - start) * 0.5, surface)
 	beam.quaternion = Quaternion(Vector3.UP, direction)
 	beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var aura := glow(beam, Vector3.ZERO, Vector2(0.95, length), color, 0.18)
-	(aura.material_override as ShaderMaterial).set_shader_parameter("beam", true)
+	if effects_quality(parent) > 1:
+		var aura := glow(beam, Vector3.ZERO, Vector2(0.95, length), color, 0.18)
+		(aura.material_override as ShaderMaterial).set_shader_parameter("beam", true)
 	var tween := effect.create_tween().set_parallel(true)
 	tween.tween_property(beam, "scale", Vector3(0.2, 1.0, 0.2), 0.18)
 	tween.tween_property(surface, "albedo_color:a", 0.0, 0.18)
-	glow(effect, Vector3.ZERO, Vector2.ONE * 2.4, color, 0.09)
-	glow(effect, endpoint - start, Vector2.ONE * 2.0, color, 0.13)
+	if effects_quality(parent) > 1:
+		glow(effect, Vector3.ZERO, Vector2.ONE * 2.4, color, 0.09)
+		glow(effect, endpoint - start, Vector2.ONE * 2.0, color, 0.13)
+
 
 
 static func explosion(parent: Node3D, location: Vector3, diameter: float = 9.7) -> void:
@@ -257,8 +315,9 @@ static func explosion(parent: Node3D, location: Vector3, diameter: float = 9.7) 
 	effect.set_meta("diameter", size)
 	var flash := glow(effect, Vector3.ZERO, Vector2.ONE * size * 2.6, Color("ffb453"), 0.85)
 	effect.create_tween().tween_property(flash, "scale", Vector3.ONE * 2.4, 0.85).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	glow(effect, Vector3.ZERO, Vector2(size * 4.8, size * 0.24), Color("ffd598"), 0.65)
-	sparks(effect, Vector3.ZERO, Vector3.ZERO, 12, size * 0.55, 1.15)
+	if effects_quality(parent) > 1:
+		glow(effect, Vector3.ZERO, Vector2(size * 4.8, size * 0.24), Color("ffd598"), 0.65)
+	sparks(effect, Vector3.ZERO, Vector3.ZERO, 4 if effects_quality(parent) == 1 else 12, size * 0.55, 1.15)
 
 
 static func destruction_size(ship: SpaceShip) -> float:
@@ -307,22 +366,28 @@ static func impact(parent: Node3D, location: Vector3, shield_hit: bool, hull_hit
 		var shell := SphereMesh.new()
 		shell.radius = radius
 		shell.height = radius * 2.0
-		shell.radial_segments = 32
-		shell.rings = 16
+		shell.radial_segments = 16 if effects_quality(parent) == 1 else 32
+		shell.rings = 8 if effects_quality(parent) == 1 else 16
 		var surface := ShaderMaterial.new()
 		surface.shader = SHIELD_SHADER
 		surface.set_shader_parameter("hit_direction", direction)
 		var pulse := mesh(effect, shell, Vector3.ZERO, surface)
 		pulse.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		effect.create_tween().tween_method(func(value: float): surface.set_shader_parameter("progress", value), 0.0, 1.0, 0.38)
-		glow(effect, direction * radius, Vector2.ONE * 2.8, Color("65dfff"), 0.14)
+		if effects_quality(parent) > 1:
+			glow(effect, direction * radius, Vector2.ONE * 2.8, Color("65dfff"), 0.14)
 	if hull_hit:
 		var contact := hull_contact(parent, direction)
 		glow(effect, contact, Vector2.ONE * 3.2, Color("ffaf50"), 0.18)
-		sparks(effect, contact, direction, 6, 1.0, 0.35)
+		sparks(effect, contact, direction, 1 if effects_quality(parent) == 1 else 6, 1.0, 0.35)
 
 
 static func feedback_root(parent: Node3D, location: Vector3, duration: float, limit: int = EFFECT_LIMIT) -> CombatEffect:
+	var quality := effects_quality(parent)
+	if quality == 0:
+		return null
+	if quality == 1:
+		limit = mini(limit, 32)
 	if parent.get_tree().get_nodes_in_group("transient_feedback").size() >= limit:
 		return null
 	var effect := CombatEffect.new()

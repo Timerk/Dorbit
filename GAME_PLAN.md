@@ -71,6 +71,22 @@ Settings are available from the connection menu and the Esc flight menu. Players
 
 Original flight tuning before the ship roster: 36 m/s cruise, 78 m/s boost, 40 m/s² acceleration, 60 m/s² braking, 80 m/s² counter-thrust, and a 65 ms mouse-steering response time constant. From cruise, release stops the ship in about 0.6 seconds; mouse steering completes about 95% of a turn command within 0.2 seconds. These values remain tuning decisions.
 
+The user approved six independent Graphics controls while retaining the
+Compatibility renderer: 3D render scale (Off/native, 85%, 75%, 50%), anisotropic
+filtering (Off, 16x), bloom and ambient occlusion toggles, shadow
+quality (Off, Low, Medium, High), and combat effects (Off, Low, High). Changes
+apply immediately and persist across restarts. Native rendering, disabled
+filtering/bloom/occlusion/shadows and High combat effects remain the defaults for
+existing profiles. Render scaling leaves menus and HUD at native resolution.
+Effects Off removes visual laser, impact and destruction feedback while retaining
+sound, damage, rewards and targeting. Low simplifies geometry and limits feedback
+to 32 meshes; High preserves the existing 64/80 limits. Shadows apply only to the
+sun, with bounded distances; distant scenery and transient effects do not cast
+shadows. Effect appearance and quality budgets remain playtesting settings; menu
+performance costs are estimates, not hardware benchmark results.
+Compatibility does not implement runtime anisotropy levels: the engine starts
+with a 16x maximum and the menu switches material filtering Off/16x immediately.
+
 ## Combat
 
 Players select an enemy and engage it with weapons that track the target. Precise manual aiming is not the basis of the initial combat system.

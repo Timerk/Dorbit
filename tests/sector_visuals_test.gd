@@ -11,6 +11,12 @@ func run() -> void:
 	SectorVisuals.environment(server, false)
 	SectorVisuals.station(client, Sector.STATION_POSITION, true)
 	SectorVisuals.station(server, Sector.STATION_POSITION, false)
+	var graphics := GameSettings.new()
+	graphics.bloom = true
+	graphics.ssao = true
+	graphics.shadow_quality = 3
+	graphics.effects_quality = 0
+	SectorVisuals.apply_graphics(server, graphics)
 	var client_shapes := collision_manifest(client)
 	var server_shapes := collision_manifest(server)
 	check(client_shapes == server_shapes, "Rendered and dedicated sectors have identical obstacle geometry")
