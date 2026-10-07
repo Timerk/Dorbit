@@ -165,7 +165,7 @@ func rail_button(text: String, icon_name: String, action: Callable) -> Button:
 
 
 func build_navigation() -> void:
-	for entry: Array in [["overview", "OVERVIEW"], ["hangar", "HANGAR"], ["quests", "QUESTS"], ["shop", "SHOP"], ["cargo", "CARGO TRADE"], ["skylab", "SKYLAB"], ["gates", "GALAXY GATES"], ["settings", "SETTINGS"], ["connection", "CONNECTION"]]:
+	for entry: Array in [["overview", "OVERVIEW"], ["hangar", "HANGAR"], ["quests", "QUESTS"], ["shop", "SHOP"], ["cargo", "CARGO TRADE"], ["refining", "REFINING"], ["skylab", "SKYLAB"], ["gates", "GALAXY GATES"], ["settings", "SETTINGS"], ["connection", "CONNECTION"]]:
 		var page: String = entry[0]
 		var button := rail_button(entry[1], page, func(): select_page(page))
 		button.toggle_mode = true
@@ -270,6 +270,7 @@ func hide_pages() -> void:
 	sector.hud.navigation.close_overview(false)
 	sector.shop.hide()
 	sector.equipment_menu.hide()
+	sector.resource_workshop.hide()
 	sector.hud.contract_panel.hide()
 	sector.settings_menu.dismiss()
 	placeholder.hide()
@@ -306,9 +307,9 @@ func select_page(page: String) -> void:
 		show_home()
 		return
 	var offline := StationUi.offline_preview(sector)
-	if not offline and page in ["shop", "hangar", "cargo", "quests"] and (not sector.session.received_snapshot or sector.session.combat.inventory.is_empty()):
+	if not offline and page in ["shop", "hangar", "cargo", "quests", "refining"] and (not sector.session.received_snapshot or sector.session.combat.inventory.is_empty()):
 		return
-	if not offline and page in ["shop", "hangar", "cargo", "quests"]:
+	if not offline and page in ["shop", "hangar", "cargo", "quests", "refining"]:
 		var blocker := sector.repair_blocker()
 		if not blocker.is_empty():
 			sector.notify(blocker)
@@ -326,6 +327,7 @@ func select_page(page: String) -> void:
 			sector.shop.open()
 			sector.shop.select_cargo(page == "cargo")
 		"hangar": sector.equipment_menu.open()
+		"refining": sector.resource_workshop.open()
 		"quests": sector.hud.toggle_contracts()
 		"settings": sector.settings_menu.open()
 		"connection": sector.session.open_menu()
@@ -418,6 +420,8 @@ func _process(_delta: float) -> void:
 		selected_page = "cargo" if sector.shop.cargo_page.visible else "shop"
 	elif sector.equipment_menu.visible:
 		selected_page = "hangar"
+	elif sector.resource_workshop.visible:
+		selected_page = "refining"
 	elif sector.hud.contract_panel.visible:
 		selected_page = "quests"
 	elif sector.settings_menu.panel.visible:
@@ -435,7 +439,7 @@ func _process(_delta: float) -> void:
 	start_button.tooltip_text = "Wait for rescue before launching." if not sector.player.alive else ("Waiting for server confirmation." if start_button.disabled else ("Enter the solo development encounter." if offline else "Launch your active ship at Outpost 01."))
 	for page: String in navigation:
 		navigation[page].set_pressed_no_signal(selected_page == page)
-		if page in ["shop", "hangar", "cargo", "quests"]:
+		if page in ["shop", "hangar", "cargo", "quests", "refining"]:
 			navigation[page].disabled = not ready or (not offline and not sector.player.alive)
 	wallet.text = StationShop.credits_text(sector.credits) + " CR"
 	ship_status.text = ("OFFLINE PREVIEW" if offline else "ACTIVE SHIP") if ready and sector.player.alive else ("RESCUE IN %d s" % ceili(sector.player_respawn) if ready else "WAITING FOR SERVER")
@@ -453,12 +457,12 @@ func _process(_delta: float) -> void:
 			last_model = model
 			ship_art.set_model(model)
 			ship_title.text = ShipCatalog.info(model)["name"].to_upper()
-		var stats := Equipment.stats(data)
+		var stats := ResourceBoosts.stats(Equipment.stats(data), sector.player.resource_boosts)
 		stat_values["hull"].text = StationShop.credits_text(int(sector.player.hull))
 		stat_values["shield"].text = StationShop.credits_text(int(stats["shield"]))
 		stat_values["damage"].text = str(int(stats["damage"]))
 		stat_values["speed"].text = "%d m/s" % stats["speed"]
 		stat_values["cargo"].text = "%d / %d" % [CargoResources.units(sector.cargo), sector.cargo_capacity]
-	for panel: Control in [placeholder, sector.shop, sector.equipment_menu, sector.hud.contract_panel]:
+	for panel: Control in [placeholder, sector.shop, sector.equipment_menu, sector.resource_workshop, sector.hud.contract_panel]:
 		if panel.visible:
 			fit_panel(panel, Vector2(1150, 690))

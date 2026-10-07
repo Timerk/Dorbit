@@ -82,6 +82,7 @@ PY
     checked --headless --path . --script res://tests/darkorbit_equipment_test.gd
     checked --headless --path . --script res://tests/preview_credits_test.gd
     checked --headless --path . --script res://tests/resources_test.gd
+    checked --headless --path . --script res://tests/resource_upgrades_test.gd
     checked_command python3 tests/pilots_test.py
     ;;
   *)

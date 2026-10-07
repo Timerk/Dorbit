@@ -597,6 +597,8 @@ func flight_launched(id: int) -> void:
 
 
 func peer_left(id: int) -> void:
+	if active and sector.dedicated_server and not combat.flush_boosts([id]):
+		stop_for_save_failure()
 	pilot_ids.erase(id)
 	challenges.erase(id)
 	if active and multiplayer.is_server():
@@ -706,6 +708,9 @@ func send_snapshot() -> void:
 			snapshot.rpc_id(id, state, {}, snapshot_sequence)
 		else:
 			snapshot.rpc(state, {}, snapshot_sequence)
+		if sector.dedicated_server:
+			var revision: int = store.pilots[pilot_ids[id]]["equipment"]["revision"]
+			combat.boost_state.rpc_id(id, ship.resource_boosts, snapshot_sequence, revision)
 	for enemy: Alien in sector.aliens.values():
 		snapshot.rpc({}, combat.pack_alien(enemy), snapshot_sequence)
 
@@ -767,6 +772,8 @@ func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int) -> void
 
 
 func disconnect_session(message: String) -> void:
+	if active and sector.dedicated_server and not combat.flush_boosts():
+		stop_for_save_failure()
 	sector.preflight = false
 	if is_instance_valid(sector.main_menu):
 		sector.main_menu.hide()
@@ -805,6 +812,8 @@ func disconnect_session(message: String) -> void:
 
 func _exit_tree() -> void:
 	if store != null:
+		if active and sector.dedicated_server and not store.failed:
+			combat.flush_boosts()
 		store.close()
 	if active or connecting:
 		multiplayer.multiplayer_peer.close()

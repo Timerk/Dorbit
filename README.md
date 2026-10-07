@@ -362,7 +362,7 @@ The regular Liberator has 116,000 hull. New pilots start with LF-1, SG3N-A01 and
 
 LF-3 adds 175 base damage and 15% more for that laser against aliens (201.25 total) per installed copy. Its bonus never multiplies other lasers. FS-01 adds 3,200 shield, 70% absorption and +6.25% regeneration; its regeneration bonuses add together and multiply normal shield recovery after the existing six-second delay. Shield capacity adds, while absorption is weighted by each generator's capacity. Current fitting and installation previews show these special bonuses. Fitting changes do not repair or refill your ship. Inventory and fittings survive rescue, reconnects and restart. Equipment purchases require the persistent dedicated server; the offline development fixture uses the same starter combat and flight values. Reference prices need human progression playtesting with the existing rewards.
 
-Client and server must use matching builds. Network schema 8 adds equipment purchase quantities to the station request format, retaining hull model, maximum hull, alien damage, shield regeneration bonuses, radiation exposure, docked state and explicit launch RPCs; the compatibility handshake rejects older builds before gameplay. Save schema 3 is unchanged. Update the operator provisioning tool with the server so credential rotation recognizes every new model.
+Client and server must use matching builds. Network schema 9 includes equipment purchase quantities and resource boost synchronization, retaining hull model, maximum hull, alien damage, shield regeneration bonuses, radiation exposure, docked state and explicit launch RPCs; the compatibility handshake rejects older builds before gameplay. Save schema 4 preserves equipment, cargo and resource boosts. Update the operator provisioning tool with the server so credential rotation recognizes every new model.
 
 The reference catalog test (`res://tests/darkorbit_equipment_test.gd`) runs in both check helpers. It exercises every purchasable model through authenticated purchase, duplicate protection, installation, stat replication and removal. It rejects LF-4, SG3N-B00 and legacy-engine purchases, then checks mixed shields, cumulative fusion regeneration, fractional LF-3 alien damage through real physics shots, UI bonus displays, bonus restoration when switching hulls and restart persistence. A rendered run produces the review captures above under `build/validation`. On 6 October 2026 it passed 131 assertions both headlessly and on Windows OpenGL; the rendered shop test passed 53. The full Windows check script passed, including ten authenticated clients and the flight replay. The compatibility and flight replays emitted their existing ObjectDB cleanup warnings on exit; the new rendered runs were clean. Six Python operator-tool tests passed, including credential rotation preserving all new models. Linux execution and exported client checks are left to PR CI; WSL is unavailable on this machine. Item artwork remains the existing category placeholders, and reference prices need human economy playtesting.
 
@@ -504,6 +504,50 @@ Cargo belongs to each owned ship and survives death, reconnects and restarts. Co
 Review captures show the [full cargo panel](docs/feedback/resources-full-hold.png), [confirmed sale](docs/feedback/resources-sold.png) and [resource box in space](docs/feedback/resources-in-space.png). Prices and capacities still need human balance playtesting.
 
 On 2 October 2026, the resource integration test passed 47 assertions on Windows headless, Windows OpenGL and Linux headless. Both full check scripts passed. Rendered equipment checks passed 53 assertions after adding the cargo page. The Windows release export passed, and its protocol fingerprint matched the Windows and WSL Linux source runtimes. Operator-tool tests passed three cases; Linux shutdown and migration checks passed seven cases, including corrupt cargo and a version-2 ledger backup. Some combat and compatibility replays emitted ObjectDB cleanup warnings on exit while passing their assertions; the resource runs did not.
+
+### Refining and resource upgrades
+
+Open **Refining** in the shared menu near Outpost 01. Its **Refining** tab shows
+the ore recipe tree; select Prometid, Duranium or Promerium, choose an amount and
+confirm. Prometid uses 20 Prometium + 10 Endurium; Duranium uses 10 Endurium +
+20 Terbium; Promerium uses 10 Prometid + 10 Duranium without Xenomit. Seprom
+production waits for Skylab, while existing Seprom loot is usable now.
+
+The **Update** tab applies resources to lasers, shields or engines. Prometid
+adds 15% weapon damage; Duranium adds 10% shield capacity/speed; Promerium adds
+30% weapon damage and 20% capacity/speed; Seprom adds 60% weapon damage and
+40% capacity, with no engine bonus. Each unit provides ten individual laser
+rounds or ten minutes. Four lasers use four rounds per volley, and a final
+partial volley boosts only the remaining rounds. Adding the same resource
+extends the reserve at a fixed percentage. Replacing it requires acknowledging
+the discard warning. Rockets show Coming later and cannot consume resources.
+
+Boosts stay with their hull. Timers count while online in the active ship,
+including menus and rescue, and pause when disconnected or using another hull.
+Shield capacity and fitted cruise/boost speeds reflect the active multiplier;
+applying a shield boost does not refill charge or alter absorption.
+Durations checkpoint every five seconds and flush on disconnect/shutdown and
+successful station changes; an abrupt crash can restore up to five seconds.
+Weapon rounds commit before damage. Server writes validate ingredients,
+compatibility, quantities, station restrictions and duplicate protection.
+
+This requires matching network-schema-9 builds. Ledger schemas 1–3 migrate to
+schema 4, preserving progression and adding empty reserves; keep a backup for
+rollback. The provisioning tool preserves and validates boosts during rotation.
+`res://tests/resource_upgrades_test.gd` exercises authenticated refining and
+upgrades, partial volleys with mixed lasers, online timing, restart, duplicate
+protection, unsupported resources, failed writes and real mouse menu actions.
+Run it with a renderer for 960 × 600 and 1440 × 900 screenshots under
+`build/validation`. Both check runners include it. Human balance playtesting
+remains necessary.
+
+On 7 October 2026, the full Windows check passed. The new upgrade fixture
+passed 75 assertions headlessly and 81 with Windows OpenGL, including real
+mouse actions at 960 × 600 and 1440 × 900. Seven Python provisioning tests
+passed. Review the [refining menu](docs/feedback/refining-menu.png) and
+[active boosts and replacement warning](docs/feedback/resource-upgrades-menu.png).
+The new rendered run was clean; some older checks still report ObjectDB cleanup
+warnings. Linux-only execution and release-export checks remain for PR CI.
 
 ### Existing gameplay checks
 

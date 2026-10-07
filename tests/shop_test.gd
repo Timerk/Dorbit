@@ -150,6 +150,7 @@ func check_flight_pages(client: Sector, prefix: String) -> void:
 				"overview": panel = menu.home
 				"hangar": panel = client.equipment_menu
 				"shop", "cargo": panel = client.shop
+				"refining": panel = client.resource_workshop
 				"quests": panel = client.hud.contract_panel
 				"settings": panel = client.settings_menu.panel
 				"connection": panel = client.session.menu
@@ -166,6 +167,8 @@ func check_flight_pages(client: Sector, prefix: String) -> void:
 					check(client.shop.sell_all.disabled and client.shop.sells.values().all(func(button: Button): return button.disabled), "Offline flight cannot sell cargo")
 				elif page == "quests":
 					check(client.hud.contract_accept.disabled, "Offline flight cannot accept hunts")
+				elif page == "refining":
+					check(client.resource_workshop.refine_button.disabled and client.resource_workshop.upgrade_button.disabled, "Offline flight cannot refine or apply resource boosts")
 			if page in ["hangar", "cargo"]:
 				await capture(client, "%s-flight-%s-%d" % [prefix, page, dimensions.x])
 		await click(client, menu.resume_button)
