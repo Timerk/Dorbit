@@ -227,42 +227,17 @@ server builds must match (network schema 7 adds docked state and launch RPCs).
 
 ### Menu visual direction
 
-The user approved the [main-menu opening-screen concept](docs/menu-design/main-menu-approved.png).
-Use graphite surfaces, amber accents, a persistent left navigation rail, a large
-active-ship preview, bottom ship statistics and an orange Start action on Overview.
-Start is exclusive to Overview. Hangar retains its ship-specifications strip,
-without Start; all other pages omit both the strip and Start. Align credits and a
-small wallet icon at the far right of the top bar. The user removed the outpost/docked
-label and green status dot during implementation review. Start remains exclusive
-to the preflight Overview; flight menu browsing uses Resume flight.
+Menus and the flight HUD share the [approved graphite-and-amber UI direction](docs/menu-design/README.md).
+Use Rajdhani typography, concise functional labels and contextual feedback.
+Menus retain a left navigation rail and a top-right wallet with credits, without
+an outpost/docked label. Start belongs only to preflight Overview; flight browsing
+uses Resume flight. Ship specifications appear only on Overview and Hangar.
 
-Keep every menu minimal: short functional labels, necessary values and actions.
-Add text or controls only as needed. Omit slogans, decorative section numbers,
-fictional dates/clocks, repeated outpost headings, ship schematic callouts and
-the flight-preparation instruction panel removed during concept review. Provide
-contextual help or blocked-action reasons when needed instead of permanent
-instruction paragraphs.
-
-The user also approved the [hangar concept](docs/menu-design/hangar-approved.png),
-which carries this style into owned-ship selection, equipment slots and storage
-inventory. The user accepted the matching Quests, Shop, Cargo Trade, Connection,
-three Settings tabs and Skylab/Galaxy Gates coming-soon concepts with the footer
-visibility change described above. The saved images incorporate that change.
-The displayed inventory, quest state, connection address
-and settings are illustrative; actual ownership and fitting remain server-authoritative.
-Saved images are visual references for future implementation, not implemented
-menu screens. See [concept notes and prompts](docs/menu-design/README.md).
-
-The [approved flight HUD](docs/hud-design/README.md) uses the same graphite/amber
-colors, Rajdhani typography and minimal text as the menus. The menu and HUD
-references are introduced together as one shared UI design, while native menu
-and HUD implementation remain separate work. The HUD omits the full-width
-header, logo, header outpost label, cargo count, pilot count and wallet. Hunting
-Contracts and Local Radar share a small top margin, with the active autopilot
-label below the radar. Ship status, destination and target panels align along
-the bottom and leave the central flight view open. Preserve contextual station,
-cargo-full, firing-blocker, radiation/re-entry, rescue and configured-control
-feedback. The generated values and world details are illustrative references.
+The [approved flight HUD](docs/hud-design/README.md) omits the full-width header,
+uses a shared small top margin for contracts/radar, and aligns ship, destination
+and target status along the bottom. Preserve contextual gameplay feedback.
+Reference images and prompts are design guidance; game state and tuning remain
+in the implementation and this plan.
 
 ### First station equipment shop and fitting
 
