@@ -79,32 +79,12 @@ func build_menu() -> void:
 	layer.layer = 5
 	add_child(layer)
 	menu = PanelContainer.new()
-	var panel_style := FlightHud.panel_style()
-	panel_style.bg_color.a = 0.98
-	menu.add_theme_stylebox_override("panel", panel_style)
 	layer.add_child(menu)
-	menu.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	menu.offset_left = -310
-	menu.offset_right = 310
-	menu.offset_top = -270
-	menu.offset_bottom = 270
-	var margin := MarginContainer.new()
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 24)
-	menu.add_child(margin)
-	var rows := VBoxContainer.new()
-	rows.add_theme_constant_override("separation", 12)
-	margin.add_child(rows)
-	var title := Label.new()
-	title.text = "CONNECT TO DORBIT"
-	title.add_theme_font_size_override("font_size", 26)
-	rows.add_child(title)
-	var help := Label.new()
-	help.text = "Join the same sector, alone or with friends.\nYour pilot's credits are saved on the server."
-	rows.add_child(help)
-	var address_label := Label.new()
-	address_label.text = "Server address"
-	rows.add_child(address_label)
+	StationUi.frame(menu, Vector2(500, 430))
+	var rows := StationUi.rows(menu, 24)
+	rows.add_theme_constant_override("separation", 14)
+	StationUi.text(rows, "CONNECTION", 30)
+	StationUi.text(rows, "Server address", 18, StationUi.MUTED)
 	address = LineEdit.new()
 	address.placeholder_text = "Server address"
 	address.text = preferences.address
@@ -117,37 +97,53 @@ func build_menu() -> void:
 	rows.add_child(port_field)
 	host_button = add_button(rows, "Host encounter (development)", func(): host())
 	host_button.visible = not sector.client_only
-	join_button = add_button(rows, "Connect", connect_from_menu)
-	leave_button = add_button(rows, "Disconnect", func(): disconnect_session("Connection cancelled." if connecting else "Disconnected. You can connect again when ready."))
+	var actions := HBoxContainer.new()
+	rows.add_child(actions)
+	join_button = add_button(actions, "CONNECT", connect_from_menu)
+	StationUi.primary(join_button)
+	leave_button = add_button(actions, "DISCONNECT", func(): disconnect_session("Connection cancelled." if connecting else "Disconnected. You can connect again when ready."))
+	leave_button.custom_minimum_size.y = 48
 	address.text_submitted.connect(func(_text: String): connect_from_menu())
 	port_field.get_line_edit().text_submitted.connect(func(_text: String): connect_from_menu.call_deferred())
-	preference_label = Label.new()
-	preference_label.text = "Remembers the last successful connection on this device."
-	preference_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	rows.add_child(preference_label)
-	status_label = Label.new()
-	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status_label.custom_minimum_size.x = 540
-	rows.add_child(status_label)
-	back_button = add_button(rows, "Back", func(): menu.hide(); sector.set_paused(false))
-	add_button(rows, "Settings", func(): sector.settings_menu.open(true))
-	add_button(rows, "Quit to desktop", func(): get_tree().quit())
+	preference_label = StationUi.text(rows, "", 16, FlightHud.RED)
+	status_label = StationUi.text(rows, "", 18, StationUi.MUTED)
+	status_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var footer := HBoxContainer.new()
+	rows.add_child(footer)
+	back_button = add_button(footer, "Back", func(): menu.hide(); sector.set_paused(false))
+	add_button(footer, "Settings", func(): sector.settings_menu.open(true))
+	add_button(footer, "Quit to desktop", func(): get_tree().quit())
 	menu.hide()
 
 
+func layout_menu() -> void:
+	if is_instance_valid(sector.main_menu) and sector.main_menu.visible:
+		sector.main_menu.fit_panel(menu, Vector2(500, 430))
+		return
+	var dimensions := Vector2(500, 430).max(menu.get_combined_minimum_size())
+	var viewport_size := sector.get_viewport().get_visible_rect().size
+	var area := viewport_size - Vector2(32, 32)
+	var factor := minf(1.0, minf(area.x / dimensions.x, area.y / dimensions.y))
+	menu.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	menu.size = dimensions
+	menu.scale = Vector2.ONE * factor
+	menu.position = (viewport_size - dimensions * factor) / 2
+
+
 func add_button(parent: Node, title: String, action: Callable) -> Button:
-	var button := Button.new()
-	button.text = title
-	button.pressed.connect(action)
-	parent.add_child(button)
+	var button := StationUi.button(parent, title, action)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return button
 
 
 func open_menu() -> void:
+	if is_instance_valid(sector.main_menu) and sector.main_menu.route_page("connection"):
+		return
 	sector.set_paused(true)
 	if is_instance_valid(sector.settings_menu):
 		sector.settings_menu.dismiss()
 	menu.show()
+	layout_menu()
 	if active:
 		back_button.grab_focus()
 	elif connecting:
@@ -162,12 +158,16 @@ func _process(_delta: float) -> void:
 			print("Server shutdown requested; closing pilot store.")
 			get_tree().quit()
 		return
+	if menu.visible:
+		layout_menu()
 	status_label.text = status
 	if not attempted_address.is_empty():
 		status_label.text = "%s | UDP %d\n%s" % [attempted_address, attempted_port, status]
 	if connecting:
 		status_label.text += "\nWaiting for the server, up to %d seconds." % int(CONNECT_TIMEOUT)
 	preference_label.text = "Could not save this connection for the next launch." if preferences.save_failed else "Remembers the last successful connection on this device."
+	preference_label.visible = preferences.save_failed
+	host_button.visible = not sector.client_only
 	join_button.text = "Connect again" if not attempted_address.is_empty() else "Connect"
 	leave_button.text = "Cancel connection" if connecting else "Disconnect"
 	host_button.disabled = active or connecting
@@ -492,6 +492,11 @@ func launch() -> void:
 
 func quit_to_menu() -> void:
 	if offline_main_menu():
+		open_offline_main_menu()
+		return
+	if active and sector.offline and multiplayer.is_server():
+		# Listen hosting is a temporary development fixture, without a docked inventory.
+		disconnect_session("Development host stopped.")
 		open_offline_main_menu()
 		return
 	if active and not sector.preflight and not multiplayer.is_server():

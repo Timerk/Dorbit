@@ -25,6 +25,7 @@ var save_status: Label
 var back_button: Button
 var resume_button: Button
 var main_menu_button: Button
+var ship_menus_button: Button
 var reset_button: Button
 var pending_action: String = ""
 var from_connection: bool = false
@@ -36,20 +37,18 @@ func _ready() -> void:
 	theme = menu_theme()
 	pause_panel = make_panel(Vector2(540, 400))
 	var pause_rows := content(pause_panel)
-	label(pause_rows, "DORBIT / PILOT CONSOLE", 11)
-	label(pause_rows, "FLIGHT MENU", 28)
+	label(pause_rows, "FLIGHT MENU", 28).autowrap_mode = TextServer.AUTOWRAP_OFF
 	resume_button = button(pause_rows, "Resume flight", func(): sector.set_paused(false))
+	ship_menus_button = button(pause_rows, "Ship menus", func(): sector.main_menu.show_home())
 	button(pause_rows, "Settings", func(): open())
 	button(pause_rows, "Multiplayer session", sector.session.open_menu)
 	main_menu_button = button(pause_rows, "Quit to main menu", sector.session.quit_to_menu)
 	button(pause_rows, "Quit to desktop", func(): get_tree().quit())
-	label(pause_rows, "In multiplayer, the world keeps running while menus are open.", 14)
+	pause_panel.tooltip_text = "In multiplayer, the world keeps running while menus are open."
 	pause_panel.hide()
-	panel = make_panel(Vector2(880, 680))
+	panel = make_panel(Vector2(1050, 640))
 	var rows := content(panel)
-	label(rows, "PILOT CONSOLE / DEVICE PREFERENCES", 11)
 	label(rows, "SETTINGS", 28)
-	label(rows, "Changes apply immediately and are saved on this device.", 14)
 	tabs = TabContainer.new()
 	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rows.add_child(tabs)
@@ -71,69 +70,23 @@ func _ready() -> void:
 	layout()
 
 
-# Match the navy/slate surfaces and cyan interaction states in the station menus.
-static func style(background: Color, border: Color, width: int = 1) -> StyleBoxFlat:
-	var result := StyleBoxFlat.new()
-	result.bg_color = background
-	result.border_color = border
-	result.set_border_width_all(width)
-	result.set_corner_radius_all(3)
-	result.set_content_margin_all(8)
-	return result
-
 
 static func menu_theme() -> Theme:
-	var result := Theme.new()
-	result.default_font_size = 16
-	for type: String in ["Label", "Button", "OptionButton", "CheckButton", "PopupMenu", "TabContainer", "TabBar"]:
-		result.set_color("font_color", type, FlightHud.INK)
-		result.set_color("font_hover_color", type, FlightHud.INK)
-		result.set_color("font_pressed_color", type, FlightHud.CYAN)
-		result.set_color("font_focus_color", type, FlightHud.CYAN)
-		result.set_color("font_disabled_color", type, FlightHud.MUTED)
-	for type: String in ["Button", "OptionButton", "CheckButton"]:
-		result.set_stylebox("normal", type, style(Color("192838"), Color("3c5163")))
-		result.set_stylebox("hover", type, style(Color("233c50"), FlightHud.CYAN))
-		result.set_stylebox("pressed", type, style(Color("164358"), FlightHud.CYAN, 2))
-		result.set_stylebox("hover_pressed", type, style(Color("164358"), FlightHud.CYAN, 2))
-		result.set_stylebox("focus", type, style(Color(0, 0, 0, 0), FlightHud.CYAN))
-		result.set_stylebox("disabled", type, style(Color("111e2a"), Color("293b4b")))
-	for type: String in ["TabContainer", "TabBar"]:
-		result.set_stylebox("tab_unselected", type, style(Color("192838"), Color("3c5163")))
-		result.set_stylebox("tab_hovered", type, style(Color("233c50"), FlightHud.CYAN))
-		result.set_stylebox("tab_selected", type, style(Color("164358"), FlightHud.CYAN))
-		result.set_stylebox("tab_focus", type, style(Color(0, 0, 0, 0), FlightHud.CYAN))
-		result.set_color("font_selected_color", type, FlightHud.CYAN)
-		result.set_color("font_unselected_color", type, FlightHud.MUTED)
-		result.set_constant("side_margin", type, 18)
-	result.set_stylebox("panel", "TabContainer", style(Color("09131f"), Color("2d4356")))
-	result.set_stylebox("panel", "PopupMenu", style(Color("111c29"), Color("526779")))
-	result.set_stylebox("hover", "PopupMenu", style(Color("233c50"), FlightHud.CYAN))
-	var track := style(Color("192838"), Color("3c5163"))
-	track.content_margin_top = 3
-	track.content_margin_bottom = 3
-	result.set_stylebox("slider", "HSlider", track)
-	var fill := track.duplicate() as StyleBoxFlat
-	fill.bg_color = Color("164358")
-	fill.border_color = FlightHud.CYAN
-	result.set_stylebox("grabber_area", "HSlider", fill)
-	result.set_stylebox("grabber_area_highlight", "HSlider", fill)
-	return result
+	return StationUi.menu_theme()
 
 
 func layout() -> void:
 	for entry: PanelContainer in [panel, pause_panel]:
-		var preferred := Vector2(880, 680) if entry == panel else Vector2(540, 400)
-		var dimensions := preferred.min(get_viewport_rect().size - Vector2(32, 32))
-		entry.offset_left = -dimensions.x / 2
-		entry.offset_right = dimensions.x / 2
-		entry.offset_top = -dimensions.y / 2
-		entry.offset_bottom = dimensions.y / 2
+		if entry == panel and is_instance_valid(sector.main_menu) and sector.main_menu.visible:
+			sector.main_menu.fit_panel(entry, Vector2(1050, 640))
+			continue
+		var preferred := Vector2(1050, 640) if entry == panel else Vector2(540, 400)
+		StationUi.centered(entry, preferred)
 
 
 func make_panel(dimensions: Vector2) -> PanelContainer:
 	var result := PanelContainer.new()
-	result.add_theme_stylebox_override("panel", style(Color("111c29"), Color("526779"), 2))
+	result.add_theme_stylebox_override("panel", StationUi.style(StationUi.SURFACE, StationUi.LINE))
 	add_child(result)
 	result.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	result.offset_left = -dimensions.x / 2
@@ -169,7 +122,7 @@ func label(parent: Node, text: String, font_size: int = 16) -> Label:
 	var result := Label.new()
 	result.text = text
 	result.add_theme_font_size_override("font_size", font_size)
-	result.add_theme_color_override("font_color", FlightHud.CYAN if font_size == 11 else (FlightHud.MUTED if font_size == 14 else FlightHud.INK))
+	result.add_theme_color_override("font_color", StationUi.AMBER if font_size == 11 else (FlightHud.MUTED if font_size == 14 else FlightHud.INK))
 	result.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	result.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(result)
@@ -203,77 +156,120 @@ func checkbox(parent: Node, title: String, action: Callable) -> CheckButton:
 
 
 func build_controls(rows: VBoxContainer) -> void:
-	var columns := HBoxContainer.new()
-	columns.add_theme_constant_override("separation", 12)
-	rows.add_child(columns)
-	rows = section(columns, "FLIGHT RESPONSE")
-	rows.get_parent().get_parent().custom_minimum_size.x = 250
-	sensitivity_label = label(rows, "Mouse sensitivity")
+	var response := HBoxContainer.new()
+	rows.add_child(response)
+	sensitivity_label = label(response, "Mouse sensitivity")
+	sensitivity_label.custom_minimum_size.x = 300
+	sensitivity_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	sensitivity = HSlider.new()
 	sensitivity.min_value = 0.1
 	sensitivity.max_value = 3.0
 	sensitivity.step = 0.05
-	sensitivity.custom_minimum_size.y = 30
-	rows.add_child(sensitivity)
+	sensitivity.custom_minimum_size.y = 36
+	sensitivity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	response.add_child(sensitivity)
 	sensitivity.value_changed.connect(func(value: float):
 		sector.settings.sensitivity = value * GameSettings.DEFAULT_SENSITIVITY
 		sector.player.mouse_sensitivity = sector.settings.sensitivity
 		sensitivity_label.text = "Mouse sensitivity  /  %.2fx" % value
 		sector.settings.save())
-	binding_help = label(rows, "Select a binding, then press a key or mouse button.\nAn occupied binding swaps actions. Esc cancels.", 14)
-	rows = section(columns, "FLIGHT & COMBAT BINDINGS")
-	rows.get_parent().get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rows.add_child(HSeparator.new())
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", 24)
+	rows.add_child(columns)
+	var bindings: Array[VBoxContainer] = []
+	for index in 2:
+		var column := VBoxContainer.new()
+		column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		column.add_theme_constant_override("separation", 12)
+		columns.add_child(column)
+		bindings.append(column)
+	var rows_per_column := ceili(GameSettings.ACTIONS.size() / 2.0)
+	var index := 0
 	for action: String in GameSettings.ACTIONS:
 		var row := HBoxContainer.new()
-		rows.add_child(row)
+		bindings[index / rows_per_column].add_child(row)
+		index += 1
 		var caption := label(row, GameSettings.ACTIONS[action])
 		caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		var binding := button(row, "", func(): begin_binding(action))
-		binding.custom_minimum_size.x = 160
+		binding.custom_minimum_size.x = 150
+		binding.tooltip_text = "Choose a key or mouse button. An occupied binding swaps actions; Esc cancels."
 		binding_buttons[action] = binding
-	reset_button = button(rows, "Restore default controls", func():
+	binding_help = label(rows, "", 14)
+	reset_button = button(rows, "Restore defaults", func():
 		sector.settings.reset_controls()
 		sector.player.mouse_sensitivity = sector.settings.sensitivity
 		sector.settings.save()
 		sync_controls())
-	label(rows, "Menu shortcuts stay fixed: B, I, C, Esc, F3 to F7, F10 and F11.", 14)
+	reset_button.size_flags_horizontal = Control.SIZE_SHRINK_END
 
 
 func build_audio(rows: VBoxContainer) -> void:
-	rows = section(rows, "SOUND LEVELS")
-	master_label = label(rows, "Master volume")
-	master = volume_slider(rows)
-	effects_label = label(rows, "Effects volume")
-	effects = volume_slider(rows)
+	var master_row := HBoxContainer.new()
+	rows.add_child(master_row)
+	master_label = label(master_row, "Master volume")
+	master_label.custom_minimum_size.x = 300
+	master_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	master = volume_slider(master_row)
+	master.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var effects_row := HBoxContainer.new()
+	rows.add_child(effects_row)
+	effects_label = label(effects_row, "Effects volume")
+	effects_label.custom_minimum_size.x = 300
+	effects_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	effects = volume_slider(effects_row)
+	effects.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	master.value_changed.connect(func(value: float):
 		sector.audio.master = value / 100.0
 		sector.audio.save_preferences())
 	effects.value_changed.connect(func(value: float):
 		sector.audio.effects = value / 100.0
 		sector.audio.save_preferences())
-	mute = checkbox(rows, "Mute all sound", func(value: bool):
+	rows.add_child(HSeparator.new())
+	mute = checkbox(rows, "Mute", func(value: bool):
 		sector.audio.muted = value
 		sector.audio.save_preferences())
-	button(rows, "Test sound", func(): sector.audio.play("purchase", sector.player.camera.global_position))
+	var test_sound := button(rows, "Test sound", func(): sector.audio.play("purchase", sector.player.camera.global_position))
+	test_sound.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 
 
 func build_graphics(rows: VBoxContainer) -> void:
-	rows = section(rows, "DISPLAY & PERFORMANCE")
 	fullscreen = checkbox(rows, "Fullscreen", func(value: bool):
 		sector.settings.fullscreen = value
 		sector.apply_graphics(false)
 		sector.settings.save())
+	var resolution_row := HBoxContainer.new()
+	rows.add_child(resolution_row)
+	var resolution_label := label(resolution_row, "Window resolution")
+	resolution_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	resolution_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	resolution = OptionButton.new()
+	resolution.custom_minimum_size.x = 240
+	resolution_row.add_child(resolution)
+	resolution.tooltip_text = "Selecting a resolution switches to windowed mode. Fullscreen uses your desktop resolution."
+	resolution.item_selected.connect(func(index: int):
+		sector.settings.resolution = resolutions[index]
+		sector.settings.fullscreen = false
+		sector.apply_graphics()
+		sector.settings.save()
+		fullscreen.set_pressed_no_signal(false))
 	vsync = checkbox(rows, "VSync", func(value: bool):
 		sector.settings.vsync = value
 		sector.apply_graphics(false)
 		sector.settings.save())
-	label(rows, "Sync frames to your screen's refresh rate to reduce tearing. Off by default.", 14)
-	label(rows, "Antialiasing")
+	vsync.tooltip_text = "Sync frames to the screen to reduce tearing."
+	var quality_row := HBoxContainer.new()
+	rows.add_child(quality_row)
+	var quality_label := label(quality_row, "Antialiasing")
+	quality_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	quality_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	quality = OptionButton.new()
+	quality.custom_minimum_size.x = 240
 	quality.add_item("Off")
 	quality.add_item("4x MSAA")
-	rows.add_child(quality)
+	quality_row.add_child(quality)
 	quality.item_selected.connect(func(index: int):
 		sector.settings.low_quality = index == 0
 		sector.apply_graphics(false)
@@ -282,31 +278,11 @@ func build_graphics(rows: VBoxContainer) -> void:
 		sector.settings.show_performance = value
 		sector.apply_graphics(false)
 		sector.settings.save())
-	label(rows, "Window resolution")
-	resolution = OptionButton.new()
-	rows.add_child(resolution)
-	resolution.item_selected.connect(func(index: int):
-		sector.settings.resolution = resolutions[index]
-		sector.settings.fullscreen = false
-		sector.apply_graphics()
-		sector.settings.save()
-		fullscreen.set_pressed_no_signal(false))
-	label(rows, "Selecting a resolution switches to windowed mode.\nFullscreen uses your desktop resolution.", 14)
-
-
-func section(parent: Node, title: String) -> VBoxContainer:
-	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", style(Color("091522"), Color("263e53")))
-	parent.add_child(card)
-	var rows := content(card)
-	rows.add_theme_constant_override("separation", 8)
-	for side in ["left", "right", "top", "bottom"]:
-		rows.get_parent().add_theme_constant_override("margin_" + side, 12)
-	label(rows, title, 11)
-	return rows
 
 
 func open(connection: bool = false) -> void:
+	if not connection and sector.main_menu.route_page("settings"):
+		return
 	from_connection = connection
 	sector.set_paused(true)
 	sector.shop.hide()
@@ -315,6 +291,7 @@ func open(connection: bool = false) -> void:
 	sector.session.menu.hide()
 	pause_panel.hide()
 	panel.show()
+	layout()
 	sync_controls()
 	back_button.grab_focus()
 
@@ -326,6 +303,8 @@ func close() -> void:
 		return
 	if from_connection:
 		sector.session.open_menu()
+	elif sector.main_menu.visible:
+		sector.set_paused(false)
 	else:
 		pause_panel.show()
 		resume_button.grab_focus()
@@ -351,7 +330,8 @@ func sync_controls() -> void:
 	quality.select(0 if sector.low_quality else 1)
 	performance.set_pressed_no_signal(sector.show_performance)
 	sync_resolution()
-	binding_help.text = "Select a binding, then press a key or mouse button.\nAn occupied binding swaps actions. Esc cancels."
+	binding_help.text = ""
+	binding_help.hide()
 
 
 func sync_resolution() -> void:
@@ -367,8 +347,9 @@ func sync_resolution() -> void:
 
 func begin_binding(action: String) -> void:
 	pending_action = action
+	binding_help.show()
 	binding_buttons[action].text = "Press a key..."
-	binding_buttons[action].add_theme_stylebox_override("normal", style(Color("164358"), FlightHud.CYAN, 2))
+	binding_buttons[action].add_theme_stylebox_override("normal", StationUi.style(Color("30251a"), StationUi.AMBER))
 	binding_help.text = "Binding: %s\nPress a key or mouse button. Esc cancels." % GameSettings.ACTIONS[action]
 
 
@@ -399,14 +380,21 @@ func _input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
-	main_menu_button.visible = (sector.client_only and sector.session.active) or sector.session.offline_main_menu()
-	var show_pause := sector.paused and not sector.preflight and not sector.session.menu.visible and not panel.visible and not sector.shop.visible and not sector.equipment_menu.visible and not sector.hud.contract_panel.visible and not sector.hud.navigation.overview.visible
+	main_menu_button.visible = sector.session.active or sector.session.offline_main_menu()
+	main_menu_button.tooltip_text = "Stops the development host and disconnects its pilots." if sector.session.active and multiplayer.is_server() else ""
+	var show_pause := sector.paused and not sector.preflight and not sector.main_menu.visible and not sector.session.menu.visible and not panel.visible and not sector.shop.visible and not sector.equipment_menu.visible and not sector.hud.contract_panel.visible and not sector.hud.navigation.overview.visible
 	if show_pause and not pause_panel.visible:
 		pause_panel.show()
 		resume_button.grab_focus()
 	pause_panel.visible = show_pause
+	if show_pause:
+		# Container minimum sizes settle after _ready and after button visibility changes.
+		StationUi.centered(pause_panel, Vector2(540, 400))
 	if panel.visible:
+		layout()
 		master_label.text = "Master volume  /  %d%%" % master.value
 		effects_label.text = "Effects volume  /  %d%%" % effects.value
 		save_status.text = "Could not save settings. Changes will last for this session." if sector.settings.save_failed or sector.audio.save_failed else "Saved on this device"
+		save_status.visible = sector.settings.save_failed or sector.audio.save_failed
+		back_button.visible = not sector.main_menu.visible or from_connection
 		save_status.add_theme_color_override("font_color", FlightHud.RED if sector.settings.save_failed or sector.audio.save_failed else FlightHud.GREEN)

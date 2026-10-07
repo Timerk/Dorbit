@@ -140,6 +140,9 @@ switch ($Task) {
         Invoke-Godot @('--headless', '--path', (Join-Path $projectRoot 'build/windows'),
             '--main-pack', (Join-Path $projectRoot 'build/windows/Dorbit.exe'),
             '--script', (Join-Path $projectRoot 'tests/ship_assets_test.gd'), '--quit-after', '10')
+        Invoke-Godot @('--headless', '--path', (Join-Path $projectRoot 'build/windows'),
+            '--main-pack', (Join-Path $projectRoot 'build/windows/Dorbit.exe'),
+            '--script', (Join-Path $projectRoot 'tests/menu_assets_test.gd'), '--quit-after', '300', '--', '--offline')
         Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tools/export_notices.gd')
     }
     'run' { & $engine --path $projectRoot }

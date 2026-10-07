@@ -194,13 +194,9 @@ speed. See README.md for configuration and use.
 ### Docked main menu and launch
 
 Normal clients connect to the persistent server into a docked pilot console before
-entering the map. The original station-console layout used a central green Start
-button and blue navigation panels. The user has approved a minimal graphite-and-amber
-replacement concept with saved credits and active-ship preparation (see below).
-Hangar, shop, quests (the existing
-hunting contracts), cargo trading, settings and connection management use the
-existing screens. Skylab and Galaxy Gates are visible coming-soon pages; their
-gameplay is not implemented in this milestone.
+entering the map. The graphite-and-amber console presents saved credits, active-ship
+preparation, Hangar, Shop, Quests, Cargo Trade, Settings and Connection. Skylab
+and Galaxy Gates remain coming-soon pages without gameplay in this milestone.
 
 Docked pilots can buy ships/equipment, activate owned hulls, fit items, trade saved
 cargo and accept or abandon hunts through the same server-validated persistence
@@ -210,7 +206,17 @@ server. Fitting and launch preserve current health, charge and cooldowns. Esc an
 screen Back actions return to the console without launching. Start closes station
 pages and launches the selected hull at the existing station spawn. Reconnection
 requires a fresh explicit launch; saved progression is retained. Menus opened
-after launch retain the existing live-world station and pause behavior.
+after launch use the same header, sidebar, artwork and page layouts. Esc > Ship
+menus opens the console without docking; B, I, C and F7 open Shop, Hangar, Quests
+and Connection in that shared layout. Resume flight or Esc closes the console.
+Start appears only on the preflight Overview. Flight Overview retains its ship
+statistics without Start. Station service checks and the running multiplayer
+world remain unchanged.
+
+Offline solo flight can also browse every page, including away from the station.
+It displays the local starter fitting without creating an authoritative inventory.
+Purchasing, selling, fitting, activation and contract actions remain disabled;
+browsing and resuming preserve the temporary wallet, health and position.
 
 After launch, Esc > Quit to main menu leaves the map from any position without
 disconnecting. The server returns the internal ship to its station spawn, removes
@@ -222,7 +228,7 @@ pending rescue completes in the menu with its existing fee and timer; Start is
 unavailable until the ship is alive. Start can then launch the prepared ship again.
 
 The console fits 960 x 600 through 1440 x 900 and larger windows; station panels
-scale to leave its persistent launch/navigation header accessible. Client and
+scale inside the content area to leave the top bar and left navigation accessible. Client and
 server builds must match (network schema 7 adds docked state and launch RPCs).
 
 ### Menu visual direction
@@ -237,7 +243,8 @@ The [approved flight HUD](docs/hud-design/README.md) omits the full-width header
 uses a shared small top margin for contracts/radar, and aligns ship, destination
 and target status along the bottom. Preserve contextual gameplay feedback.
 Reference images and prompts are design guidance; game state and tuning remain
-in the implementation and this plan.
+in the implementation and this plan. See [native menu screenshots and offline
+review instructions](docs/menu-design/implementation.md) for the implemented menus.
 
 ### First station equipment shop and fitting
 
@@ -362,7 +369,7 @@ Living ships collect automatically within 12 m. The nearest ship with free capac
 
 The Liberator holds 400 units; every resource uses one unit. Capacity is defined by ship model for future ship types, and cargo belongs to each individual owned ship. The flight HUD shows usage and FULL status; the station cargo page lists resource quantities, prices and total sale value. Collected cargo survives death, reconnects and server restarts. A future death penalty needs a separate decision.
 
-Press B at Outpost 01 and choose Trade raw materials. Seven horizontal ore cards use the colored images from the supplied resource screenshots, with unit prices, held amounts, minus/plus and editable quantity controls, sale totals and Sell buttons. Select a quantity of one resource or sell all active-ship cargo. Sales use the station restrictions: alive, within 60 m, at most 8 m/s and five seconds since damage. The server validates the selected amount and saves cargo removal, credit payment and the transaction sequence together before confirming success. Duplicate and stale requests cannot pay twice. A sale that exceeds the wallet limit leaves all cargo intact. Cargo collection also commits before removing units from space; a save failure stops progression.
+Press B at Outpost 01 and choose Trade raw materials. Seven horizontal ore cards use generated high-resolution transparent mineral renders in the supplied reference colors, with unit prices, held amounts, minus/plus and editable quantity controls, sale totals and Sell buttons. Select a quantity of one resource or sell all active-ship cargo. Sales use the station restrictions: alive, within 60 m, at most 8 m/s and five seconds since damage. The server validates the selected amount and saves cargo removal, credit payment and the transaction sequence together before confirming success. Duplicate and stale requests cannot pay twice. A sale that exceeds the wallet limit leaves all cargo intact. Cargo collection also commits before removing units from space; a save failure stops progression.
 
 Save schema 3 adds validated per-ship cargo. Versions 1 and 2 migrate once to empty holds while retaining credits, equipment, contracts and unrelated progression. The operator provisioning tool preserves cargo when rotating credentials. Older servers cannot read schema 3; rollback requires a pre-migration ledger backup.
 
@@ -374,7 +381,12 @@ Capacity, pickup distance, box lifetime, quantities and prices are provisional p
 
 The user chose a dedicated Linux server at the start of Milestone 3. Everyone connects to the same server; playing alone means being the only connected pilot. The server runs independently of any player's game client and controls movement, alien behavior, damage, rewards and action validation. The normal client has a connection menu and does not fall back to a playable offline world.
 
-The first implementation runs headlessly from source with Godot 4.7.2 on Linux x86-64, initially in Ubuntu on WSL2. It supports ten client pilots without a host ship and keeps simulating when everyone disconnects. The original solo/listen-host modes remain development fixtures behind `--offline`, not a separate progression path for normal play. Offline startup includes the main menu with explicit START and return from the Esc flight menu. Settings and connection controls remain available; station purchases, fitting, cargo trade and quests still require the dedicated server.
+The first implementation runs headlessly from source with Godot 4.7.2 on Linux x86-64, initially in Ubuntu on WSL2. It supports ten client pilots without a host ship and keeps simulating when everyone disconnects. The original solo/listen-host modes remain development fixtures behind `--offline`, not a separate progression path for normal play. Offline startup includes the main menu with explicit START and return from the Esc flight menu. All menu pages are viewable offline for visual review, using the solo starter fitting without creating a server inventory. Catalog and quest selection remain available; purchases, sales, fitting, hull activation and contract actions are disabled until connected to the dedicated server.
+
+The flight menu stays centered and readable across supported window sizes.
+Quit to main menu also stops a temporary development host and opens the offline
+Overview directly. Connected clients retain their session and use server docking,
+including clients launched with `--offline` that subsequently joined a server.
 
 The persistence slice adds operator-provisioned stable pilot IDs and private credentials, with one login per pilot. The server saves credits after each reward or charge and restores them on reconnect or restart. Invalid saves and write failures stop progression for operator recovery; each successful write retains the previous ledger as a backup. Save ownership belongs to the server; there is no client-owned wallet to transfer between worlds. Position, health and encounter objectives remain session state. Equipment purchases follow this slice.
 
