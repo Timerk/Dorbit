@@ -2,9 +2,10 @@
 
 ![Graphite-and-amber flight HUD concept](flight-hud-top-aligned.png)
 
-Revised proposal for the user's requested HUD redesign. Pending user review;
-this is a generated reference image, not an implemented or approved screen.
-No gameplay code or agreed game-plan requirements change in this branch.
+User-approved concept for the requested HUD redesign, including header removal
+and the shared small top margin for Hunting Contracts and Local Radar. Native
+Godot implementation is authorized and follows in a separate feature PR based
+on PR 42's menu theme. This branch contains reference art and documentation.
 
 ## References
 
