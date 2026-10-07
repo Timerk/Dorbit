@@ -1,13 +1,21 @@
-# Menu design references
+# Approved UI design references
 
 These raster concepts were generated with the built-in ImageGen tool. They guide
 future native Godot UI work; they are not runtime UI assets or playable screens.
+
+The menu and [flight HUD references](../hud-design/README.md) form one approved
+graphite-and-amber visual direction. Use the shared rules below when adding new
+menus. Native menu and HUD implementation remain separate feature PRs:
+[PR 42](https://github.com/Timerk/Dorbit/pull/42) and
+[PR 48](https://github.com/Timerk/Dorbit/pull/48).
+Example values and controls can predate later gameplay changes; use GAME_PLAN.md
+and the implementation for current prices, ownership and configured bindings.
 
 ## Review status
 
 | Screen | Image | Status |
 | --- | --- | --- |
-| Main menu opening screen | [main-menu-approved.png](main-menu-approved.png) | User approved, including far-right outpost status and credits |
+| Main menu opening screen | [main-menu-approved.png](main-menu-approved.png) | User approved; header simplified during implementation review |
 | Hangar | [hangar-approved.png](hangar-approved.png) | User approved |
 | Quests | [quests-approved.png](quests-approved.png) | Accepted with footer revision |
 | Shop | [shop-approved.png](shop-approved.png) | Accepted with footer revision |
@@ -18,24 +26,30 @@ future native Godot UI work; they are not runtime UI assets or playable screens.
 | Settings / Graphics | [settings-graphics-approved.png](settings-graphics-approved.png) | Accepted with footer revision |
 | Skylab | [skylab-approved.png](skylab-approved.png) | Coming-soon concept accepted with footer revision |
 | Galaxy Gates | [galaxy-gates-approved.png](galaxy-gates-approved.png) | Coming-soon concept accepted with footer revision |
+| Flight HUD | [flight-hud-top-aligned.png](../hud-design/flight-hud-top-aligned.png) | User approved, including header removal and shared top margin |
 
 ## Shared direction
 
 - Graphite surfaces, restrained amber accents, clear typography and generous spacing.
-- Persistent left navigation and top bar; outpost status and credits at the far right.
-- Overview alone has Start. Ship specifications appear only on Overview and Hangar.
+- Use graphite `#0c1217` surfaces, slate `#34434b` borders, amber `#ff880b` accents and muted `#93a5b5` labels with Rajdhani typography. Preserve semantic shield, health and danger colors.
+- Menus retain left navigation and a top bar with right-aligned credits and a small wallet icon. The outpost/docked label and green status dot were removed during implementation review.
+- Start appears only on the preflight Overview. Ship specifications appear only on Overview and Hangar.
+- The flight HUD uses the same colors and typography with an open central view, no menu sidebar, no full-width header and no Start action.
 - Keep text to useful labels, values, actions and contextual feedback. Start minimal and add only what is needed.
 - No slogans, fictional clocks/dates, decorative numbering, duplicate outpost headings, schematic callouts or flight-preparation panel.
 - Preserve existing functionality. Do not invent equipment types, configurations or progression systems.
 
 | Page | Ship-specifications strip | Start |
 | --- | --- | --- |
-| Overview | Visible | Visible |
+| Overview | Visible | Visible before launch |
 | Hangar | Visible, spanning the content width | Hidden |
 | Every other page | Hidden | Hidden |
 
 Launch requires returning to Overview. Cargo Trade keeps its own cargo usage/value
 summary; Shop keeps product stats and pricing; Quests keeps objectives and rewards.
+After launch, menu browsing uses the same style with Resume flight in place of
+launch access. The earlier concept images retain their original illustrative
+header; the current header and launch rules above take precedence.
 
 ## Hangar intent
 
@@ -74,8 +88,9 @@ Connect while disabling unavailable station actions and Overview's launch. Authe
 continues through operator-provisioned credentials, not new login fields.
 
 Skylab and Galaxy Gates contain only an icon and Coming soon. They add no gameplay.
-These concepts cover the docked main-menu destinations; flight HUD, sector map and
-in-flight pause overlays are outside this concept batch.
+The [flight HUD notes](../hud-design/README.md) extend this approved style to the
+flight overlays, preserving radar, navigation, ship/target status and contextual
+feedback. Sector map and in-flight pause overlays are outside this raster batch.
 
 ## Generation provenance
 
@@ -106,8 +121,8 @@ Original generation prompts describe the earlier shared footer for provenance;
 the visibility table and final edit prompts supersede that earlier instruction.
 
 Validation: visually checked the saved concepts for minimal copy, existing menu
-functionality, right-aligned header and relevant values. Controls matches all
-twelve current bindings; resource quantities/prices total 1,270 CR; the LF-1
+functionality, right-aligned header and relevant values. At the original concept
+review, Controls matched the twelve bindings pictured; resource quantities/prices total 1,270 CR; the LF-1
 purchase leaves 9,000 CR from 19,000 CR. Documentation and diff checks apply; no
 gameplay code changed. The directory is excluded from Godot imports with `.gdignore`.
 The revised images were also checked for footer visibility, preserved page actions

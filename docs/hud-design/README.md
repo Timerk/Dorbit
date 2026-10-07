@@ -1,0 +1,79 @@
+# Approved flight HUD design
+
+![Graphite-and-amber flight HUD concept](flight-hud-top-aligned.png)
+
+User-approved concept for the requested HUD redesign, including header removal
+and the shared small top margin for Hunting Contracts and Local Radar. These
+references are part of the same approved UI direction as the
+[menu design references](../menu-design/README.md), introduced together in
+[PR 41](https://github.com/Timerk/Dorbit/pull/41). Native Godot implementation is
+authorized and lives separately in [PR 48](https://github.com/Timerk/Dorbit/pull/48),
+based on PR 42's menu theme. This branch contains reference art and documentation.
+
+## References
+
+- [Shared approved UI direction](../menu-design/README.md#shared-direction):
+  graphite surfaces, restrained amber accents, condensed typography, concise
+  labels and existing functionality. Apply these same rules to future menus.
+- [PR 42](https://github.com/Timerk/Dorbit/pull/42) implements that direction.
+  Its [Overview screenshot](https://github.com/Timerk/Dorbit/blob/3a6f3f66cfcac6173a313b3e2a9254c87872c1b9/docs/menu-design/overview-implemented.png)
+  is the primary style reference. Its current header omits the docked-status
+  block shown in the older concept.
+- [The existing flight screenshot](../feedback/autopilot-1440.png) supplies the
+  gameplay scene, HUD functions and panel arrangement.
+
+## Approved presentation
+
+Use graphite `#0c1217` panels, thin slate `#34434b` borders, amber `#ff880b`
+brand/action accents, off-white `#e3edf7` text and muted `#93a5b5` labels.
+Match PR 42's Rajdhani font during implementation. Preserve semantic cyan
+shields, green healthy hull/friendly contacts and red hostile hull/danger.
+
+Retain the top-right forward-up radar, its range controls, contact height
+arrows, Map action and small active-only autopilot label. Keep ship status,
+destination compass and target status along the bottom, with aligned bottom
+edges. Put concise active-contract progress at top left and control hints on a
+quiet bottom strip. Leave the central flight view open.
+
+Following user review, remove the entire full-width header and extend the space
+background to the top edge. The logo, header outpost label, cargo count, pilot
+count and wallet are removed from this concept without relocating them. Following
+the next review, move Hunting Contracts and Local Radar upward to a shared small
+top margin (approximately 24 pixels in this image). Move the autopilot label with
+the radar. Preserve their horizontal positions, sizes and contents, and keep the
+bottom panels in place. No docked menu sidebar or Start action appears.
+
+Numbers illustrate existing game states; they do not change starter ownership,
+prices, tuning or saved progression. Three contracts show concurrent progress.
+The original screenshot's world is the reference; any generated differences in
+ship/environment details are illustrative and do not request new runtime art.
+
+Implementation must retain contextual feedback not shown in this single state:
+solo objectives, repair and station actions, cargo FULL, all firing blockers,
+contact identity/selection, notifications, radiation and safe-reentry guidance,
+rescue, disconnected state and optional performance overlay. Control hints must
+use configured bindings. Long labels and values must remain readable at the
+supported 960×600, 1440×900 and 1920×1080 window sizes. This image establishes
+visual direction; it does not validate native layout or interactions.
+
+## Generation and checks
+
+Generated with the built-in ImageGen tool using the three referenced local
+images: existing flight screenshot, PR 42 implemented Overview, and PR 41
+approved main-menu concept. The [original prompt](flight-hud-generation-prompt.txt)
+is saved alongside the image. A subsequent built-in ImageGen edit removed the
+header at the user's request; its [exact edit prompt](flight-hud-header-removal-prompt.txt)
+supersedes the original prompt's header instruction. The subsequent
+[top-alignment edit prompt](flight-hud-top-alignment-prompt.txt) moves both upper
+panels and the attached autopilot label into the space freed by the header,
+superseding the earlier instruction to keep those panels at their old positions.
+This directory is excluded from Godot imports.
+
+The current image is `flight-hud-top-aligned.png`; `flight-hud-concept.png`
+retains the preceding header-removal revision for reference.
+
+Visually inspected the concept for graphite/amber styling, retained health,
+radar/navigation/target/contract information, aligned bottom panels, header
+removal and matching small top margins for contracts/radar. PNG integrity and
+documentation/diff checks apply. Gameplay and runtime layout
+testing belong to the subsequent implementation, after concept review.
