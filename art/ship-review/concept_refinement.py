@@ -205,6 +205,14 @@ def goliath(b: ModuleType) -> None:
         (-.21, .28, .14, .072), (-.13, .28, .082, .036)], 'glass', 'silver')
 
 
+def nostromo_profile(p: Vector) -> tuple[float, float, float]:
+    """Lengthen the forebody and narrow its blunt bow into a tapered point."""
+    taper = min(1.0, max(0.0, (-p.y - .55) / 1.50)) ** 2
+    return (p.x * (1.0 - .86 * taper),
+            .05 + (p.y - .05) * 1.55 if p.y < .05 else p.y,
+            -.10 + (p.z + .10) * (1.0 - .35 * taper))
+
+
 def ship_fittings(b: ModuleType, name: str) -> None:
     """Macro assemblies specific to each concept; never scatter free detail."""
     if name == 'Liberator':
@@ -270,6 +278,10 @@ def ship_fittings(b: ModuleType, name: str) -> None:
                 .065, 'gunmetal', .014)
             b.ring('Concept turbine copper service band', (s * .77, .91, .67),
                    .38, .013, 'copper', (0, 1, 0))
+        # Transform the fitted plating, glazing and cheek machinery together;
+        # the rear turbines keep their round cross-sections and mounting points.
+        b.remove_parts(('Nose sensor',))
+        b.reshape(None, nostromo_profile)
     elif name == 'Phoenix':
         for s in [-1, 1]:
             b.panel('Concept capsule lower red cheek', [

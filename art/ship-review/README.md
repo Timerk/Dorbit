@@ -4,6 +4,12 @@ Twelve editable base-ship Blender models, now refined using the user's Liberator
 
 [Overview of all twelve ships and their source pictures](previews/additional-ships-overview.jpg)
 
+The Nostromo now has a longer forebody and a narrower, tapered bow following user
+review. Length relative to wing span increases by about 30%; the old wide nose
+cap becomes a small tip. Its plating, cockpit and cheek fittings follow the
+revised hull; the paired rear turbines and swept wings retain their recognizable
+arrangement.
+
 | Ship | Blender file | Catalogue comparison | Six-view sheet |
 | --- | --- | --- | --- |
 | Aegis | [aegis.blend](models/aegis.blend) | [Compare](previews/aegis-comparison.jpg) | [Views](previews/aegis-views.jpg) |
