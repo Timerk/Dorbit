@@ -1,5 +1,7 @@
 # Dorbit ship design references
 
+[Overview of all twelve concept turnarounds](overview.jpg)
+
 These twelve generated concept turnarounds use the user's Liberator main-menu
 image as the finish reference and the existing ship catalogue as the silhouette
 reference. They were created with the built-in image generation tool on
