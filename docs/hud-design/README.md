@@ -1,6 +1,6 @@
 # Flight HUD concept
 
-![Graphite-and-amber flight HUD concept](flight-hud-concept.png)
+![Graphite-and-amber flight HUD concept](flight-hud-top-aligned.png)
 
 Revised proposal for the user's requested HUD redesign. Pending user review;
 this is a generated reference image, not an implemented or approved screen.
@@ -33,8 +33,11 @@ quiet bottom strip. Leave the central flight view open.
 
 Following user review, remove the entire full-width header and extend the space
 background to the top edge. The logo, header outpost label, cargo count, pilot
-count and wallet are removed from this concept without relocating them. Keep
-the remaining HUD panels in place. No docked menu sidebar or Start action appears.
+count and wallet are removed from this concept without relocating them. Following
+the next review, move Hunting Contracts and Local Radar upward to a shared small
+top margin (approximately 24 pixels in this image). Move the autopilot label with
+the radar. Preserve their horizontal positions, sizes and contents, and keep the
+bottom panels in place. No docked menu sidebar or Start action appears.
 
 Numbers illustrate existing game states; they do not change starter ownership,
 prices, tuning or saved progression. Three contracts show concurrent progress.
@@ -56,10 +59,17 @@ images: existing flight screenshot, PR 42 implemented Overview, and PR 41
 approved main-menu concept. The [original prompt](flight-hud-generation-prompt.txt)
 is saved alongside the image. A subsequent built-in ImageGen edit removed the
 header at the user's request; its [exact edit prompt](flight-hud-header-removal-prompt.txt)
-supersedes the original prompt's header instruction. This directory is excluded
-from Godot imports.
+supersedes the original prompt's header instruction. The subsequent
+[top-alignment edit prompt](flight-hud-top-alignment-prompt.txt) moves both upper
+panels and the attached autopilot label into the space freed by the header,
+superseding the earlier instruction to keep those panels at their old positions.
+This directory is excluded from Godot imports.
+
+The current image is `flight-hud-top-aligned.png`; `flight-hud-concept.png`
+retains the preceding header-removal revision for reference.
 
 Visually inspected the concept for graphite/amber styling, retained health,
-radar/navigation/target/contract information, aligned bottom panels and header
-removal. PNG integrity and documentation/diff checks apply. Gameplay and runtime layout
+radar/navigation/target/contract information, aligned bottom panels, header
+removal and matching small top margins for contracts/radar. PNG integrity and
+documentation/diff checks apply. Gameplay and runtime layout
 testing belong to the subsequent implementation, after concept review.
