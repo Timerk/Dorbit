@@ -2,14 +2,19 @@ class_name FlightHud
 extends Control
 
 const INK := Color("e3edf7")
-const MUTED := Color("869bb0")
+const MUTED := Color("93a5b5")
+const AMBER := Color("ff880b")
+const LINE := Color("34434b")
 const CYAN := Color("66e2ee")
 const GREEN := Color("6ae9bb")
 const RED := Color("ff8176")
-const PANEL := Color(0.023, 0.042, 0.069, 0.92)
+const PANEL := Color(0.047, 0.071, 0.090, 0.92)
+const TOP_MARGIN := 24.0
+const SIDE_MARGIN := 32.0
+const BOTTOM_MARGIN := 71.0
 
 var sector: Sector
-var font: Font = ThemeDB.fallback_font
+var font: Font = StationUi.FONT
 var background: StyleBoxFlat
 var marker_labels: Array[Rect2] = []
 var contract_panel: PanelContainer
@@ -34,6 +39,7 @@ var navigation: FlightNavigation
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	theme = StationUi.menu_theme()
 	background = panel_style()
 	build_contract_panel()
 	navigation = FlightNavigation.new()
@@ -210,149 +216,226 @@ func update_contract_panel() -> void:
 	contract_abandon.tooltip_text = contract_status.text
 
 
-func text_at(point: Vector2, text: String, size_px: int = 16, color: Color = INK) -> void:
-	draw_string(font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, size_px, color)
+func text_at(point: Vector2, text: String, size_px: int = 16, color: Color = INK, width: float = -1.0) -> void:
+	# Fit long contact names and rebound keys without drawing outside their card.
+	while width > 0 and size_px > 12 and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px).x > width:
+		size_px -= 1
+	draw_string(font, point, text, HORIZONTAL_ALIGNMENT_LEFT, width, size_px, color)
 
 
-func panel(rect: Rect2, accent: Color = CYAN) -> void:
+func panel(rect: Rect2, accent: Color = AMBER) -> void:
 	draw_style_box(background, rect)
-	draw_line(rect.position, rect.position + Vector2(3.0, rect.size.y), accent, 3.0)
+	draw_line(rect.position + Vector2(2, 2), Vector2(rect.position.x + 2, rect.end.y - 2), accent, 3.0)
+
+
+func card_title(rect: Rect2, title: String, accent: Color = AMBER) -> void:
+	panel(rect, accent)
+	text_at(rect.position + Vector2(18, 27), title, 18, AMBER, rect.size.x - 36)
+	draw_line(rect.position + Vector2(18, 40), Vector2(rect.end.x - 18, rect.position.y + 40), LINE)
+
+
+static func number(value: float) -> String:
+	var digits := str(ceili(value))
+	var offset := digits.length() - 3
+	while offset > 0:
+		digits = digits.insert(offset, ",")
+		offset -= 3
+	return digits
+
+
+func ship_rect() -> Rect2:
+	return Rect2(SIDE_MARGIN, size.y - BOTTOM_MARGIN - 174, 290, 174)
+
+
+func target_rect() -> Rect2:
+	return Rect2(size.x - SIDE_MARGIN - 290, size.y - BOTTOM_MARGIN - 174, 290, 174)
+
+
+func objectives_rect() -> Rect2:
+	var shared := sector.session.active
+	var rows := sector.active_contracts.size() if shared else 0
+	return Rect2(SIDE_MARGIN, TOP_MARGIN, 280, 48 + rows * 34 if rows > 0 else 110)
+
+
+func paragraph(point: Vector2, content: String, width: float, pixels: int = 16, color: Color = INK) -> Vector2:
+	var dimensions := font.get_multiline_string_size(content, HORIZONTAL_ALIGNMENT_LEFT, width, pixels)
+	draw_multiline_string(font, point, content, HORIZONTAL_ALIGNMENT_LEFT, width, pixels, -1, color)
+	return dimensions
 
 
 static func panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = PANEL
-	style.border_color = Color(0.25, 0.4, 0.55, 0.25)
+	style.border_color = LINE
 	style.set_border_width_all(1)
-	style.set_corner_radius_all(4)
+	style.set_corner_radius_all(2)
 	return style
 
 
 func meter(point: Vector2, title: String, value: float, maximum: float, color: Color) -> void:
-	text_at(point, title, 12, MUTED)
-	text_at(point + Vector2(218, 0), "%03d" % ceili(value), 14, color)
+	text_at(point, title, 16, MUTED)
+	var value_text := number(value)
+	var value_width := font.get_string_size(value_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+	text_at(point + Vector2(250 - value_width, 0), value_text, 18, color)
 	var bar := Rect2(point + Vector2(0, 10), Vector2(250, 5))
-	draw_rect(bar, Color(0.18, 0.26, 0.34, 0.6))
+	draw_rect(bar, LINE)
 	bar.size.x *= clampf(value / maxf(maximum, 1.0), 0.0, 1.0)
 	draw_rect(bar, color)
 
 
-func _draw() -> void:
-	marker_labels.clear()
-	if sector.preflight or (is_instance_valid(sector.main_menu) and sector.main_menu.visible):
-		update_contract_panel()
-		return
-	marker_labels.append(Rect2(size.x - 322, 96, 290, 182))
-	if navigation.autopilot_status.visible:
-		marker_labels.append(navigation.autopilot_status.get_rect().grow(3))
-	if not is_instance_valid(sector.player):
-		return
-	var width := size.x
-	update_contract_panel()
-	var height := size.y
-	var player := sector.player
-	var shared := is_instance_valid(sector.session) and sector.session.active
-	# Keep the HUD usable when the window is resized down to its minimum size.
-	var compact := width < 1200.0
-	text_at(Vector2(32, 42), "D O R B I T", 26)
-	text_at(Vector2(33, 65), "OUTPOST 01  /  FIRST CONTACT", 11, CYAN)
-	text_at(Vector2(width - 200, 36), "%05d  CR" % sector.credits, 22, GREEN)
-	var connection := "CO-OP  /  %d PILOTS" % sector.session.ships.size() if shared else ("DISCONNECTED" if sector.client_only else "LOCAL SECTOR  /  SOLO")
-	text_at(Vector2(width - 200, 60), connection, 11, MUTED)
-	var cargo_used := CargoResources.units(sector.cargo)
-	text_at(Vector2(width - 390, 60), "CARGO %d / %d%s" % [cargo_used, sector.cargo_capacity, " FULL" if cargo_used >= sector.cargo_capacity else ""], 11, RED if cargo_used >= sector.cargo_capacity else GREEN)
-	draw_line(Vector2(32, 82), Vector2(width - 32, 82), Color(0.3, 0.5, 0.65, 0.25), 1.0)
-	var objective: String = [
-		"Leave the outpost. %s to fly forward." % GameSettings.binding_text("forward"),
-		"Find the alien. %s or %s to select." % [GameSettings.binding_text("cycle_target"), GameSettings.binding_text("select_target")],
-		"%s to fire. Keep the alien ahead and within 170 m." % GameSettings.binding_text("fire"),
-		"Return to Outpost 01. Slow down and press %s to repair." % GameSettings.binding_text("repair"),
-		"Encounter complete. Keep exploring or hunt another alien.",
-	][sector.objective_stage]
-	if shared:
-		objective = "C  Choose hunting contracts at Outpost 01. Rewards pay automatically."
-	text_at(Vector2(33, 113), "HUNTING CONTRACTS" if shared else "OBJECTIVE", 11, GREEN)
-	var objective_y := 137.0
-	if shared and not sector.active_contracts.is_empty():
+func draw_objectives() -> void:
+	var rect := objectives_rect()
+	card_title(rect, "HUNTING CONTRACTS" if sector.session.active else "OBJECTIVE")
+	if sector.session.active and not sector.active_contracts.is_empty():
+		var row := rect.position + Vector2(18, 66)
 		for kind: String in HuntingContracts.OFFERS:
-			if sector.active_contracts.has(kind):
-				text_at(Vector2(33, objective_y), HuntingContracts.objective(sector.active_contracts[kind]), 14 if compact else 17)
-				objective_y += 22
+			if not sector.active_contracts.has(kind):
+				continue
+			var contract: Dictionary = sector.active_contracts[kind]
+			text_at(row, kind.capitalize(), 18)
+			var pending := HuntingContracts.ready(contract)
+			var progress := "%d / %d" % [contract["progress"], contract["required"]]
+			if pending:
+				progress = "REWARD PENDING"
+			var pixels := 13 if pending else 18
+			var width := font.get_string_size(progress, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x
+			text_at(Vector2(rect.end.x - 18 - width, row.y), progress, pixels, AMBER if pending else INK)
+			row.y += 34
+			if row.y < rect.end.y:
+				draw_line(Vector2(rect.position.x + 18, row.y - 23), Vector2(rect.end.x - 18, row.y - 23), LINE)
 	else:
-		text_at(Vector2(33, objective_y), objective, 14 if compact else 17)
-		objective_y += 22
-	if sector.toast_time > 0.0:
-		text_at(Vector2(33, objective_y + 10), sector.toast, 12 if compact else 14, CYAN)
-	marker(Sector.STATION_POSITION, "[+] OUTPOST 01", GREEN, false)
-	if is_instance_valid(sector.target):
-		alien_marker(sector.target as Alien)
-	for drop: Dictionary in sector.loot.drops.values():
-		marker(drop["position"], "LOOT %d UNITS / FLY CLOSE" % CargoResources.units(drop["resources"]), Color("ffc55d"), false, null, false)
-	for enemy: Alien in sector.aliens.values():
-		if enemy != sector.target and enemy.alive and enemy.visible:
-			alien_marker(enemy)
-	if shared:
-		for ship: Pilot in sector.session.ships.values():
-			if ship != player and ship.alive:
-				marker(ship.global_position, "FRIEND %s" % sector.session.ships.find_key(ship), CYAN, false, ship)
-	var center := size * 0.5
-	draw_line(center - Vector2(8, 0), center - Vector2(3, 0), Color(0.7, 0.85, 0.95, 0.5), 1.0)
-	draw_line(center + Vector2(3, 0), center + Vector2(8, 0), Color(0.7, 0.85, 0.95, 0.5), 1.0)
-	draw_circle(center, 1.0, CYAN)
-	panel(Rect2(32, height - 245, 290, 174))
-	text_at(Vector2(50, height - 218), "%s  /  ACTIVE SHIP" % ShipCatalog.info(sector.player.ship_model)["name"].to_upper(), 12, CYAN)
-	meter(Vector2(50, height - 190), "SHIELD", player.shield, player.max_shield, CYAN)
-	meter(Vector2(50, height - 145), "HULL", player.hull, player.max_hull, GREEN if player.hull > player.max_hull * 0.3 else RED)
-	meter(Vector2(50, height - 100), "BOOST", player.energy, 100.0, Color("e3b777"))
-	text_at(Vector2(343, height - (212 if compact else 100)), "%03d" % roundi(player.velocity.length()), 32)
-	text_at(Vector2(343, height - (191 if compact else 79)), "m/s  /  " + ("BOOST" if player.boosting else "FLIGHT ASSIST"), 10, MUTED)
-	draw_target_panel(width, height)
-	var distance := player.global_position.distance_to(Sector.STATION_POSITION)
-	if distance <= Sector.REPAIR_RADIUS and player.alive:
-		if shared:
-			text_at(Vector2(width - 310, height - 280), "C  HUNTING CONTRACTS", 14, GREEN)
-		var label := "%s  REPAIR / %d CR" % [GameSettings.binding_text("repair"), sector.repair_cost()]
-		if player.velocity.length() > 8.0:
-			label = "SLOW DOWN TO REPAIR"
-		elif player.time_since_hit < 5.0:
-			label = "REPAIRS AVAILABLE IN %d s" % ceili(5.0 - player.time_since_hit)
-		text_at(Vector2(width - 310, height - 256), label, 14, GREEN)
-		text_at(Vector2(width - 310, height - 304), "B  SHOP / CARGO     I  EQUIPMENT", 14, CYAN)
-	var controls := "%s Steer    %s Target    %s Fire    %s Boost    %s Repair    M Map    Esc Menu / controls" % [
-		GameSettings.binding_text("steer"), GameSettings.binding_text("cycle_target"),
-		GameSettings.binding_text("fire"), GameSettings.binding_text("boost"), GameSettings.binding_text("repair")]
-	text_at(Vector2(33, height - 28), controls, 11 if compact else 13, MUTED)
+		var objective: String = [
+			"Leave the outpost. %s to fly forward." % GameSettings.binding_text("forward"),
+			"Find an alien. %s or %s to select." % [GameSettings.binding_text("cycle_target"), GameSettings.binding_text("select_target")],
+			"%s to fire. Keep the alien ahead and in range." % GameSettings.binding_text("fire"),
+			"Return to Outpost 01. Slow down and press %s to repair." % GameSettings.binding_text("repair"),
+			"Encounter complete. Hunt another alien.",
+		][sector.objective_stage]
+		if sector.session.active:
+			objective = "No active hunts. Choose contracts at Outpost 01 [C]."
+		paragraph(rect.position + Vector2(18, 64), objective, rect.size.x - 36)
+
+
+func draw_controls() -> void:
+	var point := Vector2(SIDE_MARGIN, size.y - 28)
+	var pixels := 14 if size.x < 1200 else 16
+	for entry: Array in [["steer", "Steer"], ["cycle_target", "Target"], ["fire", "Fire"], ["boost", "Boost"], ["repair", "Repair"], ["sector_map", "Map"], ["pause_game", "Menu"]]:
+		var key := GameSettings.binding_text(entry[0])
+		var key_width := font.get_string_size(key, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x + 14
+		draw_style_box(background, Rect2(point - Vector2(0, 18), Vector2(key_width, 26)))
+		text_at(point + Vector2(7, 0), key, pixels)
+		point.x += key_width + 8
+		text_at(point, entry[1], pixels, MUTED)
+		point.x += font.get_string_size(entry[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x + 20
+
+
+func draw_context() -> void:
+	var point := Vector2(SIDE_MARGIN, objectives_rect().end.y + 12)
+	var messages: Array[String] = []
+	if CargoResources.units(sector.cargo) >= sector.cargo_capacity:
+		messages.append("CARGO FULL / SELL AT OUTPOST 01 [B]")
+	if sector.toast_time > 0:
+		messages.append(sector.toast)
+	if sector.client_only and not sector.session.active:
+		messages.append("DISCONNECTED / " + sector.session.status)
+	for message: String in messages:
+		var width := minf(440, size.x - 2 * SIDE_MARGIN - 322)
+		var dimensions := font.get_multiline_string_size(message, HORIZONTAL_ALIGNMENT_LEFT, width - 24, 16)
+		var rect := Rect2(point, Vector2(width, dimensions.y + 16))
+		draw_style_box(background, rect)
+		paragraph(point + Vector2(12, 20), message, width - 24, 16, AMBER)
+		marker_labels.append(rect)
+		point.y = rect.end.y + 8
 	if sector.show_performance:
 		var fps := Engine.get_frames_per_second()
 		var draws := Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
-		text_at(Vector2(33, 202), "%d FPS  /  %.1f ms  /  %d draw calls  /  %s" % [fps, 1000.0 / maxf(fps, 1), draws, "LOW" if sector.low_quality else "HIGH"], 13, GREEN)
+		text_at(point + Vector2(0, 18), "%d FPS / %.1f ms / %d draws / %s" % [fps, 1000.0 / maxf(fps, 1), draws, "LOW" if sector.low_quality else "HIGH"], 14, MUTED)
+		marker_labels.append(Rect2(point, Vector2(320, 24)))
+
+
+func draw_station_actions() -> void:
+	var player := sector.player
+	if not player.alive or player.global_position.distance_to(Sector.STATION_POSITION) > Sector.REPAIR_RADIUS:
+		return
+	var rect := Rect2(target_rect().position - Vector2(0, 88 if sector.session.active else 66), Vector2(290, 78 if sector.session.active else 56))
+	draw_style_box(background, rect)
+	text_at(rect.position + Vector2(12, 21), "B  SHOP / CARGO     I  EQUIPMENT", 16, AMBER)
+	var label := "%s  REPAIR / %s CR" % [GameSettings.binding_text("repair"), number(sector.repair_cost())]
+	if player.velocity.length() > 8.0:
+		label = "SLOW DOWN TO REPAIR"
+	elif player.time_since_hit < 5.0:
+		label = "REPAIR IN %d s" % ceili(5.0 - player.time_since_hit)
+	text_at(rect.position + Vector2(12, 43), label, 16, GREEN, 266)
+	if sector.session.active:
+		text_at(rect.position + Vector2(12, 65), "C  HUNTING CONTRACTS", 16, AMBER)
+	marker_labels.append(rect)
+
+
+func _draw() -> void:
+	marker_labels.clear()
+	update_contract_panel()
+	if sector.preflight or (is_instance_valid(sector.main_menu) and sector.main_menu.visible) or not is_instance_valid(sector.player):
+		return
+	var player := sector.player
+	marker_labels.assign([objectives_rect(), navigation.radar_rect(), ship_rect(), target_rect(), navigation.guidance_rect()])
+	if navigation.autopilot_status.visible:
+		marker_labels.append(navigation.autopilot_status.get_rect().grow(3))
+	draw_objectives()
+	draw_context()
+	var rect := ship_rect()
+	card_title(rect, ShipCatalog.info(player.ship_model)["name"].to_upper())
+	meter(rect.position + Vector2(18, 64), "SHIELD", player.shield, player.max_shield, CYAN)
+	meter(rect.position + Vector2(18, 107), "HULL", player.hull, player.max_hull, GREEN if player.hull > player.max_hull * 0.3 else RED)
+	meter(rect.position + Vector2(18, 150), "BOOST", player.energy, 100.0, AMBER)
+	var speed := Vector2(rect.end.x + 20, size.y - (212 if size.x < 1200 else 100))
+	text_at(speed, "%d m/s" % roundi(player.velocity.length()), 24)
+	text_at(speed + Vector2(0, 22), "BOOST" if player.boosting else "FLIGHT ASSIST", 12, MUTED)
+	marker_labels.append(Rect2(speed - Vector2(0, 24), Vector2(130, 50)))
+	draw_target_panel()
+	draw_station_actions()
+	draw_controls()
+	var center := size * 0.5
+	draw_line(center - Vector2(8, 0), center - Vector2(3, 0), Color(INK, 0.5))
+	draw_line(center + Vector2(3, 0), center + Vector2(8, 0), Color(INK, 0.5))
+	draw_circle(center, 2.0, AMBER)
+	marker(Sector.STATION_POSITION, "OUTPOST 01", GREEN, false)
+	if is_instance_valid(sector.target):
+		alien_marker(sector.target as Alien)
+	for drop: Dictionary in sector.loot.drops.values():
+		marker(drop["position"], "LOOT %d UNITS / FLY CLOSE" % CargoResources.units(drop["resources"]), AMBER, false, null, false)
+	for enemy: Alien in sector.aliens.values():
+		if enemy != sector.target and enemy.alive and enemy.visible:
+			alien_marker(enemy)
+	if sector.session.active:
+		for ship: Pilot in sector.session.ships.values():
+			if ship != player and ship.alive:
+				marker(ship.global_position, "FRIEND %s" % sector.session.ships.find_key(ship), CYAN, false, ship)
 	if not player.alive:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.015, 0.025, 0.04, 0.65))
 		text_at(center + Vector2(-150, -20), "RESCUE INBOUND", 30, RED)
-		text_at(center + Vector2(-150, 15), "Returning to the outpost in %d..." % ceili(sector.player_respawn), 17)
+		text_at(center + Vector2(-150, 15), "Returning to the outpost in %d..." % ceili(sector.player_respawn), 18)
 	if sector.paused:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.006, 0.012, 0.025, 0.88))
 	draw_boundary_warning()
 
 
-func draw_target_panel(width: float, height: float) -> void:
-	panel(Rect2(width - 322, height - 245, 290, 174), RED if sector.target != null else MUTED)
-	var origin := Vector2(width - 304, height - 218)
-	if not is_instance_valid(sector.target) or not sector.target.alive:
-		text_at(origin, "NO TARGET", 13, MUTED)
-		text_at(origin + Vector2(0, 34), "%s or %s to lock" % [GameSettings.binding_text("cycle_target"), GameSettings.binding_text("select_target")], 15)
-		text_at(origin + Vector2(0, 64), "%02d  ALIENS DESTROYED" % sector.kills, 12, MUTED)
-		text_at(origin + Vector2(0, 104), "M / Choose a contact on the sector map", 12, CYAN)
-		return
+func draw_target_panel() -> void:
+	var rect := target_rect()
 	var enemy := sector.target as Alien
-	text_at(origin, "%s %d / %d m" % [enemy.kind.to_upper(), enemy.alien_id + 1, sector.player.global_position.distance_to(enemy.global_position)], 12, enemy.tuning()["color"])
-	meter(origin + Vector2(0, 28), "SHIELD", enemy.shield, enemy.max_shield, CYAN)
-	meter(origin + Vector2(0, 72), "HULL", enemy.hull, enemy.max_hull, RED)
-	text_at(origin + Vector2(0, 128), fire_feedback(), 12, RED if sector.auto_fire and not sector.weapon_status.is_empty() else GREEN)
+	card_title(rect, "%s %d / %d m" % [enemy.kind.to_upper(), enemy.alien_id + 1, sector.player.global_position.distance_to(enemy.global_position)] if is_instance_valid(enemy) else "NO TARGET", RED if is_instance_valid(enemy) else MUTED)
+	var origin := rect.position + Vector2(18, 64)
+	if not is_instance_valid(sector.target) or not sector.target.alive:
+		paragraph(origin, "%s or %s to lock" % [GameSettings.binding_text("cycle_target"), GameSettings.binding_text("select_target")], 250)
+		text_at(origin + Vector2(0, 42), "%d ALIENS DESTROYED" % sector.kills, 16, MUTED)
+		text_at(origin + Vector2(0, 86), "M / Choose a contact on the map", 16, MUTED, 250)
+		return
+	meter(origin, "SHIELD", enemy.shield, enemy.max_shield, CYAN)
+	meter(origin + Vector2(0, 43), "HULL", enemy.hull, enemy.max_hull, RED)
+	paragraph(origin + Vector2(0, 81), fire_feedback(), 250, 16, RED if sector.auto_fire and not sector.weapon_status.is_empty() else MUTED)
 
 
 func alien_marker(enemy: Alien) -> void:
-	marker(enemy.global_position, "HOSTILE %s %d%s" % [enemy.kind.to_upper(), enemy.alien_id + 1, " / RETURNING" if enemy.returning else ""], enemy.tuning()["color"], sector.target == enemy, null, sector.target == enemy)
+	marker(enemy.global_position, "HOSTILE %s %d%s" % [enemy.kind.to_upper(), enemy.alien_id + 1, " / RETURNING" if enemy.returning else ""], AMBER if sector.target == enemy else enemy.tuning()["color"], sector.target == enemy, null, sector.target == enemy)
 
 
 func draw_boundary_warning() -> void:
@@ -363,13 +446,13 @@ func draw_boundary_warning() -> void:
 	if remaining > Sector.BOUNDARY_WARNING_DISTANCE:
 		return
 	var outside := remaining < 0.0
-	var color := RED if outside else Color("e3b777")
+	var color := RED if outside else AMBER
 	if outside:
 		# One soft pulse per second keeps the scene and instruments readable.
 		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * TAU / 1000.0)
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.8, 0.01, 0.02, 0.025 + pulse * 0.09))
 		draw_rect(Rect2(3, 3, size.x - 6, size.y - 6), Color(RED, 0.35 + pulse * 0.6), false, 6)
-	var rect := Rect2(maxf(32, (size.x - 764) * 0.5), 220, 410, 62 if outside else 42)
+	var rect := Rect2(maxf(SIDE_MARGIN, (size.x - 764) * 0.5), 248, 410, 62 if outside else 42)
 	panel(rect, color)
 	text_at(rect.position + Vector2(14, 23), "RADIATION ZONE / RETURN TO SAFE SPACE" if outside else "SECTOR EDGE / %d m / RADIATION AHEAD" % ceili(remaining), 15, color)
 	if outside:
@@ -383,7 +466,7 @@ func marker(location: Vector3, label: String, color: Color, selected: bool, team
 	var camera := sector.player.camera
 	var point := camera.unproject_position(location)
 	var behind := camera.is_position_behind(location)
-	var bounds := Rect2(38, 205, size.x - 76, size.y - 480)
+	var bounds := Rect2(38, TOP_MARGIN, size.x - 76, size.y - TOP_MARGIN - 245)
 	var distance := sector.player.global_position.distance_to(location)
 	if behind or not bounds.has_point(point):
 		if teammate != null or not priority:
@@ -412,13 +495,17 @@ func marker(location: Vector3, label: String, color: Color, selected: bool, team
 
 
 func marker_caption(point: Vector2, caption: String, color: Color, priority: bool) -> void:
-	var text_size := font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 12)
-	var rect := Rect2(Vector2(clampf(point.x - text_size.x * 0.5 - 5, 12, size.x - text_size.x - 22), point.y - 14), text_size + Vector2(10, 6))
-	for occupied in marker_labels:
-		if occupied.intersects(rect):
-			if not priority:
-				return
-			rect.position.y = occupied.end.y + 3
-	marker_labels.append(rect)
-	draw_style_box(background, rect)
-	text_at(rect.position + Vector2(5, 14), caption, 12, color)
+	var text_size := font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 14)
+	var origin := Vector2(clampf(point.x - text_size.x * 0.5 - 5, 12, size.x - text_size.x - 22), point.y - 16)
+	var bounds := Rect2(12, TOP_MARGIN, size.x - 24, size.y - TOP_MARGIN - BOTTOM_MARGIN - 8)
+	# Check every reserved card after each move. Moving past one card must not
+	# place a priority caption inside another card at small window sizes.
+	for step in range(1 + ceili(bounds.size.y / 28) * 2 if priority else 1):
+		var offset := ceilf(step / 2.0) * 28 * (1 if step % 2 == 1 else -1)
+		var rect := Rect2(origin + Vector2(0, offset), text_size + Vector2(10, 6))
+		if not bounds.encloses(rect) or marker_labels.any(func(occupied: Rect2): return occupied.intersects(rect)):
+			continue
+		marker_labels.append(rect)
+		draw_style_box(background, rect)
+		text_at(rect.position + Vector2(5, 16), caption, 14, color)
+		return

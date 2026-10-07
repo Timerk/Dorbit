@@ -21,7 +21,7 @@ var view_yaw: float = -0.55
 var view_pitch: float = atan2(0.55, 0.7)
 var view_zoom: float = 1.0
 var view_offset := Vector2.ZERO
-var font: Font = ThemeDB.fallback_font
+var font: Font = StationUi.FONT
 var info: Label
 
 
@@ -81,17 +81,19 @@ class SectorPlot extends Control:
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	theme = StationUi.menu_theme()
 	range_less = StationUi.button(self, "-", func(): change_range(-1))
 	range_more = StationUi.button(self, "+", func(): change_range(1))
 	map_button = StationUi.button(self, "Map [M]", open_overview)
 	autopilot_status = Label.new()
 	autopilot_status.text = "Autopilot enabled"
-	autopilot_status.add_theme_font_size_override("font_size", 13)
-	autopilot_status.add_theme_color_override("font_color", FlightHud.CYAN)
+	autopilot_status.add_theme_font_size_override("font_size", 16)
+	autopilot_status.add_theme_color_override("font_color", FlightHud.AMBER)
 	autopilot_status.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(autopilot_status)
 	for button in [range_less, range_more, map_button]:
 		button.focus_mode = Control.FOCUS_NONE
+		button.add_theme_font_size_override("font_size", 16)
 	build_overview()
 
 
@@ -176,21 +178,23 @@ func build_overview() -> void:
 	overview = PanelContainer.new()
 	StationUi.frame(overview, Vector2(880, 550))
 	add_child(overview)
-	var rows := StationUi.rows(overview, 8)
+	var rows := StationUi.rows(overview, 16)
 	var header := HBoxContainer.new()
 	rows.add_child(header)
-	var title := StationUi.text(header, "SECTOR OVERVIEW / OUTPOST 01", 20, FlightHud.CYAN)
+	var title := StationUi.text(header, "SECTOR OVERVIEW / OUTPOST 01", 22, FlightHud.AMBER)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	reset_button = StationUi.button(header, "Reset view", reset_view)
 	StationUi.button(header, "Back to flight [M / Esc]", close_overview)
-	StationUi.text(rows, "Click a marker, name or row to navigate. Drag left mouse to rotate; mouse wheel to zoom.", 13, FlightHud.MUTED)
+	rows.add_child(HSeparator.new())
+	StationUi.text(rows, "Click a contact to navigate. Drag to rotate / Scroll to zoom", 16, FlightHud.MUTED)
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rows.add_child(body)
 	var sidebar := StationUi.card(body)
 	sidebar.custom_minimum_size.x = 230
-	var left := StationUi.rows(sidebar, 4)
-	StationUi.text(left, "CONTACTS / SET WAYPOINT", 12, FlightHud.CYAN)
+	var left := StationUi.rows(sidebar, 12)
+	StationUi.text(left, "CONTACTS / SET WAYPOINT", 16, FlightHud.AMBER)
+	left.add_child(HSeparator.new())
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -205,8 +209,8 @@ func build_overview() -> void:
 	plot.mouse_filter = Control.MOUSE_FILTER_STOP
 	plot.clip_contents = true
 	body.add_child(plot)
-	info = StationUi.text(rows, "", 13, FlightHud.INK)
-	StationUi.text(rows, "White: you   Green: outpost   Colored: aliens   Cyan: pilots   Vertical lines show height", 12, FlightHud.MUTED)
+	info = StationUi.text(rows, "", 16, FlightHud.AMBER)
+	StationUi.text(rows, "White: you / Green: outpost / Colored: aliens / Cyan: pilots / Lines: height", 14, FlightHud.MUTED)
 	overview.hide()
 
 
@@ -249,7 +253,7 @@ func update_contacts() -> void:
 		contact_buttons[key].set_pressed_no_signal(key == waypoint_key)
 	var selected := destination()
 	info.text = "Waypoint: %s / %.0f m%s" % [selected["name"], sector.player.position.distance_to(selected["position"]), " / RADIATION: return to safety first" if selected["key"] == "safe" else ""]
-	info.add_theme_color_override("font_color", selected["color"])
+	info.add_theme_color_override("font_color", FlightHud.RED if selected["key"] == "safe" else FlightHud.AMBER)
 
 
 func _process(_delta: float) -> void:
@@ -262,7 +266,7 @@ func _process(_delta: float) -> void:
 		else:
 			update_contacts()
 			plot.queue_redraw()
-	var origin := Vector2(size.x - 322, 96)
+	var origin := radar_rect().position
 	range_less.position = origin + Vector2(202, 5)
 	range_more.position = origin + Vector2(242, 5)
 	for button in [range_less, range_more]:
@@ -270,7 +274,7 @@ func _process(_delta: float) -> void:
 	map_button.position = origin + Vector2(164, 131)
 	map_button.size = Vector2(110, 34)
 	autopilot_status.position = origin + Vector2(14, 190)
-	var flight := sector.player.alive and not sector.paused and (not sector.client_only or sector.session.active)
+	var flight := not sector.preflight and sector.player.alive and not sector.paused and (not sector.client_only or sector.session.active)
 	autopilot_status.visible = flight and sector.autopilot.enabled
 	for button in [range_less, range_more, map_button]:
 		button.visible = flight
@@ -283,14 +287,32 @@ func label_at(canvas: Control, point: Vector2, content: String, pixels: int = 12
 	canvas.draw_string(font, point, content, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels, color)
 
 
+func radar_rect() -> Rect2:
+	return Rect2(size.x - FlightHud.SIDE_MARGIN - 290, FlightHud.TOP_MARGIN, 290, 182)
+
+
+func guidance_rect() -> Rect2:
+	return Rect2(size.x * 0.5 - 140, size.y - FlightHud.BOTTOM_MARGIN - 114, 280, 114)
+
+
+func card(rect: Rect2, title: String, accent: Color = FlightHud.AMBER) -> void:
+	draw_style_box(FlightHud.panel_style(), rect)
+	draw_line(rect.position + Vector2(2, 2), rect.position + Vector2(2, 40), accent, 3)
+	var pixels := 18
+	var width := 174.0 if rect == radar_rect() else rect.size.x - 24
+	while pixels > 12 and font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x > width:
+		pixels -= 1
+	label_at(self, rect.position + Vector2(14, 27), title, pixels, accent)
+	draw_line(rect.position + Vector2(14, 40), Vector2(rect.end.x - 14, rect.position.y + 40), FlightHud.LINE)
+
+
 func _draw() -> void:
-	if not sector.player.alive or sector.paused or (sector.client_only and not sector.session.active):
+	if sector.preflight or not sector.player.alive or sector.paused or (sector.client_only and not sector.session.active):
 		return
-	var origin := Vector2(size.x - 322, 96)
-	draw_style_box(FlightHud.panel_style(), Rect2(origin, Vector2(290, 182)))
-	label_at(self, origin + Vector2(14, 23), "LOCAL RADAR / %d m" % RANGES[range_index], 12, FlightHud.CYAN)
+	var origin := radar_rect().position
+	card(radar_rect(), "LOCAL RADAR / %s m" % FlightHud.number(RANGES[range_index]))
 	var center := origin + Vector2(84, 100)
-	draw_circle(center, 62, Color("0d1d2c"))
+	draw_circle(center, 62, Color("111a20"))
 	for radius in [31, 62]:
 		draw_arc(center, radius, 0, TAU, 64, Color(FlightHud.MUTED, 0.4), 1, true)
 	draw_line(center - Vector2(62, 0), center + Vector2(62, 0), Color(FlightHud.MUTED, 0.2))
@@ -311,7 +333,7 @@ func _draw() -> void:
 			draw_line(tip, tip + Vector2(-3, -sign_y * 3), color)
 			draw_line(tip, tip + Vector2(3, -sign_y * 3), color)
 		if contact["key"] == selected["key"]:
-			draw_arc(point, 6, 0, TAU, 24, Color.WHITE, 1.5, true)
+			draw_arc(point, 6, 0, TAU, 24, FlightHud.AMBER, 1.5, true)
 	var local_goal := relative_position(sector.player.global_transform, selected["position"])
 	if local_goal.length() > RANGES[range_index] or selected["key"] == "safe":
 		var direction := Vector2(local_goal.x, local_goal.z).normalized()
@@ -320,19 +342,20 @@ func _draw() -> void:
 			var side := direction.orthogonal() * 4
 			draw_colored_polygon(PackedVector2Array([tip, tip - direction * 8 + side, tip - direction * 8 - side]), selected["color"])
 	draw_colored_polygon(PackedVector2Array([center + Vector2(0, -6), center + Vector2(-4, 4), center + Vector2(4, 4)]), Color.WHITE)
-	label_at(self, origin + Vector2(163, 59), "FORWARD UP", 11, FlightHud.INK)
-	label_at(self, origin + Vector2(163, 79), "Arrows: height", 11, FlightHud.MUTED)
-	label_at(self, origin + Vector2(163, 99), "Green: outpost", 11, FlightHud.GREEN)
-	label_at(self, origin + Vector2(163, 119), "Ring: waypoint", 11, FlightHud.MUTED)
+	label_at(self, origin + Vector2(163, 61), "↑↓  HEIGHT", 13, FlightHud.MUTED)
+	draw_arc(origin + Vector2(168, 78), 4, 0, TAU, 20, FlightHud.AMBER, 1.5, true)
+	label_at(self, origin + Vector2(180, 82), "WAYPOINT", 13, FlightHud.MUTED)
+	draw_circle(origin + Vector2(168, 100), 3, FlightHud.GREEN)
+	label_at(self, origin + Vector2(180, 104), "OUTPOST", 13, FlightHud.MUTED)
+	draw_circle(origin + Vector2(168, 120), 3, FlightHud.RED)
+	label_at(self, origin + Vector2(180, 124), "HOSTILE", 13, FlightHud.MUTED)
 	draw_guidance(selected, local_goal)
 
 
 func draw_guidance(selected: Dictionary, local: Vector3) -> void:
-	# All three flight panels end 71 pixels above the bottom of the viewport.
-	var origin := Vector2(size.x * 0.5 - 140, size.y - 185)
-	draw_style_box(FlightHud.panel_style(), Rect2(origin, Vector2(280, 114)))
-	var color: Color = selected["color"]
-	label_at(self, origin + Vector2(12, 23), "DESTINATION / " + selected["name"].to_upper(), 12, color)
+	var origin := guidance_rect().position
+	var color := FlightHud.RED if selected["key"] == "safe" else FlightHud.AMBER
+	card(guidance_rect(), "DESTINATION / " + selected["name"].to_upper(), color)
 	var center := origin + Vector2(43, 68)
 	draw_arc(center, 26, 0, TAU, 48, FlightHud.MUTED, 1, true)
 	draw_line(center - Vector2(6, 0), center + Vector2(6, 0), FlightHud.MUTED)
@@ -345,9 +368,11 @@ func draw_guidance(selected: Dictionary, local: Vector3) -> void:
 	var hint := turn_hint(local)
 	if selected["key"] == "station" and local.length() <= Sector.REPAIR_RADIUS:
 		hint = "AT OUTPOST 01"
-	label_at(self, origin + Vector2(82, 57), hint, 11, color)
-	label_at(self, origin + Vector2(82, 80), "%.0f m / %+.0f m height" % [local.length(), local.y], 12)
-	label_at(self, origin + Vector2(12, 105), "Center dot to face destination / hollow = behind", 10, FlightHud.MUTED)
+	var pixels := 16
+	while pixels > 12 and font.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x > 186:
+		pixels -= 1
+	label_at(self, origin + Vector2(82, 65), hint, pixels, color)
+	label_at(self, origin + Vector2(82, 91), "%.0f m / %+.0f m" % [local.length(), local.y], 16)
 
 
 func plot_point(location: Vector3) -> Vector2:
@@ -391,18 +416,20 @@ func plot_labels() -> Dictionary[String, Rect2]:
 
 
 func draw_sector(canvas: Control) -> void:
-	canvas.draw_rect(Rect2(Vector2.ZERO, canvas.size), Color("07111d"))
+	canvas.draw_style_box(StationUi.style(StationUi.SURFACE, FlightHud.LINE), Rect2(Vector2.ZERO, canvas.size))
+	canvas.draw_line(Vector2(2, 2), Vector2(2, 38), FlightHud.AMBER, 3)
+	canvas.draw_line(Vector2(14, 40), Vector2(canvas.size.x - 14, 40), FlightHud.LINE)
 	var ring := PackedVector2Array()
 	for step in range(65):
 		var angle := step * TAU / 64
 		ring.append(plot_point(Vector3(cos(angle), 0, sin(angle)) * Sector.MAP_RADIUS))
-	canvas.draw_polyline(ring, Color(FlightHud.CYAN, 0.4), 1.5, true)
+	canvas.draw_polyline(ring, Color(FlightHud.AMBER, 0.35), 1.5, true)
 	for axis in [Vector3.RIGHT, Vector3.FORWARD]:
 		var meridian := PackedVector2Array()
 		for step in range(65):
 			var angle := step * TAU / 64
 			meridian.append(plot_point((axis * cos(angle) + Vector3.UP * sin(angle)) * Sector.MAP_RADIUS))
-		canvas.draw_polyline(meridian, Color(FlightHud.CYAN, 0.16), 1, true)
+		canvas.draw_polyline(meridian, Color(FlightHud.MUTED, 0.24), 1, true)
 	for fraction in [-0.5, 0.0, 0.5]:
 		var extent := sqrt(1 - fraction * fraction) * Sector.MAP_RADIUS
 		canvas.draw_line(plot_point(Vector3(-extent, 0, fraction * Sector.MAP_RADIUS)), plot_point(Vector3(extent, 0, fraction * Sector.MAP_RADIUS)), Color(FlightHud.MUTED, 0.15))
@@ -419,12 +446,12 @@ func draw_sector(canvas: Control) -> void:
 		canvas.draw_circle(floor_point, 2, Color(color, 0.4))
 		canvas.draw_circle(point, 6, color)
 		if contact["key"] == waypoint_key:
-			canvas.draw_arc(point, 10, 0, TAU, 32, Color.WHITE, 2, true)
+			canvas.draw_arc(point, 10, 0, TAU, 32, FlightHud.AMBER, 2, true)
 		if contact["key"] == plot.hovered_key:
-			canvas.draw_arc(point, 13, 0, TAU, 32, Color.WHITE, 1, true)
+			canvas.draw_arc(point, 13, 0, TAU, 32, FlightHud.INK, 1, true)
 		if labels.has(contact["key"]):
 			label_at(canvas, labels[contact["key"]].position + Vector2(2, 13), contact["name"], 12, color)
-	label_at(canvas, Vector2(14, 23), "2.4 km SECTOR / HEIGHT VIEW", 12, FlightHud.CYAN)
+	label_at(canvas, Vector2(14, 27), "2.4 km SECTOR / HEIGHT VIEW", 16, FlightHud.AMBER)
 
 
 func contact_at(point: Vector2) -> String:

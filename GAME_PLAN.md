@@ -138,6 +138,15 @@ Following playtesting, the user approved replacing the paired world-axis maps wi
 
 The user accepted the current map and navigation after playtesting. The center destination panel aligns its bottom with the ship-health and selected-enemy panels at every supported window size.
 
+The native flight HUD follows the [approved shared UI design](docs/hud-design/README.md).
+Contracts and radar share a small top margin; ship, destination and target cards
+align along the bottom. Contextual objectives, pending rewards, cargo FULL,
+notifications, station actions, firing blockers, radiation/re-entry, rescue and
+configured-control feedback remain available. Credits and cargo quantities are
+in the station menus. The sector overview uses the same presentation while
+preserving contact colors and navigation behavior. This work changes neither
+gameplay tuning nor network rules.
+
 The sector overview supports direct clicks on contact markers, names and height lines, with hover feedback. A left click selects on release; holding left mouse and dragging at least six pixels rotates the view horizontally and vertically without selecting. Right-mouse drag also rotates. Mouse wheel zooms around the pointer from 0.6× to 3× without requiring a modifier key, with clipping inside the map panel. Reset view restores the original angle, zoom and center. These controls affect presentation only.
 
 M opens a larger sector overview with a rotatable height projection and contact list. Clicking a contact or its row sets the destination and returns to flight; alien destinations also use normal combat selection, while outpost/friendly destinations clear the combat target. M or Esc closes it. Opening releases steering and disables automatic fire. Solo simulation pauses; multiplayer and radiation continue on the server. Rescue and disconnect close the overview, and missing contacts fall back to the outpost. This adds navigation controls within the current sector, with no fog of war or arbitrary-coordinate waypoints. Network schema 6 adds exposure and random home state and deliberately rejects older builds, including PR 34's schema 4.
@@ -367,7 +376,7 @@ Each alien leaves one shared box at its destruction position. The server rolls q
 
 Living ships collect automatically within 12 m. The nearest ship with free capacity collects first; exact distance ties use peer-ID order. Any connected pilot can collect, independently of kill-credit contribution eligibility. Partial pickups take the most valuable resources first and leave excess units for another pilot or a later trip. Uncollected boxes expire after three minutes. At most 64 boxes exist; a new drop replaces the oldest when that limit is reached. Late joiners receive current boxes. Space loot resets with the server session.
 
-The Liberator holds 400 units; every resource uses one unit. Capacity is defined by ship model for future ship types, and cargo belongs to each individual owned ship. The flight HUD shows usage and FULL status; the station cargo page lists resource quantities, prices and total sale value. Collected cargo survives death, reconnects and server restarts. A future death penalty needs a separate decision.
+The Liberator holds 400 units; every resource uses one unit. Capacity is defined by ship model for future ship types, and cargo belongs to each individual owned ship. The approved header-free flight HUD retains a cargo FULL warning; routine usage moves to the existing station cargo page, alongside resource quantities, prices and total sale value. Collected cargo survives death, reconnects and server restarts. A future death penalty needs a separate decision.
 
 Press B at Outpost 01 and choose Trade raw materials. Seven horizontal ore cards use generated high-resolution transparent mineral renders in the supplied reference colors, with unit prices, held amounts, minus/plus and editable quantity controls, sale totals and Sell buttons. Select a quantity of one resource or sell all active-ship cargo. Sales use the station restrictions: alive, within 60 m, at most 8 m/s and five seconds since damage. The server validates the selected amount and saves cargo removal, credit payment and the transaction sequence together before confirming success. Duplicate and stale requests cannot pay twice. A sale that exceeds the wallet limit leaves all cargo intact. Cargo collection also commits before removing units from space; a save failure stops progression.
 
