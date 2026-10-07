@@ -45,11 +45,63 @@ func run() -> void:
 	for index in range(30):
 		SectorVisuals.explosion(world, ship.global_position)
 	check(get_nodes_in_group("transient_feedback").size() == SectorVisuals.DESTRUCTION_LIMIT, "Destruction has a bounded reserve when ordinary effects are saturated")
-	await create_timer(0.8).timeout
+	await create_timer(SectorVisuals.EXPLOSION_DURATION + 0.1).timeout
 	check(get_nodes_in_group("transient_feedback").is_empty(), "Saturated effects and destruction expire without leaked nodes")
 	ship.render_enabled = false
 	ship.present_impact(true, true)
 	check(get_nodes_in_group("transient_feedback").is_empty(), "Non-rendering ships do not allocate hit presentation")
 	world.free()
+	await destruction_checks()
 	print("Combat effect checks: %d passed, %d failed" % [checks - failures, failures])
 	quit(0 if failures == 0 else 1)
+
+
+func destruction_checks() -> void:
+	var pilot := Pilot.new()
+	pilot.render_enabled = false
+	pilot.ship_model = "phoenix"
+	check(is_equal_approx(SectorVisuals.destruction_size(pilot), 3.5), "Phoenix destruction uses its smaller catalog diameter without rendering")
+	pilot.ship_model = "liberator"
+	check(is_equal_approx(SectorVisuals.destruction_size(pilot), 7.0), "Other player hulls retain the default exported diameter")
+	pilot.free()
+	var sizes: Array[float] = []
+	for kind in ["Scout", "Sentinel", "Heavy"]:
+		var alien := Alien.new()
+		alien.kind = kind
+		root.add_child(alien)
+		var bounds := AABB()
+		var first := true
+		for child in alien.model.find_children("*", "MeshInstance3D", true, false):
+			var visual := child as MeshInstance3D
+			for corner in range(8):
+				var point := alien.to_local(visual.to_global(visual.get_aabb().get_endpoint(corner)))
+				bounds = AABB(point, Vector3.ZERO) if first else bounds.expand(point)
+				first = false
+		var diameter := SectorVisuals.destruction_size(alien)
+		sizes.append(diameter)
+		check(absf(diameter - bounds.size.length()) < 0.001, kind + " explosion size matches its actual scaled visual bounds")
+		alien.free()
+	check(sizes[0] < sizes[1] and sizes[1] < sizes[2], "Scout, Sentinel and Heavy destruction sizes increase with the modeled ship")
+	sector = preload("res://scenes/sector.tscn").instantiate()
+	sector.client_only = false
+	root.add_child(sector)
+	sector.set_physics_process(false)
+	sector.player.position = Vector3(200, 100, 50)
+	sector.alien.position = Vector3(200, 100, 0)
+	sector.alien.home_position = sector.alien.position
+	sector.alien.take_damage(sector.alien.max_hull + sector.alien.max_shield + 1, sector.player)
+	var id := sector.loot.next_id
+	check(sector.loot.drops.has(id) and not sector.loot.is_presented(id), "Actual death creates loot state but hides the box and caption during the explosion")
+	var update: Dictionary = sector.loot.drops[id].duplicate(true)
+	update["resources"] = {"prometium": 1}
+	sector.loot.apply_drop(id, update)
+	check(not sector.loot.is_presented(id), "Updating a drop during destruction does not expose its box early")
+	sector.loot.apply_drop(999, {"position": sector.alien.position + Vector3(30, 0, 0), "resources": {"prometium": 1}, "ttl": 180.0})
+	check(sector.loot.is_presented(999), "An explosion does not suppress unrelated nearby loot")
+	await create_timer(SectorVisuals.EXPLOSION_DURATION + 0.1).timeout
+	check(sector.loot.is_presented(id) and not SectorVisuals.explosion_active(sector, sector.alien.position), "Loot becomes visible only after the last explosion mesh is gone")
+	sector.loot.apply_drop(id, {})
+	await process_frame
+	check(not sector.loot.meshes.has(id), "Removing a drop cannot resurrect its visual")
+	sector.queue_free()
+	await process_frame

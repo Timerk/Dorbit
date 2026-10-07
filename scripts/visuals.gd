@@ -4,6 +4,7 @@ extends RefCounted
 
 const EFFECT_LIMIT: int = 64
 const DESTRUCTION_LIMIT: int = 80
+const EXPLOSION_DURATION: float = 1.2
 const GLOW_SHADER := preload("res://shaders/combat_glow.gdshader")
 const SHIELD_SHADER := preload("res://shaders/shield_hit.gdshader")
 
@@ -246,15 +247,38 @@ static func laser(parent: Node3D, start: Vector3, finish: Vector3, hostile: bool
 	glow(effect, endpoint - start, Vector2.ONE * 2.0, color, 0.13)
 
 
-static func explosion(parent: Node3D, location: Vector3) -> void:
+static func explosion(parent: Node3D, location: Vector3, diameter: float = 9.7) -> void:
 	sound(parent, "destruction", location)
-	var effect := feedback_root(parent, location, 0.65, DESTRUCTION_LIMIT)
+	var effect := feedback_root(parent, location, EXPLOSION_DURATION, DESTRUCTION_LIMIT)
 	if effect == null:
 		return
-	var flash := glow(effect, Vector3.ZERO, Vector2.ONE * 12.0, Color("ffb453"), 0.4)
-	effect.create_tween().tween_property(flash, "scale", Vector3.ONE * 2.0, 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	glow(effect, Vector3.ZERO, Vector2(24.0, 1.1), Color("ffd598"), 0.28)
-	sparks(effect, Vector3.ZERO, Vector3.ZERO, 12, 2.8, 0.6)
+	effect.add_to_group("destruction_feedback")
+	var size := maxf(diameter, 1.0)
+	effect.set_meta("diameter", size)
+	var flash := glow(effect, Vector3.ZERO, Vector2.ONE * size * 2.6, Color("ffb453"), 0.85)
+	effect.create_tween().tween_property(flash, "scale", Vector3.ONE * 2.4, 0.85).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	glow(effect, Vector3.ZERO, Vector2(size * 4.8, size * 0.24), Color("ffd598"), 0.65)
+	sparks(effect, Vector3.ZERO, Vector3.ZERO, 12, size * 0.55, 1.15)
+
+
+static func destruction_size(ship: SpaceShip) -> float:
+	# Player exports use the catalog diameter. Procedural alien bounds
+	# include their type scale and the Heavy's lower armor, without loading server meshes.
+	if ship is Pilot:
+		return float(ShipCatalog.info(ship.ship_model).get("visual_diameter", 7.0))
+	var bounds := Vector3(6.6253, 1.895, 6.83)
+	if ship is Alien:
+		if ship.kind == "Heavy":
+			bounds.y = 2.075
+		bounds *= ship.tuning()["scale"]
+	return bounds.length()
+
+
+static func explosion_active(parent: Node3D, location: Vector3) -> bool:
+	for effect: Node3D in parent.get_tree().get_nodes_in_group("destruction_feedback"):
+		if effect.get_parent() == parent and effect.global_position.distance_squared_to(location) < 0.01:
+			return true
+	return false
 
 
 static func sound(parent: Node, cue: String, location: Vector3) -> void:
