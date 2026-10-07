@@ -7,117 +7,118 @@
     "Nonempty mesh geometry with materials",
     "Finite base and evaluated vertex coordinates",
     "No zero-area base polygons",
-    "Five cameras and five 1600 x 1440 renders per ship, newer than the saved model",
+    "Six cameras and six 1600 x 1440 renders per ship, newer than the saved model",
+    "Generated concept turnaround packed into each model",
     "All file-based reference images packed into the blend"
   ],
   "models": [
     {
       "name": "Aegis",
-      "mesh_components": 475,
-      "base_faces": 31722,
-      "evaluated_faces": 73342,
-      "packed_references": 3,
-      "cameras": 5,
-      "bytes": 821438
+      "mesh_components": 489,
+      "base_faces": 32596,
+      "evaluated_faces": 58128,
+      "packed_references": 5,
+      "cameras": 6,
+      "bytes": 4882649
     },
     {
       "name": "Goliath",
-      "mesh_components": 355,
-      "base_faces": 15996,
-      "evaluated_faces": 59457,
-      "packed_references": 2,
-      "cameras": 5,
-      "bytes": 521392
+      "mesh_components": 351,
+      "base_faces": 14144,
+      "evaluated_faces": 37516,
+      "packed_references": 4,
+      "cameras": 6,
+      "bytes": 4800305
     },
     {
       "name": "Bigboy",
-      "mesh_components": 453,
-      "base_faces": 22224,
-      "evaluated_faces": 58925,
-      "packed_references": 1,
-      "cameras": 5,
-      "bytes": 584441
+      "mesh_components": 466,
+      "base_faces": 23838,
+      "evaluated_faces": 47548,
+      "packed_references": 3,
+      "cameras": 6,
+      "bytes": 5060363
     },
     {
       "name": "Defcom",
-      "mesh_components": 398,
-      "base_faces": 24652,
-      "evaluated_faces": 55154,
-      "packed_references": 1,
-      "cameras": 5,
-      "bytes": 535193
+      "mesh_components": 411,
+      "base_faces": 24802,
+      "evaluated_faces": 47534,
+      "packed_references": 3,
+      "cameras": 6,
+      "bytes": 4968265
     },
     {
       "name": "Leonov",
-      "mesh_components": 384,
-      "base_faces": 16342,
-      "evaluated_faces": 46992,
-      "packed_references": 1,
-      "cameras": 5,
-      "bytes": 413416
+      "mesh_components": 397,
+      "base_faces": 16448,
+      "evaluated_faces": 35308,
+      "packed_references": 3,
+      "cameras": 6,
+      "bytes": 4852048
     },
     {
       "name": "Liberator",
-      "mesh_components": 336,
-      "base_faces": 11508,
-      "evaluated_faces": 41422,
-      "packed_references": 2,
-      "cameras": 5,
-      "bytes": 401907
+      "mesh_components": 319,
+      "base_faces": 39174,
+      "evaluated_faces": 55022,
+      "packed_references": 4,
+      "cameras": 6,
+      "bytes": 4906537
     },
     {
       "name": "Nostromo",
-      "mesh_components": 320,
-      "base_faces": 11258,
-      "evaluated_faces": 37792,
-      "packed_references": 1,
-      "cameras": 5,
-      "bytes": 354481
+      "mesh_components": 333,
+      "base_faces": 12872,
+      "evaluated_faces": 28540,
+      "packed_references": 3,
+      "cameras": 6,
+      "bytes": 4737253
     },
     {
       "name": "Phoenix",
-      "mesh_components": 286,
-      "base_faces": 16710,
-      "evaluated_faces": 37422,
-      "packed_references": 1,
-      "cameras": 5,
-      "bytes": 417249
+      "mesh_components": 295,
+      "base_faces": 16828,
+      "evaluated_faces": 30876,
+      "packed_references": 3,
+      "cameras": 6,
+      "bytes": 4650735
     },
     {
       "name": "Piranha",
-      "mesh_components": 341,
-      "base_faces": 12612,
-      "evaluated_faces": 39316,
-      "packed_references": 1,
-      "cameras": 5,
-      "bytes": 347611
+      "mesh_components": 354,
+      "base_faces": 12762,
+      "evaluated_faces": 28504,
+      "packed_references": 3,
+      "cameras": 6,
+      "bytes": 4619441
     },
     {
       "name": "Spearhead",
-      "mesh_components": 306,
-      "base_faces": 10358,
-      "evaluated_faces": 35242,
-      "packed_references": 1,
-      "cameras": 5,
-      "bytes": 353279
+      "mesh_components": 321,
+      "base_faces": 10508,
+      "evaluated_faces": 25750,
+      "packed_references": 3,
+      "cameras": 6,
+      "bytes": 4491606
     },
     {
       "name": "Vengeance",
-      "mesh_components": 310,
-      "base_faces": 23494,
-      "evaluated_faces": 51587,
-      "packed_references": 1,
-      "cameras": 5,
-      "bytes": 455359
+      "mesh_components": 323,
+      "base_faces": 26632,
+      "evaluated_faces": 42854,
+      "packed_references": 3,
+      "cameras": 6,
+      "bytes": 4958303
     },
     {
       "name": "Yamato",
-      "mesh_components": 312,
-      "base_faces": 27126,
-      "evaluated_faces": 53806,
-      "packed_references": 1,
-      "cameras": 5,
-      "bytes": 363753
+      "mesh_components": 325,
+      "base_faces": 27264,
+      "evaluated_faces": 43104,
+      "packed_references": 3,
+      "cameras": 6,
+      "bytes": 4738221
     }
   ]
 }

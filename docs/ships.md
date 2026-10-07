@@ -78,18 +78,38 @@ and provisioning tools, and back up the ledger before upgrading. Network schema
 4 adds model identity and maximum hull to every player snapshot; older clients
 are rejected by the existing compatibility handshake.
 
-`tools/export_ships.py` exports the saved PR 14 `.blend` files without changing
+The [Dorbit concept refinement](../art/ship-review/concepts/README.md) supplies
+new multi-angle design references and updated editable models, guided by the
+user's Liberator hangar image. Six actual mesh renders per ship provide consistent
+angles; generated sheets are design guidance and can disagree in small details.
+
+`tools/export_ships.py` exports the saved `.blend` files without changing
 them. Run Blender in background mode with `--python tools/export_ships.py`.
 The exporter removes the studio and references, consolidates each hull into
 one mesh with material surfaces, reduces bevel subdivisions, retains evaluated
 normals and PBR colors, and normalizes the bounding diameter to 7 m. Godot's
 imported nose points -Z with +Y up. Procedural studio grain is omitted. Ship
-previews derive from the original saved renders. The existing simple collision
+previews derive from the revised saved renders. The existing simple collision
 sphere and chase camera remain shared across hulls; these are approximate game
 sizes, since PR 14 supplied no physical scale. Godot generates mesh LODs on
 import. The dedicated server never instantiates hull render meshes.
 
 ## Validation
+
+Ship visual refinement checked on 7 October 2026 with Blender 5.2.2 LTS and
+Godot 4.7.2 on Windows: all twelve saved files reopen with finite, nondegenerate
+geometry, packed concepts and six final 1600 x 1440 renders each. Review sheets
+pass the render-boundary check. All twelve GLB exports load with one centered
+7 m hull mesh, materials, finite vertices, shop previews and no studio nodes.
+The rendered authenticated ship replay passed 211 checks with no failures or
+stderr errors. See the updated [flight](feedback/refined-ships-flight.png) and
+[shop](feedback/refined-ships-shop.png) captures.
+
+The full roster's base export triangle total rises from 689,638 to 762,286;
+Liberator is now the largest hull at 98,228 triangles. Godot still generates LODs
+on import. These checks establish loading and presentation compatibility, not
+ten-player performance on the reference hardware or final art acceptance.
+The exported Windows client and Linux checks are left to PR CI.
 
 `tests/ships_test.gd` covers authenticated purchases of the roster, exact prices,
 empty fittings, final valid and first invalid slots, switching, station
