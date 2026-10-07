@@ -36,37 +36,17 @@ Open a `.blend` file in Blender. Middle-drag orbits; the wheel zooms. Numpad 7 s
 
 The Outliner separates armor and mechanical assemblies. Six named cameras provide perspective, rear, top, side, front and underside views. The hidden `References` collection contains the packed concept, supplied finish screenshot and catalogue references. A Blender text block contains viewing notes. Materials and references have no external file dependencies. Forward is -Y and up is +Z. Model units and relative ship scale are for review, not canonical measurements.
 
-## Earlier catalogue reconstruction
+## Model construction
 
-The following records the previous reference reconstruction. The current Dorbit
-concept pass supersedes its palette and Aegis-preservation decisions; the original
-catalogue pictures still establish the base silhouettes. The new construction is
-implemented in [concept_refinement.py](concept_refinement.py), called by the builder.
-
-The review used Aegis's separation of painted armor, dark structure and exposed mechanisms as the finish benchmark. It also identified larger discrepancies that adding fasteners could not fix. The following table records the visible reference cues and resulting changes.
-
-| Ship | Reference comparison and correction |
-| --- | --- |
-| Aegis | Accepted benchmark. The saved model, materials and all five renders remain unchanged. |
-| Goliath | The arms read as thinner blades with darker inset crowns. Reduced arm thickness and fin height; added curved, fitted crown insets while retaining silver edges and flank ports. |
-| Bigboy | The olive bridge is a small raised command unit under an aft overhang. Replaced the large flat windshield with a compact curved bridge, reshaped the overhang, shortened the aft drives, and deepened the blue paint. |
-| Defcom | The green wings and central shell are curved. Rebuilt the scythes and carapace as curved shells with fitted glazing, rounded shoulders and shorter rear fins. |
-| Leonov | The two forks dominate the front silhouette around a narrow center. Narrowed the central spine, replaced the tall block cockpit with a small curved bridge, and added open equipment wells on the aft rails. |
-| Liberator | The central blue cockpit is raised and curved above the needle nose. Added a fitted fairing and glazing, dark equipment cells inside the engine channels, copper markings and pod armor divisions. |
-| Nostromo | The turbines sit low against the dark aft body. Lowered and shortened them, removed the tall supports, narrowed the smoked cockpit and darkened the hull and exposed metal. |
-| Phoenix | The capsule is broader, with silver-green canopy trim. Widened and lowered the body, fitted broad metal strips to the glazing, revised the red paint and silvery canopy, and inset the underlying chassis to prevent it breaking through the curved armor. |
-| Piranha | The bridge and tail fins are small relative to the long nose rails. Replaced the large windshield with a narrow curved bridge, lowered the fins and added blue longitudinal fairings. |
-| Spearhead | The upper blue pod rests on exposed dark machinery. Replaced the broad tower slab with a narrow spine and instruments, reduced the cockpit and outriggers, and added the blue nose strips. |
-| Vengeance | A compact heavy fighter with stepped engine blocks and dark cheek apertures. Shortened the hull, rebuilt all four drives with bell intakes and exposed waists, reduced the canopy and replaced the broad engine braces. |
-| Yamato | The cockpit is visibly stepped and the drives have separate blue-banded sections. Replaced the long windshield with three mounted panes and rebuilt both sizes of drive pod. |
-
-Painted blue and green surfaces now have separate darker palettes instead of sharing the same bright metal finish. Glass is less reflective, metal grain is finer, and engine lenses are less luminous. Studio lighting is retained for inspection; it does not reproduce the source images' lighting. Most comparison cameras show more of the side to approach the catalogue angle. Aegis's camera remains unchanged.
+The original catalogue pictures establish the base silhouettes. The shared
+Dorbit finish and fitted machinery are implemented in
+[concept_refinement.py](concept_refinement.py), called by the builder.
 
 Each model separates editable hull plates, engine parts, cockpit frames and mechanical details. Curved shells use fitted mesh panels. Vengeance and Yamato use short stepped drive assemblies; the other cylindrical engines retain their segmented cowls and radiator ribs. Glazing replaces selected curved shell panels on Defcom, Leonov and Liberator, avoiding overlapping glass and armor. Fasteners in reshaped assemblies move with their parent geometry.
 
-Aegis retains its U-shaped engineering body, green armor, top emitter, sloped graphite nose, exposed inclined neck, articulated forward tools and swept rear fins. Its layered construction is the benchmark for this collection. Fine channels, fasteners, cooling slots and service parts are modeled geometry. Materials add only subtle procedural metal grain.
+Aegis retains its U-shaped engineering body, green armor, top emitter, sloped graphite nose, exposed inclined neck, articulated forward tools and swept rear fins. Fine channels, fasteners, cooling slots and service parts are modeled geometry. Blender materials add subtle procedural metal grain; export produces portable surface maps for Godot.
 
-These are individually authored reconstructions for visual review. The source pictures establish the visible silhouettes and major assemblies. They do not resolve exact panel depths, the underside, internal joints or many small details; those parts are inferred. The images also differ in era, paint and camera angle. These models are reconstructions, not extracted game assets or exact replicas. There are no cosmetic variants, rigs, collision meshes, LODs or game exports in this pass.
+These are individually authored reconstructions for visual review. The source pictures establish the visible silhouettes and major assemblies. They do not resolve exact panel depths, the underside, internal joints or many small details; those parts are inferred. The images also differ in era, paint and camera angle. The saved studies contain no cosmetic variants, rigs or collision meshes; game exports and LODs are derived separately.
 
 ## References
 
@@ -97,4 +77,9 @@ Append `-- Bigboy` to rebuild one ship, or list several names after `--`. Names 
 rtk proxy python art/ship-review/build_review_sheets.py
 ```
 
-[build-stats.json](build-stats.json) records geometry counts. [validation.json](validation.json) records checks on reopened files, evaluated geometry, all six final renders and packed concepts. The sheet builder also checks that no ship touches a render boundary. Game exports preserve the existing normalized 7 m bounding diameter, orientation and one-mesh layout. `art/.gdignore` excludes the modeling collection and concept sheets from Godot imports. Art acceptance and representative-hardware performance remain user review tasks.
+The builder creates individual angle PNGs locally before validation and sheet
+composition. These intermediate renders are ignored by Git; comparison sheets,
+six-view sheets and the overview are retained. Rebuild the models before running
+the validator or sheet builder on a fresh checkout.
+
+[build-stats.json](build-stats.json) records geometry counts. [validation.json](validation.json) records checks on reopened files, evaluated geometry, all six final renders and packed concepts. The sheet builder also checks that no ship touches a render boundary. Game exports use a 3.5 m bounding diameter for Phoenix and 7 m for the others, with shared orientation and one-mesh layout. `art/.gdignore` excludes the modeling collection and concept sheets from Godot imports. Art acceptance and representative-hardware performance remain user review tasks.
