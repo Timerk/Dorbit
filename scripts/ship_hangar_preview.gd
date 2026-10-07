@@ -24,7 +24,7 @@ func _ready() -> void:
 	stage.name = "HangarViewport"
 	stage.own_world_3d = true
 	stage.size = Vector2i(640, 360)
-	stage.msaa_3d = Viewport.MSAA_4X
+	stage.msaa_3d = get_viewport().msaa_3d
 	stage.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	add_child(stage)
 	texture = stage.get_texture()
@@ -42,6 +42,7 @@ func _ready() -> void:
 	resized.connect(update_size)
 	update_size()
 	visibility_changed.connect(update_visibility)
+	add_to_group("graphics_previews")
 
 
 func surface(color: Color, metallic: float, roughness: float, emissive: bool = false) -> StandardMaterial3D:
@@ -135,6 +136,13 @@ func set_model(value: String) -> void:
 	hull = ShipCatalog.model_scene(value)
 	hull.name = "PreviewHull"
 	room.add_child(hull)
+	apply_graphics()
+
+
+func apply_graphics() -> void:
+	stage.msaa_3d = get_viewport().msaa_3d
+	if is_instance_valid(hull):
+		SectorVisuals.configure_texture_filtering(hull, SectorVisuals.texture_filtering_enabled(self))
 	request_render()
 
 

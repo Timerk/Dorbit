@@ -3,6 +3,7 @@ config_version=5
 
 [application]
 config/name="Dorbit"
+config/project_settings_override="user://graphics-renderer.cfg"
 run/main_scene="res://scenes/sector.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/description="A first playable space encounter."
@@ -26,7 +27,7 @@ window/size/min_height=600
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/default_filters/use_nearest_mipmap_filter=false
-; Compatibility reads the maximum at startup; materials toggle filtering live.
+; Saved user overrides choose the Compatibility sampler maximum at startup.
 textures/default_filters/anisotropic_filtering_level=4
 anti_aliasing/quality/msaa_3d=2
 environment/defaults/default_clear_color=Color(0.008, 0.012, 0.028, 1)

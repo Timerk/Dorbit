@@ -173,12 +173,23 @@ static func apply_surface(node: Node, surface: Material) -> void:
 		apply_surface(child, surface)
 
 
+static func texture_filtering_enabled(parent: Node) -> bool:
+	while parent != null:
+		if parent is Sector:
+			return parent.settings.anisotropic_filtering > 0
+		parent = parent.get_parent()
+	return false
+
+
 static func configure_texture_filtering(node: Node, enabled: bool = true) -> void:
-	if node is MeshInstance3D:
+	var filter_mode := BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC if enabled else BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	if node is GeometryInstance3D and node.material_override is BaseMaterial3D:
+		(node.material_override as BaseMaterial3D).texture_filter = filter_mode
+	if node is MeshInstance3D and node.mesh != null:
 		for index in range(node.mesh.get_surface_count()):
 			var surface := node.get_active_material(index) as BaseMaterial3D
 			if surface != null:
-				surface.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC if enabled else BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+				surface.texture_filter = filter_mode
 	for child in node.get_children():
 		configure_texture_filtering(child, enabled)
 
@@ -187,9 +198,12 @@ static func apply_graphics(parent: Node3D, preferences: GameSettings) -> void:
 	var world := parent.get_node_or_null("WorldEnvironment") as WorldEnvironment
 	if world == null:
 		return # Dedicated servers have no environment or presentation settings.
-	# GLES3 ignores runtime Viewport anisotropy levels. Its startup maximum is
-	# 16x; switching material samplers makes the Off/16x choice apply immediately.
+	# GLES3 ignores runtime Viewport strengths; the saved startup override
+	# sets the maximum. Material samplers still switch filtering on/off live.
 	configure_texture_filtering(parent, preferences.anisotropic_filtering > 0)
+	for preview: ShipHangarPreview in parent.get_tree().get_nodes_in_group("graphics_previews"):
+		if parent.is_ancestor_of(preview):
+			preview.apply_graphics()
 	world.environment.glow_enabled = preferences.bloom
 	world.environment.ssao_enabled = preferences.ssao
 	var sun := parent.get_node("Sun") as DirectionalLight3D

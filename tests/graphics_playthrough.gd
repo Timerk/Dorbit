@@ -69,6 +69,19 @@ func run() -> void:
 		check(toggle.button_pressed, "Keyboard enables %s" % toggle.text)
 		await tap_key(KEY_SPACE)
 		check(not toggle.button_pressed, "Keyboard disables %s" % toggle.text)
+	# Select every sample count with the same keyboard popup path players use.
+	for level in range(4):
+		menu.quality.grab_focus()
+		await frames(4)
+		await tap_key(KEY_SPACE)
+		menu.quality.get_popup().set_focused_item(0)
+		for step in range(level):
+			await popup_key(menu.quality.get_popup(), KEY_DOWN)
+		await popup_key(menu.quality.get_popup(), KEY_ENTER)
+		check(root.msaa_3d == level and menu.quality.selected == level, "Keyboard applies MSAA level %d" % level)
+		await capture("menu-msaa-%d" % level)
+	sector.settings.msaa_3d = 2
+	sector.apply_graphics(false)
 	menu.dismiss()
 	sector.set_paused(false)
 	DisplayServer.window_set_size(Vector2i(1440, 900))
