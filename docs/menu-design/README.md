@@ -3,6 +3,15 @@
 These raster concepts were generated with the built-in ImageGen tool. They guide
 future native Godot UI work; they are not runtime UI assets or playable screens.
 
+Overview is now implemented with native controls and synchronized ship/wallet
+values. The shared top bar and left navigation lead to the existing functional
+pages; their interior redesigns, including Hangar's full-width specifications
+strip, remain follow-up work. See [runtime asset provenance](../../assets/ui/menu/README.md).
+
+[In-game Overview screenshot at 1440 × 900](overview-implemented.png) (rendered
+from the authenticated main-menu validation fixture, with live starter fitting
+and a seeded 19,000-credit test budget).
+
 ## Review status
 
 | Screen | Image | Status |

@@ -205,7 +205,7 @@ pending rescue completes in the menu with its existing fee and timer; Start is
 unavailable until the ship is alive. Start can then launch the prepared ship again.
 
 The console fits 960 x 600 through 1440 x 900 and larger windows; station panels
-scale to leave its persistent launch/navigation header accessible. Client and
+scale inside the content area to leave the top bar and left navigation accessible. Client and
 server builds must match (network schema 7 adds docked state and launch RPCs).
 
 ### Menu visual direction
@@ -231,8 +231,16 @@ three Settings tabs and Skylab/Galaxy Gates coming-soon concepts with the footer
 visibility change described above. The saved images incorporate that change.
 The displayed inventory, quest state, connection address
 and settings are illustrative; actual ownership and fitting remain server-authoritative.
-Saved images are visual references for future implementation, not implemented
-menu screens. See [concept notes and prompts](docs/menu-design/README.md).
+Overview now implements this direction with native Godot controls, a generated
+empty-hangar backdrop and sharp renders of the existing ship models. Credits,
+active hull, current hull health, fitted shield capacity, damage, cruise speed
+and cargo usage read the synchronized game state. Start appears only on Overview;
+the left navigation and top-right readouts remain available on station pages.
+Flight instructions and permanent preparation prose are omitted; contextual
+station feedback remains available. Other page interiors retain their existing
+functional UI pending their own implementation, including the future full-width
+Hangar specifications strip. Saved concepts remain references, rather than
+runtime UI screenshots. See [concept notes and prompts](docs/menu-design/README.md).
 
 ### First station equipment shop and fitting
 
