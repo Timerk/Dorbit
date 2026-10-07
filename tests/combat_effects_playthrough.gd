@@ -25,6 +25,7 @@ func run() -> void:
 	sector.client_only = false
 	root.add_child(sector)
 	current_scene = sector
+	flight_replay_running = true
 	sector.set_physics_process(false)
 	sector.set_paused(false)
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
@@ -45,7 +46,7 @@ func run() -> void:
 	SectorVisuals.laser(sector, sector.player.position, sector.alien.position, false)
 	SectorVisuals.impact(sector.alien, sector.alien.position, true, true)
 	SectorVisuals.explosion(sector, sector.alien.position)
-	await create_timer(1.0).timeout
+	await create_timer(SectorVisuals.EXPLOSION_DURATION + 0.1).timeout
 	for size in [Vector2i(1440, 900), Vector2i(960, 600)]:
 		root.size = size
 		root.content_scale_size = size
@@ -69,8 +70,28 @@ func run() -> void:
 		await create_timer(0.45).timeout
 		sector.alien.take_damage(sector.alien.hull + 1.0, sector.player)
 		check(not sector.alien.alive and sector.kills > 0, "Gallery destruction uses the actual death and reward path")
+		check(not sector.loot.is_presented(sector.loot.next_id), "Gallery loot stays hidden throughout destruction")
 		await snapshot("combat-destruction-%d" % size.x)
-		await create_timer(0.7).timeout
+		await create_timer(SectorVisuals.EXPLOSION_DURATION + 0.1).timeout
+		check(sector.loot.is_presented(sector.loot.next_id), "Gallery loot appears after destruction ends")
+		await snapshot("combat-loot-%d" % size.x)
+		sector.loot.clear()
+	root.size = Vector2i(1440, 900)
+	root.content_scale_size = Vector2i(1440, 900)
+	await create_timer(0.2).timeout
+	# Use the same camera and wreck position so the size comparison is unambiguous.
+	for slot in [1, 4]:
+		var enemy: Alien = sector.aliens[slot]
+		enemy.reset_health()
+		enemy.position = sector.alien.position
+		enemy.home_position = enemy.position
+		enemy.shield = 0.0
+		enemy.take_damage(enemy.hull + 1.0, sector.player)
+		check(not sector.loot.is_presented(sector.loot.next_id), enemy.kind + " loot stays hidden during its scaled explosion")
+		await snapshot("combat-destruction-%s-1440" % enemy.kind.to_lower())
+		await create_timer(SectorVisuals.EXPLOSION_DURATION + 0.1).timeout
+		sector.loot.clear()
+	flight_replay_running = false
 	sector.queue_free()
 	await process_frame
 	print("Combat gallery: %d failures" % failures)

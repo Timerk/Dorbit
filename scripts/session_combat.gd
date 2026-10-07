@@ -156,7 +156,7 @@ func choose_target(alien: Alien) -> Pilot:
 func destroyed(ship: SpaceShip) -> void:
 	if not multiplayer.is_server():
 		return
-	show_explosion.rpc(ship.position)
+	show_explosion.rpc(ship.position, SectorVisuals.destruction_size(ship))
 	if ship is Alien:
 		var alien := ship as Alien
 		var contributors := alien.contributors
@@ -444,9 +444,9 @@ func show_laser(start: Vector3, finish: Vector3, hostile: bool) -> void:
 
 
 @rpc("authority", "call_local", "reliable")
-func show_explosion(location: Vector3) -> void:
+func show_explosion(location: Vector3, diameter: float) -> void:
 	if session.active and not session.sector.dedicated_server:
-		SectorVisuals.explosion(session.sector, location)
+		SectorVisuals.explosion(session.sector, location, diameter)
 
 
 func finish() -> void:
