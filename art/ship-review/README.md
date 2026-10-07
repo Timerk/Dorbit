@@ -10,6 +10,11 @@ cap becomes a small tip. Its plating, cockpit and cheek fittings follow the
 revised hull; the paired rear turbines and swept wings retain their recognizable
 arrangement.
 
+The Liberator now has a [Godot material benchmark](../../docs/ship-materials.md)
+with per-component surface maps and a live hangar view. These runtime maps are
+authored from the saved model during export; the Blender renders below continue
+to document the geometry and studio finish.
+
 | Ship | Blender file | Catalogue comparison | Six-view sheet |
 | --- | --- | --- | --- |
 | Aegis | [aegis.blend](models/aegis.blend) | [Compare](previews/aegis-comparison.jpg) | [Views](previews/aegis-views.jpg) |

@@ -37,7 +37,11 @@ func run() -> void:
 	var remote := server.session.ships[id]
 	var store := server.session.store
 	check(client.player.ship_model == "liberator" and client.cargo_capacity == 400, "Legacy Pathfinder loads as the modeled Liberator with its real cargo hold")
+	var performance_overlay := client.show_performance
+	client.show_performance = false
+	await settle(0.5)
 	await screenshot(client, "ships-liberator-flight")
+	client.show_performance = performance_overlay
 	check(store.commit({"pilot0": 1}), "Temporarily restrict ship budget")
 	await transaction(client, "buy_ship", "goliath")
 	check(store.pilots["pilot0"]["credits"] == 1 and store.pilots["pilot0"]["equipment"]["revision"] == 0, "Insufficient ship funds preserve credits, ownership and revision")

@@ -94,8 +94,10 @@ them. Run Blender in background mode with `--python tools/export_ships.py`.
 The exporter removes the studio and references, consolidates each hull into
 one mesh with material surfaces, reduces bevel subdivisions, retains evaluated
 normals and PBR colors, and normalizes the bounding diameter to 7 m. Godot's
-imported nose points -Z with +Y up. Procedural studio grain is omitted. Ship
-previews derive from the revised saved renders. The existing simple collision
+imported nose points -Z with +Y up. The [Liberator material benchmark](ship-materials.md)
+adds portable surface maps, shared texture resources and a live docked hangar
+preview. Its thumbnail is rendered in Godot; other hull previews derive from the
+revised Blender renders, with procedural studio grain omitted. The existing simple collision
 sphere and chase camera remain shared across hulls; these are approximate game
 sizes, since PR 14 supplied no physical scale. Godot generates mesh LODs on
 import. The dedicated server never instantiates hull render meshes.

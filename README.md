@@ -197,6 +197,10 @@ rendered window to capture the overview and station pages at 960 x 600 and
 [Shop](docs/menu-design/shop-implemented.png), and
 [Hangar](docs/menu-design/hangar-implemented.png) show the current layout.
 
+The docked overview now has a live ship preview: drag to rotate, scroll to zoom,
+or double-click to reset. The [Liberator material benchmark](docs/ship-materials.md)
+uses textured coated armor and exposed metal in both the hangar and flight.
+
 Downloading an artifact from the validation workflow does not deploy its server. To playtest an open PR, run **Actions > Deploy preview** for that PR, download the Windows client from that preview run and connect to the preview address and UDP port. See [preview playtesting](DEPLOYMENT.md#preview-a-pr-before-merging) for setup. Production uses its own matching release client. Incompatible client/server RPC definitions are rejected during connection with a build-mismatch message, before combat starts. This handshake requires both sides to be updated; older servers are rejected too.
 
 1. Hold right mouse and move the mouse to steer. Use W/S for forward/backward movement, A/D to strafe, and Q/E to descend/rise.

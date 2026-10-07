@@ -432,6 +432,13 @@ consistent final angles where generated views disagree. See
 Following model review, the Nostromo has a longer forward hull and a sharper,
 tapered bow, retaining its paired rear turbines and swept wings.
 
+The Liberator is the first in-game material benchmark: fitted panels receive
+individual roughness variation and subtle normal-map grain, with coated blue
+armor separated from exposed metal. The docked overview shows the active hull
+in a lit, rotatable 3D hangar using the same mesh and materials as flight.
+Its isolated preview renders on demand and stops when hidden. Extend the finish
+to the other ships after reviewing this benchmark.
+
 This is presentation work on the existing roster within the current milestone.
 Ship statistics, collision size, equipment, ownership and progression retain
 their agreed behavior. Art acceptance and performance on representative
