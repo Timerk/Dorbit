@@ -236,7 +236,7 @@ func check_resource_shop(server: Sector, client: Sector) -> void:
 		check(store.pilots["pilot0"]["credits"] == 1000 and store.pilots["pilot0"]["cargo"]["starter"] == hold and store.pilots["pilot0"]["equipment"]["revision"] == revision, "Reject malformed or unavailable amount: " + subject)
 	await click_control(client, shop.sells["seprom"])
 	check(client.cargo["seprom"] == 7 and client.credits == 1192 and store.pilots["pilot0"]["cargo"]["starter"]["seprom"] == 7, "Selected-quantity button saves and replicates exactly three sold units")
-	check(shop.selected["seprom"] == 3 and shop.held["seprom"].text == "In hold: 7", "Partial sale preserves the smaller selection and updates held amount")
+	check(shop.selected["seprom"] == 3 and shop.held["seprom"].text == "7 held", "Partial sale preserves the smaller selection and updates held amount")
 	await request(client, revision + 1, "sell", "seprom:3")
 	check(client.credits == 1192 and client.cargo["seprom"] == 7, "Repeated partial sale cannot pay twice")
 	shop.set_quantity("seprom", 999)
