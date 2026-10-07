@@ -7,18 +7,29 @@ so the imported Godot nose points -Z. All hulls fit a 7 m bounding diameter.
 """
 import json
 import math
+import sys
 from pathlib import Path
 
 import bpy
 from mathutils import Matrix, Vector
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'tools'))
+from ship_surface_atlas import SurfaceAtlas, deduplicate_textures
 REVIEW = ROOT / "art/ship-review"
 OUTPUT = ROOT / "assets/ships"
 OUTPUT.mkdir(parents=True, exist_ok=True)
 (ROOT / "assets/ui/ships").mkdir(parents=True, exist_ok=True)
-report = {}
-for source in sorted((REVIEW / "models").glob("*.blend")):
+requested = set(sys.argv[sys.argv.index('--') + 1:]) if '--' in sys.argv else set()
+sources = sorted((REVIEW / 'models').glob('*.blend'))
+unknown = requested - {source.stem for source in sources}
+if unknown:
+    raise ValueError('Unknown ships: ' + ', '.join(sorted(unknown)))
+report_path = OUTPUT / 'export-stats.json'
+report = json.loads(report_path.read_text()) if requested and report_path.exists() else {}
+for source in sources:
+    if requested and source.stem not in requested:
+        continue
     bpy.ops.wm.open_mainfile(filepath=str(source))
     meshes = [obj for obj in bpy.context.scene.objects if obj.type == "MESH"]
     for obj in meshes:
@@ -27,11 +38,15 @@ for source in sorted((REVIEW / "models").glob("*.blend")):
             if modifier.type == "BEVEL":
                 modifier.segments = 1
     graph = bpy.context.evaluated_depsgraph_get()
+    atlas = SurfaceAtlas(meshes, REVIEW / 'materials/liberator') if source.stem == 'liberator' else None
     vertices, faces, materials, indices, smooth, normals = [], [], [], [], [], []
+    uvs = []
     material_names = {}
     for obj in meshes:
         evaluated = obj.evaluated_get(graph)
         mesh = evaluated.to_mesh()
+        if atlas:
+            uvs.extend(atlas.coordinates(obj, mesh))
         offset = len(vertices)
         vertices.extend(obj.matrix_world @ vertex.co for vertex in mesh.vertices)
         normal_matrix = obj.matrix_world.to_3x3().inverted().transposed()
@@ -60,7 +75,9 @@ for source in sorted((REVIEW / "models").glob("*.blend")):
         # Procedural grain is a studio detail unsupported by glTF. Preserve PBR
         # paint, metal, roughness and emission; remove the unsupported bump link.
         bsdf = material.node_tree.nodes.get("Principled BSDF")
-        if bsdf:
+        if atlas:
+            atlas.apply_material(material)
+        elif bsdf:
             for link in list(bsdf.inputs["Normal"].links):
                 material.node_tree.links.remove(link)
         data.materials.append(material)
@@ -68,6 +85,11 @@ for source in sorted((REVIEW / "models").glob("*.blend")):
         polygon.material_index = index
         polygon.use_smooth = is_smooth
     data.normals_split_custom_set(normals)
+    if atlas:
+        uv_layer = data.uv_layers.new(name='Fitted component atlas')
+        assert len(uvs) == len(data.loops)
+        for loop, uv in zip(uv_layer.data, uvs):
+            loop.uv = uv
     bpy.ops.object.select_all(action="DESELECT")
     hull = bpy.data.objects.new(source.stem, data)
     bpy.context.scene.collection.objects.link(hull)
@@ -76,13 +98,18 @@ for source in sorted((REVIEW / "models").glob("*.blend")):
     bpy.ops.export_scene.gltf(filepath=str(OUTPUT / f"{source.stem}.glb"),
         export_format="GLB", use_selection=True, export_yup=True,
         export_cameras=False, export_lights=False, export_animations=False)
-    preview = bpy.data.images.load(str(REVIEW / "previews" / f"{source.stem}.png"))
-    preview.scale(400, 360)
-    preview.filepath_raw = str(ROOT / "assets/ui/ships" / f"{source.stem}.png")
-    preview.file_format = "PNG"
-    preview.save()
+    if atlas:
+        deduplicate_textures(OUTPUT / f'{source.stem}.glb')
+    if not atlas:
+        preview = bpy.data.images.load(str(REVIEW / "previews" / f"{source.stem}.png"))
+        preview.scale(400, 360)
+        preview.filepath_raw = str(ROOT / "assets/ui/ships" / f"{source.stem}.png")
+        preview.file_format = "PNG"
+        preview.save()
+    # Liberator's thumbnail uses the same Godot finish as flight; rebuild with
+    # tools/render_ship_preview.gd after importing its new GLB.
     data.calc_loop_triangles()
     report[source.stem] = {"triangles": len(data.loop_triangles), "materials": len(materials),
                           "bytes": (OUTPUT / f"{source.stem}.glb").stat().st_size}
     print("EXPORTED", source.stem, report[source.stem], flush=True)
-(OUTPUT / "export-stats.json").write_text(json.dumps(report, indent=2) + "\n")
+report_path.write_text(json.dumps(report, indent=2) + "\n")

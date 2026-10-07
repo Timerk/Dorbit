@@ -2,6 +2,7 @@ extends SceneTree
 ## Run against the exported main pack to catch missing dynamically loaded assets.
 
 func _initialize() -> void:
+	var liberator_textures := {}
 	if ShipCatalog.MODELS.size() != 12:
 		push_error("Exported ship catalog must contain twelve hulls.")
 		quit(1)
@@ -26,6 +27,19 @@ func _initialize() -> void:
 		for surface in instance.mesh.get_surface_count():
 			var arrays := instance.mesh.surface_get_arrays(surface)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			if id == "liberator":
+				var material := instance.mesh.surface_get_material(surface) as BaseMaterial3D
+				var uv: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
+				if uv.size() != vertices.size() or material == null or material.get_texture(BaseMaterial3D.TEXTURE_ALBEDO) == null or material.get_texture(BaseMaterial3D.TEXTURE_ROUGHNESS) == null or material.get_texture(BaseMaterial3D.TEXTURE_NORMAL) == null:
+					push_error("Liberator must package UVs and its color, roughness and normal maps.")
+					quit(1)
+					return
+				for channel in [BaseMaterial3D.TEXTURE_ALBEDO, BaseMaterial3D.TEXTURE_ROUGHNESS, BaseMaterial3D.TEXTURE_NORMAL]:
+					liberator_textures[material.get_texture(channel).get_instance_id()] = true
+				if material.resource_name == "Blue grey armor" and not material.clearcoat_enabled:
+					push_error("Liberator's painted armor must retain its clearcoat.")
+					quit(1)
+					return
 			if vertices.is_empty() or instance.mesh.surface_get_material(surface) == null:
 				push_error("Empty geometry or missing PBR material: " + id)
 				quit(1)
@@ -36,5 +50,10 @@ func _initialize() -> void:
 					quit(1)
 					return
 		hull.free()
+	if liberator_textures.size() != 3:
+		push_error("Liberator's ten surfaces must share three atlas textures.")
+		quit(1)
+		return
 	print("Packaged ship assets: 12 centered 7 m hulls with finite geometry, PBR materials, previews and no studio")
+	print("Liberator finish: UVs, 3 shared PBR atlases and coated paint retained")
 	quit()
