@@ -7,6 +7,10 @@ Blender component gets its own padded UV tile, with small roughness differences
 between panels and subtle tangent-space normal-map grain. Texture colors contain
 no painted lighting or reflections.
 
+The cockpit canopy uses dark cyan-tinted glass with a smooth dielectric finish,
+distinct from the coated blue armor. Its existing silver frame separates the
+glazing panes; the glass maps contain no brushed hull grain.
+
 [Godot hangar render](feedback/liberator-material-hangar.png) ·
 [Closer material view](feedback/liberator-material-detail.png) ·
 [Docked overview](feedback/liberator-material-menu.png) ·
@@ -38,7 +42,7 @@ The glTF export shares three image/sampler entries. Godot's
 [import hook](../tools/import_liberator.gd) also shares the three compressed texture
 resources across all ten material surfaces and restores the blue paint clearcoat.
 The GLB retains its single mesh, 98,228 base triangles, centered 7 m bounds and
-forward orientation. It grows from 2,016,468 to 7,857,488 bytes with UVs and maps.
+forward orientation. It grows from 2,016,468 to 7,823,272 bytes with UVs and maps.
 The saved `.blend` file remains the editable geometry source.
 
 From the repository root, using Blender 5.2.2 and Godot 4.7.2 (adjust paths):
@@ -65,6 +69,8 @@ Checked with Godot's Compatibility renderer on Windows:
 - Ship replay: 211 checks pass, with the textured Liberator loaded in flight.
 - Both source assets and an exported Windows PCK retain UVs, all three shared
   maps, coated paint, all twelve hulls, bounds, materials and previews.
+  Texture samples also verify that cockpit glass stays darker and smoother
+  than the armor, with a dielectric response.
 - The hangar also renders successfully from the exported PCK, including its
   shaders and textures. Python compilation and diff checks pass.
 

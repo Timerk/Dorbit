@@ -3,6 +3,7 @@ extends SceneTree
 
 func _initialize() -> void:
 	var liberator_textures := {}
+	var liberator_finish: Dictionary[String, Color] = {}
 	if ShipCatalog.MODELS.size() != 12:
 		push_error("Exported ship catalog must contain twelve hulls.")
 		quit(1)
@@ -40,6 +41,9 @@ func _initialize() -> void:
 					push_error("Liberator's painted armor must retain its clearcoat.")
 					quit(1)
 					return
+				if material.resource_name in ["Blue cockpit glazing", "Blue grey armor"]:
+					liberator_finish[material.resource_name] = surface_texel(instance.mesh, surface, BaseMaterial3D.TEXTURE_ALBEDO)
+					liberator_finish[material.resource_name + " ORM"] = surface_texel(instance.mesh, surface, BaseMaterial3D.TEXTURE_ROUGHNESS)
 			if vertices.is_empty() or instance.mesh.surface_get_material(surface) == null:
 				push_error("Empty geometry or missing PBR material: " + id)
 				quit(1)
@@ -54,6 +58,27 @@ func _initialize() -> void:
 		push_error("Liberator's ten surfaces must share three atlas textures.")
 		quit(1)
 		return
+	if not liberator_finish.has("Blue cockpit glazing") or not liberator_finish.has("Blue grey armor") or liberator_finish["Blue cockpit glazing"].get_luminance() >= liberator_finish["Blue grey armor"].get_luminance() * .55:
+		push_error("Liberator cockpit glazing must remain visibly darker than the blue armor.")
+		quit(1)
+		return
+	var glass_orm := liberator_finish["Blue cockpit glazing ORM"]
+	if glass_orm.g >= liberator_finish["Blue grey armor ORM"].g or glass_orm.b > .05:
+		push_error("Liberator glazing must be smoother than armor and retain a dielectric glass finish.")
+		quit(1)
+		return
 	print("Packaged ship assets: 12 centered 7 m hulls with finite geometry, PBR materials, previews and no studio")
-	print("Liberator finish: UVs, 3 shared PBR atlases and coated paint retained")
+	print("Liberator finish: UVs, 3 shared PBR atlases, coated paint and distinct smooth cockpit glass retained")
 	quit()
+
+
+func surface_texel(mesh: Mesh, surface: int, channel: int) -> Color:
+	var arrays := mesh.surface_get_arrays(surface)
+	var uv: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
+	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	var sample_uv := (uv[indices[0]] + uv[indices[1]] + uv[indices[2]]) / 3.0
+	var material := mesh.surface_get_material(surface) as BaseMaterial3D
+	var pixels := material.get_texture(channel).get_image()
+	if pixels.is_compressed():
+		pixels.decompress()
+	return pixels.get_pixelv(Vector2i(sample_uv * Vector2(pixels.get_size())))
