@@ -68,12 +68,12 @@
     },
     {
       "name": "Nostromo",
-      "mesh_components": 333,
-      "base_faces": 12872,
-      "evaluated_faces": 28540,
+      "mesh_components": 331,
+      "base_faces": 12804,
+      "evaluated_faces": 28916,
       "packed_references": 3,
       "cameras": 6,
-      "bytes": 4737253
+      "bytes": 4747991
     },
     {
       "name": "Phoenix",

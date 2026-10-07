@@ -429,6 +429,9 @@ restrained copper markings. The concepts are design guidance; one mesh supplies
 consistent final angles where generated views disagree. See
 [ship concepts](art/ship-review/concepts/README.md).
 
+Following model review, the Nostromo has a longer forward hull and a sharper,
+tapered bow, retaining its paired rear turbines and swept wings.
+
 This is presentation work on the existing roster within the current milestone.
 Ship statistics, collision size, equipment, ownership and progression retain
 their agreed behavior. Art acceptance and performance on representative
