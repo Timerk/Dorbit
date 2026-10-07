@@ -5,11 +5,15 @@ extends "res://tests/flight_playthrough.gd"
 func run() -> void:
 	root.size = Vector2i(2560, 1440)
 	root.content_scale_size = Vector2i(2560, 1440)
-	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	sector = preload("res://scenes/sector.tscn").instantiate()
 	sector.client_only = false
 	root.add_child(sector)
 	current_scene = sector
+	# Apply capture settings after startup has loaded device preferences.
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	root.size = Vector2i(2560, 1440)
+	root.content_scale_size = Vector2i(2560, 1440)
 	sector.set_physics_process(false)
 	sector.session.active = true
 	sector.show_performance = true
@@ -40,7 +44,9 @@ func run() -> void:
 		await create_timer(0.1).timeout
 	sampling = false
 	frame_times.sort()
-	print("Busy feedback: 10 pilot models, 1 alien, 100 laser + 100 impact requests/s; p95=%.2f ms; frames=%d; GPU=%s" % [frame_times[int(frame_times.size() * 0.95)], frame_times.size(), RenderingServer.get_video_adapter_name()])
+	if rendered:
+		check(root.get_texture().get_size() == Vector2(2560, 1440), "Busy feedback uses the full requested render size")
+	print("Busy feedback: 10 pilot models, 1 alien, 100 laser + 100 impact requests/s; render_size=%s; p95=%.2f ms; frames=%d; GPU=%s" % [root.get_texture().get_size(), frame_times[int(frame_times.size() * 0.95)], frame_times.size(), RenderingServer.get_video_adapter_name()])
 	sector.session.active = false
 	sector.queue_free()
 	await process_frame

@@ -90,13 +90,13 @@ func run() -> void:
 		await send_fire(client)
 		var shield := server.alien.shield
 		server.session.combat.tick(0.01)
-		# ENet effects normally arrive in milliseconds, before the 130 ms beam expires.
+		# ENet effects normally arrive in milliseconds, before the 180 ms beam expires.
 		var deadline := Time.get_ticks_msec() + 1000
 		var visible_beam := false
 		while Time.get_ticks_msec() < deadline and not visible_beam:
 			await process_frame
 			for child in client.get_children():
-				if child is MeshInstance3D and child.mesh is CylinderMesh and child.is_in_group("transient_feedback"):
+				if child is CombatEffect and child.get_meta("laser", false) and child.is_in_group("transient_feedback"):
 					visible_beam = true
 		check(server.alien.shield < shield, "Matching builds retain authoritative pilot laser damage")
 		check(visible_beam, "The server-confirmed pilot shot creates a visible client laser mesh")
