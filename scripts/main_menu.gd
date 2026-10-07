@@ -162,7 +162,10 @@ func build_navigation() -> void:
 		button.toggle_mode = true
 		if page in ["skylab", "gates"]:
 			button.add_theme_color_override("font_color", Color("60717e"))
+			button.add_theme_color_override("font_hover_color", Color("60717e"))
 			button.add_theme_color_override("icon_normal_color", Color("60717e"))
+			button.add_theme_color_override("icon_hover_color", Color("60717e"))
+			button.add_theme_stylebox_override("hover", button.get_theme_stylebox("normal"))
 			button.tooltip_text = "Coming soon"
 			var soon := label(button, "COMING SOON", 11, Color("60717e"))
 			soon.position = Vector2(86, 48)
@@ -333,7 +336,7 @@ func layout() -> void:
 	canvas.size = size / factor
 	header.size = Vector2(canvas.size.x, HEADER_HEIGHT)
 	brand.position = Vector2(40, 6)
-	var wallet_width := maxf(177, wallet.get_minimum_size().x)
+	var wallet_width := wallet.get_minimum_size().x
 	wallet.position = Vector2(canvas.size.x - wallet_width - 28, 21)
 	wallet.size = Vector2(wallet_width, 40)
 	wallet_icon.position = Vector2(wallet.position.x - 44, 27)
@@ -347,8 +350,8 @@ func layout() -> void:
 	var row_height := (sidebar.size.y - 145) / navigation.size()
 	var index := 0
 	for page: String in navigation:
-		navigation[page].position = Vector2(0, 30 + index * row_height)
-		navigation[page].size = Vector2(SIDEBAR_WIDTH, row_height)
+		navigation[page].position = Vector2(1, 30 + index * row_height)
+		navigation[page].size = Vector2(SIDEBAR_WIDTH - 2, row_height)
 		index += 1
 	for i in exit_buttons.size():
 		var button := exit_buttons[i]
