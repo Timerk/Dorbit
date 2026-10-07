@@ -223,7 +223,9 @@ filtering (Off/2x/4x/8x/16x), bloom/glow and ambient occlusion toggles, shadows
 Off/2x/4x/8x MSAA. Settings save on this device. Reduced render scale keeps the
 HUD and menus sharp.
 Combat effects Off removes existing and future laser/impact/explosion meshes;
-audio and gameplay continue. Low simplifies effects and caps them at 32 meshes.
+audio and gameplay continue. Low simplifies effects and caps them at 32 effect
+roots with fewer child meshes.
+High retains the new lasers, shield ripples and ship-sized destruction effects.
 The default remains native rendering, new lighting/filtering options off, and
 High combat effects. The game continues to use Godot's Compatibility renderer.
 Compatibility reads anisotropic strength at startup. Strength choices write

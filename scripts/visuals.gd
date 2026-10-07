@@ -318,7 +318,6 @@ static func laser(parent: Node3D, start: Vector3, finish: Vector3, hostile: bool
 		glow(effect, endpoint - start, Vector2.ONE * 2.0, color, 0.13)
 
 
-
 static func explosion(parent: Node3D, location: Vector3, diameter: float = 9.7) -> void:
 	sound(parent, "destruction", location)
 	var effect := feedback_root(parent, location, EXPLOSION_DURATION, DESTRUCTION_LIMIT)

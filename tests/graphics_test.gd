@@ -115,16 +115,25 @@ func run() -> void:
 	check(is_equal_approx(previous_health - sector.player.hull - sector.player.shield, 100.0), "Effects off preserves authoritative damage")
 	select_option(menu, "effects_quality", 1)
 	SectorVisuals.impact(sector.player, sector.player.position, true, true)
-	check(get_nodes_in_group("transient_feedback").size() == 2, "Low uses a shield ring and one hull spark")
+	check(get_nodes_in_group("transient_feedback").size() == 1, "Low groups shield and hull feedback under one lifetime root")
+	var low_hit := get_nodes_in_group("transient_feedback")[0] as CombatEffect
+	check(low_hit.find_children("*", "MeshInstance3D", true, false).size() == 3, "Low simplifies the shield ripple and uses one hull spark")
+	SectorVisuals.explosion(sector, Vector3.ZERO, 14.0)
+	var low_blast := get_nodes_in_group("destruction_feedback")[0] as CombatEffect
+	check(low_blast.get_meta("diameter") == 14.0 and low_blast.find_children("*", "MeshInstance3D", true, false).size() == 5, "Low preserves ship-sized blasts with reduced debris")
+	await create_timer(0.4).timeout
+	check(SectorVisuals.explosion_active(sector, Vector3.ZERO), "Low retains the destruction lifetime used to delay loot")
 	for index in range(50):
 		SectorVisuals.impact(sector.player, sector.player.position, true, true)
 		SectorVisuals.laser(sector, Vector3.ZERO, Vector3(0, 0, -20), false)
 		SectorVisuals.explosion(sector, Vector3.ZERO)
-	check(get_nodes_in_group("transient_feedback").size() == 32, "Low caps mixed combat feedback at 32 meshes")
+	check(get_nodes_in_group("transient_feedback").size() == 32, "Low caps mixed combat feedback at 32 roots")
 	select_option(menu, "effects_quality", 2)
 	await process_frame
 	SectorVisuals.impact(sector.player, sector.player.position, true, true)
-	check(get_nodes_in_group("transient_feedback").size() == 3, "High restores the shield ring and both hull sparks")
+	check(get_nodes_in_group("transient_feedback").size() == 1, "High groups shield and hull feedback under one lifetime root")
+	var high_hit := get_nodes_in_group("transient_feedback")[0] as CombatEffect
+	check(high_hit.find_children("*", "MeshInstance3D", true, false).size() == 9, "High preserves the new shield ripple, flashes and six hull sparks")
 	select_option(menu, "effects_quality", 0)
 	await process_frame
 	var victim := sector.alien
@@ -137,6 +146,7 @@ func run() -> void:
 	victim.take_damage(victim.hull + victim.shield + 1.0, sector.player)
 	check(not victim.alive and sector.credits > credits_before, "Effects off preserves alien destruction and rewards")
 	check(get_nodes_in_group("transient_feedback").is_empty(), "Actual destruction remains visually off")
+	check(sector.loot.is_presented(sector.loot.next_id), "Effects Off reveals dropped loot without waiting for a visual explosion")
 
 	var invalid := ConfigFile.new()
 	for setting: String in GameSettings.GRAPHICS_LEVELS:

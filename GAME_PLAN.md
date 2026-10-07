@@ -81,7 +81,8 @@ filtering/bloom/occlusion/shadows and High combat effects remain the defaults fo
 existing profiles. Render scaling leaves menus and HUD at native resolution.
 Effects Off removes visual laser, impact and destruction feedback while retaining
 sound, damage, rewards and targeting. Low simplifies geometry and limits feedback
-to 32 meshes; High preserves the existing 64/80 limits. Shadows apply only to the
+to 32 effect roots with fewer child meshes; High preserves the existing 64/80
+root limits and the updated combat visuals. Shadows apply only to the
 sun, with bounded distances; distant scenery and transient effects do not cast
 shadows. Effect appearance and quality budgets remain playtesting settings; menu
 performance costs are estimates, not hardware benchmark results.
