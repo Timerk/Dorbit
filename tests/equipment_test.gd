@@ -123,7 +123,7 @@ func check_inventory_layout(client: Sector) -> void:
 	await settle()
 	check(fitting.get_global_rect().position.x >= 0 and fitting.get_global_rect().end.x <= 1440 and fitting.get_global_rect().end.y <= 900, "Equipment resizes within the larger viewport")
 	if client.preflight:
-		check(fitting.get_global_rect().position.y >= MainMenu.HEADER_HEIGHT and not fitting.get_global_rect().intersects(client.main_menu.start_button.get_global_rect()), "Docked grouped inventory leaves Start accessible")
+		check(fitting.get_global_rect().position.y >= MainMenu.HEADER_HEIGHT and fitting.specifications.is_visible_in_tree() and not client.main_menu.start_button.is_visible_in_tree(), "Docked grouped inventory retains specifications and keeps Start exclusive to Overview")
 	scroll.scroll_vertical = 0
 	await screenshot(client, "equipment-large-window")
 	client.get_viewport().size = Vector2i(960, 600)
@@ -199,9 +199,8 @@ func check_quick_equip() -> void:
 	check(client.preflight and client.paused and client.main_menu.home.visible and not fitting.visible, "Esc returns from inventory to the main menu without launching")
 	await click_item(client, client.main_menu.navigation["hangar"], false)
 	check(fitting.visible and fitting.filter_category == "shield" and fitting.stored.size() == 1, "Reopening Hangar retains the filter and updated inventory")
-	var back: Button = fitting.find_children("*", "Button", true, false).filter(func(button: Button): return button.text == "Back [Esc]")[0]
-	await click_item(client, back, false)
-	check(client.preflight and client.main_menu.home.visible and not fitting.visible, "Inventory Back returns to the docked overview")
+	await click_item(client, client.main_menu.navigation["overview"], false)
+	check(client.preflight and client.main_menu.home.visible and not fitting.visible, "Overview navigation returns from inventory to the docked overview")
 	await click_item(client, client.main_menu.start_button, false)
 	await replicate(server)
 	check(not client.preflight and not client.main_menu.visible and combat.inventory == before and client.player.laser_damage == 260 and client.player.max_shield == 3000, "Start launches with the Shift-clicked fitting preserved")

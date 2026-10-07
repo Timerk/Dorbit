@@ -12,9 +12,9 @@ var artwork: TextureRect
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(72, 64 if compact else 86)
-	add_theme_stylebox_override("normal", StationUi.style(Color("102235"), Color("37546c")))
-	add_theme_stylebox_override("hover", StationUi.style(Color("1c3548"), FlightHud.CYAN))
-	add_theme_stylebox_override("focus", StationUi.style(Color(0, 0, 0, 0), FlightHud.CYAN))
+	add_theme_stylebox_override("normal", StationUi.style(Color("111a20"), StationUi.LINE))
+	add_theme_stylebox_override("hover", StationUi.style(Color("242522"), StationUi.AMBER))
+	add_theme_stylebox_override("focus", StationUi.style(Color(0, 0, 0, 0), StationUi.AMBER))
 	var rows := VBoxContainer.new()
 	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rows.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -44,25 +44,33 @@ func refresh() -> void:
 	if item.is_empty():
 		var kind: String = screen.slots_kind(slot)
 		if kind == "extra":
-			artwork.texture = null
+			artwork.texture = load("res://assets/ui/menu/disconnect.svg")
+			artwork.modulate = Color("60717e")
 			caption.text = "EXTRA"
 			tooltip_text = "Extra slot reserved for future equipment."
 			return
-		artwork.texture = StationUi.texture("laser" if kind == "laser" else "shield")
+		artwork.texture = null
+		artwork.hide()
+		caption.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		artwork.modulate = Color(1, 1, 1, 0.18)
-		caption.text = "EMPTY"
+		caption.text = "+"
+		caption.add_theme_font_size_override("font_size", 26)
 		tooltip_text = "Empty %s slot. Drag compatible equipment here." % kind
-		add_theme_stylebox_override("normal", StationUi.style(Color("0b1928"), Color("294156")))
+		add_theme_stylebox_override("normal", StationUi.style(Color("0b1115"), StationUi.LINE))
 	else:
 		var model: String = item["model"]
+		artwork.show()
+		caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		caption.add_theme_font_size_override("font_size", 12)
 		artwork.modulate = Color.WHITE
 		artwork.texture = StationUi.texture(model)
 		caption.text = "ION" if model == "engine" else Equipment.MODELS[model]["name"]
 		tooltip_text = "%s\n%s\n%s" % [Equipment.MODELS[model]["name"], StationUi.bonus(model), "In inventory / Shift-click to equip" if slot.is_empty() else slot.capitalize()]
-		add_theme_stylebox_override("normal", StationUi.style(Color("102235"), StationUi.accent(model).darkened(0.5)))
+		add_theme_stylebox_override("normal", StationUi.style(Color("111a20"), StationUi.LINE))
 	# The selected tile keeps a visible outline after focus moves to a destination.
 	if not item_id.is_empty() and item_id == screen.selected_item:
-		add_theme_stylebox_override("normal", StationUi.style(Color("1a3547"), FlightHud.CYAN))
+		add_theme_stylebox_override("normal", StationUi.style(Color("30251a"), StationUi.AMBER))
 
 
 func _gui_input(event: InputEvent) -> void:

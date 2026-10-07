@@ -185,6 +185,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			hud.navigation.close_overview()
 		return
 	if event.is_action_pressed("sector_map") and not preflight:
+		if main_menu.visible:
+			set_paused(false)
 		hud.navigation.open_overview()
 		return
 	if event.is_action_pressed("multiplayer_menu"):
@@ -193,7 +195,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		equipment_menu.hide()
 		session.open_menu()
 		return
-	if event.is_action_pressed("contracts") and session.active:
+	if event.is_action_pressed("contracts") and (session.active or StationUi.offline_preview(self)):
 		hud.toggle_contracts()
 		return
 	if event.is_action_pressed("station_shop"):
@@ -387,6 +389,10 @@ func set_paused(value: bool) -> void:
 	paused = value
 	if not paused and is_instance_valid(settings_menu):
 		settings_menu.dismiss()
+		if is_instance_valid(main_menu) and main_menu.visible:
+			main_menu.hide()
+			main_menu.hide_pages()
+			session.menu.hide()
 	if paused:
 		autopilot.cancel()
 		if is_instance_valid(player):

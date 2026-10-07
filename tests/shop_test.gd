@@ -30,6 +30,69 @@ func click(client: Sector, control: Control) -> void:
 	await settle()
 
 
+func check_flight_pages(client: Sector, prefix: String) -> void:
+	var menu := client.main_menu
+	var position := client.player.position
+	var hull := client.player.hull
+	var credits := client.credits
+	var inventory := client.session.combat.inventory.duplicate(true)
+	client.set_paused(true)
+	await settle()
+	await click(client, client.settings_menu.ship_menus_button)
+	check(menu.home.visible and menu.visible and not client.settings_menu.pause_panel.visible and not client.preflight, "%s Esc menu opens the shared flight Overview without docking" % prefix)
+	await click(client, menu.resume_button)
+	for dimensions in [Vector2i(960, 600), Vector2i(1440, 900), Vector2i(1920, 1080)]:
+		client.get_viewport().size = dimensions
+		root.size = dimensions
+		await press(client, KEY_B)
+		check(menu.visible and client.shop.visible and menu.selected_page == "shop", "%s B opens the shared Shop header and sidebar at %s" % [prefix, dimensions])
+		await press(client, KEY_I)
+		check(menu.visible and client.equipment_menu.visible and menu.selected_page == "hangar", "%s I opens the shared Hangar" % prefix)
+		await press(client, KEY_C)
+		check(menu.visible and client.hud.contract_panel.visible and menu.selected_page == "quests", "%s C opens the shared Quests" % prefix)
+		await press(client, KEY_F7)
+		check(client.session.menu.visible and menu.visible, "%s F7 opens Connection inside the shared shell" % prefix)
+		for page: String in menu.navigation:
+			await click(client, menu.navigation[page])
+			var panel: Control
+			match page:
+				"overview": panel = menu.home
+				"hangar": panel = client.equipment_menu
+				"shop", "cargo": panel = client.shop
+				"quests": panel = client.hud.contract_panel
+				"settings": panel = client.settings_menu.panel
+				"connection": panel = client.session.menu
+				_: panel = menu.placeholder
+			check(panel.is_visible_in_tree() and menu.selected_page == page and menu.resume_button.is_visible_in_tree(), "%s flight %s remains reachable at %s" % [prefix, page, dimensions])
+			check(menu.content_rect().grow(1).encloses(panel.get_global_rect()), "%s flight %s fits beside the navigation at %s" % [prefix, page, dimensions])
+			check(not client.preflight and client.paused and not client.settings_menu.pause_panel.visible and not menu.start_button.is_visible_in_tree(), "%s flight %s does not dock, launch or overlay the pause menu" % [prefix, page])
+			if StationUi.offline_preview(client):
+				if page == "hangar":
+					check(client.equipment_menu.activate_button.disabled and not client.equipment_menu.reason("starter-laser", "").is_empty(), "Offline flight cannot activate or fit equipment")
+				elif page == "shop":
+					check(client.shop.buys[client.shop.selected_model].disabled, "Offline flight cannot purchase equipment")
+				elif page == "cargo":
+					check(client.shop.sell_all.disabled and client.shop.sells.values().all(func(button: Button): return button.disabled), "Offline flight cannot sell cargo")
+				elif page == "quests":
+					check(client.hud.contract_accept.disabled, "Offline flight cannot accept hunts")
+			if page in ["hangar", "cargo"]:
+				await capture(client, "%s-flight-%s-%d" % [prefix, page, dimensions.x])
+		await click(client, menu.resume_button)
+		check(not menu.visible and not client.paused and not client.session.menu.visible and not menu.placeholder.visible, "%s Resume closes the shell and its pages" % prefix)
+		await press(client, KEY_I)
+		await press(client, KEY_ESCAPE)
+		check(not menu.visible and not client.equipment_menu.visible and not client.paused, "%s Esc closes the flight Hangar and resumes" % prefix)
+	await press(client, KEY_F7)
+	client.settings_menu.open(true)
+	await settle()
+	client.settings_menu.close()
+	await settle()
+	check(menu.visible and client.session.menu.visible and client.paused, "%s Connection Settings Back restores the shared Connection page" % prefix)
+	await click(client, client.session.back_button)
+	check(not client.paused and not menu.visible and not client.session.menu.visible, "%s Connection Back resumes flight" % prefix)
+	check(client.player.position == position and client.player.hull == hull and client.credits == credits and client.session.combat.inventory == inventory and not client.session.combat.station_pending, "%s flight browsing preserves position, health, wallet and fitting without a station request" % prefix)
+
+
 func run() -> void:
 	var server := make_sector("ShopServer", true, 24735)
 	check(server.session.store.commit({"pilot0": 12000}), "Seed a purchase budget")
@@ -55,11 +118,11 @@ func run() -> void:
 	await press(client, KEY_B)
 	check(shop.visible and client.paused and not client.settings_menu.pause_panel.visible, "B opens the shop and suppresses flight and pause controls")
 	check(shop.selected_model == "laser" and shop.cards.keys().filter(func(model: String): return shop.cards[model].visible) == Equipment.catalog_models(), "All equipment opens with equipment only and the laser selected")
-	await click(client, shop.cargo_button)
+	await click(client, client.main_menu.navigation["cargo"])
 	check(shop.cargo_page.visible and not shop.equipment_page.visible and shop.sells.size() == 7, "Trading navigation opens all seven ore cards without overlapping the equipment catalog")
 	check(Rect2(Vector2.ZERO, Vector2(960, 600)).encloses(shop.get_global_rect()), "Trading fits the minimum viewport with category-shop navigation")
 	await capture(client, "shop-cargo")
-	await click(client, shop.catalog_button)
+	await click(client, client.main_menu.navigation["shop"])
 	check(shop.equipment_page.visible and not shop.cargo_page.visible and shop.selected_model == "laser", "Equipment navigation restores the selected catalog item")
 	check(client.credits == 12000 and combat.inventory["revision"] == 0, "Switching shop pages sends no purchase or sale")
 	for dimensions in [Vector2i(960, 600), Vector2i(1440, 900)]:
@@ -98,7 +161,7 @@ func run() -> void:
 	check(client.equipment_menu.visible and not shop.visible and client.paused, "I switches to the separate equipment screen")
 	await press(client, KEY_B)
 	check(shop.visible and not client.equipment_menu.visible and shop.selected_model == "shield", "B returns to the selected shop item")
-	shop.equipment_button.pressed.emit()
+	await click(client, client.main_menu.navigation["hangar"])
 	await settle()
 	check(client.equipment_menu.visible and not shop.visible, "Shop navigation opens equipment without overlapping panels")
 	await press(client, KEY_B)
@@ -116,7 +179,7 @@ func run() -> void:
 	await settle()
 	check(shop.models_in_category("ships").size() == 12 and shop.grid.visible and not shop.empty_catalog.visible, "Ships lists all twelve purchasable hulls")
 	shop.select_model("liberator")
-	check(shop.product_title.text == "Liberator" and shop.bonus.text.contains("116,000 hull") and shop.slot_hint.text == "4 laser / 6 shared generator / 2 extra slots" and shop.buys["liberator"].disabled, "Owned Liberator shows its model and stats and blocks another purchase")
+	check(shop.product_title.text == "Liberator" and shop.bonus.text.contains("116,000 hull") and shop.product_title.tooltip_text.contains("4 laser / 6 shared generator / 2 extra slots") and shop.buys["liberator"].disabled, "Owned Liberator shows its model and stats and blocks another purchase")
 	await capture(client, "shop-ships")
 	shop.categories["weapons"].pressed.emit()
 	check(server.session.store.commit({"pilot0": 500}), "Set a low wallet through persistence")
