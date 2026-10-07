@@ -231,8 +231,10 @@ The user approved the [main-menu opening-screen concept](docs/menu-design/main-m
 Use graphite surfaces, amber accents, a persistent left navigation rail, a large
 active-ship preview, bottom ship statistics and an orange Start action on Overview.
 Start is exclusive to Overview. Hangar retains its ship-specifications strip,
-without Start; all other pages omit both the strip and Start. Align the outpost
-status and credits together at the far right of the top bar.
+without Start; all other pages omit both the strip and Start. Align credits and a
+small wallet icon at the far right of the top bar. The user removed the outpost/docked
+label and green status dot during implementation review. Start remains exclusive
+to the preflight Overview; flight menu browsing uses Resume flight.
 
 Keep every menu minimal: short functional labels, necessary values and actions.
 Add text or controls only as needed. Omit slogans, decorative section numbers,
@@ -250,6 +252,17 @@ The displayed inventory, quest state, connection address
 and settings are illustrative; actual ownership and fitting remain server-authoritative.
 Saved images are visual references for future implementation, not implemented
 menu screens. See [concept notes and prompts](docs/menu-design/README.md).
+
+The [approved flight HUD](docs/hud-design/README.md) uses the same graphite/amber
+colors, Rajdhani typography and minimal text as the menus. The menu and HUD
+references are introduced together as one shared UI design, while native menu
+and HUD implementation remain separate work. The HUD omits the full-width
+header, logo, header outpost label, cargo count, pilot count and wallet. Hunting
+Contracts and Local Radar share a small top margin, with the active autopilot
+label below the radar. Ship status, destination and target panels align along
+the bottom and leave the central flight view open. Preserve contextual station,
+cargo-full, firing-blocker, radiation/re-entry, rescue and configured-control
+feedback. The generated values and world details are illustrative references.
 
 ### First station equipment shop and fitting
 
