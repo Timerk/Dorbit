@@ -16,7 +16,7 @@ and a seeded 19,000-credit test budget).
 
 | Screen | Image | Status |
 | --- | --- | --- |
-| Main menu opening screen | [main-menu-approved.png](main-menu-approved.png) | User approved, including far-right outpost status and credits |
+| Main menu opening screen | [main-menu-approved.png](main-menu-approved.png) | User approved; header simplified during implementation review |
 | Hangar | [hangar-approved.png](hangar-approved.png) | User approved |
 | Quests | [quests-approved.png](quests-approved.png) | Accepted with footer revision |
 | Shop | [shop-approved.png](shop-approved.png) | Accepted with footer revision |
@@ -31,7 +31,7 @@ and a seeded 19,000-credit test budget).
 ## Shared direction
 
 - Graphite surfaces, restrained amber accents, clear typography and generous spacing.
-- Persistent left navigation and top bar; outpost status and credits at the far right.
+- Persistent left navigation and top bar; credits with a small wallet icon at the far right. The outpost/docked label and green dot shown in the original concepts were removed during implementation review.
 - Overview alone has Start. Ship specifications appear only on Overview and Hangar.
 - Keep text to useful labels, values, actions and contextual feedback. Start minimal and add only what is needed.
 - No slogans, fictional clocks/dates, decorative numbering, duplicate outpost headings, schematic callouts or flight-preparation panel.
