@@ -19,6 +19,9 @@ var placeholder_title: Label
 var selected_page := "overview"
 var last_model := ""
 var header: PanelContainer
+var disconnect_button: Button
+var hangar_button: Button
+var launch_hint: Label
 
 
 func _ready() -> void:
@@ -108,7 +111,7 @@ func build_home() -> void:
 	ship_art = StationUi.art(ship_rows, "ship", Vector2(300, 100))
 	ship_art.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	ship_stats = StationUi.text(ship_rows, "", 14)
-	StationUi.button(ship_rows, "Open hangar / equip your ship", func(): select_page("hangar"))
+	hangar_button = StationUi.button(ship_rows, "Open hangar / equip your ship", func(): select_page("hangar"))
 	var briefing := StationUi.card(body)
 	briefing.custom_minimum_size.x = 310
 	briefing.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -117,12 +120,12 @@ func build_home() -> void:
 	StationUi.text(brief_rows, "01  SHOP\nBuy ships, lasers, shields and engines.\n\n02  HANGAR\nActivate a hull and fit owned equipment.\n\n03  QUESTS\nAccept Scout, Sentinel and Heavy hunts.", 15)
 	quests = StationUi.text(brief_rows, "", 14, FlightHud.GREEN)
 	quests.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	StationUi.text(brief_rows, "Choose START above to spawn at Outpost 01. Your ship stays docked until launch.", 15)
+	launch_hint = StationUi.text(brief_rows, "Choose START above to spawn at Outpost 01. Your ship stays docked until launch.", 15)
 	notice = StationUi.text(rows, "", 13, FlightHud.CYAN)
 	var footer := HBoxContainer.new()
 	rows.add_child(footer)
 	StationUi.button(footer, "Settings", func(): select_page("settings"))
-	StationUi.button(footer, "Disconnect", func(): sector.session.disconnect_session("Disconnected. You can connect again when ready."))
+	disconnect_button = StationUi.button(footer, "Disconnect", func(): sector.session.disconnect_session("Disconnected. You can connect again when ready."))
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	footer.add_child(spacer)
@@ -154,6 +157,9 @@ func show_home() -> void:
 
 func select_page(page: String) -> void:
 	if not sector.preflight:
+		return
+	if sector.session.offline_main_menu() and page in ["shop", "hangar", "cargo", "quests"]:
+		sector.notify("Connect to a dedicated server to use station services.")
 		return
 	if page in ["shop", "hangar", "cargo", "quests"] and (not sector.session.received_snapshot or sector.session.combat.inventory.is_empty()):
 		return
@@ -205,22 +211,32 @@ func _process(_delta: float) -> void:
 		selected_page = "hangar"
 	elif sector.hud.contract_panel.visible:
 		selected_page = "quests"
-	var ready := sector.session.received_snapshot and not sector.session.combat.inventory.is_empty()
+	var offline := sector.session.offline_main_menu()
+	disconnect_button.disabled = not sector.session.active
+	hangar_button.disabled = offline
+	hangar_button.tooltip_text = "Requires a dedicated server connection." if offline else ""
+	launch_hint.text = "Choose START above to enter the solo encounter. The offline world stays paused until launch." if offline else "Choose START above to spawn at Outpost 01. Your ship stays docked until launch."
+	var ready := offline or (sector.session.received_snapshot and not sector.session.combat.inventory.is_empty())
 	start_button.disabled = not ready or not sector.player.alive or sector.session.combat.station_pending
 	start_button.tooltip_text = "Wait for rescue before launching." if not sector.player.alive else ("Waiting for server confirmation." if start_button.disabled else "Launch your active ship at Outpost 01.")
 	for page: String in navigation:
 		navigation[page].set_pressed_no_signal(selected_page == page)
 		if page in ["shop", "hangar", "cargo", "quests"]:
-			navigation[page].disabled = not ready or not sector.player.alive
+			navigation[page].disabled = offline or not ready or not sector.player.alive
+			navigation[page].tooltip_text = "Requires a dedicated server connection." if offline else ""
 	wallet.text = StationShop.credits_text(sector.credits) + " CR"
 	connection.text = "OUTPOST 01 / DOCKED" if ready else "SYNCING PILOT..."
+	if offline:
+		connection.text = "OFFLINE / DEVELOPMENT"
 	if ready and not sector.player.alive:
 		connection.text = "DOCKED / RESCUE IN %d s" % ceili(sector.player_respawn)
 	notice.text = sector.session.combat.station_message if not sector.session.combat.station_message.is_empty() else "Your equipment, credits and quests are saved on the server."
-	if sector.toast_time > 0:
+	if offline:
+		notice.text = "Offline development encounter. Credits are temporary; station services require a dedicated server."
+	if sector.toast_time > 0 and not offline:
 		notice.text = sector.toast
 	if ready:
-		var data := sector.session.combat.inventory
+		var data := Equipment.starter() if offline else sector.session.combat.inventory
 		var model: String = ShipCatalog.canonical(data["ships"][data["active_ship"]])
 		if last_model != model:
 			last_model = model
