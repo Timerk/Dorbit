@@ -436,8 +436,11 @@ The Liberator is the first in-game material benchmark: fitted panels receive
 individual roughness variation and subtle normal-map grain, with coated blue
 armor separated from exposed metal. The docked overview shows the active hull
 in a lit, rotatable 3D hangar using the same mesh and materials as flight.
-Its isolated preview renders on demand and stops when hidden. Extend the finish
-to the other ships after reviewing this benchmark.
+Its isolated preview renders on demand and stops when hidden. The user accepted
+the Liberator finish and distinct cockpit glass, then requested the same treatment
+across the remaining roster. All twelve hulls use portable surface maps, coated
+colored armor, exposed metal and dark tinted cockpit glazing; Godot review views
+and shop thumbnails show the actual game finishes.
 
 This is presentation work on the existing roster within the current milestone.
 Ship statistics, collision size, equipment, ownership and progression retain
