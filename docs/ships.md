@@ -87,7 +87,7 @@ Following user review, Nostromo's forebody is longer and tapers to a sharper bow
 Its length relative to wing span increases by about 30%. Armor, cockpit and
 cheek fittings follow the hull, while the paired rear turbines retain their
 round shape. See the [revised model views](../art/ship-review/previews/nostromo-views.jpg)
-and [Nostromo game capture](feedback/refined-nostromo-flight.png).
+and [Nostromo game-material views](../art/ship-review/materials/nostromo/views.jpg).
 
 `tools/export_ships.py` exports the saved `.blend` files without changing
 them. Run Blender in background mode with `--python tools/export_ships.py`.
@@ -114,14 +114,15 @@ hull mesh (3.5 m bounding diameter for Phoenix, 7 m for the others), materials,
 finite vertices, shop previews and no studio nodes. The packaged asset check
 also requires Phoenix to be smallest by bounding diameter and longest dimension.
 The rendered authenticated ship replay passed 211 checks with no failures or
-stderr errors. See the updated [flight](feedback/refined-ships-flight.png) and
-[shop](feedback/refined-ships-shop.png) captures.
+stderr errors. See the current [flight capture](feedback/liberator-material-flight.png)
+and [roster material review](ship-materials.md).
 
 The full roster's base export triangle total rises from 689,638 to 762,142;
 Liberator is now the largest hull at 98,228 triangles. Godot still generates LODs
 on import. These checks establish loading and presentation compatibility, not
 ten-player performance on the reference hardware or final art acceptance.
-The exported Windows client and Linux checks are left to PR CI.
+The exported Windows client and Linux checks passed in
+[PR CI](https://github.com/Timerk/Dorbit/actions/runs/37663762598).
 
 `tests/ships_test.gd` covers authenticated purchases of the roster, exact prices,
 empty fittings, final valid and first invalid slots, switching, station

@@ -1,4 +1,4 @@
-"""Export PR 14's saved studies without modifying the review .blend files.
+"""Export the saved ship studies without modifying the review .blend files.
 
 Run Blender in background mode with --python tools/export_ships.py.
 One mesh per hull, material surfaces, reduced bevel tessellation, no studio or

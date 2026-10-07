@@ -19,6 +19,15 @@ PAINT_MATERIALS = {'Blue grey armor', 'Muted green grey armor', 'Cobalt enamel',
                    'Aegis green enamel', 'Defcom green enamel', 'Phoenix red enamel'}
 
 
+def write_manifest(path: Path, manifest: dict) -> None:
+    """Keep each component on one line so surface settings are easy to review."""
+    metadata = {key: value for key, value in manifest.items() if key != 'parts'}
+    header = json.dumps(metadata, indent=2).removesuffix('\n}')
+    parts = ',\n'.join('    ' + json.dumps(part) for part in manifest['parts'])
+    path.write_text(header + ',\n  "parts": [\n' + parts + '\n  ]\n}\n',
+                    encoding='utf-8', newline='\n')
+
+
 def write_png(path: Path, pixels: np.ndarray) -> None:
     """Write exact channel values without color transforms on data maps."""
     data = np.round(np.clip(pixels[:, :, :3], 0, 1) * 255).astype(np.uint8)
@@ -131,13 +140,13 @@ class SurfaceAtlas:
             image = bpy.data.images.load(str(path))
             image.colorspace_settings.name = 'sRGB' if name == 'albedo' else 'Non-Color'
             self.images[name] = image
-        (directory / 'manifest.json').write_text(json.dumps({
+        write_manifest(directory / 'manifest.json', {
             'size': SIZE, 'grid': self.grid, 'padding_pixels': 8,
             'source': 'tools/ship_surface_atlas.py; deterministic per-component finish',
             'channels': {'albedo': 'sRGB hull colors and subtle finish variation',
                          'orm': 'R: 1 (no AO bake), G: roughness, B: metallic',
                          'normal': 'tangent-space +Y micrograin; no baked lighting'},
-            'parts': records}, indent=2) + '\n')
+            'parts': records})
 
     def coordinates(self, obj, mesh) -> list[tuple[float, float]]:
         points = [obj.matrix_world @ vertex.co for vertex in mesh.vertices]

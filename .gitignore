@@ -5,3 +5,12 @@ build/*
 *.log
 export_credentials.cfg
 __pycache__/
+
+# Intermediate review renders are assembled into the tracked comparison/view sheets.
+/art/ship-review/previews/*.png
+/art/ship-review/materials/*/perspective.png
+/art/ship-review/materials/*/front.png
+/art/ship-review/materials/*/rear.png
+/art/ship-review/materials/*/side.png
+/art/ship-review/materials/*/top.png
+/art/ship-review/materials/*/underside.png
