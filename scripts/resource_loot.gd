@@ -57,9 +57,15 @@ func apply_drop(id: int, data: Dictionary) -> void:
 	material.emission_energy_multiplier = 1.8
 	meshes[id].material_override = material
 	meshes[id].position = data["position"]
+	meshes[id].visible = not SectorVisuals.explosion_active(sector, meshes[id].global_position)
+
+func is_presented(id: int) -> bool:
+	return meshes.has(id) and meshes[id].visible
 
 func _process(delta: float) -> void:
-	for mesh: MeshInstance3D in meshes.values():
+	for id: int in meshes:
+		var mesh := meshes[id]
+		mesh.visible = not SectorVisuals.explosion_active(sector, mesh.global_position)
 		mesh.rotate_y(delta * 0.7)
 
 func tick(delta: float) -> void:

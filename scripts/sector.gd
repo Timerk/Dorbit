@@ -468,7 +468,7 @@ func on_destroyed(ship: SpaceShip, attacker: SpaceShip) -> void:
 	if session.active:
 		session.combat.destroyed(ship)
 		return
-	SectorVisuals.explosion(self, ship.global_position)
+	SectorVisuals.explosion(self, ship.global_position, SectorVisuals.destruction_size(ship))
 	if ship is Alien:
 		var enemy := ship as Alien
 		loot.spawn_drop(enemy)
