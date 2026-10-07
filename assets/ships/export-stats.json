@@ -1,62 +1,62 @@
 {
   "aegis": {
-    "triangles": 89228,
+    "triangles": 91376,
     "materials": 10,
-    "bytes": 1871300
+    "bytes": 1925108
   },
   "bigboy": {
-    "triangles": 72780,
+    "triangles": 76288,
     "materials": 10,
-    "bytes": 1634312
+    "bytes": 1712900
   },
   "defcom": {
-    "triangles": 83216,
+    "triangles": 83764,
     "materials": 9,
-    "bytes": 1673300
+    "bytes": 1699556
   },
   "goliath": {
-    "triangles": 53380,
+    "triangles": 48448,
     "materials": 10,
-    "bytes": 1266444
+    "bytes": 1217088
   },
   "leonov": {
-    "triangles": 52280,
+    "triangles": 52932,
     "materials": 9,
-    "bytes": 1268416
+    "bytes": 1295584
   },
   "liberator": {
-    "triangles": 40216,
-    "materials": 11,
-    "bytes": 1084408
+    "triangles": 98228,
+    "materials": 10,
+    "bytes": 2016468
   },
   "nostromo": {
-    "triangles": 37692,
+    "triangles": 41200,
     "materials": 10,
-    "bytes": 893012
+    "bytes": 971600
   },
   "phoenix": {
-    "triangles": 52198,
-    "materials": 10,
-    "bytes": 1030356
+    "triangles": 52594,
+    "materials": 11,
+    "bytes": 1050936
   },
   "piranha": {
-    "triangles": 40324,
+    "triangles": 40864,
     "materials": 10,
-    "bytes": 964024
+    "bytes": 989868
   },
   "spearhead": {
-    "triangles": 35624,
-    "materials": 11,
-    "bytes": 871836
+    "triangles": 36556,
+    "materials": 12,
+    "bytes": 905340
   },
   "vengeance": {
-    "triangles": 62772,
+    "triangles": 69264,
     "materials": 8,
-    "bytes": 1360836
+    "bytes": 1489344
   },
   "yamato": {
-    "triangles": 69928,
-    "materials": 11,
-    "bytes": 1453044
+    "triangles": 70772,
+    "materials": 12,
+    "bytes": 1481404
   }
 }

@@ -1,10 +1,10 @@
 # DarkOrbit ship model review
 
-Twelve editable base-ship Blender models built around the supplied DarkOrbit image catalogue. Aegis is the user's accepted quality benchmark and its model and renders are preserved. This revision corrects the other eleven ships' proportions, colors, glazing and assemblies after a close comparison with each supplied base image. The editable studies remain isolated from Godot imports. Derived gameplay exports now live under `assets/ships`; see [playable ships](../../docs/ships.md).
+Twelve editable base-ship Blender models, now refined using the user's Liberator hangar image as a shared finish reference. [Generated concept turnarounds](concepts/README.md) cover the whole roster. The models use brighter separated PBR materials, ship-specific fitted service panels and mechanical assemblies, rebuilt Liberator turbine pods and drives, and revised Goliath crowns and inner-arm bays. Six actual mesh renders provide consistent views, including the underside. Derived gameplay exports live under `assets/ships`; see [playable ships](../../docs/ships.md).
 
 [Overview of all twelve ships and their source pictures](previews/additional-ships-overview.jpg)
 
-| Ship | Blender file | Reference comparison | Five-view sheet |
+| Ship | Blender file | Catalogue comparison | Six-view sheet |
 | --- | --- | --- | --- |
 | Aegis | [aegis.blend](models/aegis.blend) | [Compare](previews/aegis-comparison.jpg) | [Views](previews/aegis-views.jpg) |
 | Goliath | [goliath.blend](models/goliath.blend) | [Compare](previews/goliath-comparison.jpg) | [Views](previews/goliath-views.jpg) |
@@ -21,9 +21,14 @@ Twelve editable base-ship Blender models built around the supplied DarkOrbit ima
 
 Open a `.blend` file in Blender. Middle-drag orbits; the wheel zooms. Numpad 7 shows the top, numpad 1 the front, and numpad 3 the side. Press Home to frame the visible ship. F12 renders the saved review camera.
 
-The Outliner separates armor and mechanical assemblies. Five named cameras provide perspective, rear, top, side and front views. The hidden `References` collection contains packed image references, and a Blender text block contains viewing notes. Materials and references have no external file dependencies. The forward direction is -Y and up is +Z. Model units and relative ship scale are for review, not canonical measurements.
+The Outliner separates armor and mechanical assemblies. Six named cameras provide perspective, rear, top, side, front and underside views. The hidden `References` collection contains the packed concept, supplied finish screenshot and catalogue references. A Blender text block contains viewing notes. Materials and references have no external file dependencies. Forward is -Y and up is +Z. Model units and relative ship scale are for review, not canonical measurements.
 
-## What changed
+## Earlier catalogue reconstruction
+
+The following records the previous reference reconstruction. The current Dorbit
+concept pass supersedes its palette and Aegis-preservation decisions; the original
+catalogue pictures still establish the base silhouettes. The new construction is
+implemented in [concept_refinement.py](concept_refinement.py), called by the builder.
 
 The review used Aegis's separation of painted armor, dark structure and exposed mechanisms as the finish benchmark. It also identified larger discrepancies that adding fasteners could not fix. The following table records the visible reference cues and resulting changes.
 
@@ -65,17 +70,18 @@ The unrelated black/orange spaceship in the catalogue's fan-made Goliath viewer 
 
 ## Rebuilding and checks
 
-Generated with Blender 5.2.1 LTS. From the repository root:
+The current revision uses Blender 5.2.2 LTS. From the repository root (adjust the executable path for your installation):
 
 ```powershell
-rtk proxy D:/Blender/blender.exe --background --factory-startup --python art/ship-review/build_models.py
-rtk proxy D:/Blender/blender.exe --background --factory-startup --python art/ship-review/validate_models.py
+rtk proxy "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" --background --factory-startup --python art/ship-review/build_models.py
+rtk proxy "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" --background --factory-startup --python art/ship-review/validate_models.py
+rtk proxy "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" --background --factory-startup --python tools/export_ships.py
 ```
 
-Append `-- Bigboy` to rebuild one ship, or list several names after `--`. Names are case-sensitive as listed in the table. With no names the builder regenerates all twelve, including Aegis; list the other names explicitly to preserve its accepted files. Add `--draft` after `--` for smaller, quicker perspective and top renders. Draft builds overwrite that ship's model and previews; rebuild without `--draft` before delivery. `--gpu` enables OptiX rendering on a supported NVIDIA GPU. The sheet builder uses Pillow:
+Append `-- Bigboy` to rebuild one ship, or list several names after `--`. Names are case-sensitive as listed in the table. With no names the builder regenerates all twelve. The default renderer is Eevee with ray tracing and ambient occlusion; `--cycles` selects Cycles and `--cycles --gpu` enables OptiX on a supported NVIDIA GPU. Add `--draft` for smaller perspective and top renders; rebuild without it before delivery. Do not run simultaneous builders against the same ship. The sheet builder uses Pillow:
 
 ```powershell
-rtk proxy C:/Users/TBerk/AppData/Local/Python/bin/python.exe art/ship-review/build_review_sheets.py
+rtk proxy python art/ship-review/build_review_sheets.py
 ```
 
-[build-stats.json](build-stats.json) records geometry counts. [validation.json](validation.json) records checks on the saved files, including evaluated geometry and packed references. The sheet builder also checks that no ship touches the render boundary. Five-view sheets and reference comparisons are used for visual inspection. Windows viewport interaction could not be checked because the computer-use native pipe was unavailable; saved files are reopened and checked through Blender's background mode. Gameplay checks do not apply to this isolated art pass; `art/.gdignore` excludes the collection from Godot imports.
+[build-stats.json](build-stats.json) records geometry counts. [validation.json](validation.json) records checks on reopened files, evaluated geometry, all six final renders and packed concepts. The sheet builder also checks that no ship touches a render boundary. Game exports preserve the existing normalized 7 m bounding diameter, orientation and one-mesh layout. `art/.gdignore` excludes the modeling collection and concept sheets from Godot imports. Art acceptance and representative-hardware performance remain user review tasks.
