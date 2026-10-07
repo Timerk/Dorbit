@@ -43,6 +43,7 @@ var shop: StationShop
 var equipment_menu: ShipEquipment
 var dedicated_server: bool = false
 var client_only: bool = true
+var offline: bool = false
 var server_port: int = FlightSession.PORT
 var audio: FeedbackAudio
 var settings := GameSettings.new()
@@ -57,7 +58,8 @@ func _ready() -> void:
 	autopilot.sector = self
 	spawn_rng.randomize()
 	dedicated_server = dedicated_server or "--server" in OS.get_cmdline_user_args()
-	client_only = client_only and not "--offline" in OS.get_cmdline_user_args()
+	offline = offline or "--offline" in OS.get_cmdline_user_args()
+	client_only = client_only and not offline
 	if not dedicated_server:
 		settings.load_from()
 	settings.configure_input()
@@ -142,6 +144,8 @@ func _ready() -> void:
 			get_tree().quit(1)
 	elif client_only:
 		session.open_menu()
+	elif offline:
+		session.open_offline_main_menu()
 
 
 func _notification(what: int) -> void:
@@ -289,6 +293,10 @@ func _physics_process(delta: float) -> void:
 		return
 	if dedicated_server or client_only:
 		return
+	if preflight and not player.alive and player_respawn > 0.0:
+		player_respawn -= delta
+		if player_respawn <= 0.0:
+			respawn_player()
 	if paused:
 		return
 	toast_time = maxf(0.0, toast_time - delta)
