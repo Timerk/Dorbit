@@ -11,8 +11,8 @@ permissions:
 jobs:
   linux-server:
     runs-on: ubuntu-latest
-    # Validate again from the clean release copy, then upload the complete package.
-    timeout-minutes: 20
+    # Both the working checkout and release staging import the textured ship assets.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
