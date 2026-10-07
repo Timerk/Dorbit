@@ -1,129 +1,77 @@
 # Approved UI design references
 
-These raster concepts were generated with the built-in ImageGen tool. They guide
-future native Godot UI work; they are not runtime UI assets or playable screens.
-
-The menu and [flight HUD references](../hud-design/README.md) form one approved
-graphite-and-amber visual direction. Use the shared rules below when adding new
-menus. Native menu and HUD implementation remain separate feature PRs:
-[PR 42](https://github.com/Timerk/Dorbit/pull/42) and
-[PR 48](https://github.com/Timerk/Dorbit/pull/48).
-Example values and controls can predate later gameplay changes; use GAME_PLAN.md
-and the implementation for current prices, ownership and configured bindings.
-
-## Review status
-
-| Screen | Image | Status |
-| --- | --- | --- |
-| Main menu opening screen | [main-menu-approved.png](main-menu-approved.png) | User approved; header simplified during implementation review |
-| Hangar | [hangar-approved.png](hangar-approved.png) | User approved |
-| Quests | [quests-approved.png](quests-approved.png) | Accepted with footer revision |
-| Shop | [shop-approved.png](shop-approved.png) | Accepted with footer revision |
-| Cargo Trade | [cargo-trade-approved.png](cargo-trade-approved.png) | Accepted with footer revision |
-| Connection | [connection-approved.png](connection-approved.png) | Accepted with footer revision |
-| Settings / Controls | [settings-controls-approved.png](settings-controls-approved.png) | Accepted with footer revision |
-| Settings / Audio | [settings-audio-approved.png](settings-audio-approved.png) | Accepted with footer revision |
-| Settings / Graphics | [settings-graphics-approved.png](settings-graphics-approved.png) | Accepted with footer revision |
-| Skylab | [skylab-approved.png](skylab-approved.png) | Coming-soon concept accepted with footer revision |
-| Galaxy Gates | [galaxy-gates-approved.png](galaxy-gates-approved.png) | Coming-soon concept accepted with footer revision |
-| Flight HUD | [flight-hud-top-aligned.png](../hud-design/flight-hud-top-aligned.png) | User approved, including header removal and shared top margin |
+The menus and [flight HUD](../hud-design/README.md) share one approved visual
+direction. Use these rules for future UI work. The generated images illustrate
+layouts, not playable screens or current game data; [GAME_PLAN.md](../../GAME_PLAN.md)
+and the implementation define ownership, prices and configured controls.
 
 ## Shared direction
 
-- Graphite surfaces, restrained amber accents, clear typography and generous spacing.
-- Use graphite `#0c1217` surfaces, slate `#34434b` borders, amber `#ff880b` accents and muted `#93a5b5` labels with Rajdhani typography. Preserve semantic shield, health and danger colors.
-- Menus retain left navigation and a top bar with right-aligned credits and a small wallet icon. The outpost/docked label and green status dot were removed during implementation review.
-- Start appears only on the preflight Overview. Ship specifications appear only on Overview and Hangar.
-- The flight HUD uses the same colors and typography with an open central view, no menu sidebar, no full-width header and no Start action.
-- Keep text to useful labels, values, actions and contextual feedback. Start minimal and add only what is needed.
-- No slogans, fictional clocks/dates, decorative numbering, duplicate outpost headings, schematic callouts or flight-preparation panel.
-- Preserve existing functionality. Do not invent equipment types, configurations or progression systems.
+- Graphite `#0c1217` surfaces, slate `#34434b` borders, amber `#ff880b` accents,
+  muted `#93a5b5` labels and Rajdhani typography. Preserve semantic status colors.
+- Keep short functional labels, necessary values, actions and contextual feedback.
+  Omit slogans, clocks, decorative numbering, repeated headings and permanent
+  preparation instructions.
+- Menus use persistent left navigation and a top bar with credits and a small
+  wallet icon at the far right. Omit the outpost/docked label and green status dot.
+- Start appears only on the preflight Overview. Flight browsing uses Resume flight.
+- Ship specifications appear only on Overview and Hangar. Hangar's strip spans
+  the content width; every other page keeps only its relevant product, cargo or
+  quest information.
+- The flight HUD leaves the central view open, without the menu sidebar,
+  full-width header or Start action. See its [layout and feedback requirements](../hud-design/README.md).
+- Preserve existing functionality and accessible alternatives to dragging.
+  Do not introduce equipment, settings or progression systems through mockups.
 
-| Page | Ship-specifications strip | Start |
-| --- | --- | --- |
-| Overview | Visible | Visible before launch |
-| Hangar | Visible, spanning the content width | Hidden |
-| Every other page | Hidden | Hidden |
+The original menu images retain an illustrative outpost header. The written
+header and launch rules above take precedence over older images and prompts.
 
-Launch requires returning to Overview. Cargo Trade keeps its own cargo usage/value
-summary; Shop keeps product stats and pricing; Quests keeps objectives and rewards.
-After launch, menu browsing uses the same style with Resume flight in place of
-launch access. The earlier concept images retain their original illustrative
-header; the current header and launch rules above take precedence.
+## Approved screens
 
-## Hangar intent
+| Screen | Reference |
+| --- | --- |
+| Overview | [main-menu-approved.png](main-menu-approved.png) |
+| Hangar | [hangar-approved.png](hangar-approved.png) |
+| Quests | [quests-approved.png](quests-approved.png) |
+| Shop | [shop-approved.png](shop-approved.png) |
+| Cargo Trade | [cargo-trade-approved.png](cargo-trade-approved.png) |
+| Connection | [connection-approved.png](connection-approved.png) |
+| Controls | [settings-controls-approved.png](settings-controls-approved.png) |
+| Audio | [settings-audio-approved.png](settings-audio-approved.png) |
+| Graphics | [settings-graphics-approved.png](settings-graphics-approved.png) |
+| Skylab | [skylab-approved.png](skylab-approved.png) |
+| Galaxy Gates | [galaxy-gates-approved.png](galaxy-gates-approved.png) |
+| Flight HUD | [flight-hud-top-aligned.png](../hud-design/flight-hud-top-aligned.png) |
 
-Ship selection and preview sit beside equipment and storage inventory. The Liberator
-has four laser slots, six shared shield/engine slots and two reserved extra slots.
-The draft shows one installed LF-1, one SG3N-A01 and one original Ion engine.
-Two stored LF-1s and one stored SG3N-A01 illustrate the inventory layout; this is
-not a change to starter ownership. A selected installed item has a contextual
-Remove action. Fitting remains immediate; no Save or Apply action is added.
+## Page requirements
 
-Keep current and proposed fitting values, ship activation, accessible click/select
-alternatives to dragging and blocked-action reasons available in implementation
-when relevant. These static images show one state, not every interaction.
-
-## Other menu concepts
-
-Quests shows the existing Scout, Sentinel and Heavy offers, their objectives and
-rewards, and a selected Scout offer with Accept. Active runs use the same layout
-with progress and Abandon when appropriate. The concept ships are illustrative
-previews, not replacements for the current alien models.
-
-Shop shows the Weapons category and an LF-1 purchase. The other categories use
-the same catalog/detail layout. LF-4 remains unavailable. Cargo Trade retains
-the seven ore cards and per-resource quantities/Sell actions, plus Sell all.
-Its example of ten units of each resource totals 70 / 400 cargo and 1,270 CR.
-
-Settings covers all current Controls, Audio and Graphics options without adding
-settings or Save/Apply actions. Binding-edit guidance and save failures can appear
-contextually in implementation. The three images illustrate tab content, not
-final panel sizing; implement one consistent tab container across all three.
-
-Connection shows an already-connected client with locked address/port fields.
-The example hostname is fictional. Connect is unavailable while connected;
-Disconnect is available. A disconnected state must expose editable fields and
-Connect while disabling unavailable station actions and Overview's launch. Authentication
-continues through operator-provisioned credentials, not new login fields.
-
-Skylab and Galaxy Gates contain only an icon and Coming soon. They add no gameplay.
-The [flight HUD notes](../hud-design/README.md) extend this approved style to the
-flight overlays, preserving radar, navigation, ship/target status and contextual
-feedback. Sector map and in-flight pause overlays are outside this raster batch.
+- Hangar combines owned-ship selection, preview, real fitting slots and storage.
+  Show current/proposed fitting values, activation and contextual removal.
+  Fitting is immediate, without Save/Apply. Concept inventory is illustrative.
+- Quests keeps existing offers, objectives, rewards, active progress and
+  Accept/Abandon. Preview artwork does not replace gameplay models.
+- Shop keeps categories, catalog selection, product stats, ownership, pricing
+  and purchase validation. Cargo Trade keeps seven resource cards, quantities,
+  per-resource Sell and Sell all. Example prices are not economy configuration.
+- Controls, Audio and Graphics use one consistent settings container. Changes
+  apply immediately; binding guidance and save failures appear contextually.
+- Connection retains editable disconnected endpoints, locked connected fields,
+  session status and Connect/Disconnect. Authentication uses operator credentials.
+- Skylab and Galaxy Gates contain an icon and Coming soon, without new gameplay.
 
 ## Generation provenance
 
-The main-menu image is the selected tactical-amber concept, simplified according
-to the user's red-circle annotations, then edited to align the outpost and wallet
-at the right edge. Its final edit prompt is in [main-menu-final-edit-prompt.txt](main-menu-final-edit-prompt.txt).
+Built-in ImageGen produced the selected tactical-amber Overview and its
+[final edit](main-menu-final-edit-prompt.txt). Hangar used that style and
+[the existing fitting screen](../feedback/main-menu-hangar.png), with
+[generation](hangar-generation-prompt.txt) and
+[slot-correction](hangar-correction-prompt.txt) prompts.
 
-The hangar used the approved main menu as its visual reference and
-[the existing hangar screenshot](../feedback/main-menu-hangar.png) as its functional
-reference. The initial draft had one extra generator slot. A targeted edit removed
-it; the approved image shows the correct six. Exact prompts are in
-[hangar-generation-prompt.txt](hangar-generation-prompt.txt) and
-[hangar-correction-prompt.txt](hangar-correction-prompt.txt).
+The remaining concepts used Hangar as the style reference. Each exact
+`<screen>-generation-prompt.txt` is saved beside its image. The
+[Hangar footer edit](hangar-footer-edit-prompt.txt) and
+[other-menu footer edit](other-menus-footer-edit-prompt.txt) supersede the original
+shared-footer instructions, restricting Start to Overview and specifications to
+Overview/Hangar. Final images preserve the approved page actions.
 
-The other nine concepts used the approved hangar as their style reference. Quests,
-Shop and Cargo Trade also used the existing screenshots as functional references.
-Their exact built-in ImageGen prompts are saved as `<screen>-generation-prompt.txt`
-beside each image.
-
-The user accepted those concepts with one shared revision: Start belongs only to
-Overview, and the ship-specifications strip belongs only to Overview and Hangar.
-The current images reflect that rule. The hangar strip expands into the former
-Start-button space; other pages restore quiet hangar background in place of both
-footer components. Exact built-in ImageGen edits are saved in
-[hangar-footer-edit-prompt.txt](hangar-footer-edit-prompt.txt) and
-[other-menus-footer-edit-prompt.txt](other-menus-footer-edit-prompt.txt).
-Original generation prompts describe the earlier shared footer for provenance;
-the visibility table and final edit prompts supersede that earlier instruction.
-
-Validation: visually checked the saved concepts for minimal copy, existing menu
-functionality, right-aligned header and relevant values. At the original concept
-review, Controls matched the twelve bindings pictured; resource quantities/prices total 1,270 CR; the LF-1
-purchase leaves 9,000 CR from 19,000 CR. Documentation and diff checks apply; no
-gameplay code changed. The directory is excluded from Godot imports with `.gdignore`.
-The revised images were also checked for footer visibility, preserved page actions
-and Hangar's unchanged four laser, six generator and two extra slots.
+Reference directories are excluded from Godot imports with `.gdignore`.
