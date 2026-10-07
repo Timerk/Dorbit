@@ -88,7 +88,7 @@ class SurfaceAtlas:
             metallic = .18 if painted else (.95 if metal else .35)
             roughness = (.29 if painted else .25 if metal else .43) + rng.uniform(-.035, .035)
             if glass or mat.name == 'Ion blue':
-                metallic, roughness = .0, .18 if glass else .35
+                metallic, roughness = .0, .11 if glass else .35
             grain = rng.random((self.cell, self.cell), dtype=np.float32) - .5
             brush = np.repeat(rng.uniform(-1, 1, (self.cell, 1)), self.cell, axis=1)
             streak = np.sin(x * .06 + np.sin(y * .12))
@@ -110,6 +110,8 @@ class SurfaceAtlas:
             if glass or mat.name == 'Ion blue':
                 albedo[region][:, :, :3] = color
                 normal[region][:, :, :3] = (.5, .5, 1)
+                if glass:
+                    orm[region][:, :, 1] = roughness
             records.append({'part': obj.name, 'tile': slot, 'material': mat.name,
                             'metallic': metallic, 'roughness': round(roughness, 4)})
         self.images = {}

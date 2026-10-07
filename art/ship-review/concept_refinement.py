@@ -31,6 +31,8 @@ def finish_palette(b: ModuleType, name: str) -> None:
     }
     if name == 'Goliath':
         colors['glass'] = ((.17, .065, .008), .42, .18)
+    if name == 'Liberator':
+        colors['blueglass'] = ((.004, .012, .020), .0, .11)
     if name == 'Nostromo':
         colors['silver'] = ((.20, .25, .30), .74, .30)
         colors['steel'] = ((.14, .18, .23), .72, .30)
