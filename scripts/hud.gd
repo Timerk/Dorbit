@@ -349,7 +349,7 @@ func draw_context() -> void:
 	if sector.show_performance:
 		var fps := Engine.get_frames_per_second()
 		var draws := Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
-		text_at(point + Vector2(0, 18), "%d FPS / %.1f ms / %d draws / %s" % [fps, 1000.0 / maxf(fps, 1), draws, "LOW" if sector.low_quality else "HIGH"], 14, MUTED)
+		text_at(point + Vector2(0, 18), "%d FPS / %.1f ms / %d draws / %s" % [fps, 1000.0 / maxf(fps, 1), draws, ["AA OFF", "2x MSAA", "4x MSAA", "8x MSAA"][sector.settings.msaa_3d]], 14, MUTED)
 		marker_labels.append(Rect2(point, Vector2(320, 24)))
 
 

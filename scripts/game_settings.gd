@@ -3,15 +3,18 @@ extends RefCounted
 ## Device-local controls and display preferences. Audio retains its existing config file.
 
 const PATH := "user://settings.cfg"
+const RENDERER_PATH := "user://graphics-renderer.cfg"
+const ANISOTROPY_SETTING := "rendering/textures/default_filters/anisotropic_filtering_level"
 const DEFAULT_SENSITIVITY := 0.003
 # Only supported menu values are accepted from device-local profiles.
 const GRAPHICS_LEVELS := {
 	"render_scale": [1.0, 0.85, 0.75, 0.5],
-	"anisotropic_filtering": [0, 4],
+	"msaa_3d": [0, 1, 2, 3],
+	"anisotropic_filtering": [0, 1, 2, 3, 4],
 	"shadow_quality": [0, 1, 2, 3],
 	"effects_quality": [0, 1, 2],
 }
-const GRAPHICS_BOOLEANS := ["fullscreen", "vsync", "low_quality", "show_performance", "bloom", "ssao"]
+const GRAPHICS_BOOLEANS := ["fullscreen", "vsync", "show_performance", "bloom", "ssao"]
 const ACTIONS := {
 	"forward": "Move forward", "backward": "Move backward",
 	"strafe_left": "Strafe left", "strafe_right": "Strafe right",
@@ -40,7 +43,11 @@ var sensitivity: float = DEFAULT_SENSITIVITY
 var bindings: Dictionary = DEFAULT_BINDINGS.duplicate()
 var fullscreen: bool = false
 var vsync: bool = false
-var low_quality: bool = false
+var msaa_3d: int = 2
+# Retain the F4 on/off shortcut and migrate profiles from the original boolean.
+var low_quality: bool:
+	get: return msaa_3d == 0
+	set(value): msaa_3d = 0 if value else 2
 var show_performance: bool = false
 var resolution := Vector2i(1440, 900)
 var render_scale: float = 1.0
@@ -67,6 +74,9 @@ func load_from(path: String = PATH) -> void:
 		value = config.get_value("graphics", setting, get(setting))
 		if value is bool:
 			set(setting, value)
+	value = config.get_value("graphics", "low_quality", false)
+	if value is bool:
+		low_quality = value
 	for setting: String in GRAPHICS_LEVELS:
 		value = config.get_value("graphics", setting, get(setting))
 		if setting == "render_scale":
@@ -87,6 +97,16 @@ func save(path: String = PATH) -> void:
 	for setting in GRAPHICS_BOOLEANS + GRAPHICS_LEVELS.keys() + ["resolution"]:
 		config.set_value("graphics", setting, get(setting))
 	save_failed = config.save(path) != OK
+	if path == PATH:
+		# GLES3 captures the hardware sampler maximum before scripts run. The
+		# user override is loaded by Godot before renderer initialization next time.
+		var renderer := ConfigFile.new()
+		renderer.set_value("rendering", "textures/default_filters/anisotropic_filtering_level", anisotropic_filtering if anisotropic_filtering > 0 else 4)
+		save_failed = renderer.save(RENDERER_PATH) != OK or save_failed
+
+
+static func startup_filtering_level() -> int:
+	return int(ProjectSettings.get_setting(ANISOTROPY_SETTING, 4))
 
 
 static func valid_binding(code: int) -> bool:

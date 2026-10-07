@@ -274,7 +274,7 @@ func cycle_resolution(direction: int) -> void:
 func apply_graphics(resize_window: bool = true) -> void:
 	low_quality = settings.low_quality
 	show_performance = settings.show_performance
-	get_viewport().msaa_3d = Viewport.MSAA_DISABLED if low_quality else Viewport.MSAA_4X
+	get_viewport().msaa_3d = settings.msaa_3d as Viewport.MSAA
 	if not dedicated_server:
 		get_viewport().scaling_3d_scale = settings.render_scale
 		get_viewport().anisotropic_filtering_level = settings.anisotropic_filtering as Viewport.AnisotropicFiltering

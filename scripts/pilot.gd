@@ -29,6 +29,7 @@ func set_ship_model(value: String) -> void:
 		model.queue_free()
 		model = ShipCatalog.model_scene(ship_model)
 		add_child(model)
+		SectorVisuals.configure_texture_filtering(model, SectorVisuals.texture_filtering_enabled(self))
 
 
 func _ready() -> void:
@@ -39,6 +40,7 @@ func _ready() -> void:
 	model.queue_free()
 	model = ShipCatalog.model_scene(ship_model)
 	add_child(model)
+	SectorVisuals.configure_texture_filtering(model, SectorVisuals.texture_filtering_enabled(self))
 	arm = SpringArm3D.new()
 	arm.position = Vector3(0.0, 2.5, 0.0)
 	arm.rotation.x = -0.12
