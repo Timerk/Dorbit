@@ -138,17 +138,31 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 	if sequence != equipment["revision"] + 1 or sequence > MAX_CREDITS:
 		return "Inventory changed. Review it and try again."
 	if action == "buy":
-		var blocker := Equipment.purchase_blocker(subject)
+		# Legacy model-only requests buy one; model:quantity buys one atomic batch.
+		var parts := subject.split(":")
+		var model: String = parts[0]
+		if parts.size() > 2 or not ship.is_empty() or not slot.is_empty():
+			return "Invalid equipment purchase."
+		var amount := 1
+		if parts.size() == 2:
+			if parts[1].length() > 3 or not parts[1].is_valid_int():
+				return "Invalid purchase quantity."
+			amount = parts[1].to_int()
+			if amount < 1 or amount > Equipment.MAX_PURCHASE_QUANTITY:
+				return "Invalid purchase quantity."
+		var blocker := Equipment.purchase_blocker(model)
 		if not blocker.is_empty():
 			return blocker
-		var price: int = Equipment.MODELS[subject]["price"]
-		if equipment["items"].has("purchase-%d" % sequence):
-			fail("Equipment item ID conflicts with its transaction sequence.")
-			return "Persistence unavailable."
+		var price: int = Equipment.MODELS[model]["price"] * amount
 		if pilot["credits"] < price:
 			return "Insufficient credits. Need %d CR." % price
+		for index in range(amount):
+			var identifier := "purchase-%d" % sequence if index == 0 else "purchase-%d-%d" % [sequence, index + 1]
+			if equipment["items"].has(identifier):
+				fail("Equipment item ID conflicts with its transaction sequence.")
+				return "Persistence unavailable."
+			equipment["items"][identifier] = {"model": model, "ship": "", "slot": ""}
 		pilot["credits"] -= price
-		equipment["items"]["purchase-%d" % sequence] = {"model": subject, "ship": "", "slot": ""}
 	elif action == "buy_ship":
 		if not ShipCatalog.MODELS.has(subject) or not ship.is_empty() or not slot.is_empty():
 			return "Unknown ship model."
@@ -219,6 +233,8 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		return "Ship purchased with an empty fitting. Activate it in Ship equipment."
 	if action == "switch_ship":
 		return "Ship activated. Equipment and cargo stay with their ships."
+	if action == "buy" and subject.contains(":") and subject.get_slice(":", 1).to_int() > 1:
+		return "Purchased %d items. Items are in storage." % subject.get_slice(":", 1).to_int()
 	return "Purchased. Item is in storage." if action == "buy" else "Fitting saved."
 
 

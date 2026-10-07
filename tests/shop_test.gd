@@ -30,6 +30,97 @@ func click(client: Sector, control: Control) -> void:
 	await settle()
 
 
+func type_quantity(client: Sector, value: String) -> void:
+	await click(client, client.shop.purchase_input)
+	client.shop.purchase_input.select_all()
+	var erase := InputEventKey.new()
+	erase.keycode = KEY_BACKSPACE
+	erase.pressed = true
+	client.get_viewport().push_input(erase)
+	for character in value:
+		var event := InputEventKey.new()
+		event.unicode = character.unicode_at(0)
+		event.pressed = true
+		client.get_viewport().push_input(event)
+	await settle()
+
+
+func check_bulk_purchase(server: Sector, client: Sector) -> void:
+	var shop := client.shop
+	var combat := client.session.combat
+	client.session.menu.hide()
+	await press(client, KEY_B)
+	shop.select_category("engines")
+	shop.select_model("g3n-1010")
+	check(server.session.store.commit({"pilot0": 100000}), "Fund bulk purchase checks")
+	server.session.combat.records[client.multiplayer.get_unique_id()]["credits"] = 100000
+	await replicate(server)
+	await click(client, shop.purchase_increase)
+	check(shop.purchase_quantity == 2 and shop.price.text == "Total: 4,000 CR", "Plus increments quantity and total by one item")
+	await click(client, shop.purchase_decrease)
+	check(shop.purchase_quantity == 1 and shop.purchase_decrease.disabled, "Minus decrements by one and stops at one")
+	await type_quantity(client, "")
+	check(shop.purchase_quantity == 0 and shop.buys["g3n-1010"].disabled, "Clearing the field permits editing and blocks buying")
+	await type_quantity(client, "0")
+	check(shop.purchase_quantity == 1 and shop.purchase_input.text == "1", "Zero normalizes to the minimum quantity")
+	for value: String in ["abc", "1.5"]:
+		await type_quantity(client, value)
+		check(shop.purchase_quantity == 0 and shop.buys["g3n-1010"].disabled, "Noninteger input cannot submit a purchase: " + value)
+	await type_quantity(client, "1000")
+	check(shop.purchase_quantity == 999 and shop.purchase_input.text == "999", "Oversized input clamps to the maximum without truncating digits")
+	await type_quantity(client, "999")
+	check(shop.purchase_quantity == 999 and shop.purchase_increase.disabled and shop.buys["g3n-1010"].disabled and shop.availability.text == "Need 1,898,000 more CR", "Maximum quantity and full-batch affordability are enforced")
+	await type_quantity(client, "3")
+	check(shop.purchase_quantity == 3 and shop.price.text == "Total: 6,000 CR" and shop.balance.text == "After: 94,000 CR", "Typing a quantity updates total and remaining balance")
+	shop.purchase_input.release_focus()
+	await settle()
+	for dimensions in [Vector2i(960, 600), Vector2i(1440, 900)]:
+		client.get_viewport().size = dimensions
+		await settle()
+		check(shop.get_global_rect().encloses(shop.purchase_controls.get_global_rect()) and shop.get_global_rect().encloses(shop.buys["g3n-1010"].get_global_rect()), "Quantity and buy controls fit at %s" % dimensions)
+		check(shop.purchase_controls.size.y <= 40 and shop.purchase_input.size.x >= 60, "Quantity label and input remain readable in a compact row at %s" % dimensions)
+		await capture(client, "shop-quantity-%d" % dimensions.x)
+	var before := combat.inventory.duplicate(true)
+	var sequence: int = before["revision"] + 1
+	shop.buys["g3n-1010"].pressed.emit()
+	check(combat.station_pending and not shop.purchase_input.editable and shop.purchase_increase.disabled, "Pending bulk purchase locks quantity controls")
+	shop.buys["g3n-1010"].pressed.emit()
+	await settle()
+	await replicate(server)
+	check(client.credits == 94000 and combat.inventory["revision"] == sequence and combat.inventory["items"].size() == before["items"].size() + 3, "Double click commits exactly three items and one total charge")
+	for suffix: String in ["", "-2", "-3"]:
+		check(combat.inventory["items"]["purchase-%d%s" % [sequence, suffix]] == {"model": "g3n-1010", "ship": "", "slot": ""}, "Each bulk item has a unique stored identity " + suffix)
+	check(Equipment.stats(combat.inventory) == Equipment.stats(before), "Bulk buying preserves installed stats")
+	var saved: Dictionary = server.session.store.pilots["pilot0"].duplicate(true)
+	var disk_before := FileAccess.get_file_as_string(server.session.store.path)
+	combat.station_request.rpc_id(1, sequence, "buy", "g3n-1010:3", "", "", 0)
+	await settle()
+	check(client.credits == 94000 and server.session.store.pilots["pilot0"] == saved, "Duplicate batch request cannot charge or grant items again")
+	for subject: String in ["g3n-1010:0", "g3n-1010:-1", "g3n-1010:1000", "g3n-1010:1.5", "g3n-1010:", "g3n-1010:2:3", "lf-4:3", "g3n-1010:999"]:
+		combat.station_request.rpc_id(1, sequence + 1, "buy", subject, "", "", 0)
+		await settle()
+		check(server.session.store.pilots["pilot0"] == saved and FileAccess.get_file_as_string(server.session.store.path) == disk_before, "Invalid or unaffordable batch leaves wallet, inventory, revision and disk unchanged: " + subject)
+	shop.select_model("g3n-2010")
+	check(shop.purchase_quantity == 1, "Selecting another item resets its quantity to one")
+	shop.select_category("ships")
+	check(not shop.purchase_controls.visible, "Ships retain single-hull purchasing")
+	client.session.disconnect_session("Bulk restart check")
+	await settle()
+	server.session.disconnect_session("Bulk restart check")
+	check(server.session.host(24735) == OK, "Server reloads the bulk transaction")
+	client.session.join("127.0.0.1", 24735)
+	await settle(0.5)
+	await replicate(server)
+	combat.station_request.rpc_id(1, sequence, "buy", "g3n-1010:3", "", "", 0)
+	await settle()
+	check(client.credits == 94000 and combat.inventory == saved["equipment"], "Bulk ownership and duplicate protection survive restart and reconnect")
+	check(server.session.store.commit({"pilot0": 2000000}), "Fund the maximum batch")
+	server.session.combat.records[client.multiplayer.get_unique_id()]["credits"] = 2000000
+	combat.station_request.rpc_id(1, sequence + 1, "buy", "g3n-1010:999", "", "", 0)
+	await settle(0.5)
+	check(client.credits == 2000 and combat.inventory["revision"] == sequence + 1 and combat.inventory["items"].size() == saved["equipment"]["items"].size() + 999 and combat.inventory["items"].has("purchase-%d-999" % (sequence + 1)), "Maximum batch grants 999 unique items through the real RPC and charges the exact total")
+
+
 func check_flight_pages(client: Sector, prefix: String) -> void:
 	var menu := client.main_menu
 	var position := client.player.position
@@ -215,6 +306,7 @@ func run() -> void:
 	await press(client, KEY_B)
 	await press(client, KEY_F7)
 	check(client.session.menu.visible and not shop.visible, "F7 closes the shop for the session menu")
+	await check_bulk_purchase(server, client)
 	client.session.disconnect_session("Shop test complete")
 	await settle()
 	check(not shop.visible, "Disconnect closes the shop")

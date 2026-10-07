@@ -4,6 +4,7 @@ extends RefCounted
 
 # Reference values and credit-only prices; see GAME_PLAN.md for sources.
 const URIDIUM_TO_CREDITS: int = 100
+const MAX_PURCHASE_QUANTITY: int = 999
 const MODELS := {
 	# Retain these persisted model IDs and the original starter engine's flight tuning.
 	"laser": {"name": "LF-1", "kind": "laser", "price": 10000, "damage": 65.0, "shield": 0.0, "speed": 0.0},

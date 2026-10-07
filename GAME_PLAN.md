@@ -271,6 +271,7 @@ The first Milestone 3 equipment slice added fittings for the Liberator starter. 
 - Current and proposed damage, shield capacity, absorption, cruise and boost speeds remain visible. Unavailable purchases and fitting actions explain why. B, I and C switch station screens; Esc returns to flight. Generated item art and a temporary ship preview do not depend on the final ship models.
 - Fitting changes never repair hull, refill shields or boost energy, or reset weapon cooldowns. Added shield capacity starts empty and recovers through the normal shield regeneration rules. Removing capacity discards excess charge.
 - The server commits a purchase's credit deduction, new item and request sequence together. Successful requests cannot run again, even after restart. A new intentional purchase uses the next sequence. Inventory and fittings survive death, reconnects and server restarts.
+- Equipment purchases have an editable quantity with minus/plus buttons that change it by one, defaulting to one when selecting another model. The shop shows the batch total and remaining balance. Each request buys 1–999 items into storage as one saved transaction; insufficient funds reject the entire batch. Ships remain limited to one owned hull per model. Network schema 8 requires matching clients and servers; save schema 3 is unchanged.
 - No equipment selling, trading, rarity, equipment leveling, loot acquisition or assembly are included. Resource cargo and sales are described below.
 
 ### DarkOrbit reference equipment catalog

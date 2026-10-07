@@ -44,6 +44,11 @@ var delivery: String
 var products: Dictionary = {}
 var product_rows: VBoxContainer
 var page_title: Label
+var purchase_controls: HBoxContainer
+var purchase_input: LineEdit
+var purchase_decrease: Button
+var purchase_increase: Button
+var purchase_quantity: int = 1
 
 
 func catalog() -> Dictionary:
@@ -242,6 +247,25 @@ func build_product(parent: Node) -> void:
 
 func build_order(parent: Node) -> void:
 	parent.add_child(HSeparator.new())
+	purchase_controls = HBoxContainer.new()
+	parent.add_child(purchase_controls)
+	var quantity_label := text(purchase_controls, "Quantity", 16, StationUi.MUTED)
+	quantity_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	purchase_decrease = quantity_button(purchase_controls, "-", func(): set_purchase_quantity(purchase_quantity - 1))
+	purchase_decrease.tooltip_text = "Decrease purchase quantity by one"
+	purchase_input = LineEdit.new()
+	purchase_input.text = "1"
+	purchase_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	purchase_input.add_theme_constant_override("minimum_character_width", 3)
+	purchase_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	purchase_input.max_length = 10
+	purchase_input.select_all_on_focus = true
+	purchase_input.tooltip_text = "Quantity to buy (1–%d)" % Equipment.MAX_PURCHASE_QUANTITY
+	purchase_controls.add_child(purchase_input)
+	purchase_input.text_changed.connect(edit_purchase_quantity)
+	purchase_input.focus_exited.connect(func(): set_purchase_quantity(maxi(1, purchase_quantity)))
+	purchase_increase = quantity_button(purchase_controls, "+", func(): set_purchase_quantity(purchase_quantity + 1))
+	purchase_increase.tooltip_text = "Increase purchase quantity by one"
 	price = text(parent, "", 30, StationUi.AMBER)
 	ownership = text(parent, "", 16, StationUi.MUTED)
 	balance = text(parent, "", 18, StationUi.MUTED)
@@ -340,6 +364,9 @@ func select_category(id: String) -> void:
 
 
 func select_model(model: String) -> void:
+	if selected_model != model:
+		purchase_quantity = 1
+		purchase_input.text = "1"
 	selected_model = model
 	for key: String in cards:
 		cards[key].set_pressed_no_signal(key == model)
@@ -358,18 +385,41 @@ func select_model(model: String) -> void:
 	else:
 		bonus.text = ""
 		slot_hint = ""
-	price.text = ("%s CR" % credits_text(int(catalog()[model]["price"])) if is_ship or Equipment.purchase_blocker(model).is_empty() else "Not for sale") if available else ""
 	refresh()
 
 
 func purchase(model: String) -> void:
 	if not purchase_blocker(model).is_empty():
 		return
-	sector.session.combat.request_station("buy_ship" if ShipCatalog.MODELS.has(model) else "buy", model)
+	var is_ship := ShipCatalog.MODELS.has(model)
+	sector.session.combat.request_station("buy_ship" if is_ship else "buy", model if is_ship else "%s:%d" % [model, purchase_quantity])
 	refresh()
 
 
+func set_purchase_quantity(amount: int) -> void:
+	purchase_quantity = clampi(amount, 1, Equipment.MAX_PURCHASE_QUANTITY)
+	purchase_input.text = str(purchase_quantity)
+	refresh()
+
+
+func edit_purchase_quantity(value: String) -> void:
+	# Empty or noninteger input stays editable, but cannot submit a purchase.
+	if value.is_empty() or not value.is_valid_int():
+		purchase_quantity = 0
+		refresh()
+	else:
+		var caret := purchase_input.caret_column
+		set_purchase_quantity(value.to_int())
+		purchase_input.caret_column = mini(caret, purchase_input.text.length())
+
+
+func purchase_total(model: String) -> int:
+	return int(catalog()[model]["price"]) * (1 if ShipCatalog.MODELS.has(model) else purchase_quantity)
+
+
 func purchase_blocker(model: String) -> String:
+	if model.is_empty():
+		return "Select a product to preview it."
 	if StationUi.offline_preview(sector):
 		return StationUi.OFFLINE_BLOCKER
 	var supply := "" if ShipCatalog.MODELS.has(model) else Equipment.purchase_blocker(model)
@@ -384,7 +434,9 @@ func purchase_blocker(model: String) -> String:
 		return reason
 	if ShipCatalog.MODELS.has(model) and not ShipCatalog.owned_id(sector.session.combat.inventory, model).is_empty():
 		return "Already owned. Activate in Ship equipment."
-	var shortfall := int(catalog()[model]["price"]) - sector.credits
+	if not ShipCatalog.MODELS.has(model) and purchase_quantity < 1:
+		return "Enter a whole quantity from 1 to %d." % Equipment.MAX_PURCHASE_QUANTITY
+	var shortfall := purchase_total(model) - sector.credits
 	return "Need %s more CR" % credits_text(shortfall) if shortfall > 0 else ""
 
 
@@ -427,6 +479,19 @@ func refresh() -> void:
 	var combat := sector.session.combat
 	var blocked := StationUi.blocker(sector)
 	var inventory := StationUi.inventory(sector)
+	purchase_controls.visible = Equipment.MODELS.has(selected_model)
+	var can_edit := purchase_controls.visible and Equipment.purchase_blocker(selected_model).is_empty() and not combat.station_pending
+	purchase_input.editable = can_edit
+	purchase_decrease.disabled = not can_edit or purchase_quantity <= 1
+	purchase_increase.disabled = not can_edit or purchase_quantity >= Equipment.MAX_PURCHASE_QUANTITY
+	if not selected_model.is_empty():
+		var for_sale := ShipCatalog.MODELS.has(selected_model) or Equipment.purchase_blocker(selected_model).is_empty()
+		var caption := "Total: %s CR" if Equipment.MODELS.has(selected_model) and purchase_quantity > 1 else "%s CR"
+		price.text = caption % credits_text(purchase_total(selected_model)) if for_sale else "Not for sale"
+		price.tooltip_text = "%s CR per item" % credits_text(int(catalog()[selected_model]["price"])) if for_sale else ""
+	else:
+		price.text = ""
+		price.tooltip_text = ""
 	cargo_summary.text = "CARGO %d / %d units / %d CR" % [CargoResources.units(sector.cargo), sector.cargo_capacity, CargoResources.value(sector.cargo)]
 	if last_cargo != sector.cargo:
 		for resource: String in selected:
@@ -455,7 +520,7 @@ func refresh() -> void:
 		var reason := purchase_blocker(model)
 		buys[model].visible = model == selected_model
 		buys[model].disabled = not reason.is_empty()
-		buys[model].tooltip_text = reason if not reason.is_empty() else "Buy %s" % catalog()[model]["name"]
+		buys[model].tooltip_text = reason if not reason.is_empty() else "Buy %d × %s" % [1 if ShipCatalog.MODELS.has(model) else purchase_quantity, catalog()[model]["name"]]
 	if selected_model.is_empty():
 		ownership.text = ""
 		balance.text = ""
@@ -473,7 +538,7 @@ func refresh() -> void:
 		availability.add_theme_color_override("font_color", FlightHud.MUTED if not owned.is_empty() else (FlightHud.RED if not reason.is_empty() else FlightHud.GREEN))
 	else:
 		var for_sale := Equipment.purchase_blocker(selected_model).is_empty()
-		delivery = "1 item to storage" if for_sale else "Not available"
+		delivery = ("1 item to storage" if purchase_quantity == 1 else "%d items to storage" % purchase_quantity) if for_sale else "Not available"
 		var stored := 0
 		var installed := 0
 		for item: Dictionary in inventory.get("items", {}).values():
@@ -483,7 +548,7 @@ func refresh() -> void:
 				else:
 					installed += 1
 		ownership.text = "OWNED %d   /   %d in storage   /   %d installed" % [stored + installed, stored, installed]
-		var remaining := sector.credits - int(Equipment.MODELS[selected_model]["price"])
+		var remaining := sector.credits - purchase_total(selected_model)
 		balance.text = "After: %s" % ("%s CR" % credits_text(remaining) if remaining >= 0 else "Insufficient funds") if for_sale else ""
 		var reason := purchase_blocker(selected_model)
 		availability.text = reason if not reason.is_empty() else "Ready to purchase"
