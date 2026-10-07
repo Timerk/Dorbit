@@ -59,13 +59,16 @@ surfaces and restores clearcoat for colored paints. Source maps and review
 pictures are excluded from the game pack by `art/.gdignore`.
 
 Every export retains one mesh, its existing material count and base triangles,
-centered 7 m bounds and forward orientation. The roster retains 762,142 base
-triangles. Maps and UVs add download and texture-memory costs; Godot generates
+centered bounds and forward orientation. Phoenix has a 3.5 m visual bounding
+diameter, half the other hulls' 7 m default, making it the smallest ship without
+changing gameplay collision settings. Fixed preview cameras preserve these
+relative sizes. The roster retains 762,142 base triangles. Maps and UVs add
+download and texture-memory costs; Godot generates
 mesh LODs and imports embedded maps with Basis Universal compression. Saved
 Blender studies remain the editable geometry and studio finish source; runtime
 surface maps are authored during export.
 
-Combined GLB size grows from 22,559,412 to 81,352,700 bytes for this roster pass.
+Combined GLB size grows from 22,559,412 to 81,352,708 bytes for this roster pass.
 The accepted Liberator GLB is unchanged at 7,823,272 bytes. Other hulls receive
 the maps and UVs without adding triangles or material surfaces.
 

@@ -9,6 +9,7 @@ func _initialize() -> void:
 	if ShipCatalog.MODELS.size() != 12:
 		fail("Exported ship catalog must contain twelve hulls.")
 		return
+	var sizes := {}
 	for id: String in ShipCatalog.MODELS:
 		var hull := ShipCatalog.model_scene(id)
 		if hull == null or StationUi.texture(id) == null:
@@ -20,13 +21,23 @@ func _initialize() -> void:
 			return
 		var mesh := (meshes[0] as MeshInstance3D).mesh
 		var bounds := mesh.get_aabb()
-		if absf(bounds.size.length() - 7.0) > 0.01 or bounds.get_center().length() > 0.01:
-			fail("Ship export must preserve its centered 7 m bounding diameter: " + id)
+		var diameter: float = ShipCatalog.info(id).get("visual_diameter", 7.0)
+		if absf(bounds.size.length() - diameter) > 0.01 or bounds.get_center().length() > 0.01:
+			fail("Ship export must preserve its centered catalog visual diameter: " + id)
 			return
+		sizes[id] = bounds.size
 		if not check_finish(id, mesh):
 			return
 		hull.free()
-	print("Packaged ship assets: 12 centered 7 m hulls with finite geometry, previews and no studio")
+	var phoenix_size: Vector3 = sizes["phoenix"]
+	var phoenix_longest := phoenix_size[phoenix_size.max_axis_index()]
+	for id: String in sizes:
+		var size: Vector3 = sizes[id]
+		var longest := size[size.max_axis_index()]
+		if id != "phoenix" and (phoenix_size.length() >= size.length() or phoenix_longest >= longest):
+			fail("Phoenix must be the smallest hull by bounding diameter and longest dimension: " + id)
+			return
+	print("Packaged ship assets: 12 centered hulls with finite geometry, previews and no studio; Phoenix is the smallest")
 	print("Roster finish: every hull retains UVs, 3 shared PBR atlases, coated paint and distinct smooth cockpit glass")
 	quit()
 
