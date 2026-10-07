@@ -43,6 +43,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Test local offline launcher
+        shell: pwsh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tests/local_launcher_test.ps1
       - name: Cache pinned Godot tools
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:

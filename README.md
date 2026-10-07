@@ -383,6 +383,24 @@ Append `--port=24600` to `run` to choose another UDP port, and use the same port
 
 ## Develop on Windows
 
+To build and play this checkout or T3 worktree offline, run this one command from
+its root folder:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\play.ps1
+```
+
+`play.ps1` installs the pinned Godot engine if missing, builds
+`build/windows/Dorbit.exe`, and launches it with `-- --offline`. Run the same
+command after changing code. Existing tools and imported assets are reused;
+each new worktree gets its own tools on the first run. Setup or build errors
+stop the script before launch. The script also works from another directory
+when invoked by its full path.
+
+Offline play uses temporary progression and previews of the station menus;
+purchases, fitting and quests require the dedicated server. Use the deployment
+workflow and matching client/server builds for online play.
+
 The helper downloads the official Godot 4.7.2 editor and verifies its SHA-256 checksum. Building also downloads the matching export-template archive, about 1.3 GB, and extracts only the Windows templates. Tools and generated builds stay out of Git.
 
 Run from the repository root with PowerShell and RTK:
