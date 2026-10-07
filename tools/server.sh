@@ -57,6 +57,7 @@ PY
     checked --headless --path . --script res://tests/alien_sector_test.gd
     checked --headless --path . --script res://tests/map_layout_test.gd
     checked --headless --path . --script res://tests/map_layout_playthrough.gd
+    checked --headless --path . --script res://tests/hud_playthrough.gd
     checked --headless --path . --script res://tests/autopilot_test.gd
     checked --headless --path . --script res://tests/targeting_test.gd
     checked --headless --path . --script res://tests/rpc_compatibility_test.gd

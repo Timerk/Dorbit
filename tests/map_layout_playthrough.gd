@@ -23,6 +23,12 @@ func capture(label: String) -> void:
 
 
 func click_at(point: Vector2) -> void:
+	# Route hover before pressing, as native pointer input does. This also clears
+	# the preceding button's hover after a window resize.
+	var motion := InputEventMouseMotion.new()
+	motion.position = point
+	root.push_input(motion)
+	await process_frame
 	for pressed in [true, false]:
 		var event := InputEventMouseButton.new()
 		event.button_index = MOUSE_BUTTON_LEFT
@@ -95,7 +101,7 @@ func run() -> void:
 		navigation.change_range(1)
 	check(navigation.range_index == navigation.RANGES.size() - 1, "Radar range stops at maximum")
 	navigation.change_range(-2)
-	for pixels in [Vector2i(960, 600), Vector2i(1440, 900)]:
+	for pixels in [Vector2i(960, 600), Vector2i(1440, 900), Vector2i(1920, 1080)]:
 		root.size = pixels
 		root.content_scale_size = pixels
 		DisplayServer.window_set_size(pixels)
@@ -152,8 +158,11 @@ func run() -> void:
 		await click_at(navigation.plot.global_position + label_rect.get_center())
 		check(sector.target == sector.aliens[1] and not navigation.overview.visible and not sector.paused, "Map name selects an alien destination and returns to flight")
 		navigation.open_overview()
+		await sync_physics()
 		var alien_position := sector.aliens[1].position
-		var stem_point := navigation.plot_point(alien_position).lerp(navigation.plot_point(Vector3(alien_position.x, 0, alien_position.z)), 0.5)
+		# The stem's midpoint falls under the outpost caption at this projection.
+		# Click its exposed lower section to exercise height-line selection.
+		var stem_point := navigation.plot_point(alien_position).lerp(navigation.plot_point(Vector3(alien_position.x, 0, alien_position.z)), 0.8)
 		await click_at(navigation.plot.global_position + stem_point)
 		check(not navigation.overview.visible and navigation.waypoint_key == "alien1", "Height stem selects its destination directly on the map")
 		navigation.open_overview()
