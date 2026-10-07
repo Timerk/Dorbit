@@ -58,6 +58,10 @@ header and launch rules above take precedence over older images and prompts.
 - Connection retains editable disconnected endpoints, locked connected fields,
   session status and Connect/Disconnect. Authentication uses operator credentials.
 - Skylab and Galaxy Gates contain an icon and Coming soon, without new gameplay.
+- Refining combines an ore recipe tree and an Update tab using Cargo Trade's
+  resource renders. Show ingredient totals before refining, individual laser
+  rounds and timed reserves, compatibility, and a confirmation warning before
+  discarding a different boost. Rocket boosts remain Coming later.
 
 ## Generation provenance
 

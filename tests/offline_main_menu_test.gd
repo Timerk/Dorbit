@@ -22,10 +22,12 @@ func run() -> void:
 		await settle()
 		check(Rect2(Vector2.ZERO, Vector2(dimensions)).encloses(menu.home.get_global_rect()), "Offline overview fits at %s" % dimensions)
 		await capture(client, "offline-main-menu-%d" % dimensions.x)
-		for page: String in ["hangar", "shop", "cargo", "quests", "skylab", "gates"]:
+		for page: String in ["hangar", "shop", "cargo", "refining", "quests", "skylab", "gates"]:
 			check(not menu.navigation[page].disabled, "Offline %s can be browsed" % page)
 			await click(client, menu.navigation[page])
 			var panel: Control = client.equipment_menu if page == "hangar" else (client.shop if page in ["shop", "cargo"] else (client.hud.contract_panel if page == "quests" else menu.placeholder))
+			if page == "refining":
+				panel = client.resource_workshop
 			check(panel.is_visible_in_tree() and not menu.start_button.is_visible_in_tree() and not menu.specifications.is_visible_in_tree(), "Offline %s stays open without Overview footer" % page)
 			check(Rect2(menu.content_rect().position - Vector2.ONE, menu.content_rect().size + Vector2.ONE * 2).encloses(panel.get_global_rect()), "Offline %s fits at %s" % [page, dimensions])
 			await capture(client, "offline-%s-%d" % [page, dimensions.x])
@@ -45,6 +47,12 @@ func run() -> void:
 				check(client.shop.cargo_page.visible and client.shop.sell_all.disabled, "Offline cargo is viewable and Sell all is disabled")
 				for resource: String in client.shop.sells:
 					check(client.shop.sells[resource].disabled, "Offline %s sale is disabled" % resource)
+			elif page == "refining":
+				check(client.resource_workshop.refine_button.disabled, "Offline refining cannot spend cargo")
+				client.resource_workshop.select_tab("update")
+				await settle()
+				check(client.resource_workshop.upgrade_button.disabled, "Offline resource upgrades remain unavailable")
+				client.resource_workshop.select_tab("refining")
 			elif page == "quests":
 				client.hud.select_contract("heavy")
 				check(client.hud.contract_title.text == "Heavy hunt" and client.hud.contract_accept.disabled, "Offline quest selection works while acceptance is disabled")

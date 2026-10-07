@@ -336,7 +336,7 @@ The first Milestone 3 equipment slice added fittings for the Liberator starter. 
 - Current and proposed damage, shield capacity, absorption, cruise and boost speeds remain visible. Unavailable purchases and fitting actions explain why. B, I and C switch station screens; Esc returns to flight. Generated item art and a temporary ship preview do not depend on the final ship models.
 - Fitting changes never repair hull, refill shields or boost energy, or reset weapon cooldowns. Added shield capacity starts empty and recovers through the normal shield regeneration rules. Removing capacity discards excess charge.
 - The server commits a purchase's credit deduction, new item and request sequence together. Successful requests cannot run again, even after restart. A new intentional purchase uses the next sequence. Inventory and fittings survive death, reconnects and server restarts.
-- Equipment purchases have an editable quantity with minus/plus buttons that change it by one, defaulting to one when selecting another model. The shop shows the batch total and remaining balance. Each request buys 1–999 items into storage as one saved transaction; insufficient funds reject the entire batch. Ships remain limited to one owned hull per model. Network schema 8 requires matching clients and servers; save schema 3 is unchanged.
+- Equipment purchases have an editable quantity with minus/plus buttons that change it by one, defaulting to one when selecting another model. The shop shows the batch total and remaining balance. Each request buys 1–999 items into storage as one saved transaction; insufficient funds reject the entire batch. Ships remain limited to one owned hull per model. Network schema 9 requires matching clients and servers; save schema 4 also preserves resource boosts.
 - No equipment selling, trading, rarity, equipment leveling, loot acquisition or assembly are included. Resource cargo and sales are described below.
 
 ### DarkOrbit reference equipment catalog
@@ -448,7 +448,34 @@ Press B at Outpost 01 and choose Trade raw materials. Seven horizontal ore cards
 
 Save schema 3 adds validated per-ship cargo. Versions 1 and 2 migrate once to empty holds while retaining credits, equipment, contracts and unrelated progression. The operator provisioning tool preserves cargo when rotating credentials. Older servers cannot read schema 3; rollback requires a pre-migration ledger backup.
 
-Capacity, pickup distance, box lifetime, quantities and prices are provisional playtest values. Resource income changes the previous equipment-price estimates; hunting and selling need human economy playtesting before prices are finalized. Crafting, refining, resource missions and additional playable ships are outside this addition.
+Capacity, pickup distance, box lifetime, quantities and prices are provisional playtest values. Resource income changes the previous equipment-price estimates; hunting and selling need human economy playtesting before prices are finalized. Resource missions and general crafting remain future work. Refining and resource boosts extend this slice below.
+
+### Resource refining and equipment boosts
+
+The user requested one Refining menu with **Refining** and **Update** tabs, using the current Cargo Trade resource renders and the shared graphite/amber styling. The first tab follows the supplied ore tree: three raw ores above Prometid and Duranium, which feed Promerium. Select an output, choose an integer amount or Max, review the ingredient totals and confirm. The active ship's cargo supplies all ingredients and receives the output.
+
+| Output | Ingredients per unit |
+| --- | --- |
+| Prometid | 20 Prometium + 10 Endurium |
+| Duranium | 10 Endurium + 20 Terbium |
+| Promerium | 10 Prometid + 10 Duranium |
+
+Xenomit is omitted because it does not exist in Dorbit. Seprom cannot be refined aboard the ship; production, automation and the Xeno module wait for Skylab. Existing Seprom loot can already be applied to equipment.
+
+| Resource | Laser / rocket damage | Shield capacity | Speed |
+| --- | --- | --- | --- |
+| Prometid | +15% | — | — |
+| Duranium | — | +10% | +10% |
+| Promerium | +30% | +20% | +20% |
+| Seprom | +60% | +40% | — |
+
+Update selects an equipment group, resource and amount. One unit provides ten boosted **individual laser rounds**, or ten minutes for shields/engines. Each installed laser consumes one round when an authoritative volley actually fires; blocked shots and cooldowns consume none. A final partial volley boosts only as many lasers as rounds remain, in laser-slot order. Each laser's own NPC bonus is included before the resource multiplier. Rocket boosts show Coming later and cannot consume cargo until rocket combat exists, as chosen by the user.
+
+The same resource adds rounds or duration without changing its percentage. A different resource replaces the remaining reserve only after the player checks an explicit discard warning, as chosen by the user. Boosts belong to the ship; switching hulls preserves its reserve. Shield capacity multiplies the installed total without changing absorption or granting charge; expiry clamps excess charge. Engines multiply fitted cruise and boost speeds without changing acceleration. Applying resources never repairs hull or resets cooldowns.
+
+The user chose timers that count only while online. They count with that hull active, including station menus and rescue; inactive hulls and disconnected pilots retain their time. The server checkpoints durations every five seconds and flushes them on disconnect, shutdown and successful station actions. Abrupt termination can restore up to five seconds of unused duration. Weapon-round consumption saves before damage, so consumed rounds cannot return after restart.
+
+All actions retain the station checks and persistent sequence protection. Save schema 4 adds validated per-ship boost reserves and migrates schemas 1–3 while preserving progression; provisioning and credential rotation preserve boosts. Rollback needs a pre-migration backup. Network schema 9 requires matching clients and servers. Offline preview exposes both tabs with resource actions disabled. Balance and timer feel need human playtesting; Skylab and rocket weapons remain later work.
 
 ## Multiplayer and hosting
 
