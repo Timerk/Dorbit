@@ -52,6 +52,7 @@ PY
     fi
     checked --headless --path . --script res://tests/dedicated_server_test.gd
     checked --headless --path . --script res://tests/sector_visuals_test.gd
+    checked --headless --path . --script res://tests/combat_effects_test.gd
     checked --headless --path . --script res://tests/pilot_persistence_test.gd
     python3 tests/server_shutdown_test.py "$engine"
     checked --headless --path . --script res://tests/alien_sector_test.gd
