@@ -17,7 +17,7 @@ var start_button: Button
 var navigation: Dictionary[String, Button] = {}
 var wallet: Label
 var home: Control
-var ship_art: TextureRect
+var ship_art: ShipHangarPreview
 var ship_title: Label
 var notice: Label
 var placeholder: PanelContainer
@@ -205,7 +205,9 @@ func build_home() -> void:
 	ship_shadow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	ship_shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	home.add_child(ship_shadow)
-	ship_art = StationUi.art(home, "ship", Vector2.ZERO)
+	ship_art = ShipHangarPreview.new()
+	ship_art.hull_only = true
+	home.add_child(ship_art)
 	ship_art.hide()
 	ship_title = label(home, "SYNCING PILOT", 36, INK, true)
 	ship_title.add_theme_constant_override("outline_size", 4)
@@ -449,11 +451,7 @@ func _process(_delta: float) -> void:
 		var model: String = ShipCatalog.canonical(data["ships"][data["active_ship"]])
 		if last_model != model:
 			last_model = model
-			var render: Texture2D = load("res://assets/ui/menu/ships/%s.png" % model)
-			var cropped := AtlasTexture.new()
-			cropped.atlas = render
-			cropped.region = Rect2(render.get_image().get_used_rect())
-			ship_art.texture = cropped
+			ship_art.set_model(model)
 			ship_title.text = ShipCatalog.info(model)["name"].to_upper()
 		var stats := Equipment.stats(data)
 		stat_values["hull"].text = StationShop.credits_text(int(sector.player.hull))
