@@ -11,6 +11,34 @@ Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated ser
 
 ## Play
 
+### Flight HUD
+
+The flight HUD follows the menu's graphite panels, amber accents and Rajdhani
+typeface. Hunting Contracts and Local Radar share a small top margin; ship
+health/boost, destination and target cards align along the bottom. The header
+is removed, and credits/cargo quantities remain in the station menus. Cargo
+FULL, pending rewards, notifications, station prompts, radiation and rescue
+remain visible when relevant. Control keycaps use your current bindings.
+
+See the [approved concept](docs/hud-design/README.md) and native
+screenshots at [960×600](docs/feedback/hud-flight-960.png),
+[1440×900](docs/feedback/hud-flight-1440.png) and
+[1920×1080](docs/feedback/hud-flight-1920.png), plus
+[contextual alerts](docs/feedback/hud-alerts-960.png),
+[station actions](docs/feedback/hud-station-960.png) and
+[radiation](docs/feedback/hud-radiation-960.png).
+The sector overview shares the graphite surfaces, amber headings and waypoint
+ring, with a muted grid and the existing contact colors. Native map screenshots:
+[960×600](docs/feedback/hud-map-960.png),
+[1440×900](docs/feedback/hud-map-1440.png) and
+[1920×1080](docs/feedback/hud-map-1920.png).
+`tests/hud_playthrough.gd` checks resizing, card alignment and separation,
+caption displacement, native radar/map clicks, active-only autopilot and current
+fire bindings/blockers. Its screenshots include illustrative contract/alert
+states with simulation frozen; dedicated-server and contract tests separately
+check authority and payouts. Run with a renderer for visual captures; both
+check runners include its headless checks.
+
 ### Sector environment
 
 The environment takes composition cues from DarkOrbit's planet and nebula maps,
@@ -28,8 +56,8 @@ Blender is only required to regenerate assets, not to run, build or deploy the g
 The safe sector is a **2.4 km diameter sphere**, with free movement past its edge.
 The upper-right radar follows your ship: forward is up, left/right match your
 steering, and small arrows show contacts above or below. Green marks Outpost 01,
-cyan marks other pilots, and aliens use their type colors. A white ring identifies
-your destination. Use **− / +** to change range from 250 m to 2.4 km.
+cyan marks other pilots, and aliens use their type colors. An amber ring identifies
+your destination on the local radar. Use **− / +** to change range from 250 m to 2.4 km.
 Press **M** or click Map for a larger sector overview. Click a contact or its row
 to select a destination. Markers, names and height lines are clickable directly
 on the map and highlight under the pointer. Hold left mouse and drag to rotate
