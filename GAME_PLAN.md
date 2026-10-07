@@ -183,7 +183,7 @@ Proposed progression principles:
 
 Exact prices, ship roles, upgrade limits, rewards, and sector unlocks remain open.
 
-Preview playtesting includes an optional station-shop button to add 100,000 test
+Preview playtesting includes an optional station-shop button to add 100,000,000 test
 credits without restarting the server. The server enables it only for explicitly
 allowlisted private test pilots; it is disabled by default. Grants commit through
 the normal persistence path with duplicate-request protection and preserve owned
