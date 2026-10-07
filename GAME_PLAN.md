@@ -417,6 +417,23 @@ does not start at boot. No CPU or memory limits are needed for the current solo
 development phase; both instances share host resources. Production deployment
 remains a separate manual action. See DEPLOYMENT.md for setup and recovery.
 
+## Ship visual refinement
+
+The user requested a visual refinement of the existing twelve playable ships
+using the generated Liberator hangar image as the quality reference. Generate
+matching concept turnarounds for the roster, including fixed angles and
+undersides to support modeling, then update the editable Blender studies and
+their game exports. Keep each base ship's recognizable silhouette and colors.
+The shared finish uses fitted armor, recessed machinery, machined trim and
+restrained copper markings. The concepts are design guidance; one mesh supplies
+consistent final angles where generated views disagree. See
+[ship concepts](art/ship-review/concepts/README.md).
+
+This is presentation work on the existing roster within the current milestone.
+Ship statistics, collision size, equipment, ownership and progression retain
+their agreed behavior. Art acceptance and performance on representative
+friend-group hardware still require user review.
+
 ## Performance
 
 Reference PC supplied by the user:
