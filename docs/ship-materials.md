@@ -57,6 +57,8 @@ image/sampler entries; the [Godot import hook](../tools/import_ship_materials.gd
 shares three compressed texture resources across all of that hull's material
 surfaces and restores clearcoat for colored paints. Source maps and review
 pictures are excluded from the game pack by `art/.gdignore`.
+Individual angle PNGs are intermediate renders and are ignored by Git; the
+hangar images, six-view sheets and surface maps are retained.
 
 Every export retains one mesh, its existing material count and base triangles,
 centered bounds and forward orientation. Phoenix has a 3.5 m visual bounding
@@ -111,5 +113,5 @@ Checked with Godot's Compatibility renderer on Windows:
 These checks establish import, packaging and interaction behavior. They do not
 measure representative ten-player performance or establish final art acceptance
 for the remaining ships. Complete Windows executable export and Linux execution
-are left to PR CI. Generated concepts retain more modeled detail than these
-authored hulls.
+passed in [PR CI](https://github.com/Timerk/Dorbit/actions/runs/37663762598).
+Generated concepts retain more modeled detail than these authored hulls.
