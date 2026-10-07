@@ -72,14 +72,14 @@ func run() -> void:
 	client.shop.test_credits_button.pressed.emit()
 	await settle()
 	await replicate(server)
-	check(client.credits == 100000 and store.pilots["pilot0"]["credits"] == 100000, "Button immediately grants and replicates 100,000 saved credits")
+	check(client.credits == 100000000 and store.pilots["pilot0"]["credits"] == 100000000, "Button immediately grants and replicates 100,000,000 saved credits")
 	check(store.pilots["pilot0"]["equipment"]["revision"] == 1, "Grant commits its duplicate-protection sequence")
 	check(store.pilots["pilot0"]["equipment"]["items"] == inventory_before["items"] and store.pilots["pilot0"]["contracts"] == contracts and store.pilots["pilot0"]["verifier"] == verifier, "Grant preserves owned items, fittings, contract progress and credentials")
 	check(ship.hull == 87 and ship.shield == 23 and ship.energy == 42 and ship.shot_cooldown == 0.3, "Grant changes no health, energy or weapon cooldown")
-	check(client.session.combat.station_message == "Preview: added 100000 test credits.", "Server confirms the actual committed grant")
+	check(client.session.combat.station_message == "Preview: added 100000000 test credits.", "Server confirms the actual committed grant")
 	check(store.pilots["pilot1"]["credits"] == 0, "Grant never touches another pilot's wallet")
 	await request(client, 1, "test_credits", "")
-	check(store.pilots["pilot0"]["credits"] == 100000, "Duplicate grant cannot add credits twice")
+	check(store.pilots["pilot0"]["credits"] == 100000000, "Duplicate grant cannot add credits twice")
 	await request(client, 2, "test_credits", "pilot1")
 	check(store.pilots["pilot0"]["equipment"]["revision"] == 1, "Payload cannot select another pilot or an arbitrary amount")
 	for reason in ["distance", "speed", "damage", "life"]:
@@ -87,16 +87,16 @@ func run() -> void:
 		ship.velocity = Vector3(10, 0, 0) if reason == "speed" else Vector3.ZERO
 		ship.time_since_hit = 0 if reason == "damage" else 5
 		await request(client, 2, "test_credits", "", "", "", 99 if reason == "life" else 0)
-		check(store.pilots["pilot0"]["credits"] == 100000, "Station rejects grant for " + reason)
+		check(store.pilots["pilot0"]["credits"] == 100000000, "Station rejects grant for " + reason)
 	ship.time_since_hit = 5
 	client.shop.buys["laser"].pressed.emit()
 	await settle()
 	await replicate(server)
-	check(client.credits == 90000 and client.session.combat.inventory["items"].has("purchase-2"), "Granted credits buy real equipment with the next sequence")
+	check(client.credits == 99990000 and client.session.combat.inventory["items"].has("purchase-2"), "Granted credits buy real equipment with the next sequence")
 	client.shop.test_credits_button.pressed.emit()
 	await settle()
 	await replicate(server)
-	check(client.credits == 190000 and store.pilots["pilot0"]["equipment"]["revision"] == 3, "Pilot can deliberately grant another budget without restarting")
+	check(client.credits == 199990000 and store.pilots["pilot0"]["equipment"]["revision"] == 3, "Pilot can deliberately grant another budget without restarting")
 	client.get_viewport().size = Vector2i(960, 600)
 	client.get_viewport().render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	if DisplayServer.get_name() != "headless":
