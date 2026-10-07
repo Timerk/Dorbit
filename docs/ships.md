@@ -93,7 +93,9 @@ and [Nostromo game capture](feedback/refined-nostromo-flight.png).
 them. Run Blender in background mode with `--python tools/export_ships.py`.
 The exporter removes the studio and references, consolidates each hull into
 one mesh with material surfaces, reduces bevel subdivisions, retains evaluated
-normals and PBR colors, and normalizes the bounding diameter to 7 m. Godot's
+normals and PBR colors, and normalizes the bounding diameter to the catalog's
+`visual_diameter` (7 m by default). Phoenix uses 3.5 m so it is visibly the
+smallest ship in flight, hangar previews and shop thumbnails. Godot's
 imported nose points -Z with +Y up. The [ship material finish](ship-materials.md)
 adds portable surface maps and shared texture resources to every hull, with a
 live docked hangar preview. All shop thumbnails and material review views are
@@ -108,7 +110,9 @@ Ship visual refinement checked on 7 October 2026 with Blender 5.2.2 LTS and
 Godot 4.7.2 on Windows: all twelve saved files reopen with finite, nondegenerate
 geometry, packed concepts and six final 1600 x 1440 renders each. Review sheets
 pass the render-boundary check. All twelve GLB exports load with one centered
-7 m hull mesh, materials, finite vertices, shop previews and no studio nodes.
+hull mesh (3.5 m bounding diameter for Phoenix, 7 m for the others), materials,
+finite vertices, shop previews and no studio nodes. The packaged asset check
+also requires Phoenix to be smallest by bounding diameter and longest dimension.
 The rendered authenticated ship replay passed 211 checks with no failures or
 stderr errors. See the updated [flight](feedback/refined-ships-flight.png) and
 [shop](feedback/refined-ships-shop.png) captures.
