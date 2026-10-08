@@ -68,8 +68,8 @@ class ProvisioningTest(unittest.TestCase):
                 self.assertFalse(pilots.valid_equipment(candidate))
 
     def test_rotation_and_migration(self):
-        for version in (1, 2, 3, 4):
-            with self.subTest(version=version), tempfile.TemporaryDirectory() as directory:
+        for version, layout in ((1, "legacy"), (2, "legacy"), (3, "legacy"), (4, "ammo"), (4, "boosts"), (4, "both"), (5, "both")):
+            with self.subTest(version=version, layout=layout), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 record = {"verifier": "a" * 64, "credits": 2345,
                           "contract": {"id": "test", "progress": 2}}
@@ -80,8 +80,9 @@ class ProvisioningTest(unittest.TestCase):
                         record["equipment"]["items"][model] = {"model": model, "ship": "", "slot": ""}
                 if version >= 3:
                     record["cargo"] = {"starter": {"seprom": 2}}
-                if version == 4:
+                if layout in ("ammo", "both"):
                     record["ammo"] = {"x1": 4321, "x2": 45, "x3": 123, "x4": 7}
+                if layout in ("boosts", "both"):
                     record["boosts"] = {"starter": {"lasers": {"resource": "seprom", "remaining": 7},
                                                       "shields": {"resource": "duranium", "remaining": 600.25}}}
                 path = root / "pilots.json"
@@ -90,7 +91,7 @@ class ProvisioningTest(unittest.TestCase):
                                          str(root / "credential.json"), "--rotate"], capture_output=True)
                 self.assertEqual(result.returncode, 0, result.stderr.decode())
                 saved = json.loads(path.read_text())
-                self.assertEqual(saved["version"], 4)
+                self.assertEqual(saved["version"], 5)
                 expected = record | {"equipment": record.get("equipment", pilots.starter_equipment()),
                                      "cargo": record.get("cargo", {"starter": {}}),
                                      "ammo": record.get("ammo", pilots.starter_ammo()),

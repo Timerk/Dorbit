@@ -268,7 +268,7 @@ x4 is reserved for future quests and special rewards
 and cannot be bought. Station purchase restrictions and duplicate protection apply.
 
 Save schema **4** adds ammo and gives existing pilots the starter inventory once.
-Back up the ledger before updating; older servers cannot read schema 4. Consumption
+Back up the ledger before updating; older servers cannot read schema 5. Consumption
 is committed before each volley, and a failed save stops progression. Client and
 server need matching builds. Run `res://tests/ammo_test.gd` headlessly or with a
 renderer to check purchases, multipliers, inventory recovery and HUD interactions;
@@ -362,7 +362,7 @@ The regular Liberator has 116,000 hull. New pilots start with LF-1, SG3N-A01 and
 
 LF-3 adds 175 base damage and 15% more for that laser against aliens (201.25 total) per installed copy. Its bonus never multiplies other lasers. FS-01 adds 3,200 shield, 70% absorption and +6.25% regeneration; its regeneration bonuses add together and multiply normal shield recovery after the existing six-second delay. Shield capacity adds, while absorption is weighted by each generator's capacity. Current fitting and installation previews show these special bonuses. Fitting changes do not repair or refill your ship. Inventory and fittings survive rescue, reconnects and restart. Equipment purchases require the persistent dedicated server; the offline development fixture uses the same starter combat and flight values. Reference prices need human progression playtesting with the existing rewards.
 
-Client and server must use matching builds. Network schema 9 includes equipment purchase quantities and resource boost synchronization, retaining hull model, maximum hull, alien damage, shield regeneration bonuses, radiation exposure, docked state and explicit launch RPCs; the compatibility handshake rejects older builds before gameplay. Save schema 4 preserves equipment, cargo and resource boosts. Update the operator provisioning tool with the server so credential rotation recognizes every new model.
+Client and server must use matching builds. Network schema 10 includes equipment purchase quantities and resource boost synchronization, retaining hull model, maximum hull, alien damage, shield regeneration bonuses, radiation exposure, docked state and explicit launch RPCs; the compatibility handshake rejects older builds before gameplay. Save schema 5 preserves equipment, cargo and resource boosts. Update the operator provisioning tool with the server so credential rotation recognizes every new model.
 
 The reference catalog test (`res://tests/darkorbit_equipment_test.gd`) runs in both check helpers. It exercises every purchasable model through authenticated purchase, duplicate protection, installation, stat replication and removal. It rejects LF-4, SG3N-B00 and legacy-engine purchases, then checks mixed shields, cumulative fusion regeneration, fractional LF-3 alien damage through real physics shots, UI bonus displays, bonus restoration when switching hulls and restart persistence. A rendered run produces the review captures above under `build/validation`. On 6 October 2026 it passed 131 assertions both headlessly and on Windows OpenGL; the rendered shop test passed 53. The full Windows check script passed, including ten authenticated clients and the flight replay. The compatibility and flight replays emitted their existing ObjectDB cleanup warnings on exit; the new rendered runs were clean. Six Python operator-tool tests passed, including credential rotation preserving all new models. Linux execution and exported client checks are left to PR CI; WSL is unavailable on this machine. Item artwork remains the existing category placeholders, and reference prices need human economy playtesting.
 
@@ -538,8 +538,8 @@ successful station changes; an abrupt crash can restore up to five seconds.
 Weapon rounds commit before damage. Server writes validate ingredients,
 compatibility, quantities, station restrictions and duplicate protection.
 
-This requires matching network-schema-9 builds. Ledger schemas 1–3 migrate to
-schema 4, preserving progression and adding empty reserves; keep a backup for
+This requires matching network-schema-10 builds. Ledger schemas 1–4 migrate to
+schema 5, preserving progression and adding empty reserves; keep a backup for
 rollback. The provisioning tool preserves and validates boosts during rotation.
 `res://tests/resource_upgrades_test.gd` exercises authenticated refining and
 upgrades, partial volleys with mixed lasers, online timing, restart, duplicate
@@ -686,3 +686,8 @@ is required. New preview branches must include this export support.
 - `scripts/game_settings.gd`: saved control/display preferences and input bindings.
 
 Combat emits visual signals; visual effects do not award rewards or apply damage. Shared play sends movement and fire intent to the host at 20 Hz and receives authoritative snapshots at 20 Hz, with local flight prediction and smoothing of other players and aliens. Only the host simulates combat; repair requests identify the requesting peer, never a client-supplied price or damage amount.
+
+Save schema 5 combines ammunition inventory and per-ship resource boost reserves.
+Schema 4 ammunition saves retain their rounds and receive empty boosts; schema 4
+boost saves retain their reserves and receive the one-time starter ammunition.
+Each fired volley commits both debits together before applying damage.

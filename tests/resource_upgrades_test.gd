@@ -177,13 +177,19 @@ func run() -> void:
 	alien.reset_health()
 	await physics_frame
 	var expected_base := 65.0 * 3 + 201.25
+	var grant := ship.ammo.duplicate()
+	grant["x2"] = 20
+	check(store.commit({}, {}, {}, {"pilot0": grant}), "Seed ammunition for combined boost volleys")
+	ship.ammo = grant
+	ship.ammo_type = "x2"
 	for volley in range(3):
 		ship.shot_cooldown = 0
 		var health := alien.hull + alien.shield
 		check(ship.try_fire(alien), "Authoritative boosted volley %d fires" % volley)
 		var expected := expected_base * 1.6 if volley < 2 else expected_base + (65.0 + 201.25) * 0.6
-		check(is_equal_approx(health - alien.hull - alien.shield, expected), "Volley %d boosts only lasers with remaining rounds, including LF-3's own NPC damage" % volley)
+		check(is_equal_approx(health - alien.hull - alien.shield, expected * 2), "Volley %d combines x2 ammunition with partial boost reserves and LF-3 NPC damage" % volley)
 		check(ResourceBoosts.remaining(ship.resource_boosts, "lasers") == maxi(0, 10 - (volley + 1) * 4), "Four installed lasers consume four rounds per volley")
+		check(ship.ammo["x2"] == 20 - (volley + 1) * 4 and store.pilots["pilot0"]["ammo"]["x2"] == ship.ammo["x2"], "Ammunition and boost debit persist together")
 	check(not store.pilots["pilot0"]["boosts"]["starter"].has("lasers"), "Depleted laser reserve is persisted before damage")
 	await replicate(server)
 	check(menu.boost_icons["lasers"].texture == null and menu.reserve_labels["lasers"].text == "0 rounds", "Depleting laser rounds clears the corner badge")
@@ -192,6 +198,15 @@ func run() -> void:
 	ship.velocity = Vector3.ZERO
 	ship.time_since_hit = 6
 	await request(client, 12, "boost", "seprom:2", "lasers")
+	var insufficient := ship.ammo.duplicate()
+	insufficient["x2"] = 3
+	check(store.commit({}, {}, {}, {"pilot0": insufficient}), "Seed incomplete ammunition volley")
+	ship.ammo = insufficient
+	ship.position = Vector3(0, 100, 0)
+	var blocked_health := alien.hull + alien.shield
+	ship.shot_cooldown = 0
+	check(not ship.try_fire(alien) and ship.ammo["x2"] == 3 and ResourceBoosts.remaining(ship.resource_boosts, "lasers") == 20 and alien.hull + alien.shield == blocked_health, "Insufficient ammunition preserves boost rounds and damage")
+	ship.ammo_type = "x1"
 	ship.position = Vector3(0, 100, 1000)
 	ship.shot_cooldown = 0
 	check(not ship.try_fire(alien) and ResourceBoosts.remaining(ship.resource_boosts, "lasers") == 20, "Blocked shots consume no rounds")
@@ -232,7 +247,7 @@ func run() -> void:
 	var expired: Dictionary = store.pilots["pilot0"]["boosts"].duplicate(true)
 	for key: String in ["shields", "engines"]:
 		expired["starter"][key]["remaining"] = 0.001
-	check(store.commit({}, {}, {}, {"pilot0": expired}), "Save timed-expiry fixture")
+	check(store.commit({}, {}, {}, {}, {"pilot0": expired}), "Save timed-expiry fixture")
 	server.session.combat.apply_equipment(id)
 	server.session.combat.tick(0.01)
 	await replicate(server)
