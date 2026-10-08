@@ -486,6 +486,9 @@ func repair(id: int, life: int) -> bool:
 	if not records.has(id) or records[id]["life"] != life:
 		return false
 	var ship := session.ships[id]
+	if ship.get_meta("docked", false):
+		message(id, "Launch before requesting repairs.")
+		return false
 	var blocker := session.sector.repair_blocker(ship)
 	if not blocker.is_empty():
 		message(id, blocker)
