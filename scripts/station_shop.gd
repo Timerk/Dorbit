@@ -384,7 +384,7 @@ func select_model(model: String) -> void:
 	product_title.text = catalog()[model]["name"] if available else "No selection"
 	var is_ship := ShipCatalog.MODELS.has(model)
 	if Ammunition.TYPES.has(model):
-		description = "One shot powers a volley from all installed lasers. Shared by your owned ships."
+		description = "Each installed laser consumes one round per volley. Shared by your owned ships."
 		bonus.text = "%dx laser damage\n%s" % [Ammunition.TYPES[model]["multiplier"], "Special reward ammunition" if model == "x4" else "100 shots per batch"]
 		slot_hint = "Select with keys 1-4 or the flight ammo bar."
 	elif is_ship:
@@ -413,7 +413,7 @@ func purchase(model: String) -> void:
 
 
 func set_purchase_quantity(amount: int) -> void:
-	purchase_quantity = clampi(amount, 1, Equipment.MAX_PURCHASE_QUANTITY)
+	purchase_quantity = clampi(amount, 1, purchase_quantity_limit(selected_model))
 	purchase_input.text = str(purchase_quantity)
 	refresh()
 
@@ -431,6 +431,10 @@ func edit_purchase_quantity(value: String) -> void:
 
 func purchase_total(model: String) -> int:
 	return int(catalog()[model]["price"]) * (1 if ShipCatalog.MODELS.has(model) else purchase_quantity)
+
+
+func purchase_quantity_limit(model: String) -> int:
+	return Ammunition.MAX_PURCHASE_BATCHES if Ammunition.TYPES.has(model) else Equipment.MAX_PURCHASE_QUANTITY
 
 
 func supply_blocker(model: String) -> String:
@@ -455,7 +459,7 @@ func purchase_blocker(model: String) -> String:
 	if ShipCatalog.MODELS.has(model) and not ShipCatalog.owned_id(sector.session.combat.inventory, model).is_empty():
 		return "Already owned. Activate in Ship equipment."
 	if not ShipCatalog.MODELS.has(model) and purchase_quantity < 1:
-		return "Enter a whole quantity from 1 to %d." % Equipment.MAX_PURCHASE_QUANTITY
+		return "Enter a whole quantity from 1 to %d." % purchase_quantity_limit(model)
 	if Ammunition.TYPES.has(model) and purchase_quantity * Ammunition.BATCH_SIZE > Ammunition.MAX_SHOTS - int(sector.player.ammo[model]):
 		return "Ammunition limit reached."
 	var shortfall := purchase_total(model) - sector.credits
@@ -503,11 +507,11 @@ func refresh() -> void:
 	var inventory := StationUi.inventory(sector)
 	purchase_controls.visible = Equipment.MODELS.has(selected_model) or (Ammunition.TYPES.has(selected_model) and selected_model != "x4")
 	purchase_quantity_label.text = "Batches" if Ammunition.TYPES.has(selected_model) else "Quantity"
-	purchase_input.tooltip_text = "Batches of 100 shots (1-999)" if Ammunition.TYPES.has(selected_model) else "Quantity to buy (1-999)"
+	purchase_input.tooltip_text = "Batches of 100 rounds (1-10,000); up to 1,000,000 rounds per order" if Ammunition.TYPES.has(selected_model) else "Quantity to buy (1-999)"
 	var can_edit := purchase_controls.visible and supply_blocker(selected_model).is_empty() and not combat.station_pending
 	purchase_input.editable = can_edit
 	purchase_decrease.disabled = not can_edit or purchase_quantity <= 1
-	purchase_increase.disabled = not can_edit or purchase_quantity >= Equipment.MAX_PURCHASE_QUANTITY
+	purchase_increase.disabled = not can_edit or purchase_quantity >= purchase_quantity_limit(selected_model)
 	if not selected_model.is_empty():
 		var for_sale := supply_blocker(selected_model).is_empty()
 		var caption := "Total: %s CR" if purchase_controls.visible and purchase_quantity > 1 else "%s CR"
