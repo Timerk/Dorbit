@@ -14,7 +14,7 @@ from pathlib import Path
 
 import bpy
 import numpy as np
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -353,7 +353,8 @@ def studio(name: str, root: bpy.types.Object, draft: bool) -> dict[str, bpy.type
     return cameras
 
 
-def export_model(name: str) -> dict[str, int]:
+def export_model(name: str, directory: Path | None = None,
+                 visual_diameter: float | None = None) -> dict:
     """Reduced bevels; one textured mesh, no lights, cameras or references."""
     for obj in geo.PARTS:
         for modifier in obj.modifiers:
@@ -391,6 +392,14 @@ def export_model(name: str) -> dict[str, int]:
                            for i in triangle.loops)
             uvs.extend(tuple(data.uv_layers.active.data[i].uv) for i in triangle.loops)
         evaluated.to_mesh_clear()
+    if visual_diameter is not None:
+        low=Vector(tuple(min(v[i] for v in vertices) for i in range(3)))
+        high=Vector(tuple(max(v[i] for v in vertices) for i in range(3)))
+        center=(low+high)/2
+        scale=visual_diameter/(high-low).length
+        rotation=Matrix.Rotation(math.pi,3,'Z')
+        vertices=[rotation @ ((v-center)*scale) for v in vertices]
+        normals=[rotation @ n for n in normals]
     mesh = bpy.data.meshes.new(name+' export')
     mesh.from_pydata(vertices,[],faces)
     mesh.update()
@@ -409,14 +418,20 @@ def export_model(name: str) -> dict[str, int]:
     bpy.context.scene.collection.objects.link(hull)
     hull.select_set(True)
     bpy.context.view_layer.objects.active = hull
-    path = HERE/'exports'/(name.lower()+'.glb')
+    path = (directory or HERE/'exports')/(name.lower()+'.glb')
     bpy.ops.export_scene.gltf(filepath=str(path),export_format='GLB',use_selection=True,
                               export_yup=True,export_cameras=False,export_lights=False,
                               export_animations=False)
     surfaces.deduplicate_textures(path)
     mesh.calc_loop_triangles()
-    return {'triangles':len(mesh.loop_triangles),'materials':len(materials),
+    result={'triangles':len(mesh.loop_triangles),'materials':len(materials),
             'bytes':path.stat().st_size,'omitted_degenerate_triangles':omitted_triangles}
+    if visual_diameter is not None:
+        bounds=Vector(tuple(max(v[i] for v in vertices)-min(v[i] for v in vertices) for i in range(3)))
+        result.update({'visual_diameter':visual_diameter,
+                       'bounds_godot':[round(bounds.x,6),round(bounds.z,6),round(bounds.y,6)],
+                       'forward':'-Z','up':'+Y','atlas_size':surfaces.SIZE})
+    return result
 
 
 def build(name: str, draft: bool) -> None:

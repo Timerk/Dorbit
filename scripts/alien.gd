@@ -2,6 +2,12 @@ class_name Alien
 extends SpaceShip
 
 const RETURN_TIMEOUT: float = 30.0
+# Preserve the previous modeled size tiers independently of gameplay colliders.
+const VISUAL_DIAMETERS := {
+	"Scout": 7.547966,
+	"Sentinel": 9.702295,
+	"Heavy": 13.515700,
+}
 const TYPES := {
 	"Scout": {"hull": 1000.0, "shield": 500.0, "damage": 1500.0, "interval": 0.85, "range": 120.0, "speed": 29.0, "detection": 155.0, "leash": 170.0, "reward": 300, "respawn": 10.0, "scale": Vector3(0.7, 0.7, 0.85), "color": Color("ffc875")},
 	"Sentinel": {"hull": 4000.0, "shield": 2000.0, "damage": 5000.0, "interval": 0.75, "range": 155.0, "speed": 18.0, "detection": 180.0, "leash": 230.0, "reward": 1500, "respawn": 12.0, "scale": Vector3.ONE, "color": Color("ff8176")},
@@ -25,6 +31,11 @@ func tuning() -> Dictionary:
 	return TYPES[kind]
 
 
+static func model_scene(alien_kind: String) -> Node3D:
+	var scene: PackedScene = load("res://assets/aliens/%s.glb" % alien_kind.to_lower())
+	return scene.instantiate()
+
+
 func _ready() -> void:
 	var stats := tuning()
 	max_hull = stats["hull"]
@@ -35,11 +46,11 @@ func _ready() -> void:
 	laser_range = stats["range"]
 	super._ready()
 	if render_enabled:
-		model.scale = stats["scale"]
-		var stripe := SectorVisuals.material(stats["color"], true)
-		SectorVisuals.box(model, Vector3(0, 1, 0), Vector3(1.5, 0.15, 2.5), stripe)
-		if kind == "Heavy":
-			SectorVisuals.box(model, Vector3(0, -0.6, 0), Vector3(4.5, 0.8, 3.5), SectorVisuals.material(Color("58446f")))
+		remove_child(model)
+		model.queue_free()
+		model = model_scene(kind)
+		add_child(model)
+		SectorVisuals.configure_texture_filtering(model, SectorVisuals.texture_filtering_enabled(self))
 
 
 func available() -> bool:

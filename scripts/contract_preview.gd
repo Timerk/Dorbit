@@ -1,6 +1,6 @@
 class_name ContractPreview
 extends SubViewportContainer
-## Isolated preview of the actual encounter model and its type-specific fittings.
+## Isolated preview sharing the textured encounter model.
 
 var viewport: SubViewport
 var model: Node3D
@@ -47,10 +47,6 @@ func show_kind(kind: String) -> void:
 	if is_instance_valid(model):
 		viewport.remove_child(model)
 		model.queue_free()
-	model = SectorVisuals.ship_model(true)
-	var tuning: Dictionary = Alien.TYPES[kind]
-	model.scale = tuning["scale"]
-	SectorVisuals.box(model, Vector3(0, 1, 0), Vector3(1.5, 0.15, 2.5), SectorVisuals.material(tuning["color"], true))
-	if kind == "Heavy":
-		SectorVisuals.box(model, Vector3(0, -0.6, 0), Vector3(4.5, 0.8, 3.5), SectorVisuals.material(Color("58446f")))
+	model = Alien.model_scene(kind)
+	SectorVisuals.configure_texture_filtering(model, SectorVisuals.texture_filtering_enabled(self))
 	viewport.add_child(model)

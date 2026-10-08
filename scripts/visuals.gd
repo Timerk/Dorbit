@@ -351,16 +351,12 @@ static func explosion(parent: Node3D, location: Vector3, diameter: float = 9.7) 
 
 
 static func destruction_size(ship: SpaceShip) -> float:
-	# Player exports use the catalog diameter. Procedural alien bounds
-	# include their type scale and the Heavy's lower armor, without loading server meshes.
+	# Exported visual diameters are also available without loading server meshes.
 	if ship is Pilot:
 		return float(ShipCatalog.info(ship.ship_model).get("visual_diameter", 7.0))
-	var bounds := Vector3(6.6253, 1.895, 6.83)
 	if ship is Alien:
-		if ship.kind == "Heavy":
-			bounds.y = 2.075
-		bounds *= ship.tuning()["scale"]
-	return bounds.length()
+		return float(Alien.VISUAL_DIAMETERS[ship.kind])
+	return Vector3(6.6253, 1.895, 6.83).length()
 
 
 static func explosion_active(parent: Node3D, location: Vector3) -> bool:
