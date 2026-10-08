@@ -94,6 +94,12 @@ func _ready() -> void:
 	for button in [range_less, range_more, map_button]:
 		button.focus_mode = Control.FOCUS_NONE
 		button.add_theme_font_size_override("font_size", 16)
+	for button in [range_less, range_more]:
+		button.custom_minimum_size = Vector2(26, 26)
+		for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+			var style := button.get_theme_stylebox(state).duplicate() as StyleBoxFlat
+			style.set_content_margin_all(2)
+			button.add_theme_stylebox_override(state, style)
 	build_overview()
 
 
@@ -267,10 +273,10 @@ func _process(_delta: float) -> void:
 			update_contacts()
 			plot.queue_redraw()
 	var origin := radar_rect().position
-	range_less.position = origin + Vector2(202, 5)
-	range_more.position = origin + Vector2(242, 5)
+	range_less.position = origin + Vector2(216, 8)
+	range_more.position = origin + Vector2(248, 8)
 	for button in [range_less, range_more]:
-		button.size = Vector2(32, 30)
+		button.size = Vector2(26, 26)
 	map_button.position = origin + Vector2(164, 131)
 	map_button.size = Vector2(110, 34)
 	autopilot_status.position = origin + Vector2(14, 190)
@@ -311,7 +317,7 @@ func _draw() -> void:
 		return
 	var origin := radar_rect().position
 	card(radar_rect(), "LOCAL RADAR / %s m" % FlightHud.number(RANGES[range_index]))
-	var center := origin + Vector2(84, 100)
+	var center := origin + Vector2(84, 108)
 	draw_circle(center, 62, Color("111a20"))
 	for radius in [31, 62]:
 		draw_arc(center, radius, 0, TAU, 64, Color(FlightHud.MUTED, 0.4), 1, true)
