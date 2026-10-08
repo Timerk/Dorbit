@@ -449,7 +449,7 @@ second; all debit/refill effects commit together before applying or replicating.
 Fitting never repairs or refills hull, shield or boost energy.
 
 Items and per-item automation settings survive death, reconnect and server restart
-in save schema 5 without a starter grant or migration. Older binaries cannot read
+in the current save schema 6 without an extras starter grant or migration. Older binaries cannot read
 new extra model IDs: back up before introducing these items. Network schema 11
 requires matching clients and servers. Original generated images and their exact
 prompts are under `assets/ui/extras`; prices, repair gates and automation behavior
