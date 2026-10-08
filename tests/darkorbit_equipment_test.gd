@@ -36,7 +36,7 @@ func run() -> void:
 	var sequence := 0
 	var wallet := client.credits
 	var owned: Dictionary[String, String] = {}
-	check(Equipment.catalog_models() == EXPECTED.keys() and not client.shop.cards.has("engine"), "Catalog contains the 18 requested models and hides the legacy engine")
+	check(Equipment.catalog_models() == EXPECTED.keys() + ["hst-1", "hst-2"] and not client.shop.cards.has("engine"), "Catalog retains the 18 reference models and adds both launchers; legacy engine stays hidden")
 	for model: String in EXPECTED:
 		var reference: Array = EXPECTED[model]
 		var info: Dictionary = Equipment.MODELS[model]

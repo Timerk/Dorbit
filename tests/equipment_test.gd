@@ -214,7 +214,7 @@ func run() -> void:
 	var server := make_sector("EquipmentServer", true, 24731)
 	var store := server.session.store
 	check(store.pilots["pilot0"]["equipment"]["items"].size() == 3, "Legacy pilots receive starter items")
-	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 6, "Migration commits before server admits pilots")
+	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 7, "Migration commits before server admits pilots")
 	check(not JSON.parse_string(FileAccess.get_file_as_string(store.path + ".bak"))["pilots"]["pilot0"].has("equipment"), "Migration backs up the original ledger")
 	check(store.commit({"pilot0": 40600}), "Seed test wallet through the normal commit path")
 	var client := make_sector("EquipmentClient")
@@ -255,7 +255,7 @@ func run() -> void:
 	await screenshot(client, "equipment-starter")
 	await press(client, KEY_I)
 	check(client.equipment_menu.visible and not client.shop.visible and client.paused and not client.settings_menu.pause_panel.visible, "I opens separate equipment screen and hides shop and pause controls")
-	check(client.equipment_menu.slots.size() == 12 and client.equipment_menu.stored.is_empty(), "Active ship shows its twelve real slots and storage excludes installed items")
+	check(client.equipment_menu.slots.size() == 13 and client.equipment_menu.stored.is_empty(), "Active ship shows its thirteen slots including the launcher; storage excludes installed items")
 	check(client.equipment_menu.get_global_rect().position.y >= 0 and client.equipment_menu.get_global_rect().end.y <= 600, "Equipment panel fits the minimum window height")
 	await screenshot(client, "equipment-layout-starter")
 	var slot_scroll := client.equipment_menu.slots["extra2"].get_parent().get_parent().get_parent() as ScrollContainer

@@ -52,6 +52,13 @@ var purchase_quantity: int = 1
 var purchase_quantity_label: Label
 
 
+static func ammo_description(kind: String) -> String:
+	if Ammunition.ROCKETS.has(kind):
+		var info: Dictionary = Ammunition.ROCKETS[kind]
+		return "%s damage / rocket (%s)\n%d m range / %d%% accuracy" % [credits_text(int(info["damage"])), "average" if info["launcher"] else "maximum", info["range"], roundi(info["accuracy"] * 100)]
+	return "%dx laser damage" % Ammunition.TYPES[kind]["multiplier"]
+
+
 func catalog() -> Dictionary:
 	if not products.is_empty():
 		return products
@@ -60,8 +67,8 @@ func catalog() -> Dictionary:
 	for id: String in ShipCatalog.MODELS:
 		products[id] = ShipCatalog.info(id).duplicate()
 		products[id]["price"] = ShipCatalog.price(id)
-	for kind: String in Ammunition.TYPES:
-		products[kind] = Ammunition.TYPES[kind]
+	for kind: String in Ammunition.types():
+		products[kind] = Ammunition.types()[kind]
 	return products
 
 
@@ -226,11 +233,11 @@ func build_catalog(parent: Node) -> void:
 		card.custom_minimum_size = Vector2(230, 190)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		card.toggle_mode = true
-		var is_ammo := Ammunition.TYPES.has(model)
+		var is_ammo := Ammunition.types().has(model)
 		var offer := "%s CR" % credits_text(info["price"]) if supply_blocker(model).is_empty() else "Unavailable"
 		if is_ammo and model != "x4":
 			offer += " / 100 shots"
-		card.tooltip_text = "%s / %s\n%s" % [info["name"], offer, "%dx laser damage" % info["multiplier"] if is_ammo else (StationUi.bonus(model) if Equipment.MODELS.has(model) else "%s hull" % credits_text(int(info["hull"])))]
+		card.tooltip_text = "%s / %s\n%s" % [info["name"], offer, ammo_description(model) if is_ammo else (StationUi.bonus(model) if Equipment.MODELS.has(model) else "%s hull" % credits_text(int(info["hull"])))]
 		var content := padded_rows(card, 8)
 		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var title := text(content, info["name"], 20)
@@ -355,7 +362,7 @@ func models_in_category(id: String) -> Array[String]:
 		if id == "all" or id == Equipment.category(model) or (id == "generators" and Equipment.MODELS[model]["kind"] == "generator"):
 			result.append(model)
 	if id == "ammo":
-		for kind: String in Ammunition.TYPES:
+		for kind: String in Ammunition.types():
 			result.append(kind)
 	return result
 
@@ -383,9 +390,13 @@ func select_model(model: String) -> void:
 	product_art.texture = StationUi.texture(model if available else "ship")
 	product_title.text = catalog()[model]["name"] if available else "No selection"
 	var is_ship := ShipCatalog.MODELS.has(model)
-	if Ammunition.TYPES.has(model):
+	if Ammunition.ROCKETS.has(model):
+		description = "Dedicated Hellstorm ammunition. Reserve rounds by loading the equipped launcher." if Ammunition.ROCKETS[model]["launcher"] else "One homing rocket per shot. Independent of lasers; shared by owned ships."
+		bonus.text = ammo_description(model)
+		slot_hint = "Select in the flight ammo bar. 100 rockets per batch."
+	elif Ammunition.types().has(model):
 		description = "Each installed laser consumes one round per volley. Shared by your owned ships."
-		bonus.text = "%dx laser damage\n%s" % [Ammunition.TYPES[model]["multiplier"], "Special reward ammunition" if model == "x4" else "100 shots per batch"]
+		bonus.text = "%dx laser damage\n%s" % [Ammunition.types()[model]["multiplier"], "Special reward ammunition" if model == "x4" else "100 shots per batch"]
 		slot_hint = "Select with keys 1-4 or the flight ammo bar."
 	elif is_ship:
 		description = "An owned hull with its own fitting and cargo. Purchases do not switch your active ship."
@@ -393,9 +404,9 @@ func select_model(model: String) -> void:
 		bonus.text = "%s hull\n%d m/s base cruise\n%d cargo units" % [credits_text(int(entry["hull"])), entry["speed"] * ShipCatalog.SPEED_SCALE, entry["cargo"]]
 		slot_hint = "%d laser / %d shared generator / %d extra slots" % [entry["lasers"], entry["generators"], entry["extras"]]
 	elif available:
-		description = DESCRIPTIONS[Equipment.category(model)]
+		description = "A Hellstorm launcher for dedicated ammunition. Loads one rocket per second and fires all loaded rounds together." if Equipment.MODELS[model]["kind"] == "launcher" else DESCRIPTIONS[Equipment.category(model)]
 		bonus.text = StationUi.bonus(model)
-		slot_hint = "Laser slot. Bonuses stack per installed item." if Equipment.MODELS[model]["kind"] == "laser" else "Generator slot. Shields and engines share these slots."
+		slot_hint = "Laser slot. Bonuses stack per installed item." if Equipment.MODELS[model]["kind"] == "laser" else ("Launcher slot. HST ammunition only." if Equipment.MODELS[model]["kind"] == "launcher" else "Generator slot. Shields and engines share these slots.")
 	else:
 		description = ""
 		bonus.text = ""
@@ -407,7 +418,7 @@ func purchase(model: String) -> void:
 	if not purchase_blocker(model).is_empty():
 		return
 	var is_ship := ShipCatalog.MODELS.has(model)
-	var action := "buy_ammo" if Ammunition.TYPES.has(model) else ("buy_ship" if is_ship else "buy")
+	var action := "buy_ammo" if Ammunition.types().has(model) else ("buy_ship" if is_ship else "buy")
 	sector.session.combat.request_station(action, model if is_ship else "%s:%d" % [model, purchase_quantity])
 	refresh()
 
@@ -434,11 +445,11 @@ func purchase_total(model: String) -> int:
 
 
 func purchase_quantity_limit(model: String) -> int:
-	return Ammunition.MAX_PURCHASE_BATCHES if Ammunition.TYPES.has(model) else Equipment.MAX_PURCHASE_QUANTITY
+	return Ammunition.MAX_PURCHASE_BATCHES if Ammunition.types().has(model) else Equipment.MAX_PURCHASE_QUANTITY
 
 
 func supply_blocker(model: String) -> String:
-	return Ammunition.purchase_blocker(model) if Ammunition.TYPES.has(model) else ("" if ShipCatalog.MODELS.has(model) else Equipment.purchase_blocker(model))
+	return Ammunition.purchase_blocker(model) if Ammunition.types().has(model) else ("" if ShipCatalog.MODELS.has(model) else Equipment.purchase_blocker(model))
 
 
 func purchase_blocker(model: String) -> String:
@@ -460,7 +471,7 @@ func purchase_blocker(model: String) -> String:
 		return "Already owned. Activate in Ship equipment."
 	if not ShipCatalog.MODELS.has(model) and purchase_quantity < 1:
 		return "Enter a whole quantity from 1 to %d." % purchase_quantity_limit(model)
-	if Ammunition.TYPES.has(model) and purchase_quantity * Ammunition.BATCH_SIZE > Ammunition.MAX_SHOTS - int(sector.player.ammo[model]):
+	if Ammunition.types().has(model) and purchase_quantity * Ammunition.BATCH_SIZE > Ammunition.MAX_SHOTS - int(sector.player.ammo[model]):
 		return "Ammunition limit reached."
 	var shortfall := purchase_total(model) - sector.credits
 	return "Need %s more CR" % credits_text(shortfall) if shortfall > 0 else ""
@@ -505,9 +516,9 @@ func refresh() -> void:
 	var combat := sector.session.combat
 	var blocked := StationUi.blocker(sector)
 	var inventory := StationUi.inventory(sector)
-	purchase_controls.visible = Equipment.MODELS.has(selected_model) or (Ammunition.TYPES.has(selected_model) and selected_model != "x4")
-	purchase_quantity_label.text = "Batches" if Ammunition.TYPES.has(selected_model) else "Quantity"
-	purchase_input.tooltip_text = "Batches of 100 rounds (1-10,000); up to 1,000,000 rounds per order" if Ammunition.TYPES.has(selected_model) else "Quantity to buy (1-999)"
+	purchase_controls.visible = Equipment.MODELS.has(selected_model) or (Ammunition.types().has(selected_model) and selected_model != "x4")
+	purchase_quantity_label.text = "Batches" if Ammunition.types().has(selected_model) else "Quantity"
+	purchase_input.tooltip_text = "Batches of 100 rounds (1-10,000); up to 1,000,000 rounds per order" if Ammunition.types().has(selected_model) else "Quantity to buy (1-999)"
 	var can_edit := purchase_controls.visible and supply_blocker(selected_model).is_empty() and not combat.station_pending
 	purchase_input.editable = can_edit
 	purchase_decrease.disabled = not can_edit or purchase_quantity <= 1
@@ -516,7 +527,7 @@ func refresh() -> void:
 		var for_sale := supply_blocker(selected_model).is_empty()
 		var caption := "Total: %s CR" if purchase_controls.visible and purchase_quantity > 1 else "%s CR"
 		price.text = caption % credits_text(purchase_total(selected_model)) if for_sale else "Not for sale"
-		price.tooltip_text = ("%s CR per 100 shots" if Ammunition.TYPES.has(selected_model) else "%s CR per item") % credits_text(int(catalog()[selected_model]["price"])) if for_sale else ""
+		price.tooltip_text = ("%s CR per 100 shots" if Ammunition.types().has(selected_model) else "%s CR per item") % credits_text(int(catalog()[selected_model]["price"])) if for_sale else ""
 	else:
 		price.text = ""
 		price.tooltip_text = ""
@@ -547,7 +558,7 @@ func refresh() -> void:
 	for model: String in buys:
 		var reason := purchase_blocker(model)
 		buys[model].visible = model == selected_model
-		buys[model].text = "BUY %s SHOTS" % credits_text(purchase_quantity * Ammunition.BATCH_SIZE) if Ammunition.TYPES.has(model) and model != "x4" else "BUY"
+		buys[model].text = "BUY %s SHOTS" % credits_text(purchase_quantity * Ammunition.BATCH_SIZE) if Ammunition.types().has(model) and model != "x4" else "BUY"
 		buys[model].disabled = not reason.is_empty()
 		buys[model].tooltip_text = reason if not reason.is_empty() else "Buy %d × %s" % [1 if ShipCatalog.MODELS.has(model) else purchase_quantity, catalog()[model]["name"]]
 	if selected_model.is_empty():
@@ -556,7 +567,7 @@ func refresh() -> void:
 		delivery = "Not available"
 		availability.text = "Select a product to preview it."
 		availability.add_theme_color_override("font_color", FlightHud.MUTED)
-	elif Ammunition.TYPES.has(selected_model):
+	elif Ammunition.types().has(selected_model):
 		var for_sale := supply_blocker(selected_model).is_empty()
 		ownership.text = "%s shots held / shared across ships" % credits_text(int(sector.player.ammo[selected_model]))
 		delivery = "%s shots to ammunition inventory" % credits_text(purchase_quantity * Ammunition.BATCH_SIZE) if for_sale else "Future quests and special rewards"
