@@ -20,6 +20,27 @@ is removed, and credits/cargo quantities remain in the station menus. Cargo
 FULL, pending rewards, notifications, station prompts, radiation and rescue
 remain visible when relevant. Control keycaps use your current bindings.
 
+Press **Ctrl + Alt** together during flight to customize the HUD. Drag a panel
+or its title bar to move it, drag the lower-right corner to resize it, and use
+its **×** to hide it. The editor's icon sidebar reopens or selects any instrument.
+Hide the sidebar to edit the whole screen; a Show sidebar button brings it back.
+The grid makes editing clear and supports optional snapping. Panels preserve
+their proportions and stop shrinking at 80% of their default size. **Escape**,
+**Done**, or Ctrl + Alt finishes and saves positions, sizes and hidden panels on
+this device. **Reset layout** restores the default arrangement. Custom layouts
+adapt when resizing the game window. Editing stops your local controls and fire;
+the multiplayer world continues. World contact markers still track their contacts,
+and rescue/radiation effects still signal their gameplay states.
+
+Review the [HUD editor](docs/feedback/hud-editor-1440.png) and a
+[customized flight layout](docs/feedback/hud-customized-1440.png).
+
+`tests/hud_customization_test.gd` checks real editor input, moving/resizing,
+minimum sizes, closing/reopening, saved layouts, screen bounds and moved radar
+buttons. Run with a renderer for editor and customized-flight screenshots in
+`build/validation`, at 960, 1440 and 1920 pixel widths. Use an isolated APPDATA
+profile for tests, as with the other settings/HUD checks.
+
 See the [approved concept](docs/hud-design/README.md) and native
 screenshots at [960×600](docs/feedback/hud-flight-960.png),
 [1440×900](docs/feedback/hud-flight-1440.png) and

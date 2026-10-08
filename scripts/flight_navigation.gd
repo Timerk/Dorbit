@@ -272,18 +272,26 @@ func _process(_delta: float) -> void:
 		else:
 			update_contacts()
 			plot.queue_redraw()
-	var origin := radar_rect().position
-	range_less.position = origin + Vector2(216, 8)
-	range_more.position = origin + Vector2(248, 8)
+	var layout := sector.hud.layout
+	var radar := layout.rect_for("radar")
+	var factor := radar.size.x / radar_rect().size.x
+	var origin := radar.position
+	range_less.position = origin + Vector2(216, 8) * factor
+	range_more.position = origin + Vector2(248, 8) * factor
 	for button in [range_less, range_more]:
 		button.size = Vector2(26, 26)
-	map_button.position = origin + Vector2(164, 131)
+		button.scale = Vector2.ONE * factor
+	map_button.position = origin + Vector2(164, 131) * factor
 	map_button.size = Vector2(110, 34)
-	autopilot_status.position = origin + Vector2(14, 190)
+	map_button.scale = Vector2.ONE * factor
+	var status_rect := layout.rect_for("autopilot")
+	autopilot_status.text = "Autopilot / preview" if layout.editing else "Autopilot enabled"
+	autopilot_status.position = status_rect.position
+	autopilot_status.scale = Vector2.ONE * (status_rect.size.x / layout.default_rect("autopilot").size.x)
 	var flight := not sector.preflight and sector.player.alive and not sector.paused and (not sector.client_only or sector.session.active)
-	autopilot_status.visible = flight and sector.autopilot.enabled
+	autopilot_status.visible = (flight and sector.autopilot.enabled or layout.editing) and layout.shown("autopilot")
 	for button in [range_less, range_more, map_button]:
-		button.visible = flight
+		button.visible = (flight or layout.editing) and layout.shown("radar")
 	range_less.disabled = range_index == 0
 	range_more.disabled = range_index == RANGES.size() - 1
 	queue_redraw()
@@ -313,8 +321,20 @@ func card(rect: Rect2, title: String, accent: Color = FlightHud.AMBER) -> void:
 
 
 func _draw() -> void:
-	if sector.preflight or not sector.player.alive or sector.paused or (sector.client_only and not sector.session.active):
+	var layout := sector.hud.layout
+	if sector.preflight or not sector.player.alive or (sector.paused and not layout.editing) or (sector.client_only and not sector.session.active):
 		return
+	var selected := destination()
+	var local_goal := relative_position(sector.player.global_transform, selected["position"])
+	if layout.begin_draw(self, "radar"):
+		draw_radar()
+		layout.end_draw(self)
+	if layout.begin_draw(self, "guidance"):
+		draw_guidance(selected, local_goal)
+		layout.end_draw(self)
+
+
+func draw_radar() -> void:
 	var origin := radar_rect().position
 	card(radar_rect(), "LOCAL RADAR / %s m" % FlightHud.number(RANGES[range_index]))
 	var center := origin + Vector2(84, 108)
@@ -355,7 +375,6 @@ func _draw() -> void:
 	label_at(self, origin + Vector2(180, 104), "OUTPOST", 13, FlightHud.MUTED)
 	draw_circle(origin + Vector2(168, 120), 3, FlightHud.RED)
 	label_at(self, origin + Vector2(180, 124), "HOSTILE", 13, FlightHud.MUTED)
-	draw_guidance(selected, local_goal)
 
 
 func draw_guidance(selected: Dictionary, local: Vector3) -> void:
