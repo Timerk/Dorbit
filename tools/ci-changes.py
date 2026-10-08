@@ -10,7 +10,8 @@ def documentation_only(paths: list[str]) -> bool:
             return False  # Removing an import boundary can expose runtime assets.
         if path.endswith('.md'):
             return True
-        if path.startswith(('art/', 'docs/hud-design/', 'docs/menu-design/', 'docs/feedback/')):
+        if path.startswith(('art/', 'docs/hud-design/', 'docs/menu-design/', 'docs/feedback/',
+                            'docs/ammo-art/', 'docs/sector-art/')):
             return True  # These trees have tracked .gdignore boundaries.
         return '/' not in path and path.endswith('-results.json')
     return bool(paths) and all(documentation(path) for path in paths)

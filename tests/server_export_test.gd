@@ -17,6 +17,9 @@ func check(condition: bool, description: String) -> void:
 func run() -> void:
 	var packed := "--expect-export" in OS.get_cmdline_user_args()
 	check(not packed or OS.has_feature("dedicated_server"), "Pack has dedicated-server feature")
+	if packed:
+		for directory: String in ["res://docs/ammo-art", "res://docs/sector-art"]:
+			check(not DirAccess.dir_exists_absolute(directory), "Documentation artwork stays outside the server pack: " + directory)
 	var scene: PackedScene = load("res://scenes/sector.tscn")
 	var sector := scene.instantiate() as Sector
 	sector.dedicated_server = true
