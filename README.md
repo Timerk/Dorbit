@@ -660,6 +660,9 @@ On 3 October 2026, the revised rendered contract replay passed 26 checks on Wind
 
 ## CI performance
 
+See the [CI performance investigation](docs/ci-performance.md) for measured cache
+effectiveness, remaining bottlenecks and ranked optimization options.
+
 Validation checks the exact Linux release staged by `git archive` once. Packaging
 still runs the full server suite before publishing a release; it does not reuse a
 success result from the working checkout. Godot setup verifies the pinned archive
