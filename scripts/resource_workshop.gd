@@ -146,7 +146,7 @@ func build_refining(parent: Node) -> void:
 		button.size = Vector2(164, 132)
 		resource_cards[key] = button
 		button.tooltip_text = "Select to refine " + CargoResources.TYPES[key]["name"] if ResourceBoosts.RECIPES.has(key) else "Raw ore collected from alien cargo."
-	StationUi.text(tree_rows, "Seprom production comes later with Skylab. Seprom in cargo can already boost equipment.", 15, StationUi.MUTED)
+	StationUi.text(tree_rows, "Seprom is produced in Skylab, not ship refining. Seprom in cargo can boost equipment.", 15, StationUi.MUTED)
 	var detail := StationUi.card(body)
 	detail.custom_minimum_size.x = 340
 	var rows := StationUi.rows(detail, 16)
@@ -433,7 +433,7 @@ func _process(_delta: float) -> void:
 	var amount := int(upgrade_amount.value)
 	upgrade_description.text = "%s\n\n%s\n\n%s" % [CargoResources.TYPES[resource]["name"], ("Adds %d boosted rounds. Each installed laser uses one round per shot; the final volley may be partly boosted." % (amount * 10) if group == "lasers" else "Adds %d minutes at the same bonus." % (amount * 10)), ("WARNING: applying this resource discards the current boost's remaining rounds or time." if replacement else "Applying the same resource extends its reserve. The percentage does not stack.")]
 	if group == "rockets":
-		upgrade_description.text = "Rocket weapons are coming later.\n\nEach resource unit will provide 10 boosted rockets at the listed damage bonus."
+		upgrade_description.text = "Rocket boosts are coming later.\n\nEach resource unit will provide 10 boosted rockets at the listed damage bonus."
 	elif percent <= 0:
 		upgrade_title.text = ResourceBoosts.GROUPS[group].to_upper()
 		upgrade_description.text = "%s cannot boost %s.\n\nDrag this resource onto compatible equipment, or choose a different resource." % [CargoResources.TYPES[resource]["name"], ResourceBoosts.GROUPS[group].to_lower()]
