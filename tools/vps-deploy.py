@@ -232,8 +232,11 @@ def stop_preview():
     print("Preview stopped; no preview processes remain. Saves retained.")
 
 
-def ready(timeout=120, stable_seconds=10):
+def ready(timeout=None, stable_seconds=10):
     """Require game initialization and a live UDP socket belonging to this invocation."""
+    # A fresh preview imports the textured ship roster before opening its socket.
+    if timeout is None:
+        timeout = 1200 if PREVIEW else 120
     port = None
     for line in ENV.read_text().splitlines():
         if line.startswith("DORBIT_PORT="):
