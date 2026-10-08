@@ -10,6 +10,10 @@ func run() -> void:
 	check(not client.session.active and not client.session.connecting and not menu.start_button.disabled, "Offline Start needs no server or snapshot")
 	check(menu.ship_status.text == "OFFLINE PREVIEW" and menu.start_caption.text == "SOLO ENCOUNTER", "Offline overview identifies the preview and solo launch")
 	check(menu.ship_title.text == "LIBERATOR" and menu.stat_values["damage"].text == "65", "Offline overview displays the starter ship and fitting")
+	var offline_inventory := StationUi.inventory(client)
+	var offline_base: Dictionary = menu.fitting_stats.ships["starter"]
+	await settle()
+	check(is_same(offline_inventory, StationUi.inventory(client)) and is_same(offline_base, menu.fitting_stats.ships["starter"]), "Offline frames retain the preview inventory and reuse its cached fitting")
 	check(menu.exit_buttons[0].disabled and client.session.combat.inventory.is_empty(), "Offline preview does not create a server inventory or enable disconnect")
 	if DisplayServer.get_name() != "headless":
 		client.get_viewport().render_target_update_mode = SubViewport.UPDATE_ALWAYS

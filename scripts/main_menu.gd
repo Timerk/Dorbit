@@ -42,6 +42,7 @@ var start_caption: Label
 var exit_buttons: Array[Button] = []
 var resume_button: Button
 var opening_page := false
+var fitting_stats := Equipment.StatsCache.new()
 
 
 func _ready() -> void:
@@ -438,19 +439,18 @@ func _process(_delta: float) -> void:
 	var offline := StationUi.offline_preview(sector)
 	var ready := offline or (sector.session.received_snapshot and not sector.session.combat.inventory.is_empty())
 	exit_buttons[0].disabled = not sector.session.active
-	start_caption.text = "SOLO ENCOUNTER" if offline else "LAUNCH FROM OUTPOST 01"
+	StationUi.set_text(start_caption, "SOLO ENCOUNTER" if offline else "LAUNCH FROM OUTPOST 01")
 	start_button.disabled = not ready or not sector.player.alive or sector.session.combat.station_pending
 	start_button.tooltip_text = "Wait for rescue before launching." if not sector.player.alive else ("Waiting for server confirmation." if start_button.disabled else ("Enter the solo development encounter." if offline else "Launch your active ship at Outpost 01."))
 	for page: String in navigation:
-		navigation[page].set_pressed_no_signal(selected_page == page)
+		if navigation[page].button_pressed != (selected_page == page):
+			navigation[page].set_pressed_no_signal(selected_page == page)
 		if page in ["shop", "hangar", "cargo", "quests", "refining"]:
 			navigation[page].disabled = not ready or (not offline and not sector.player.alive)
-	wallet.text = StationShop.credits_text(sector.credits) + " CR"
-	ship_status.text = ("OFFLINE PREVIEW" if offline else "ACTIVE SHIP") if ready and sector.player.alive else ("RESCUE IN %d s" % ceili(sector.player_respawn) if ready else "WAITING FOR SERVER")
+	StationUi.set_text(wallet, StationShop.credits_text(sector.credits) + " CR")
+	StationUi.set_text(ship_status, ("OFFLINE PREVIEW" if offline else "ACTIVE SHIP") if ready and sector.player.alive else ("RESCUE IN %d s" % ceili(sector.player_respawn) if ready else "WAITING FOR SERVER"))
 	ship_ready.visible = ready and sector.player.alive
-	notice.text = sector.session.combat.station_message
-	if sector.toast_time > 0:
-		notice.text = sector.toast
+	StationUi.set_text(notice, sector.toast if sector.toast_time > 0 else sector.session.combat.station_message)
 	notice.visible = not notice.text.is_empty()
 	ship_art.visible = ready
 	ship_shadow.visible = ready
@@ -461,12 +461,12 @@ func _process(_delta: float) -> void:
 			last_model = model
 			ship_art.set_model(model)
 			ship_title.text = ShipCatalog.info(model)["name"].to_upper()
-		var stats := ResourceBoosts.stats(Equipment.stats(data), sector.player.resource_boosts)
-		stat_values["hull"].text = StationShop.credits_text(int(sector.player.hull))
-		stat_values["shield"].text = StationShop.credits_text(int(stats["shield"]))
-		stat_values["damage"].text = str(int(stats["damage"]))
-		stat_values["speed"].text = "%d m/s" % stats["speed"]
-		stat_values["cargo"].text = "%d / %d" % [CargoResources.units(sector.cargo), sector.cargo_capacity]
+		var stats := ResourceBoosts.stats(fitting_stats.get_stats(data), sector.player.resource_boosts)
+		StationUi.set_text(stat_values["hull"], StationShop.credits_text(int(sector.player.hull)))
+		StationUi.set_text(stat_values["shield"], StationShop.credits_text(int(stats["shield"])))
+		StationUi.set_text(stat_values["damage"], str(int(stats["damage"])))
+		StationUi.set_text(stat_values["speed"], "%d m/s" % stats["speed"])
+		StationUi.set_text(stat_values["cargo"], "%d / %d" % [CargoResources.units(sector.cargo), sector.cargo_capacity])
 	for panel: Control in [placeholder, sector.shop, sector.equipment_menu, sector.resource_workshop, sector.hud.contract_panel]:
 		if panel.visible:
 			fit_panel(panel, Vector2(1150, 690))

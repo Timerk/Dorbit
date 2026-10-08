@@ -9,6 +9,7 @@ const LINE := Color("34434b")
 const SURFACE := Color("0c1217")
 const FONT = preload("res://assets/ui/fonts/Rajdhani-SemiBold.ttf")
 const OFFLINE_BLOCKER := "Connect to a server to use station actions."
+static var offline_inventory: Dictionary = Equipment.starter()
 
 
 static func offline_preview(sector: Sector) -> bool:
@@ -17,7 +18,12 @@ static func offline_preview(sector: Sector) -> bool:
 
 static func inventory(sector: Sector) -> Dictionary:
 	# Display the solo starter fitting without creating an authoritative inventory.
-	return Equipment.starter() if offline_preview(sector) else sector.session.combat.inventory
+	return offline_inventory if offline_preview(sector) else sector.session.combat.inventory
+
+
+static func set_text(label: Label, content: String) -> void:
+	if label.text != content:
+		label.text = content
 
 
 static func menu_theme() -> Theme:

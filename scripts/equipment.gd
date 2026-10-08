@@ -33,6 +33,26 @@ const MODELS := {
 const STARTER_HULL: float = 116000.0
 
 
+class StatsCache:
+	extends RefCounted
+	# Each owner keeps one inventory; equal revisions from different pilots are unrelated.
+	var inventory: Dictionary = {}
+	var revision: int = -1
+	var ships: Dictionary = {}
+
+	func get_stats(data: Dictionary, ship: String = "") -> Dictionary:
+		if not is_same(inventory, data) or revision != int(data["revision"]):
+			inventory = data
+			revision = int(data["revision"])
+			ships.clear()
+		if ship.is_empty():
+			ship = data["active_ship"]
+		if not ships.has(ship):
+			ships[ship] = Equipment.stats(data, ship)
+		# Callers can apply live boosts or edit nested laser data without changing the cache.
+		return ships[ship].duplicate(true)
+
+
 static func category(model: String) -> String:
 	var info: Dictionary = MODELS[model]
 	return "weapons" if info["kind"] in ["laser", "launcher"] else ("shields" if info["shield"] > 0.0 else "engines")
@@ -123,11 +143,12 @@ static func stats(data: Dictionary, ship: String = "") -> Dictionary:
 	var result := {"model": model, "hull": float(hull["hull"]), "damage": 0.0, "npc_damage": 0.0, "shield": 0.0, "absorption": 0.0, "regen_bonus": 0.0, "speed": speed, "boost": speed + ShipCatalog.BOOST_BONUS, "lasers": []}
 	result["laser_count"] = 0
 	result["launcher_capacity"] = 0
-	var installed: Array = data["items"].values()
+	var installed: Array[Dictionary] = []
+	for item: Dictionary in data["items"].values():
+		if item["ship"] == ship:
+			installed.append(item)
 	installed.sort_custom(func(a: Dictionary, b: Dictionary): return a["slot"].naturalnocasecmp_to(b["slot"]) < 0)
 	for item: Dictionary in installed:
-		if item["ship"] != ship:
-			continue
 		var item_model: Dictionary = MODELS[item["model"]]
 		if item_model["kind"] == "launcher":
 			result["launcher_capacity"] = item_model["capacity"]
