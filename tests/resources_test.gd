@@ -11,7 +11,7 @@ func run() -> void:
 		var scout := CargoResources.roll("Scout")
 		var sentinel := CargoResources.roll("Sentinel")
 		var heavy := CargoResources.roll("Heavy")
-		tiers_valid = tiers_valid and scout.size() == 3 and sentinel.size() == 5 and heavy.size() == 7 and CargoResources.units(scout) < CargoResources.units(sentinel) and CargoResources.units(sentinel) < CargoResources.units(heavy)
+		tiers_valid = tiers_valid and scout.size() == 3 and sentinel.size() == 5 and heavy.size() == 8 and CargoResources.units(scout) < CargoResources.units(sentinel) and CargoResources.units(sentinel) < CargoResources.units(heavy)
 	check(tiers_valid, "Loot tiers increase quantity and quality across thirty rolls")
 	var server := make_sector("ResourceServer", true, 24732)
 	var client := make_sector("ResourceClient")
@@ -28,7 +28,7 @@ func run() -> void:
 	var owned := Equipment.starter()
 	owned["ships"]["spare"] = "pathfinder"
 	check(CargoResources.valid({"starter": {"seprom": 2}, "spare": {}}, owned), "Cargo belongs to individual owned ships")
-	check(not CargoResources.valid({"starter": {"seprom": 401}, "spare": {}}, owned), "Each ship has its own capacity limit")
+	check(not CargoResources.valid({"starter": {"seprom": 801}, "spare": {}}, owned), "Each ship rejects cargo beyond its bounded single-shipment overfill")
 	ship.position = Vector3(0, 100, 0)
 	for slot in [1, 0, 4]:
 		var alien: Alien = server.aliens[slot]
@@ -154,7 +154,7 @@ func run() -> void:
 	var failure_dir := store.path.get_base_dir().path_join("resource-failure")
 	DirAccess.make_dir_absolute(failure_dir)
 	var file := FileAccess.open(failure_dir.path_join("pilots.json"), FileAccess.WRITE)
-	file.store_string(JSON.stringify({"version": 4, "pilots": {"pilot0": store.pilots["pilot0"]}}))
+	file.store_string(JSON.stringify({"version": 6, "pilots": {"pilot0": store.pilots["pilot0"]}}))
 	file.close()
 	var probe := PilotStore.new()
 	check(probe.open(failure_dir), "Open isolated cargo failure fixture")
@@ -199,7 +199,7 @@ func check_resource_shop(server: Sector, client: Sector) -> void:
 	client.shop.cargo_page.show()
 	await settle()
 	var shop := client.shop
-	check(shop.visible and shop.sells.size() == 7 and shop.selected["seprom"] == 10, "Trading displays all seven resources with full quantities initially selected")
+	check(shop.visible and shop.sells.size() == 8 and shop.selected["seprom"] == 10, "Trading displays all eight resources including Xenomit with full quantities initially selected")
 	check(shop.get_global_rect().position.x >= 0 and shop.get_global_rect().end.x <= 960 and shop.get_global_rect().end.y <= 600, "Ore cards fit the minimum supported viewport")
 	for resource: String in CargoResources.TYPES:
 		check(shop.sells[resource].get_global_rect().end.x <= shop.get_global_rect().end.x and shop.sells[resource].get_global_rect().end.y <= shop.get_global_rect().end.y, "%s sale control stays inside the shop" % resource)

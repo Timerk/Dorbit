@@ -33,6 +33,7 @@ func run() -> void:
 			"quests": panel = sector.hud.contract_panel
 			"settings": panel = sector.settings_menu.panel
 			"connection": panel = sector.session.menu
+			"skylab": panel = sector.skylab_menu
 			_: panel = menu.placeholder
 		if not panel.is_visible_in_tree() or menu.start_button.is_visible_in_tree():
 			push_error("Exported offline %s did not open independently of Overview." % page)
@@ -48,6 +49,19 @@ func run() -> void:
 				var image := texture.get_image() if texture != null else null
 				if image == null or image.get_width() < 1024 or image.get_height() < 1024 or image.get_used_rect().size == image.get_size() or image.get_pixel(0, 0).a != 0.0:
 					push_error("Packaged %s artwork must be high resolution with transparent padding." % resource)
+					quit(1)
+					return
+		if page == "skylab":
+			var scene := sector.skylab_menu.art.texture
+			var standard := load("res://assets/ui/skylab/robot-standard.png") as Texture2D
+			var advanced := load("res://assets/ui/skylab/robot-advanced.png") as Texture2D
+			if scene == null or scene.get_width() < 1500 or standard == null or advanced == null:
+				push_error("Packaged Skylab must include its detailed station scene and robot artwork.")
+				quit(1)
+				return
+			for robot: Texture2D in [standard, advanced]:
+				if robot.get_width() < 1024 or robot.get_image().get_pixel(0, 0).a != 0.0:
+					push_error("Packaged collector robots must be detailed transparent artwork.")
 					quit(1)
 					return
 	menu.show_home()
@@ -79,5 +93,5 @@ func run() -> void:
 		push_error("Exported solo flight could not return to Overview.")
 		quit(1)
 		return
-	print("Packaged menus: every destination, seven high-resolution transparent resources, three Settings tabs and solo launch/return loaded")
+	print("Packaged menus: every destination, eight high-resolution transparent resources, three Settings tabs and solo launch/return loaded")
 	quit(0)

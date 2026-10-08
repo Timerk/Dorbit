@@ -51,6 +51,7 @@ var settings := GameSettings.new()
 var settings_menu: SettingsMenu
 var spawn_rng := RandomNumberGenerator.new()
 var main_menu: MainMenu
+var skylab_menu: SkylabMenu
 var preflight: bool = false
 var autopilot := FlightAutopilot.new()
 
@@ -119,6 +120,9 @@ func _ready() -> void:
 		resource_workshop = ResourceWorkshop.new()
 		resource_workshop.sector = self
 		shop_layer.add_child(resource_workshop)
+		skylab_menu = SkylabMenu.new()
+		skylab_menu.sector = self
+		shop_layer.add_child(skylab_menu)
 	if not dedicated_server:
 		apply_graphics()
 		var layer := CanvasLayer.new()

@@ -198,8 +198,10 @@ Set `DORBIT_PILOT_FILE` to your private credential file as described below. Ente
 After connecting, the **main menu** keeps your pilot docked before entering the
 map. Visit **Shop** to buy ships and equipment, **Hangar** to activate a hull and
 equip it, **Quests** to accept hunting contracts, or **Cargo trade** to sell saved
-resources. **Settings** and **Connection** are also available. **Skylab** and
-**Galaxy Gates** open coming-soon pages. Choose the amber **START** button on Overview
+resources. **Skylab** manages persistent collectors, refining, upgrades, robots
+and shipments to ship cargo; see [Skylab rules and balance](docs/skylab.md).
+**Settings** and **Connection** are also available. **Galaxy Gates** opens a
+coming-soon page. Choose the amber **START** button on Overview
 to spawn at Outpost 01 with your selected ship and fitting. Esc or Back returns to
 the overview; these actions do not launch. Docked ships are hidden from other
 pilots and cannot move, fight or collect loot. Each reconnect returns to this menu
@@ -390,7 +392,7 @@ The regular Liberator has 116,000 hull. New pilots start with LF-1, SG3N-A01 and
 
 LF-3 adds 175 base damage and 15% more for that laser against aliens (201.25 total) per installed copy. Its bonus never multiplies other lasers. FS-01 adds 3,200 shield, 70% absorption and +6.25% regeneration; its regeneration bonuses add together and multiply normal shield recovery after the existing six-second delay. Shield capacity adds, while absorption is weighted by each generator's capacity. Current fitting and installation previews show these special bonuses. Fitting changes do not repair or refill your ship. Inventory and fittings survive rescue, reconnects and restart. Equipment purchases require the persistent dedicated server; the offline development fixture uses the same starter combat and flight values. Reference prices need human progression playtesting with the existing rewards.
 
-Client and server must use matching builds. Network schema 10 includes equipment purchase quantities and resource boost synchronization, retaining hull model, maximum hull, alien damage, shield regeneration bonuses, radiation exposure, docked state and explicit launch RPCs; the compatibility handshake rejects older builds before gameplay. Save schema 5 preserves equipment, cargo and resource boosts. Update the operator provisioning tool with the server so credential rotation recognizes every new model.
+Client and server must use matching builds. Network schema 11 combines resource-boost state and owner-only Skylab snapshots and commands while retaining station purchase quantities and existing flight data; the compatibility handshake rejects older builds before gameplay. Save schema 6 combines persistent industry, ammunition and combat boosts; Skylab uses credits exclusively. Update the operator provisioning tool with the server so credential rotation recognizes every new model and preserves industry jobs.
 
 The reference catalog test (`res://tests/darkorbit_equipment_test.gd`) runs in both check helpers. It exercises every purchasable model through authenticated purchase, duplicate protection, installation, stat replication and removal. It rejects LF-4, SG3N-B00 and legacy-engine purchases, then checks mixed shields, cumulative fusion regeneration, fractional LF-3 alien damage through real physics shots, UI bonus displays, bonus restoration when switching hulls and restart persistence. A rendered run produces the review captures above under `build/validation`. On 6 October 2026 it passed 131 assertions both headlessly and on Windows OpenGL; the rendered shop test passed 53. The full Windows check script passed, including ten authenticated clients and the flight replay. The compatibility and flight replays emitted their existing ObjectDB cleanup warnings on exit; the new rendered runs were clean. Six Python operator-tool tests passed, including credential rotation preserving all new models. Linux execution and exported client checks are left to PR CI; WSL is unavailable on this machine. Item artwork remains the existing category placeholders, and reference prices need human economy playtesting.
 
@@ -429,7 +431,7 @@ playtesting is still required.
 
 ### Saves, backups and recovery
 
-The ledger is `DORBIT_DATA_DIR/pilots.json`, schema version 3. Version 1 saves migrate before the server opens its port, retaining credits and adding starter equipment once; versions 1 and 2 also receive empty per-ship cargo. Keep matching server, client and provisioning-tool versions; older builds cannot read the new hull models or version 3 cargo. The migration uses the normal backup and failure path. Modern records with missing or invalid equipment fail validation rather than receiving replacements. Credential rotation preserves inventory, fittings, cargo and other pilot fields.
+The ledger is `DORBIT_DATA_DIR/pilots.json`, schema version 6. Version 1 saves migrate before the server opens its port, retaining credits and adding starter equipment once; versions 1 and 2 also receive empty per-ship cargo. Legacy pilots without industry receive the documented Skylab bootstrap and Premium off. Existing industry wallets convert once at 100 credits per retired unit, preserving robots and timers. Existing equipment, credits, cargo, ammunition and contracts are preserved. Keep matching server, client and provisioning-tool versions; older builds cannot read schema 6. The migration uses the normal backup and failure path. Preserve a separate pre-migration backup for rollback: the rolling `.bak` advances with normal saves. Modern records with missing or invalid equipment or industry fail validation rather than receiving replacements. Credential rotation preserves inventory, fittings, cargo and industry jobs.
 
 Every reward, repair charge, rescue fee, purchase and fitting change is committed before the server confirms it. All contributors' shares use one commit. Writes go to a sibling temporary file, flush and verify its contents, then rename over the destination. `pilots.json.bak` keeps the previous complete ledger. A save failure stops simulation and exits the server with code 1 before granting the pending transaction.
 
@@ -523,9 +525,9 @@ The project uses Godot Compatibility rendering with 4x MSAA by default. The firs
 
 Destroyed Scouts, Sentinels and Heavies leave glowing resource boxes. Fly within 12 m to collect them automatically. The Liberator holds 400 units, with one unit per resource; other hulls use their reference capacities in the [ship catalog](docs/ships.md). A full hold leaves loot in space; partial pickups take valuable resources first. Boxes are shared, with the nearest living ship collecting first, and expire after three minutes. The server keeps at most 64 boxes.
 
-Press B at Outpost 01 and select **Trade raw materials**. Seven ore cards show the resource images, unit prices, held quantities and sale totals. Use minus/plus or type a quantity, then choose **SELL** to sell that amount; **Sell all cargo** sells the entire hold. Sales require the usual station conditions: alive, within 60 m, no faster than 8 m/s and five seconds since the last hit. Resource value increases in this order: Prometium, Endurium, Terbium, Prometid, Duranium, Promerium, Seprom. Provisional prices are 1, 2, 4, 8, 16, 32 and 64 CR per unit. Stronger aliens drop larger quantities and higher resource tiers. Full drop tables are in [GAME_PLAN.md](GAME_PLAN.md#enemy-resources-cargo-and-station-sales).
+Press B at Outpost 01 and select **Trade raw materials**. Eight ore cards show the resource images, unit prices, held quantities and sale totals. Use minus/plus or type a quantity, then choose **SELL** to sell that amount; **Sell all cargo** sells the entire hold. Sales require the usual station conditions: alive, within 60 m, no faster than 8 m/s and five seconds since the last hit. Resource value increases in this order: Prometium, Endurium, Terbium, Prometid, Duranium, Xenomit, Promerium, Seprom. Provisional prices are 10, 20, 40, 80, 160, 200, 320 and 640 CR per unit. Stronger aliens drop larger quantities and higher resource tiers. Full drop tables are in [GAME_PLAN.md](GAME_PLAN.md#enemy-resources-cargo-and-station-sales).
 
-Cargo belongs to each owned ship and survives death, reconnects and restarts. Collected cargo and sale credits are server-owned saves. Uncollected boxes remain session state. Save versions 1 and 2 migrate to version 3 with empty cargo. Preserve a pre-migration ledger backup when deploying; older servers cannot load version 3. Credential rotation with `tools/pilots.py` retains cargo.
+Cargo belongs to each owned ship and survives death, reconnects and restarts. Collected cargo and sale credits are server-owned saves. Uncollected boxes remain session state. Skylab shipments can overfill their dispatch ship if cargo fills during transit; collection then waits for free space. Real Xenomit is an eighth collectible and saleable mineral, with a custom development price of 200 CR and Heavy drops of 1–3 units. Save versions 1–5 migrate to schema 6; preserve a pre-migration backup when deploying. Credential rotation with `tools/pilots.py` retains cargo and industry.
 
 `res://tests/resources_test.gd` checks actual ENet kills, replicated and late-join loot, two-pilot pickup conservation, full and partial holds, client authority, station restrictions, per-resource and sell-all actions, duplicate sales, restart recovery, wallet limits, expiry and failed writes. Run it headlessly or with the renderer to capture the cargo panel and loot markers at 960 x 600 under `build/validation`. Windows and Linux check scripts include it. Operator-tool tests cover cargo-preserving migration and credential rotation, and reject corrupted cargo without altering the ledger.
 
@@ -650,7 +652,7 @@ Purchases play a confirmation cue only after the server commits a new transactio
 
 `tests/hunting_contracts_test.gd` checks authenticated concurrent contracts, shared kill progress, automatic payouts, restart recovery, abandonment, repeatability, legacy migration and failed saves. Both check helpers run it. For a rendered replay, run Godot with `--path . --script res://tests/contracts_playthrough.gd`. It provisions a disposable pilot and server on UDP 24690, accepts all three hunts, follows Scout respawns and repairs between kills, completes the Scout hunt with automatic payment in flight, and saves frames under `build/validation/contracts-*.png`.
 
-The contract board hides pause-menu audio controls. Equipment purchases and fitting share the version-3 persistence path with concurrent contracts and automatic payouts. The replay starts with a 10,000-credit purchase budget, buys and installs a second LF-1 after the Scout hunt, and checks that credits, all accepted contracts and fitting survive a server restart. Inventory uses an owner-only reliable channel; world snapshots send one player per packet with equipment stats and active contracts.
+The contract board hides pause-menu audio controls. Equipment purchases and fitting share the version-6 persistence path with concurrent contracts, automatic payouts and industry. The replay starts with a 10,000-credit purchase budget, buys and installs a second LF-1 after the Scout hunt, and checks that credits, all accepted contracts and fitting survive a server restart. Inventory uses an owner-only reliable channel; world snapshots send one player per packet with equipment stats and active contracts.
 
 On 2 October 2026, the full Windows check command passed after the concurrent-hunt update, and the expanded contract checks passed 43 assertions. The rendered replay accepted all three hunts, paid the Scout reward in flight for 180 total credits, kept the other hunts active, and repeated the Scout offer at the station. The board was inspected at 960 x 600.
 
@@ -737,7 +739,15 @@ is required. New preview branches must include this export support.
 
 Combat emits visual signals; visual effects do not award rewards or apply damage. Shared play sends movement and fire intent to the host at 20 Hz and receives authoritative snapshots at 20 Hz, with local flight prediction and smoothing of other players and aliens. Only the host simulates combat; repair requests identify the requesting peer, never a client-supplied price or damage amount.
 
-Save schema 5 combines ammunition inventory and per-ship resource boost reserves.
+Save schema 6 retains schema 5's combined ammunition inventory and per-ship
+resource boost reserves alongside persistent Skylab industry.
 Schema 4 ammunition saves retain their rounds and receive empty boosts; schema 4
 boost saves retain their reserves and receive the one-time starter ammunition.
 Each fired volley commits both debits together before applying damage.
+
+Skylab now follows the approved detailed station concept with live module labels and
+reference-style graphite/amber windows. All builds, acceleration and robots use
+credits. Instant builds cost twice the normal build credit price with the same
+ore requirements. Instant send and immediate delivery of an
+active shipment both cost a flat **125,000 CR**, independent of amount. See
+[Skylab policies and migration](docs/skylab.md) for schema-6 rollout details.

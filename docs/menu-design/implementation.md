@@ -2,8 +2,9 @@
 
 The native Godot menus follow the [approved UI references](README.md).
 Overview, Hangar, Shop, Cargo Trade, Quests, Connection and the three Settings
-tabs use the same header, sidebar and hangar backdrop. Skylab and Galaxy Gates
-remain Coming soon pages. Ship specifications appear on Overview and Hangar;
+tabs use the same header, sidebar and hangar backdrop. Skylab adds the approved
+station and persistent industry; Galaxy Gates remains a Coming soon page.
+Ship specifications appear on Overview and Hangar;
 START appears only on preflight Overview.
 
 ## Offline review
@@ -11,7 +12,8 @@ START appears only on preflight Overview.
 Launch `Dorbit.exe -- --offline` to inspect every page without a deployment.
 Hangar shows the solo starter fitting; catalog and quest selections are previews.
 Buying, selling, fitting, activation and contract actions require a server and
-remain disabled offline. Device settings remain editable.
+remain disabled offline. Skylab shows a read-only bootstrap fixture; all industry
+mutations require the dedicated server. Device settings remain editable.
 
 START enters the solo encounter. During flight, Esc > Ship menus opens the same
 console; B, I, C and F7 open Shop, Hangar, Quests and Connection. Resume flight or
@@ -52,7 +54,7 @@ reflect starter state, rather than the illustrative concept inventory.
 The [runtime assets](../../assets/ui/menu/README.md) include the generated empty
 hangar, unchanged ship renders, original SVG icons and licensed Rajdhani fonts.
 Quests previews the existing procedural alien model in an isolated viewport.
-The seven [mineral renders](../../assets/ui/resources/README.md) retain their
+The eight [mineral renders](../../assets/ui/resources/README.md) retain their
 high-resolution transparency, lossless imports and mipmap filtering.
 
 Focused fixtures cover docked and flight navigation, offline blocked actions,

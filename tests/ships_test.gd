@@ -50,7 +50,7 @@ func run() -> void:
 	await transaction(client, "buy_ship", "liberator")
 	await transaction(client, "buy_ship", "unknown")
 	await transaction(client, "switch_ship", "not-owned")
-	check(store.pilots["pilot0"] == original, "Duplicate models, unknown ships and unowned switches cannot change the save")
+	check(without_industry(store.pilots["pilot0"]) == without_industry(original), "Duplicate models, unknown ships and unowned switches cannot change ownership or currency")
 	for model: String in ShipCatalog.MODELS:
 		var entry := ShipCatalog.info(model)
 		var scene := ShipCatalog.model_scene(model)
@@ -125,7 +125,7 @@ func run() -> void:
 	# Validate transaction replay and station restrictions on ship actions.
 	var saved: Dictionary = store.pilots["pilot0"].duplicate(true)
 	await request(client, int(saved["equipment"]["revision"]), "buy_ship", "goliath", "", "", int(remote.get_meta("life")))
-	check(store.pilots["pilot0"] == saved, "Successful ship sequences cannot run twice")
+	check(without_industry(store.pilots["pilot0"]) == without_industry(saved), "Successful ship sequences cannot run twice")
 	var goliath := ShipCatalog.owned_id(saved["equipment"], "goliath")
 	for blocker in ["distance", "speed", "damage", "dead", "life"]:
 		remote.position = Vector3(0, 0, 400) if blocker == "distance" else Sector.SPAWN_POSITION
@@ -133,7 +133,7 @@ func run() -> void:
 		remote.time_since_hit = 0 if blocker == "damage" else 5
 		remote.alive = blocker != "dead"
 		await request(client, int(saved["equipment"]["revision"]) + 1, "switch_ship", goliath, "", "", -1 if blocker == "life" else int(remote.get_meta("life")))
-		check(store.pilots["pilot0"] == saved, "Server rejects ship switching for " + blocker)
+		check(without_industry(store.pilots["pilot0"]) == without_industry(saved), "Server rejects ship switching for " + blocker)
 	remote.alive = true
 	remote.time_since_hit = 5
 	check(store.commit({}, {}, {"pilot0": {"starter": {"seprom": 2}}.merged(saved["cargo"], false)}), "Seed cargo on the starter")
@@ -189,5 +189,5 @@ func run() -> void:
 	client.session.join("127.0.0.1", test_port(24736))
 	await settle(0.5)
 	await replicate(server)
-	check(server.session.store.pilots["pilot0"] == final and client.player.ship_model == "goliath" and client.session.combat.inventory["ships"].size() == 12, "Ownership, fittings, cargo, active hull and wallet survive restart")
+	check(without_industry(server.session.store.pilots["pilot0"]) == without_industry(final) and client.player.ship_model == "goliath" and client.session.combat.inventory["ships"].size() == 12, "Ownership, fittings, cargo, active hull and wallet survive restart while industry catches up")
 	finish()

@@ -39,7 +39,7 @@ header and launch rules above take precedence over older images and prompts.
 | Controls | [settings-controls-approved.png](settings-controls-approved.png) |
 | Audio | [settings-audio-approved.png](settings-audio-approved.png) |
 | Graphics | [settings-graphics-approved.png](settings-graphics-approved.png) |
-| Skylab | [skylab-approved.png](skylab-approved.png) |
+| Skylab | [skylab-station-concept.png](skylab-station-concept.png) |
 | Galaxy Gates | [galaxy-gates-approved.png](galaxy-gates-approved.png) |
 | Flight HUD | [flight-hud-top-aligned.png](../hud-design/flight-hud-top-aligned.png) |
 
@@ -51,17 +51,40 @@ header and launch rules above take precedence over older images and prompts.
 - Quests keeps existing offers, objectives, rewards, active progress and
   Accept/Abandon. Preview artwork does not replace gameplay models.
 - Shop keeps categories, catalog selection, product stats, ownership, pricing
-  and purchase validation. Cargo Trade keeps seven resource cards, quantities,
+  and purchase validation. Cargo Trade keeps eight resource cards, quantities,
   per-resource Sell and Sell all. Example prices are not economy configuration.
 - Controls, Audio and Graphics use one consistent settings container. Changes
   apply immediately; binding guidance and save failures appear contextually.
 - Connection retains editable disconnected endpoints, locked connected fields,
   session status and Connect/Disconnect. Authentication uses operator credentials.
-- Skylab and Galaxy Gates contain an icon and Coming soon, without new gameplay.
 - Refining combines an ore recipe tree and an Update tab using Cargo Trade's
   resource renders. Show ingredient totals before refining, individual laser
   rounds and timed reserves, compatibility, and a confirmation warning before
   discarding a different boost. Rocket boosts remain Coming later.
+- Skylab now follows the approved station concept and [industry specification](../skylab.md).
+  Galaxy Gates contains an icon and Coming soon.
+
+## Approved Skylab station reference
+
+The user approved the [Skylab station concept](skylab-station-concept.png) for
+the passive industry feature requested on 2026-10-08. It supersedes the older
+Coming soon reference; [skylab-implemented.png](skylab-implemented.png) shows
+the playable page with detailed concept-derived artwork and live clickable labels.
+The later module-window references guide tables, recipe flows and bottom controls;
+Drobit retains its graphite surfaces and amber highlights.
+
+The concept uses the shared graphite/amber menu style with an original orbital
+station: three collectors on the left, four refineries on the right, Solar above
+the central spine, Basic below, Storage and Transport at lower left, and Xeno
+beside Promerium. The eight-resource strip includes real Xenomit inventory,
+separate from the virtual catalyst supplied by Xeno.
+
+Built-in ImageGen produced the image from the [exact prompt](skylab-station-concept-prompt.txt).
+Labels, stocks and levels are illustrative; the user's Skylab specification is
+authoritative for fixture values and mechanics. Generated mineral appearances
+and station details guide the art direction, not balance data. See
+[Skylab](../skylab.md) for implemented rules, custom development balance and
+the separately maintained screenshot fixture.
 
 ## Generation provenance
 

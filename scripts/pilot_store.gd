@@ -10,6 +10,7 @@ var pilots: Dictionary = {}
 var saved_text: String
 var locked: bool = false
 var failed: bool = false
+var next_lab_due: int = 0
 
 
 static func valid_id(value: String) -> bool:
@@ -47,7 +48,7 @@ func open(directory: String) -> bool:
 	file.close()
 	var json := JSON.new()
 	var data: Variant = json.data if json.parse(saved_text) == OK else null
-	if not data is Dictionary or (data.get("version") != 1 and data.get("version") != 2 and data.get("version") != 3 and data.get("version") != 4 and data.get("version") != 5) or not data.get("pilots") is Dictionary or data["pilots"].is_empty():
+	if not data is Dictionary or not Skylab.integer(data.get("version"), 1, 6) or not data.get("pilots") is Dictionary or data["pilots"].is_empty():
 		return fail("Invalid pilots.json schema. Original file preserved.")
 	for id: Variant in data["pilots"]:
 		var pilot: Variant = data["pilots"][id]
@@ -101,12 +102,30 @@ func open(directory: String) -> bool:
 			return fail("Invalid pilot ammunition. Original file preserved.")
 		for kind: String in pilot["ammo"]:
 			pilot["ammo"][kind] = int(pilot["ammo"][kind])
-		if not pilot.has("boosts") and data["version"] < 5:
+		if not pilot.has("boosts") and data["version"] < 6:
 			pilot["boosts"] = ResourceBoosts.empty_holds(pilot["equipment"])
 		elif not ResourceBoosts.valid(pilot.get("boosts"), pilot["equipment"]):
 			return fail("Invalid pilot resource boosts. Original file preserved.")
+		if data["version"] < 6:
+			# Main's schema 5 contains boosts; the earlier Skylab preview's schema 5
+			# contains industry. Preserve either layout and convert the retired wallet once.
+			if pilot.has("skylab"):
+				if not Skylab.migrate_credits(pilot): return fail("Invalid legacy Skylab or credit conversion overflow. Original file preserved.")
+			else:
+				if pilot.has("uridium") or pilot.has("premium"): return fail("Unexpected industry fields. Original file preserved.")
+				pilot["skylab"] = Skylab.bootstrap(Skylab.now())
+				pilot["premium"] = false
+		if pilot.has("uridium") or not pilot.get("premium") is bool or not Skylab.valid(pilot.get("skylab"), pilot["equipment"]):
+			return fail("Invalid pilot Skylab state. Original file preserved.")
+		Skylab.normalize(pilot["skylab"])
 	pilots = data["pilots"]
-	return persist(pilots) if data["version"] < 5 else true
+	if data["version"] < 6:
+		if not persist(pilots): return false
+		# Newly bootstrapped labs have no earlier industry to catch up. Keep the
+		# migration backup intact until the first normal command or scheduled tick.
+		schedule_labs(Skylab.now())
+		return true
+	return advance_labs(Skylab.now())
 
 
 func verifies(id: String, nonce: PackedByteArray, proof: PackedByteArray) -> bool:
@@ -149,6 +168,8 @@ func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary 
 # Only successful changes advance it; distinct station actions use the next sequence.
 func transact(id: String, sequence: int, action: String, subject: String, ship: String, slot: String, allow_preview_credits: bool = false, active_boosts: Variant = null) -> String:
 	if failed or not locked or not pilots.has(id):
+		return "Persistence unavailable."
+	if not advance_lab(id, Skylab.now()):
 		return "Persistence unavailable."
 	if action == "test_credits" and not allow_preview_credits:
 		return "Test credits are unavailable for this pilot on this server."
@@ -246,7 +267,7 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		var hold: Dictionary = pilot["cargo"][equipment["active_ship"]]
 		var sold := hold.duplicate() if resource == "all" else ({resource: hold[resource]} if hold.has(resource) else {})
 		if parts.size() == 2:
-			if resource == "all" or not parts[1].is_valid_int() or parts[1].length() > 4:
+			if resource == "all" or not parts[1].is_valid_int() or parts[1].length() > 10:
 				return "Invalid sale quantity."
 			var amount := parts[1].to_int()
 			if amount < 1 or amount > int(hold.get(resource, 0)):
@@ -307,6 +328,60 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 	return "Purchased. Item is in storage." if action == "buy" else "Fitting saved."
 
 
+func advance_lab(id: String, at: int) -> bool:
+	if failed or not locked or not pilots.has(id):
+		return false
+	var next := pilots.duplicate(true)
+	Skylab.advance(next[id], at)
+	if next != pilots and not persist(next):
+		return false
+	schedule_labs(at)
+	return true
+
+
+func advance_labs(at: int) -> bool:
+	if failed or not locked:
+		return false
+	var next := pilots.duplicate(true)
+	for pilot: Dictionary in next.values():
+		Skylab.advance(pilot, at)
+	if next != pilots and not persist(next):
+		return false
+	schedule_labs(at)
+	return true
+
+
+func schedule_labs(at: int) -> void:
+	next_lab_due = (int(at / 60) + 1) * 60
+	for pilot: Dictionary in pilots.values():
+		next_lab_due = mini(next_lab_due, Skylab.next_event(pilot["skylab"], next_lab_due))
+
+
+# Godot executes these commands synchronously on the server thread under its ledger lock.
+# The existing persisted inventory sequence is the request ID across all economy actions.
+func transact_lab(id: String, sequence: int, action: String, payload: Dictionary, at: int) -> String:
+	if not advance_lab(id, at):
+		return "Persistence unavailable."
+	if action == "snapshot":
+		return ""
+	var revision := int(pilots[id]["equipment"]["revision"])
+	if sequence <= revision:
+		return "Request already processed. Skylab refreshed."
+	if sequence != revision + 1 or sequence > MAX_CREDITS:
+		return "Inventory changed. Review it and try again."
+	var next := pilots.duplicate(true)
+	var result := Skylab.command(next[id], sequence, action, payload, at)
+	if next[id] != pilots[id]:
+		next[id]["equipment"]["revision"] = sequence
+		if not Skylab.valid(next[id]["skylab"], next[id]["equipment"]) or not CargoResources.valid(next[id]["cargo"], next[id]["equipment"]):
+			fail("Invalid server Skylab update.")
+			return "Persistence unavailable."
+		if not persist(next):
+			return "Persistence unavailable."
+	schedule_labs(at)
+	return result
+
+
 func persist(next: Dictionary) -> bool:
 	if failed or not locked:
 		return false
@@ -314,7 +389,7 @@ func persist(next: Dictionary) -> bool:
 	if current == null or current.get_as_text() != saved_text:
 		return fail("pilots.json changed or became unreadable while running. Save preserved; stop and recover.")
 	current.close()
-	var text := JSON.stringify({"version": 5, "pilots": next}, "\t") + "\n"
+	var text := JSON.stringify({"version": 6, "pilots": next}, "\t") + "\n"
 	if not replace_file(path + ".bak", saved_text) or not replace_file(path, text):
 		return false
 	pilots = next

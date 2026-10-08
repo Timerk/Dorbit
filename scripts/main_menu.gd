@@ -169,7 +169,7 @@ func build_navigation() -> void:
 		var page: String = entry[0]
 		var button := rail_button(entry[1], page, func(): select_page(page))
 		button.toggle_mode = true
-		if page in ["skylab", "gates"]:
+		if page == "gates":
 			button.add_theme_color_override("font_color", Color("60717e"))
 			button.add_theme_color_override("font_hover_color", Color("60717e"))
 			button.add_theme_color_override("icon_normal_color", Color("60717e"))
@@ -274,6 +274,7 @@ func hide_pages() -> void:
 	sector.hud.contract_panel.hide()
 	sector.settings_menu.dismiss()
 	placeholder.hide()
+	sector.skylab_menu.hide()
 	home.hide()
 
 
@@ -323,6 +324,7 @@ func select_page(page: String) -> void:
 	selected_page = page
 	opening_page = true
 	match page:
+		"skylab": sector.skylab_menu.open()
 		"shop", "cargo":
 			sector.shop.open()
 			sector.shop.select_cargo(page == "cargo")
@@ -331,7 +333,7 @@ func select_page(page: String) -> void:
 		"quests": sector.hud.toggle_contracts()
 		"settings": sector.settings_menu.open()
 		"connection": sector.session.open_menu()
-		"skylab", "gates":
+		"gates":
 			placeholder_icon.texture = load("res://assets/ui/menu/%s.svg" % page)
 			placeholder.show()
 	opening_page = false
@@ -428,6 +430,8 @@ func _process(_delta: float) -> void:
 		selected_page = "settings"
 	elif sector.session.menu.visible:
 		selected_page = "connection"
+	elif sector.skylab_menu.visible:
+		selected_page = "skylab"
 	# Keyboard shortcuts and the existing panels' links also switch pages.
 	if selected_page != "overview":
 		home.hide()
