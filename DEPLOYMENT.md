@@ -351,10 +351,41 @@ Open **Actions > Stop preview > Run workflow** when finished or before a product
 session with friends. It stops only `dorbit-preview.service` and verifies that no
 processes owned by `dorbit-preview` remain. Saves and release files stay on disk.
 Deploy preview again to start it. Preview has no systemd boot enablement and stays
-off after a VPS reboot. Both actions share one concurrency group and cannot overlap.
-GitHub can replace an older pending run when another is submitted, so avoid
-submitting multiple pending actions. If a deployment is running, Stop preview waits for it; an administrator can stop the
+off after a VPS reboot. Builds for different requests can overlap. The complete
+deployment transaction and Stop preview share one concurrency group with a queue
+of up to 100 pending jobs; running transactions are never canceled automatically.
+Before staging, the latest dispatched preview or stop request wins, regardless of
+which build finishes first. Older preview and stop requests skip their action, even if the
+newest request fails or is canceled; dispatch a new preview explicitly to retry.
+A stop dispatched during an older preview build prevents that build from starting
+the service afterward. Once staging begins, backup and activation finish together.
+If a deployment is running, Stop preview waits for it; an administrator can stop the
 service directly if immediate intervention is needed.
+
+Preview restores main's OS-specific validated import caches with read-only access
+and runs isolated test groups with two workers. Rebase older preview branches onto
+the CI performance changes first so their cache validator and test runner exist.
+The first successful main build after the cache format change must populate main's
+caches; PR validation caches are isolated from workflow dispatches on main.
+
+Selection checks the latest 30 successful preview and validation runs for a
+complete Linux/Windows pair labeled with the exact selected head revision. Both
+build jobs must have succeeded and both artifacts must still exist. Previous
+preview builds also require the same trusted main workflow revision as the new
+dispatch. Normal PR validation builds a merge commit, so those packages do not
+match the selected head and preview builds it instead. A reusable pair skips both
+build jobs; its embedded client and server revisions are checked before the
+packages are copied into this run's usual `Preview-*` artifacts. The current run
+therefore always contains the matching client, and recovery's build reference and
+partial-rerun behavior remain unchanged. Missing or expired pairs cause a fresh
+build; a failure while downloading or verifying a selected pair fails the run.
+
+After merging workflow changes, test a fresh preview, repeat the same unchanged
+PR to exercise reuse, push a new head to verify a fresh build, and dispatch Stop
+preview while another build is pending. Check the selected SHA, matching client,
+saved progress, readiness and encrypted recovery artifact each time. These live
+checks require the trusted main workflow; PR CI covers helper regressions and
+exported packages without accessing the VPS.
 
 One preview runs at a time, with no CPU/memory limits. It shares the VPS's resources
 and kernel with production. A separate account and unit isolate file access and
