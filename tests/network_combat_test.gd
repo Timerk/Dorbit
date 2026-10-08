@@ -21,8 +21,8 @@ func run() -> void:
 	var late := make_sector("LateCombat")
 	host.credits = 123
 	client.credits = 456
-	host.session.host(24681)
-	client.session.join("127.0.0.1", 24681)
+	host.session.host(test_port(24681))
+	client.session.join("127.0.0.1", test_port(24681))
 	await settle(0.5)
 	check(host.session.ships.size() == 2, "Combat client joins")
 	if host.session.ships.size() != 2:
@@ -91,7 +91,7 @@ func run() -> void:
 	# A late join sees an already damaged encounter, without resetting it.
 	alien.take_damage(15, host.player)
 	var damaged_shield := alien.shield
-	late.session.join("127.0.0.1", 24681)
+	late.session.join("127.0.0.1", test_port(24681))
 	await settle(0.5)
 	await replicate(host)
 	check(late.alien.shield == damaged_shield and alien.shield == damaged_shield, "Late join preserves and receives current alien health")

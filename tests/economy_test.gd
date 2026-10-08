@@ -83,7 +83,7 @@ func run() -> void:
 	check(clients.map(func(client: Sector): return client.credits) == balances, "Duplicate Heavy destruction cannot repeat the larger payments")
 	server.session.disconnect_session("Economy restart")
 	await settle(0.3)
-	check(server.session.host(CONTRACT_PORT) == OK, "Economy ledger reopens")
+	check(server.session.host(test_port(CONTRACT_PORT)) == OK, "Economy ledger reopens")
 	await connect_pilot(pilot, 0)
 	await replicate(server)
 	check(pilot.credits == balances[0] and pilot.active_contracts.is_empty() and pilot.session.combat.inventory["items"].has("purchase-2"), "Restart retains earned upgrade, payout and cleared contracts")

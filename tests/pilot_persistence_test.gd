@@ -11,7 +11,7 @@ func run() -> void:
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
 	client.client_only = true
-	client.session.join("127.0.0.1", 24683)
+	client.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	check(server.session.ships.size() == 1, "Provisioned pilot authenticates before spawning")
 	if server.session.ships.size() != 1:
@@ -22,20 +22,20 @@ func run() -> void:
 	var attacker := make_sector("Attacker")
 	attacker.session.credential_id = "pilot1"
 	attacker.session.credential_token = test_token(0)
-	attacker.session.join("127.0.0.1", 24683)
+	attacker.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	check(not attacker.session.active and not attacker.session.received_snapshot and server.session.ships.size() == 1, "Wrong token cannot choose another wallet or receive world state")
 	attacker.session.credential_id = "unknown"
-	attacker.session.join("127.0.0.1", 24683)
+	attacker.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	check(not attacker.session.active, "Unknown pilot cannot join")
 	attacker.multiplayer.auth_callback = func(peer: int, _data: PackedByteArray): attacker.multiplayer.send_auth(peer, "{bad-json".to_utf8_buffer())
-	attacker.session.join("127.0.0.1", 24683)
+	attacker.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	check(not attacker.session.active and server.session.challenges.is_empty(), "Malformed authentication is rejected and its challenge removed")
 	attacker.multiplayer.auth_callback = attacker.session.authenticate
 	attacker.session.credential_id = "pilot0"
-	attacker.session.join("127.0.0.1", 24683)
+	attacker.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	check(not attacker.session.active and client.session.active and server.session.ships.size() == 1, "Duplicate login rejects newcomer and preserves existing session")
 	attacker.multiplayer.auth_callback = func(peer: int, challenge: PackedByteArray):
@@ -46,7 +46,7 @@ func run() -> void:
 			var nonce: PackedByteArray = envelope["nonce"].hex_decode()
 			var forged := {"id": "pilot1", "proof": Crypto.new().hmac_digest(HashingContext.HASH_SHA256, test_token(1).sha256_buffer(), nonce).hex_encode(), "protocol": attacker.session.protocol_fingerprint(), "credits": 999999, "wallet": "pilot0"}
 			attacker.multiplayer.send_auth(peer, JSON.stringify(forged).to_utf8_buffer())
-	attacker.session.join("127.0.0.1", 24683)
+	attacker.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	await replicate(server)
 	check(attacker.session.active and attacker.credits == 0 and server.session.pilot_ids[attacker.multiplayer.get_unique_id()] == "pilot1", "Client-supplied balance and wallet fields cannot override authenticated ownership")
@@ -73,14 +73,14 @@ func run() -> void:
 	check(not server.session.store.verifies("pilot0", nonce, PackedByteArray()), "Malformed proof fails")
 	client.session.disconnect_session("Reconnect")
 	await settle(0.3)
-	client.session.join("127.0.0.1", 24683)
+	client.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	await replicate(server)
 	check(client.credits == 1500 and server.session.pilot_ids.size() == 1, "Reconnect restores wallet and releases old login reservation")
 	server.session.disconnect_session("Restart")
 	await settle(0.3)
-	check(server.session.host(24683) == OK, "Restart opens saved ledger with a new store instance")
-	client.session.join("127.0.0.1", 24683)
+	check(server.session.host(test_port(24683)) == OK, "Restart opens saved ledger with a new store instance")
+	client.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	await replicate(server)
 	check(client.credits == 1500, "Restart restores earned credits")
@@ -140,7 +140,7 @@ func save_failure_process() -> void:
 	var client := make_sector("Pilot")
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
-	client.session.join("127.0.0.1", 24683)
+	client.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	if server.session.ships.size() != 1:
 		quit(2)

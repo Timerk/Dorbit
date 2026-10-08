@@ -90,34 +90,7 @@ PY
     if [[ "$task" == run ]]; then
       exec python3 tools/run_server.py "$engine" --headless --max-fps 60 --path . -- --server "$@"
     fi
-    checked --headless --path . --script res://tests/dedicated_server_test.gd
-    checked --headless --path . --script res://tests/sector_visuals_test.gd
-    checked --headless --path . --script res://tests/combat_effects_test.gd
-    checked --headless --path . --script res://tests/pilot_persistence_test.gd
-    checked_command python3 tests/server_shutdown_test.py "$engine"
-    checked --headless --path . --script res://tests/alien_sector_test.gd
-    checked --headless --path . --script res://tests/map_layout_test.gd
-    checked --headless --path . --script res://tests/map_layout_playthrough.gd
-    checked --headless --path . --script res://tests/hud_playthrough.gd
-    checked --headless --path . --script res://tests/hud_customization_test.gd
-    checked --headless --path . --script res://tests/autopilot_test.gd
-    checked --headless --path . --script res://tests/targeting_test.gd
-    checked --headless --path . --script res://tests/rpc_compatibility_test.gd
-    checked --headless --path . --script res://tests/hunting_contracts_test.gd
-    checked --headless --path . --script res://tests/economy_test.gd
-    checked --headless --path . --script res://tests/equipment_test.gd
-    checked --headless --path . --script res://tests/shop_test.gd
-    checked --headless --path . --script res://tests/ammo_test.gd
-    checked --headless --path . --script res://tests/main_menu_test.gd
-    checked --headless --path . --script res://tests/offline_main_menu_test.gd -- --offline
-    checked --headless --path . --script res://tests/ship_hangar_test.gd
-    checked --headless --path . --script res://tests/ships_test.gd
-    checked --headless --path . --script res://tests/balance_test.gd
-    checked --headless --path . --script res://tests/darkorbit_equipment_test.gd
-    checked --headless --path . --script res://tests/preview_credits_test.gd
-    checked --headless --path . --script res://tests/resources_test.gd
-    checked --headless --path . --script res://tests/resource_upgrades_test.gd
-    checked_command python3 tests/pilots_test.py
+    python3 tools/check-game.py "$engine" --suite linux
     ;;
   build)
     setup_template

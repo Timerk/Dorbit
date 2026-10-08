@@ -22,11 +22,11 @@ func run() -> void:
 		root.size = Vector2i(960, 600)
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
-	client.session.join("127.0.0.1", 24736)
+	client.session.join("127.0.0.1", test_port(24736))
 	var observer := make_sector("ShipObserver")
 	observer.session.credential_id = "pilot1"
 	observer.session.credential_token = test_token(1)
-	observer.session.join("127.0.0.1", 24736)
+	observer.session.join("127.0.0.1", test_port(24736))
 	await settle(0.6)
 	await replicate(server)
 	check(client.session.active and observer.session.active, "Both pilots authenticate")
@@ -171,7 +171,7 @@ func run() -> void:
 	var late := make_sector("ShipLate")
 	late.session.credential_id = "pilot2"
 	late.session.credential_token = test_token(2)
-	late.session.join("127.0.0.1", 24736)
+	late.session.join("127.0.0.1", test_port(24736))
 	await settle(0.5)
 	await replicate(server)
 	check(late.session.ships[id].ship_model == "goliath" and late.session.ships[id].max_hull == 356000, "Late join gets the current model and hull")
@@ -185,8 +185,8 @@ func run() -> void:
 	late.session.disconnect_session("Restart")
 	await settle()
 	server.session.disconnect_session("Restart")
-	check(server.session.host(24736) == OK, "Server restarts with all purchased hulls")
-	client.session.join("127.0.0.1", 24736)
+	check(server.session.host(test_port(24736)) == OK, "Server restarts with all purchased hulls")
+	client.session.join("127.0.0.1", test_port(24736))
 	await settle(0.5)
 	await replicate(server)
 	check(server.session.store.pilots["pilot0"] == final and client.player.ship_model == "goliath" and client.session.combat.inventory["ships"].size() == 12, "Ownership, fittings, cargo, active hull and wallet survive restart")
