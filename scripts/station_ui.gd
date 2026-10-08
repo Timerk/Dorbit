@@ -154,6 +154,8 @@ static func button(parent: Node, content: String, action: Callable) -> Button:
 static func texture(model: String) -> Texture2D:
 	if Ammunition.ROCKETS.has(model) or model in ["hst-1", "hst-2"]:
 		return load("res://assets/ui/rockets/%s.png" % model)
+	if Equipment.MODELS.has(model) and Equipment.MODELS[model]["kind"] == "extra":
+		return load("res://assets/ui/extras/%s.png" % model)
 	if Ammunition.TYPES.has(model):
 		return load("res://assets/ui/ammo/%s.png" % model)
 	if model == "ship" or ShipCatalog.MODELS.has(model):
@@ -185,6 +187,8 @@ static func bonus(model: String) -> String:
 	var info: Dictionary = Equipment.MODELS[model]
 	if info["kind"] == "launcher":
 		return "%d rockets / volley\n1 second / load\n3 seconds / reload cooldown" % info["capacity"]
+	if info["kind"] == "extra":
+		return {"rep-1": "Hull repair / 165 s", "rep-2": "Hull repair / 120 s", "repair-auto": "Automatic repair / requires robot", "cargo-expander": "Cargo capacity x2", "slot-cpu-1": "+2 extra slots", "ammo-cpu": "Auto-buy 10,000 configured rounds", "generator-cpu": "Automatic shield & engine boosts"}[model]
 	if info["kind"] == "laser":
 		return "+%d damage / shot" % info["damage"] + ("\n+%d%% damage against aliens" % roundi(info["npc_bonus"] * 100) if info.has("npc_bonus") else "")
 	if info["shield"] > 0.0:
