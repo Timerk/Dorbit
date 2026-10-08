@@ -34,6 +34,7 @@ func run() -> void:
 		return
 	var id := client.multiplayer.get_unique_id()
 	var remote := server.session.ships[id]
+	check(client.player.repair_visual == null, "Idle pilot creates no repair meshes before working")
 	var combat := client.session.combat
 	client.shop.select_category("extras")
 	check(client.shop.models_in_category("extras").size() == 7, "All seven extras appear in the shop")
