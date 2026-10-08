@@ -729,6 +729,31 @@ Ship statistics, collision size, equipment, ownership and progression retain
 their agreed behavior. Art acceptance and performance on representative
 friend-group hardware still require user review.
 
+## Alien model review
+
+The user approved the generated Scout, Sentinel and Heavy spacecraft concepts
+and requested editable models and renders. The existing amber, crimson and
+violet identities guide fitted armor, machined trim, exposed wing mounts,
+recessed drives and sensor slits. Scout retains a narrow hull and long crescent
+wings; Sentinel has a broader wedge and angular talons; Heavy adds reinforced
+shoulders and a thicker ventral armor block. See the
+[alien model review](art/alien-review/README.md) for Blender sources, portable
+textured GLBs, surface maps and six consistent views rendered from each mesh.
+
+The user requested a more detailed match to the approved concepts after reviewing
+the first models. The refinement adds contoured interlocking plating, machined
+chine blades, exposed hydraulic joints and service bays, ribbed cannons, layered
+drive cowls and turbine throats. Heavy gains a raised overlapping command shield
+and shorter talons; Sentinel and Heavy have distinct exhaust grilles. Packed 4K
+surface maps include coating chips along real polygon edges, seam grime and
+brushed wear. Each craft also has three actual mesh close-ups for detail review.
+
+This is art for the existing three alien types within the current milestone.
+Model dimensions are review units. Runtime size/orientation, LODs and gameplay
+integration follow separately; collision sizes, alien statistics and combat
+retain their existing behavior. The concepts are accepted; final model art and
+representative-hardware performance still need user review.
+
 ## Performance
 
 Reference PC supplied by the user:
