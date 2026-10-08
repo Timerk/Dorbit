@@ -1,0 +1,60 @@
+{
+  "models": [
+    {
+      "name": "Scout",
+      "mesh_components": 607,
+      "studio_triangles": 135352,
+      "dimensions_review_units": [
+        5.6739,
+        6.616,
+        1.2383
+      ],
+      "packed_images": 4,
+      "blend_bytes": 51163227,
+      "export_triangles": 42936,
+      "export_bytes": 50639896,
+      "embedded_texture_images": 3
+    },
+    {
+      "name": "Sentinel",
+      "mesh_components": 625,
+      "studio_triangles": 144512,
+      "dimensions_review_units": [
+        6.2545,
+        6.996,
+        1.568
+      ],
+      "packed_images": 4,
+      "blend_bytes": 51119423,
+      "export_triangles": 44576,
+      "export_bytes": 50688504,
+      "embedded_texture_images": 3
+    },
+    {
+      "name": "Heavy",
+      "mesh_components": 662,
+      "studio_triangles": 158444,
+      "dimensions_review_units": [
+        7.1794,
+        7.216,
+        2.3121
+      ],
+      "packed_images": 4,
+      "blend_bytes": 54340717,
+      "export_triangles": 48592,
+      "export_bytes": 54058232,
+      "embedded_texture_images": 3
+    }
+  ],
+  "checks": [
+    "Three saved Blender models reopen with editable components and nine cameras",
+    "Finite nondegenerate base and evaluated geometry with UVs and materials",
+    "Approved concept and three 4096-square surface maps packed per model",
+    "Correct sRGB albedo and Non-Color roughness/metallic and tangent normal maps",
+    "Six full views and three detail renders per alien are newer than the saved model",
+    "Single-mesh GLB exports have UVs/normals and three unique embedded textures",
+    "GLBs round-trip through Blender with dimensions/orientation preserved",
+    "Source and round-trip rear raycasts reach both recessed emissive exhaust centers",
+    "Exports include no studio cameras, lights or animations"
+  ]
+}

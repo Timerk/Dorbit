@@ -1,0 +1,383 @@
+{
+  "renders": 27,
+  "checks": [
+    {
+      "file": "scout.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        214,
+        255,
+        1349,
+        983
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "scout-top.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        352,
+        78,
+        1248,
+        1122
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "scout-side.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        104,
+        469,
+        1496,
+        731
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "scout-front.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        104,
+        448,
+        1496,
+        752
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "scout-rear.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        104,
+        448,
+        1496,
+        752
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "scout-underside.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        352,
+        78,
+        1248,
+        1122
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "scout-armor-detail.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        0,
+        0,
+        1600,
+        1200
+      ],
+      "intentional_detail_crop": true
+    },
+    {
+      "file": "scout-mount-detail.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        0,
+        0,
+        1600,
+        1200
+      ],
+      "intentional_detail_crop": true
+    },
+    {
+      "file": "scout-drive-detail.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        0,
+        0,
+        1600,
+        983
+      ],
+      "intentional_detail_crop": true
+    },
+    {
+      "file": "sentinel.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        147,
+        205,
+        1380,
+        1022
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "sentinel-top.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        333,
+        78,
+        1267,
+        1122
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "sentinel-side.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        104,
+        443,
+        1496,
+        756
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "sentinel-front.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        104,
+        425,
+        1496,
+        775
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "sentinel-rear.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        104,
+        425,
+        1496,
+        775
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "sentinel-underside.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        333,
+        78,
+        1267,
+        1122
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "sentinel-armor-detail.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        0,
+        0,
+        1600,
+        1200
+      ],
+      "intentional_detail_crop": true
+    },
+    {
+      "file": "sentinel-mount-detail.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        0,
+        0,
+        1600,
+        1200
+      ],
+      "intentional_detail_crop": true
+    },
+    {
+      "file": "sentinel-drive-detail.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        0,
+        0,
+        1600,
+        965
+      ],
+      "intentional_detail_crop": true
+    },
+    {
+      "file": "heavy.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        203,
+        144,
+        1435,
+        978
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "heavy-top.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        280,
+        78,
+        1320,
+        1122
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "heavy-side.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        104,
+        376,
+        1496,
+        824
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "heavy-front.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        104,
+        375,
+        1496,
+        825
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "heavy-rear.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        104,
+        375,
+        1496,
+        825
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "heavy-underside.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        280,
+        78,
+        1320,
+        1122
+      ],
+      "intentional_detail_crop": false
+    },
+    {
+      "file": "heavy-armor-detail.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        0,
+        0,
+        1600,
+        1200
+      ],
+      "intentional_detail_crop": true
+    },
+    {
+      "file": "heavy-mount-detail.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        0,
+        0,
+        1600,
+        1200
+      ],
+      "intentional_detail_crop": true
+    },
+    {
+      "file": "heavy-drive-detail.png",
+      "size": [
+        1600,
+        1200
+      ],
+      "alpha_bounds": [
+        0,
+        0,
+        1600,
+        982
+      ],
+      "intentional_detail_crop": true
+    }
+  ]
+}
