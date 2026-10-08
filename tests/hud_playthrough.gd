@@ -47,6 +47,9 @@ func run() -> void:
 					check(not caption.intersects(card), "World captions avoid every HUD card after displacement")
 		for button in [navigation.range_less, navigation.range_more, navigation.map_button]:
 			check(navigation.radar_rect().encloses(button.get_rect()), "Radar click targets remain inside their card")
+		for button in [navigation.range_less, navigation.range_more]:
+			check(button.size == Vector2(26, 26), "Radar range buttons retain their compact size")
+			check(button.get_rect().end.y <= navigation.radar_rect().position.y + 34, "Radar range buttons leave a gap above the header divider")
 		await click_at(navigation.range_more.get_global_rect().get_center())
 		check(navigation.range_index == 2, "Native radar button changes range after repositioning")
 		await click_at(navigation.range_less.get_global_rect().get_center())
