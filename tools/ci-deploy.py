@@ -10,6 +10,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
 import zipfile
 
@@ -56,7 +57,8 @@ def artifact_file(archive, name, target):
 def download_builds(preview=False):
     sha = commit(os.environ["PREVIEW_SHA" if preview else "GITHUB_SHA"])
     repo = os.environ["GITHUB_REPOSITORY"]
-    run_id, attempt = os.environ["GITHUB_RUN_ID"], os.environ["GITHUB_RUN_ATTEMPT"]
+    run_id = os.environ.get("PREVIEW_SOURCE_RUN", os.environ["GITHUB_RUN_ID"]) if preview else os.environ["GITHUB_RUN_ID"]
+    attempt = os.environ.get("PREVIEW_SOURCE_ATTEMPT", os.environ["GITHUB_RUN_ATTEMPT"]) if preview else os.environ["GITHUB_RUN_ATTEMPT"]
     if not all(re.fullmatch(r"[1-9][0-9]*", value) for value in (run_id, attempt)):
         raise ValueError("Invalid build run")
     Path("dist").mkdir()
@@ -64,7 +66,10 @@ def download_builds(preview=False):
         build_attempt = os.environ[f"{platform.upper()}_BUILD_ATTEMPT"] if preview else attempt
         if not re.fullmatch(r"[1-9][0-9]*", build_attempt) or int(build_attempt) > int(attempt):
             raise ValueError("Invalid build attempt")
-        name = f"{'Preview' if preview else 'Dorbit'}-{platform}-{sha}-{build_attempt}"
+        prefix = os.environ.get("PREVIEW_SOURCE_PREFIX", "Preview") if preview else "Dorbit"
+        if prefix not in ("Preview", "Dorbit"):
+            raise ValueError("Invalid artifact prefix")
+        name = f"{prefix}-{platform}-{sha}-{build_attempt}"
         listing = api(f"repos/{repo}/actions/runs/{run_id}/artifacts?name={name}")
         if listing["total_count"] != 1 or len(listing["artifacts"]) != 1:
             raise ValueError("Expected exactly one artifact from the successful build job's attempt")
@@ -76,6 +81,90 @@ def download_builds(preview=False):
             run("gh", "api", f"repos/{repo}/actions/artifacts/{int(artifact['id'])}/zip", stdout=archive)
             archive.seek(0)
             artifact_file(archive, filename, Path("dist") / filename)
+    if preview:
+        verify_preview_packages(sha)
+
+
+def verify_preview_packages(sha):
+    """Check both embedded revisions before a reused pair can be republished."""
+    with zipfile.ZipFile("dist/windows.zip") as client:
+        revisions = [member for member in client.infolist() if member.filename == "REVISION"]
+        if len(revisions) != 1 or revisions[0].file_size > 64 or client.read(revisions[0]).decode().strip() != sha:
+            raise ValueError("Preview client revision mismatch")
+    with tarfile.open("dist/server.tar.gz", "r:gz") as server:
+        revision = None
+        total = 0
+        for count, member in enumerate(server, 1):
+            total += member.size
+            if count > 30000 or total > 1024**3:
+                raise ValueError("Server archive too large")
+            if member.name in ("REVISION", "./REVISION"):
+                if revision is not None or not member.isfile() or member.size > 64:
+                    raise ValueError("Preview server revision mismatch")
+                revision = server.extractfile(member).read().decode().strip()
+        if revision != sha:
+            raise ValueError("Preview server revision mismatch")
+
+
+def reusable_preview(sha):
+    """Find a complete checked pair; PR merge SHA artifacts never match a head SHA."""
+    repo = os.environ["GITHUB_REPOSITORY"]
+    current = os.environ["GITHUB_RUN_ID"]
+    for filename, prefix in (("preview.yml", "Preview"), ("validate.yml", "Dorbit")):
+        workflow = api(f"repos/{repo}/actions/workflows/{filename}")
+        listing = api(f"repos/{repo}/actions/workflows/{workflow['id']}/runs?status=success&per_page=30")
+        for build in listing["workflow_runs"]:
+            if (str(build["id"]) == current or build["workflow_id"] != workflow["id"] or
+                    build["status"] != "completed" or build["conclusion"] != "success" or
+                    (build.get("head_repository") or {}).get("full_name") != repo):
+                continue
+            if prefix == "Preview":
+                # Reuse only the same trusted main workflow revision as this dispatch.
+                if (build["event"] != "workflow_dispatch" or build["head_branch"] != "main" or
+                        build["head_sha"] != os.environ["GITHUB_SHA"]):
+                    continue
+            elif build["event"] not in ("push", "pull_request") or build["head_sha"] != sha:
+                continue
+            artifacts = api(f"repos/{repo}/actions/runs/{build['id']}/artifacts?per_page=100")
+            if artifacts["total_count"] > 100:
+                continue  # Bounded lookup; never select from an incomplete listing.
+            candidates = {}
+            for platform, job_name in (("Linux", "linux" if prefix == "Preview" else "linux-server"),
+                                       ("Windows", "windows")):
+                matches = []
+                for artifact in artifacts["artifacts"]:
+                    match = re.fullmatch(rf"{prefix}-{platform}-{sha}-([1-9][0-9]*)", artifact["name"])
+                    if match and not artifact["expired"] and int(match[1]) <= build["run_attempt"]:
+                        matches.append(int(match[1]))
+                for attempt in sorted(set(matches), reverse=True):
+                    if matches.count(attempt) != 1:
+                        continue
+                    jobs = api(f"repos/{repo}/actions/runs/{build['id']}/attempts/{attempt}/jobs?per_page=100")
+                    checked = [job for job in jobs["jobs"] if job["name"] == job_name]
+                    if jobs["total_count"] <= 100 and len(checked) == 1 and checked[0]["conclusion"] == "success":
+                        candidates[platform.lower()] = str(attempt)
+                        break
+            if len(candidates) == 2:
+                return {"run": str(build["id"]), "attempt": str(build["run_attempt"]),
+                        "prefix": prefix, **candidates}
+    return {"run": "", "attempt": "", "prefix": "", "linux": "", "windows": ""}
+
+
+def preview_current():
+    """Newest manual request wins, including a later request to stop preview."""
+    repo = os.environ["GITHUB_REPOSITORY"]
+    current = api(f"repos/{repo}/actions/runs/{os.environ['GITHUB_RUN_ID']}")
+    newer = []
+    for filename in ("preview.yml", "stop-preview.yml"):
+        listing = api(f"repos/{repo}/actions/workflows/{filename}/runs?event=workflow_dispatch&branch=main&per_page=100")
+        newer += [build for build in listing["workflow_runs"]
+                  if (build["created_at"], int(build["id"])) > (current["created_at"], int(current["id"]))]
+    allowed = not newer
+    with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
+        output.write(f"current={str(allowed).lower()}\n")
+    if not allowed:
+        with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as output:
+            output.write("Preview action skipped: a newer preview or stop request was dispatched.\n")
 
 
 def verify_provenance(path, sha):
@@ -128,10 +217,15 @@ def preview_select():
     if pr["state"] != "open" or not pr["head"]["repo"] or pr["head"]["repo"]["full_name"] != repo:
         raise ValueError("Preview accepts only open PRs with branches in this repository")
     sha = commit(pr["head"]["sha"])
+    reuse = reusable_preview(sha)
     with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
         output.write(f"sha={sha}\npr={number}\n")
+        for name, value in reuse.items():
+            output.write(f"reuse_{name}={value}\n")
     with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as output:
         output.write(f"Selected PR #{number}, exact head commit `{sha}`. Later pushes require another deployment.\n")
+        if reuse["run"]:
+            output.write(f"Reusing checked packages from [run {reuse['run']}](https://github.com/{repo}/actions/runs/{reuse['run']}).\n")
 
 
 def preview_prepare():
@@ -307,4 +401,5 @@ if __name__ == "__main__":
      "select": select, "prepare": prepare,
      "activate": activate, "report": report, "ssh-config": ssh_config,
      "preview-select": preview_select, "preview-prepare": preview_prepare,
+     "preview-current": preview_current,
      "preview-report": preview_report, "preview-stop": preview_stop}[sys.argv[1]]()
