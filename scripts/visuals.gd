@@ -277,7 +277,7 @@ static func distant_scenery(parent: Node3D) -> void:
 		source.free()
 
 
-static func laser(parent: Node3D, start: Vector3, finish: Vector3, hostile: bool) -> void:
+static func laser(parent: Node3D, start: Vector3, finish: Vector3, hostile: bool, ammo_type: String = "x1") -> void:
 	sound(parent, "laser", start)
 	if start.distance_squared_to(finish) < 0.01:
 		return
@@ -294,14 +294,14 @@ static func laser(parent: Node3D, start: Vector3, finish: Vector3, hostile: bool
 	if effect == null:
 		return
 	effect.set_meta("laser", true)
-	var color := Color("ff6245") if hostile else Color("46cfff")
+	var color: Color = Color("ff6245") if hostile else Ammunition.TYPES.get(ammo_type, Ammunition.TYPES["x1"])["color"]
 	var length := start.distance_to(endpoint)
 	var shape := CylinderMesh.new()
 	shape.top_radius = 0.055
 	shape.bottom_radius = 0.055
 	shape.height = length
 	shape.radial_segments = 4 if effects_quality(parent) == 1 else 8
-	var surface := material(color.lerp(Color.WHITE, 0.85), true)
+	var surface := material(color.lerp(Color.WHITE, 0.35), true)
 	surface.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	surface.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	var beam := mesh(effect, shape, (endpoint - start) * 0.5, surface)

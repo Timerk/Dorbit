@@ -466,7 +466,7 @@ func spawn(id: int, location: Vector3, docked: bool = false) -> void:
 			ship.camera.current = false
 		ship.collision_mask = 1
 		ship.destroyed.connect(sector.on_destroyed)
-		ship.fired.connect(sector.on_laser)
+		ship.fired.connect(sector.on_laser.bind(ship))
 	ship.position = location
 	ships[id] = ship
 	combat.add_player(id, location)

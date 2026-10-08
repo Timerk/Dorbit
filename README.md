@@ -254,6 +254,11 @@ laser bonuses against aliens. Each successful volley uses one shot. Blocked shot
 use none. An empty selected type stops fire until you choose another type.
 The destination tracker is now at top center.
 
+The HUD and shop use generated metallic energy-cartridge artwork. Pilot lasers
+match their icons: ice-blue x1, cyan x2, amber x3 and violet x4; aliens fire red.
+Each network shot carries its firing ammo type so observers see the same color.
+See the [ImageGen prompts](docs/ammo-art/generation-prompts.md) for the asset source.
+
 Each new pilot receives **10,000 x1 shots**. Ammo is shared across owned ships and
 survives rescue, reconnects and server restart. In **Shop > Ammo**, x1/x2/x3 cost
 **10 / 50 / 100 credits per 100 shots**, as confirmed by the user. The quantity
@@ -269,7 +274,8 @@ rendered runs save shop and flight views under `build/validation/ammo-*.png`.
 
 Review the [flight ammo bar](docs/feedback/ammo-flight-1440.png) and
 [ammo shop](docs/feedback/ammo-shop-960.png). Windows ammo checks passed 99
-assertions headlessly and 104 with OpenGL; the rendered HUD replay passed 220,
+assertions headlessly and 108 with OpenGL, including all four network shot colors;
+combat effect checks passed 28 and the rendered color gallery passed. The HUD replay passed 220,
 the full Windows check helper passed, and seven Python provisioning tests passed.
 Human pricing and group-combat performance playtesting remain necessary; Linux
 and exported-client checks are left to CI.

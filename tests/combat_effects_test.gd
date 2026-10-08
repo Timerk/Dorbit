@@ -15,6 +15,18 @@ func run() -> void:
 	var nose_hit := SectorVisuals.hull_contact(ship, -ship.global_basis.z)
 	check(nose_hit.length() > 4.0, "Hull sparks are placed outside the long visual nose instead of inside the physics sphere")
 	var start := ship.global_position + Vector3(0, 0, 30)
+	for kind: String in Ammunition.TYPES:
+		SectorVisuals.laser(world, start, ship.global_position, false, kind)
+		var effect: Node = get_nodes_in_group("transient_feedback")[-1]
+		var mesh := effect.get_child(0) as MeshInstance3D
+		var surface := mesh.material_override as StandardMaterial3D
+		check(surface.albedo_color.is_equal_approx(Ammunition.TYPES[kind]["color"].lerp(Color.WHITE, 0.35)), kind + " beam uses its cartridge color")
+		effect.free()
+	SectorVisuals.laser(world, start, ship.global_position, true, "x4")
+	var hostile_effect: Node = get_nodes_in_group("transient_feedback")[-1]
+	var hostile_surface := (hostile_effect.get_child(0) as MeshInstance3D).material_override as StandardMaterial3D
+	check(hostile_surface.albedo_color.is_equal_approx(Color("ff6245").lerp(Color.WHITE, 0.35)), "Alien lasers retain hostile red")
+	hostile_effect.free()
 	SectorVisuals.laser(world, start, ship.global_position, false)
 	check(ship.get_meta("visual_hit_direction") == Vector3.BACK, "Confirmed shot records the incoming surface direction")
 	var beam := get_nodes_in_group("transient_feedback")[0] as CombatEffect

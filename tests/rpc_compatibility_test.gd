@@ -33,8 +33,8 @@ func run() -> void:
 	# A changed signature can keep the same names and still misinterpret packets.
 	different = GDScript.new()
 	different.source_code = original.source_code.replace("class_name SessionCombat\n", "").replace(
-		"func show_laser(start: Vector3, finish: Vector3, hostile: bool)",
-		"func show_laser(start: Vector3, finish: Vector3, hostile: bool, extra: bool = false)")
+		'func show_laser(start: Vector3, finish: Vector3, hostile: bool, ammo_type: String = "x1")',
+		'func show_laser(start: Vector3, finish: Vector3, hostile: bool, ammo_type: String = "x1", extra: bool = false)')
 	check(different.reload() == OK, "Changed-argument fixture compiles")
 	server.session.combat.set_script(different)
 	server.session.combat.session = server.session
@@ -42,7 +42,7 @@ func run() -> void:
 	await settle(0.3)
 	check(not client.session.active and server.session.ships.is_empty(), "Changed RPC arguments are rejected before gameplay")
 	different = GDScript.new()
-	different.source_code = 'extends SessionCombat\n\n@rpc("authority", "call_local", "unreliable", 4)\nfunc show_laser(start: Vector3, finish: Vector3, hostile: bool) -> void:\n\tpass\n'
+	different.source_code = 'extends SessionCombat\n\n@rpc("authority", "call_local", "unreliable", 4)\nfunc show_laser(start: Vector3, finish: Vector3, hostile: bool, ammo_type: String = "x1") -> void:\n\tpass\n'
 	check(different.reload() == OK, "Changed-channel fixture compiles")
 	server.session.combat.set_script(different)
 	server.session.combat.session = server.session

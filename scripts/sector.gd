@@ -74,7 +74,7 @@ func _ready() -> void:
 		player.mouse_sensitivity = settings.sensitivity
 		toast = "Welcome to Outpost 01. Hold %s to steer." % GameSettings.binding_text("steer")
 		player.destroyed.connect(on_destroyed)
-		player.fired.connect(on_laser)
+		player.fired.connect(on_laser.bind(player))
 	for id in range(ALIEN_KINDS.size()):
 		var enemy := Alien.new()
 		enemy.alien_id = id
@@ -88,7 +88,7 @@ func _ready() -> void:
 		if dedicated_server or not client_only:
 			relocate_alien(enemy)
 		enemy.destroyed.connect(on_destroyed)
-		enemy.fired.connect(on_laser)
+		enemy.fired.connect(on_laser.bind(enemy))
 	if not dedicated_server:
 		var layer := CanvasLayer.new()
 		add_child(layer)
@@ -465,12 +465,13 @@ func select_target(ship: SpaceShip) -> void:
 		objective_stage = maxi(objective_stage, 2)
 
 
-func on_laser(start: Vector3, finish: Vector3, hostile: bool) -> void:
+func on_laser(start: Vector3, finish: Vector3, hostile: bool, shooter: SpaceShip = null) -> void:
+	var ammo_type: String = shooter.ammo_type if shooter is Pilot else "x1"
 	if session.active:
 		if multiplayer.is_server():
-			session.combat.show_laser.rpc(start, finish, hostile)
+			session.combat.show_laser.rpc(start, finish, hostile, ammo_type)
 		return
-	SectorVisuals.laser(self, start, finish, hostile)
+	SectorVisuals.laser(self, start, finish, hostile, ammo_type)
 
 
 func on_destroyed(ship: SpaceShip, attacker: SpaceShip) -> void:

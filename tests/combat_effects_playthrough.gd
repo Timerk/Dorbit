@@ -47,6 +47,19 @@ func run() -> void:
 	SectorVisuals.impact(sector.alien, sector.alien.position, true, true)
 	SectorVisuals.explosion(sector, sector.alien.position)
 	await create_timer(SectorVisuals.EXPLOSION_DURATION + 0.1).timeout
+	# Exercise the real Pilot signal path and capture each cartridge's firing color.
+	root.size = Vector2i(1440, 900)
+	root.content_scale_size = root.size
+	await create_timer(0.2).timeout
+	for kind: String in Ammunition.TYPES:
+		sector.player.ammo_type = kind
+		sector.player.ammo[kind] = 10
+		sector.player.shot_cooldown = 0.0
+		sector.alien.reset_health()
+		check(sector.player.try_fire(sector.alien), "Gallery fires " + kind + " through the pilot signal")
+		await snapshot("ammo-laser-" + kind)
+		await create_timer(0.45).timeout
+	sector.player.ammo_type = "x1"
 	for size in [Vector2i(1440, 900), Vector2i(960, 600)]:
 		root.size = size
 		root.content_scale_size = size
