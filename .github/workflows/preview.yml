@@ -205,7 +205,7 @@ jobs:
   deploy:
     needs: [select, reuse, linux, windows]
     if: >-
-      always() && needs.select.result == 'success' &&
+      always() && !cancelled() && needs.select.result == 'success' &&
       ((needs.reuse.result == 'success') ||
       (needs.linux.result == 'success' && needs.windows.result == 'success'))
     # Build jobs overlap; only the complete VPS transaction shares the stop lock.
