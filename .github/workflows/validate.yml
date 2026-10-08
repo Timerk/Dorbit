@@ -11,7 +11,7 @@ permissions:
 # Each PR cancels only its own obsolete validation; main builds are independent.
 concurrency:
   group: validate-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 jobs:
   changes:
