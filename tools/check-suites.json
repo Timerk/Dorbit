@@ -5,6 +5,7 @@
     {"name": "quickslots_test", "checks": [["quickslots_test.gd"]]},
     {"name": "rocket_test", "checks": [["rocket_test.gd"]]},
     {"name": "sector_visuals_test", "checks": [["sector_visuals_test.gd"]]},
+    {"name": "station_assets_test", "checks": [["station_assets_test.gd"]]},
     {"name": "combat_effects_test", "checks": [["combat_effects_test.gd"]]},
     {"name": "targeting_test", "checks": [["targeting_test.gd"]]},
     {"name": "network_test", "checks": [["network_test.gd"]]},
@@ -40,6 +41,7 @@
   "linux": [
     {"name": "dedicated_server_test", "checks": [["dedicated_server_test.gd"]]},
     {"name": "sector_visuals_test", "checks": [["sector_visuals_test.gd"]]},
+    {"name": "station_assets_test", "checks": [["station_assets_test.gd"]]},
     {"name": "combat_effects_test", "checks": [["combat_effects_test.gd"]]},
     {"name": "pilot_persistence_test", "checks": [["pilot_persistence_test.gd"]]},
     {"name": "alien_sector_test", "checks": [["alien_sector_test.gd"]]},

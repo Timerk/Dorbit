@@ -1,0 +1,14 @@
+{
+  "triangles": 116064,
+  "materials": 8,
+  "editable_parts": 3367,
+  "collision_boxes": 53,
+  "godot_dimensions_m": [
+    170.32000732421875,
+    293.625,
+    170.32000732421875
+  ],
+  "glb_bytes": 13114844,
+  "service_origin": "Lowest main hangar; approach from +Z",
+  "source": "art/station-review/concept.png"
+}

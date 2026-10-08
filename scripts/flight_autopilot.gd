@@ -155,6 +155,19 @@ func command(delta: float) -> Vector3:
 			cancel("ARRIVED")
 		return Vector3.ZERO
 	var endpoint := location - offset.normalized() * arrival_radius
+	if selected["key"] == "station":
+		# The taller station can occupy the radial stopping point above/below
+		# the service origin. Keep a chosen clear approach stable during detours.
+		if destination_key == "station" and goal != Vector3.INF:
+			endpoint = goal
+		elif not segment_clear(endpoint, endpoint):
+			var nearest := INF
+			for direction in [Vector3.FORWARD, Vector3.BACK, Vector3.LEFT, Vector3.RIGHT]:
+				var candidate: Vector3 = location + direction * arrival_radius
+				var distance_to_pilot := candidate.distance_squared_to(pilot.position)
+				if distance_to_pilot < nearest and segment_clear(candidate, candidate):
+					endpoint = candidate
+					nearest = distance_to_pilot
 	if goal == Vector3.INF or goal.distance_to(endpoint) > 8.0 or destination_key != selected["key"]:
 		goal = endpoint
 		destination_key = selected["key"]

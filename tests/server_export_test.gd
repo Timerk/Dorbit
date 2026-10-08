@@ -35,7 +35,7 @@ func run() -> void:
 			var shape := collider.shape
 			colliders.append([str(collider.global_transform), shape.get_class(),
 				shape.radius if shape is SphereShape3D else str(shape.size)])
-	check(colliders.size() == 30, "All 24 asteroids and six station colliders survive export")
+	check(colliders.size() == 77, "All 24 asteroids and 53 station colliders survive export")
 	for model: String in ShipCatalog.MODELS:
 		var pilot := Pilot.new()
 		pilot.render_enabled = false
@@ -50,7 +50,7 @@ func run() -> void:
 	await physics_frame
 	var space := sector.get_world_3d().direct_space_state
 	var center := Sector.STATION_POSITION
-	check(space.intersect_ray(PhysicsRayQueryParameters3D.create(center + Vector3(0, 0, 20), center - Vector3(0, 0, 20), 1)).is_empty(), "Station docking aperture remains open")
+	check(space.intersect_ray(PhysicsRayQueryParameters3D.create(center + Vector3(0, 0, 45), center, 1)).is_empty(), "Station service hangar remains open")
 	check(not space.intersect_ray(PhysicsRayQueryParameters3D.create(center + Vector3(14, 0, 20), center + Vector3(14, 0, -20), 1)).is_empty(), "Station structure still blocks weapons and ships")
 	print("DORBIT_SERVER_EXPORT=" + JSON.stringify({"protocol": sector.session.protocol_fingerprint(),
 		"colliders": colliders, "catalog": ShipCatalog.MODELS, "skylab_balance": skylab_balance}))
