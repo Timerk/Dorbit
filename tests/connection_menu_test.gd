@@ -10,6 +10,13 @@ func run() -> void:
 	session.credential_token = test_token(0)
 	session.open_menu()
 	await settle()
+	check(session.join_button.has_focus(), "Connection menu focuses Connect for keyboard access")
+	for state: String in ["normal", "hover", "pressed", "focus"]:
+		var font_color := session.join_button.get_theme_color("font_" + ("color" if state == "normal" else state + "_color")).srgb_to_linear()
+		var background := session.join_button.get_theme_stylebox("normal" if state == "focus" else state) as StyleBoxFlat
+		var background_luminance := background.bg_color.srgb_to_linear().get_luminance()
+		var contrast := (maxf(font_color.get_luminance(), background_luminance) + 0.05) / (minf(font_color.get_luminance(), background_luminance) + 0.05)
+		check(contrast >= 4.5, "Connect label remains readable in the %s state" % state)
 	if "--restart" in OS.get_cmdline_user_args():
 		check(session.address.text == "localhost" and int(session.port_field.value) == 24731, "Successful endpoint survives a new client process and subsequent failed attempts")
 		check(not session.active and not session.connecting and not session.join_button.disabled, "Restart opens a usable menu without auto-connecting")
