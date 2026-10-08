@@ -66,10 +66,13 @@ def main():
         data.mkdir()
         token = "disposable-export-check-token"
         ledger = data / "pilots.json"
-        original = json.dumps({"version": 4, "pilots": {
+        # Use the current save schema so migration is not mistaken for data loss.
+        # A nonempty laser boost must survive both restarts without firing.
+        original = json.dumps({"version": 5, "pilots": {
             "export_test": {"verifier": hashlib.sha256(token.encode()).hexdigest(), "credits": 137,
                             "equipment": pilots.starter_equipment(), "cargo": {"starter": {"seprom": 5}},
-                            "ammo": pilots.starter_ammo(), "contracts": {}}}})
+                            "ammo": pilots.starter_ammo(), "contracts": {},
+                            "boosts": {"starter": {"lasers": {"resource": "seprom", "remaining": 7}}}}}})
         ledger.write_text(original)
         environment = dict(os.environ, DORBIT_DATA_DIR=str(data), APPDATA=str(clean / "appdata"),
                            HOME=str(clean), XDG_DATA_HOME=str(clean / "userdata"))
