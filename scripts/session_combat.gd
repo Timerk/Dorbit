@@ -13,6 +13,7 @@ var preview_tools_available: bool = false
 var ammo_sequence: int = -1
 var boost_save_clock: float = 0.0
 var boost_sequence: int = -1
+var lab_snapshot: Dictionary = {}
 
 
 func begin() -> void:
@@ -566,6 +567,7 @@ func finish() -> void:
 	cargo_holds.clear()
 	session.sector.cargo = {}
 	inventory.clear()
+	lab_snapshot.clear()
 	preview_tools_available = false
 	station_pending = false
 	station_message = ""
@@ -641,11 +643,11 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 func publish_inventory(id: int, result: String = "") -> void:
 	if session.sector.dedicated_server:
 		var pilot: Dictionary = session.store.pilots[session.pilot_ids[id]]
-		station_result.rpc_id(id, pilot["equipment"], result, session.can_grant_test_credits(id), pilot["cargo"], pilot["credits"], pilot["ammo"], session.snapshot_sequence, session.ships[id].resource_boosts)
+		station_result.rpc_id(id, pilot["equipment"], result, session.can_grant_test_credits(id), pilot["cargo"], pilot["credits"], pilot["ammo"], session.snapshot_sequence, session.ships[id].resource_boosts, Skylab.snapshot(pilot, int(pilot["skylab"]["lastSimulatedAt"])))
 
 
 @rpc("authority", "call_remote", "reliable")
-func station_result(data: Dictionary, result: String, test_credits_allowed: bool = false, holds: Dictionary = {}, credits: int = -1, ammo: Dictionary = {}, sequence: int = -1, boosts: Dictionary = {}) -> void:
+func station_result(data: Dictionary, result: String, test_credits_allowed: bool = false, holds: Dictionary = {}, credits: int = -1, ammo: Dictionary = {}, sequence: int = -1, boosts: Dictionary = {}, lab: Dictionary = {}) -> void:
 	if session.active:
 		var new_revision := int(data["revision"]) > int(inventory.get("revision", -1))
 		inventory = data
@@ -666,6 +668,56 @@ func station_result(data: Dictionary, result: String, test_credits_allowed: bool
 		preview_tools_available = test_credits_allowed
 		station_pending = false
 		station_message = result
+		if not lab.is_empty():
+			lab_snapshot = lab
+			if is_instance_valid(session.sector.skylab_menu):
+				session.sector.skylab_menu.received()
+
+
+func request_lab(action: String = "snapshot", payload: Dictionary = {}) -> void:
+	if not session.active or session.sector.dedicated_server or multiplayer.is_server() or inventory.is_empty() or station_pending:
+		return
+	station_pending = true
+	station_message = "Waiting for server..."
+	skylab_request.rpc_id(1, int(inventory["revision"]) + 1, action, payload)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func skylab_request(sequence: int, action: String, payload: Dictionary) -> void:
+	if not session.active or not multiplayer.is_server() or not session.sector.dedicated_server:
+		return
+	var id := multiplayer.get_remote_sender_id()
+	if not records.has(id) or not session.pilot_ids.has(id):
+		return
+	# Bound the RPC without trusting a client-selected account, recipient, clock or currency.
+	if payload.size() > 4 or JSON.stringify(payload).length() > 4096:
+		publish_inventory(id, "Invalid Skylab request.")
+		return
+	var result := session.store.transact_lab(session.pilot_ids[id], sequence, action, payload, Skylab.now())
+	if session.store.failed:
+		session.stop_for_save_failure()
+		return
+	sync_lab_accounts()
+	publish_inventory(id, result)
+
+
+func sync_lab_accounts() -> void:
+	for id: int in records:
+		var pilot: Dictionary = session.store.pilots[session.pilot_ids[id]]
+		records[id]["credits"] = pilot["credits"]
+		cargo_holds[id] = pilot["cargo"].duplicate(true)
+
+
+func advance_labs() -> void:
+	var at := Skylab.now()
+	if at < session.store.next_lab_due:
+		return
+	if not session.store.advance_labs(at):
+		session.stop_for_save_failure()
+		return
+	sync_lab_accounts()
+	for id: int in records:
+		publish_inventory(id)
 
 
 @rpc("authority", "call_remote", "unreliable_ordered", 2)

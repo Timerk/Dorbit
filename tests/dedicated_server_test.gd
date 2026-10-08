@@ -2,6 +2,18 @@ extends "res://tests/network_combat_test.gd"
 ## A server has no local pilot. Exercise all ten slots and combat with real ENet clients.
 
 
+func without_industry(pilot: Dictionary) -> Dictionary:
+	var result := pilot.duplicate(true)
+	result.erase("skylab") # Server-time production continues during purchases and rejected retries.
+	return result
+
+
+func conserved_ledger(text: String) -> Dictionary:
+	var result: Dictionary = JSON.parse_string(text)
+	for pilot: Dictionary in result["pilots"].values(): pilot.erase("skylab")
+	return result
+
+
 func replicate(host: Sector) -> void:
 	var expected := host.session.snapshot_sequence + 1
 	var deadline := Time.get_ticks_msec() + 8000

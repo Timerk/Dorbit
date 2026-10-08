@@ -8,13 +8,14 @@ const TYPES := {
 	"terbium": {"name": "Terbium", "price": 40, "color": Color("d6df56")},
 	"prometid": {"name": "Prometid", "price": 80, "color": Color("f6a5d5")},
 	"duranium": {"name": "Duranium", "price": 160, "color": Color("7be3b0")},
+	"xenomit": {"name": "Xenomit", "price": 200, "color": Color("eee8d8")},
 	"promerium": {"name": "Promerium", "price": 320, "color": Color("ffc55d")},
 	"seprom": {"name": "Seprom", "price": 640, "color": Color("ab83ff")},
 }
 const LOOT := {
 	"Scout": {"prometium": Vector2i(6, 10), "endurium": Vector2i(2, 4), "terbium": Vector2i(1, 2)},
 	"Sentinel": {"prometium": Vector2i(10, 16), "endurium": Vector2i(6, 10), "terbium": Vector2i(4, 6), "prometid": Vector2i(2, 4), "duranium": Vector2i(1, 2)},
-	"Heavy": {"prometium": Vector2i(18, 24), "endurium": Vector2i(12, 18), "terbium": Vector2i(8, 12), "prometid": Vector2i(6, 10), "duranium": Vector2i(4, 6), "promerium": Vector2i(2, 4), "seprom": Vector2i(1, 2)},
+	"Heavy": {"prometium": Vector2i(18, 24), "endurium": Vector2i(12, 18), "terbium": Vector2i(8, 12), "prometid": Vector2i(6, 10), "duranium": Vector2i(4, 6), "xenomit": Vector2i(1, 3), "promerium": Vector2i(2, 4), "seprom": Vector2i(1, 2)},
 }
 
 static func capacity(equipment: Dictionary, ship: String = "") -> int:
@@ -50,9 +51,11 @@ static func valid(holds: Variant, equipment: Dictionary) -> bool:
 			var amount: Variant = holds[ship][resource]
 			if not resource is String or not TYPES.has(resource) or not (amount is int or amount is float):
 				return false
-			if not is_finite(amount) or amount < 1 or amount > capacity(equipment, ship) or amount != floor(amount):
+			# Delivery may overfill a hold. Bounds still reject corrupt or overflowing saves.
+			if not is_finite(amount) or amount < 1 or amount > 2 * capacity(equipment, ship) or amount != floor(amount):
 				return false
-		if units(holds[ship]) > capacity(equipment, ship):
+		# A single shipment can add at most one hold to cargo that filled during transit.
+		if units(holds[ship]) > 2 * capacity(equipment, ship):
 			return false
 	return true
 

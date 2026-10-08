@@ -100,6 +100,7 @@ func run() -> void:
 	DirAccess.remove_absolute(path + ".tmp")
 	store = PilotStore.new()
 	check(store.open(directory), "Operator can reopen preserved primary after fixing write path")
+	before = FileAccess.get_file_as_string(path) # Reopening catches up the persisted Skylab clock.
 	check(store.commit({"pilot0": 81, "pilot1": 19}), "Multiple reward shares commit together")
 	check(FileAccess.get_file_as_string(path + ".bak") == before, "Backup retains previous complete ledger")
 	store.close()

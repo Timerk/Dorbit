@@ -7,7 +7,7 @@ const MAX_PLAYERS: int = 10
 const COMMAND_TIMEOUT: float = 0.5
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when gameplay packet contents change without an RPC signature change.
-const NETWORK_SCHEMA: int = 10
+const NETWORK_SCHEMA: int = 11
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
@@ -48,6 +48,7 @@ var incompatible_build: bool = false
 var shutdown_file: String = ""
 var preview_tools_enabled: bool = false
 var preview_pilots: PackedStringArray = []
+var lab_clock: float = 0.0
 
 
 func _ready() -> void:
@@ -646,6 +647,11 @@ func tick(delta: float) -> void:
 	var boost := not sector.dedicated_server and not sector.paused and not sector.autopilot.enabled and Input.is_action_pressed("boost")
 	send_clock += delta
 	if multiplayer.is_server():
+		if sector.dedicated_server:
+			lab_clock += delta
+			if lab_clock >= 1.0:
+				lab_clock = 0.0
+				combat.advance_labs()
 		if not sector.dedicated_server and sector.player.alive:
 			sector.player.fly_command(delta, movement, boost)
 		for id: int in ships:

@@ -99,13 +99,13 @@ func run() -> void:
 	var before := store.pilots.duplicate(true)
 	for args: Array in [["refine", "prometid:0", ""], ["refine", "prometid:-1", ""], ["refine", "prometid:1.5", ""], ["refine", "prometid:999999", ""], ["refine", "seprom:1", ""], ["refine", "promerium:3", ""], ["boost", "seprom:1", "engines"], ["boost", "prometid:1", "shields"], ["boost", "promerium:1", "rockets"], ["boost", "seprom:11", "lasers"]]:
 		await request(client, 1, args[0], args[1], args[2])
-		check(store.pilots == before, "Invalid recipe, quantity or boost cannot consume cargo: %s" % str(args))
+		check(conserved_ledger(JSON.stringify({"pilots": store.pilots})) == conserved_ledger(JSON.stringify({"pilots": before})), "Invalid recipe, quantity or boost cannot consume cargo: %s" % str(args))
 	for reason: String in ["distance", "speed", "damage", "life"]:
 		ship.position = Vector3(0, 100, 0) if reason == "distance" else combat.records[id]["spawn"]
 		ship.velocity = Vector3(9, 0, 0) if reason == "speed" else Vector3.ZERO
 		ship.time_since_hit = 0 if reason == "damage" else 6
 		await request(client, 1, "refine", "prometid:1", "", "", 99 if reason == "life" else 0)
-		check(store.pilots == before, "Refining validates authoritative " + reason)
+		check(conserved_ledger(JSON.stringify({"pilots": store.pilots})) == conserved_ledger(JSON.stringify({"pilots": before})), "Refining validates authoritative " + reason)
 	ship.time_since_hit = 6
 	client.get_viewport().size = Vector2i(960, 600)
 	client.get_viewport().render_target_update_mode = SubViewport.UPDATE_ALWAYS
@@ -186,7 +186,7 @@ func run() -> void:
 	check(menu.boost_icons["lasers"].texture.resource_path.ends_with("seprom.png"), "Replacement preview retains the currently applied resource icon")
 	before = store.pilots.duplicate(true)
 	await request(client, 5, "boost", "prometid:1", "lasers")
-	check(store.pilots == before, "Server rejects an unconfirmed replacement")
+	check(conserved_ledger(JSON.stringify({"pilots": store.pilots})) == conserved_ledger(JSON.stringify({"pilots": before})), "Server rejects an unconfirmed replacement")
 	await click(client, menu.replace_warning)
 	await click(client, menu.upgrade_button)
 	check(client.player.resource_boosts["lasers"]["resource"] == "prometid" and client.player.resource_boosts["lasers"]["remaining"] == 10, "Confirmed replacement discards the old reserve")
@@ -393,7 +393,7 @@ func run() -> void:
 	var failed_dir := store.path.get_base_dir().path_join("boost-failure")
 	DirAccess.make_dir_absolute(failed_dir)
 	var file := FileAccess.open(failed_dir.path_join("pilots.json"), FileAccess.WRITE)
-	file.store_string(JSON.stringify({"version": 4, "pilots": {"pilot0": store.pilots["pilot0"]}}))
+	file.store_string(JSON.stringify({"version": 6, "pilots": {"pilot0": store.pilots["pilot0"]}}))
 	file.close()
 	var probe := PilotStore.new()
 	check(probe.open(failed_dir), "Open isolated failure ledger")
@@ -405,7 +405,7 @@ func run() -> void:
 	var failed_refine_dir := store.path.get_base_dir().path_join("refining-failure")
 	DirAccess.make_dir_absolute(failed_refine_dir)
 	file = FileAccess.open(failed_refine_dir.path_join("pilots.json"), FileAccess.WRITE)
-	file.store_string(JSON.stringify({"version": 5, "pilots": {"pilot0": raw_fixture["pilot0"]}}))
+	file.store_string(JSON.stringify({"version": 6, "pilots": {"pilot0": raw_fixture["pilot0"]}}))
 	file.close()
 	probe = PilotStore.new()
 	check(probe.open(failed_refine_dir), "Open isolated chained refining failure ledger")

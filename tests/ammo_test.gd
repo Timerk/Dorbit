@@ -6,7 +6,7 @@ func run() -> void:
 	var server := make_sector("AmmoServer", true, 24836)
 	var store := server.session.store
 	check(store.pilots["pilot0"]["ammo"] == Ammunition.starter(), "Legacy migration grants 10,000 x1 shots once")
-	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 5, "Ammo migration writes schema 5")
+	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 6, "Ammo migration writes schema 6")
 	check(store.commit({"pilot0": 1000}), "Fund ammo purchases")
 	var client := make_sector("AmmoPilot")
 	client.get_viewport().size = Vector2i(960, 600)
@@ -47,7 +47,7 @@ func run() -> void:
 	for subject: String in ["x4:1", "x0:1", "x1:0", "x1:-1", "x1:10001", "x1:100000", "x1:1.5", "x1:", "x1:1:2", "x2:999"]:
 		combat.station_request.rpc_id(1, int(combat.inventory["revision"]) + 1, "buy_ammo", subject, "", "", 0)
 		await settle()
-		check(store.pilots == before, "Invalid or unaffordable purchase preserves the whole ledger: " + subject)
+		check(conserved_ledger(JSON.stringify({"pilots": store.pilots})) == conserved_ledger(JSON.stringify({"pilots": before})), "Invalid or unaffordable purchase preserves wallet, ammo and ownership while industry advances: " + subject)
 	check(store.commit({"pilot0": 3_000_000}), "Fund million-round orders")
 	server.session.combat.records[id]["credits"] = 3_000_000
 	await replicate(server)
@@ -70,7 +70,7 @@ func run() -> void:
 	var funded_before := store.pilots.duplicate(true)
 	combat.station_request.rpc_id(1, int(combat.inventory["revision"]) + 1, "buy_ammo", "x3:10001", "", "", 0)
 	await settle()
-	check(store.pilots == funded_before, "Server rejects over-limit orders even with sufficient credits")
+	check(conserved_ledger(JSON.stringify({"pilots": store.pilots})) == conserved_ledger(JSON.stringify({"pilots": funded_before})), "Server rejects over-limit orders even with sufficient credits")
 	combat.station_message = "" # Capture the current offer after adversarial requests.
 	for dimensions in [Vector2i(960, 600), Vector2i(1440, 900)]:
 		client.get_viewport().size = dimensions
@@ -234,7 +234,7 @@ func check_failed_debit(server: Sector, client: Sector) -> void:
 	var directory := server.session.store.path.get_base_dir().path_join("failed-ammo")
 	DirAccess.make_dir_absolute(directory)
 	var file := FileAccess.open(directory.path_join("pilots.json"), FileAccess.WRITE)
-	file.store_string(JSON.stringify({"version": 4, "pilots": {"pilot0": server.session.store.pilots["pilot0"]}}))
+	file.store_string(JSON.stringify({"version": 6, "pilots": {"pilot0": server.session.store.pilots["pilot0"]}}))
 	file.close()
 	var probe := PilotStore.new()
 	check(probe.open(directory), "Open isolated debit failure ledger")
@@ -244,7 +244,7 @@ func check_failed_debit(server: Sector, client: Sector) -> void:
 	var capped_before := probe.pilots.duplicate(true)
 	var capped_disk := FileAccess.get_file_as_string(probe.path)
 	var result := probe.transact("pilot0", int(probe.pilots["pilot0"]["equipment"]["revision"]) + 1, "buy_ammo", "x1:1", "", "")
-	check(result.contains("limit") and probe.pilots == capped_before and FileAccess.get_file_as_string(probe.path) == capped_disk, "Overflow rejects the entire batch without changing shots, credits or revision")
+	check(result.contains("limit") and conserved_ledger(JSON.stringify({"pilots": probe.pilots})) == conserved_ledger(JSON.stringify({"pilots": capped_before})) and conserved_ledger(FileAccess.get_file_as_string(probe.path)) == conserved_ledger(capped_disk), "Overflow rejects the entire batch without changing shots, credits or revision")
 	for value: Variant in [{}, capped.merged({"x1": -1}, true), capped.merged({"x2": 1.5}, true), capped.merged({"x4": true}, true), capped.merged({"x3": Ammunition.MAX_SHOTS + 1}, true), capped.merged({"unknown": 1}, true)]:
 		check(not Ammunition.valid(value), "Runtime rejects malformed ammunition inventory")
 	var remote := server.session.ships[client.multiplayer.get_unique_id()]

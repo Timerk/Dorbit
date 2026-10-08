@@ -42,7 +42,7 @@ func run() -> void:
 	await replicate(server)
 	check(pilot.credits == 1100 and pilot.session.combat.inventory["items"].has("purchase-2"), "Earned credits buy an upgrade and leave a repair reserve")
 	# Loot value bounds make the contribution of station trading reviewable.
-	var bounds := {"Scout": Vector2i(140, 260), "Sentinel": Vector2i(700, 1240), "Heavy": Vector2i(3140, 5400)}
+	var bounds := {"Scout": Vector2i(140, 260), "Sentinel": Vector2i(700, 1240), "Heavy": Vector2i(3340, 6000)}
 	for kind: String in bounds:
 		var low := {}
 		var high := {}
