@@ -150,6 +150,37 @@ func run() -> void:
 	await click(layout.rail_toggle.get_global_rect().get_center())
 	await click(layout.buttons["ship"].get_global_rect().get_center())
 	check(layout.shown("ship"), "Sidebar icon reopens a closed panel")
+	var ammo := hud.ammo_bar
+	layout.selected_id = "ammo"
+	var ammo_original := layout.rect_for("ammo")
+	var ammo_type := sector.player.ammo_type
+	check(ammo.visible and ammo.buttons["x1"].disabled, "Editor shows the ammo bar without enabling ammo selection")
+	await drag(ammo.buttons["x2"].get_global_rect().get_center(), ammo.buttons["x2"].get_global_rect().get_center() + Vector2(0, -300))
+	var ammo_moved := layout.rect_for("ammo")
+	check(ammo_moved.position.y < ammo_original.position.y - 200 and sector.player.ammo_type == ammo_type, "Dragging an ammo tile moves the whole bar without changing ammunition")
+	await drag(ammo_moved.end - Vector2(8, 8), ammo_moved.end - Vector2(2000, 2000))
+	check(layout.rect_for("ammo").size.is_equal_approx(ammo_original.size * HudLayout.MIN_SCALE), "The entire ammo bar stops shrinking at the HUD minimum")
+	var ammo_minimum := layout.rect_for("ammo")
+	await drag(ammo_minimum.end - Vector2(8, 8), ammo_minimum.end + Vector2(120, 40))
+	var ammo_enlarged := layout.rect_for("ammo")
+	check(ammo_enlarged.size.x > ammo_original.size.x and is_equal_approx(ammo_enlarged.size.x / ammo_enlarged.size.y, ammo_original.size.x / ammo_original.size.y), "Resizing the ammo corner grows the whole horizontal bar proportionally")
+	layout.store_rect("ammo", Rect2(Vector2(560, 510), ammo_original.size * 1.4))
+	await process_frame
+	check(ammo.get_global_rect().is_equal_approx(layout.rect_for("ammo")), "Ammo container follows the customized position and proportional scale")
+	var previous_tile := Rect2()
+	for kind: String in Ammunition.TYPES:
+		var tile := ammo.buttons[kind].get_global_rect()
+		check(ammo.get_global_rect().encloses(tile) and (previous_tile == Rect2() or tile.position.x > previous_tile.position.x and is_equal_approx(tile.position.y, previous_tile.position.y)), "The %s tile stays in the ordered horizontal bar" % kind)
+		previous_tile = tile
+	var ammo_rect := layout.rect_for("ammo")
+	await click(Vector2(ammo_rect.end.x - 12, ammo_rect.position.y - 12))
+	check(not ammo.visible and not layout.shown("ammo"), "Closing ammunition hides all tiles together")
+	layout.sidebar.show()
+	var ammo_scroll := layout.buttons["ammo"].get_parent().get_parent() as ScrollContainer
+	ammo_scroll.ensure_control_visible(layout.buttons["ammo"])
+	await process_frame
+	await click(layout.buttons["ammo"].get_global_rect().get_center())
+	check(ammo.visible and layout.shown("ammo"), "The sidebar ammunition icon restores the entire bar")
 	# Keep the restored ship away from the radar under test.
 	layout.store_rect("ship", Rect2(240, 600, 290, 174))
 	var radar := layout.default_rect("radar")
@@ -165,11 +196,15 @@ func run() -> void:
 	var previous_range := hud.navigation.range_index
 	await click(button.get_global_rect().get_center())
 	check(hud.navigation.range_index == previous_range + 1, "Radar button remains clickable after moving and resizing")
+	await click(ammo.buttons["x3"].get_global_rect().get_center())
+	check(sector.player.ammo_type == "x3" and ammo.buttons["x3"].button_pressed, "A moved and resized ammunition tile still selects ammo after editing")
 	await capture("hud-customized-1440")
 	var saved := layout.entries.duplicate(true)
 	layout.entries.clear()
 	layout.load_layout()
 	check(layout.entries == saved, "Positions, scales and hidden state survive a fresh configuration load")
+	await process_frame
+	check(ammo.get_global_rect().is_equal_approx(layout.rect_for("ammo")), "Saved ammunition geometry is restored on the whole bar")
 	check(layout.rect_for("reticle").get_center().is_equal_approx(layout.size * 0.5), "Reloading retains the centered, resized reticle")
 	var fresh := HudLayout.new()
 	fresh.save_path = layout.save_path
