@@ -221,7 +221,11 @@ func load_layout() -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		# Toggle once on the modifier chord; ignore key repeat and right Alt / AltGr.
-		var chord: bool = event.ctrl_pressed and event.alt_pressed and not event.shift_pressed and not event.meta_pressed and not (event.keycode == KEY_ALT and event.location == KEY_LOCATION_RIGHT)
+		# Windows omits a modifier's own flag on that key's event. Include the
+		# currently pressed key, so either Ctrl-then-Alt or Alt-then-Ctrl works.
+		var control: bool = event.ctrl_pressed or (event.keycode == KEY_CTRL and event.pressed)
+		var alt: bool = event.alt_pressed or (event.keycode == KEY_ALT and event.pressed)
+		var chord: bool = control and alt and not event.shift_pressed and not event.meta_pressed and not (event.keycode == KEY_ALT and event.location == KEY_LOCATION_RIGHT)
 		if event.keycode in [KEY_CTRL, KEY_ALT]:
 			if event.pressed and chord and not chord_down and not event.echo:
 				chord_down = true

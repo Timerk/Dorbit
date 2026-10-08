@@ -9,11 +9,12 @@ func _process(_delta: float) -> bool:
 	return false
 
 
-func chord(pressed: bool = true, echo: bool = false) -> void:
+func chord(pressed: bool = true, echo: bool = false, control_last: bool = false) -> void:
 	var event := InputEventKey.new()
-	event.keycode = KEY_ALT
-	event.ctrl_pressed = pressed
-	event.alt_pressed = pressed
+	event.keycode = KEY_CTRL if control_last else KEY_ALT
+	# Match Windows: the event excludes the modifier flag for its own key.
+	event.ctrl_pressed = pressed and not control_last
+	event.alt_pressed = pressed and control_last
 	event.pressed = pressed
 	event.echo = echo
 	root.push_input(event)
@@ -96,6 +97,12 @@ func run() -> void:
 	await chord(true, true)
 	check(layout.editing, "Key repeat cannot toggle the editor")
 	await chord(false)
+	await chord(true, false, true)
+	check(not layout.editing, "Alt-then-Ctrl finishes editing with Windows modifier flags")
+	await chord(false, false, true)
+	await chord(true, false, true)
+	check(layout.editing, "Alt-then-Ctrl enters editing with Windows modifier flags")
+	await chord(false, false, true)
 	await capture("hud-editor-1440")
 	check(not sector.settings_menu.pause_panel.visible, "HUD editing never displays the pause menu")
 	# A sidebar icon selects even a covered panel without altering its saved layout.
