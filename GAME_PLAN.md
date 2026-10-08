@@ -138,8 +138,10 @@ The flight HUD has a compact framed ammo bar at bottom center, in x1, x2, x3, x4
 order, with distinct symbols, remaining counts and selected-type highlighting.
 Press 1, 2, 3 or 4, or click a symbol, to select its ammo. These shortcuts are
 reserved from other control bindings and are inactive in menus. The destination
-tracker moves to top center. The ammo bar is a separate HUD control for the
-parallel HUD customization work to position later.
+tracker moves to top center. HUD customization moves, resizes, hides and restores
+the ammunition selector as one horizontal bar. Its four tiles retain their order
+and cannot be moved or resized individually. The whole bar shares the HUD's
+minimum scale and device-local layout persistence.
 
 The user requested generated metallic laser-energy cartridge pictures for the
 four ammo types. Their ice-blue, cyan, amber and violet colors also tint each

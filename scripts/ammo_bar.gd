@@ -1,6 +1,6 @@
 class_name AmmoBar
 extends HBoxContainer
-## Separate HUD control so future HUD positioning can move this bar as one element.
+## One horizontal HUD instrument; its tiles always move and scale together.
 
 var sector: Sector
 var buttons: Dictionary[String, Button] = {}
@@ -53,13 +53,23 @@ func _ready() -> void:
 		counts[kind] = count
 
 
+func default_rect() -> Rect2:
+	var dimensions := get_combined_minimum_size()
+	var viewport := get_viewport_rect().size
+	return Rect2(Vector2((viewport.x - dimensions.x) * 0.5, viewport.y - FlightHud.BOTTOM_MARGIN - dimensions.y), dimensions)
+
+
 func _process(_delta: float) -> void:
-	visible = not sector.preflight and not sector.paused and sector.player.alive and (not sector.client_only or sector.session.active)
+	var layout := sector.hud.layout
+	visible = not sector.preflight and (not sector.paused or layout.editing) and sector.player.alive and (not sector.client_only or sector.session.active) and layout.shown("ammo")
 	if not visible:
 		return
-	size = get_combined_minimum_size()
-	position = Vector2((get_viewport_rect().size.x - size.x) * 0.5, get_viewport_rect().size.y - FlightHud.BOTTOM_MARGIN - size.y)
+	var rect := layout.rect_for("ammo")
+	size = default_rect().size
+	position = rect.position
+	scale = Vector2.ONE * (rect.size.x / size.x)
 	for kind: String in buttons:
+		buttons[kind].disabled = layout.editing
 		var amount := int(sector.player.ammo[kind])
 		buttons[kind].set_pressed_no_signal(sector.player.ammo_type == kind)
 		counts[kind].text = StationShop.credits_text(amount) if amount < 1000000 else ("%.1fM" % (amount / 1000000.0) if amount < 1000000000 else "%.1fB" % (amount / 1000000000.0))

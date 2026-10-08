@@ -25,6 +25,8 @@ or its title bar to move it, drag the lower-right corner to resize it, and use
 its **×** to hide it. The editor's icon sidebar reopens or selects any instrument.
 The reticle can be resized but always stays centered; it cannot be dragged to
 another position, and older saved reticle positions are ignored.
+The ammunition selector moves, resizes and hides as one horizontal bar. Its four
+tiles stay together in x1–x4 order; select ammo by clicking a tile after editing.
 Hide the sidebar to edit the whole screen; a Show sidebar button brings it back.
 The grid makes editing clear and supports optional snapping. Panels preserve
 their proportions and stop shrinking at 80% of their default size. **Escape**,
@@ -39,7 +41,7 @@ Review the [HUD editor](docs/feedback/hud-editor-1440.png) and a
 
 `tests/hud_customization_test.gd` checks real editor input, moving/resizing,
 minimum sizes, closing/reopening, saved layouts, screen bounds and moved radar
-buttons. Run with a renderer for editor and customized-flight screenshots in
+buttons and ammunition tiles. Run with a renderer for editor and customized-flight screenshots in
 `build/validation`, at 960, 1440 and 1920 pixel widths. Use an isolated APPDATA
 profile for tests, as with the other settings/HUD checks.
 The Windows build helper also runs `tests/hud_shortcut_export_test.gd` against
