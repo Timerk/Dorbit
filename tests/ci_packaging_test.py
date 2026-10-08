@@ -46,7 +46,7 @@ else
 fi
 ''', encoding="utf-8", newline="\n")
         for name in ("tools/run_server.py", "tools/pilots.py", "tools/check-server-export.py", "deploy/dorbit.service",
-                     "assets/ships/catalog.json", "assets/ui/fonts/OFL.txt"):
+                     "assets/ships/catalog.json", "assets/skylab/balance-v1.json", "assets/ui/fonts/OFL.txt"):
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("fixture")
@@ -82,6 +82,7 @@ fi
         self.assertEqual((release / "runtime/DorbitServer.pck").read_text().strip(), "exported")
         self.assertTrue((release / "tools/run_server.py").is_file())
         self.assertTrue((release / "deploy/dorbit.service").is_file())
+        self.assertTrue((release / "assets/skylab/balance-v1.json").is_file())
         self.assertEqual((release / "REVISION").read_text().strip(), self.sha)
         self.assertEqual(self.calls.read_text().splitlines(), ["checked", "built"])
         self.assertEqual((self.cache / "result").read_text().strip(), "imported")

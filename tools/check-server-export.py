@@ -68,10 +68,11 @@ def main():
         ledger = data / "pilots.json"
         # Use the current save schema so migration is not mistaken for data loss.
         # A nonempty laser boost must survive both restarts without firing.
-        original = json.dumps({"version": 5, "pilots": {
+        original = json.dumps({"version": 6, "pilots": {
             "export_test": {"verifier": hashlib.sha256(token.encode()).hexdigest(), "credits": 137,
                             "equipment": pilots.starter_equipment(), "cargo": {"starter": {"seprom": 5}},
-                            "ammo": pilots.starter_ammo(), "contracts": {},
+                            "ammo": pilots.starter_ammo(), "contracts": {}, "premium": False,
+                            "skylab": pilots.starter_skylab(int(time.time())),
                             "boosts": {"starter": {"lasers": {"resource": "seprom", "remaining": 7}}}}}})
         ledger.write_text(original)
         environment = dict(os.environ, DORBIT_DATA_DIR=str(data), APPDATA=str(clean / "appdata"),
@@ -119,7 +120,14 @@ def main():
                     text = log.read_text()
                     if process.returncode or any(error in text for error in ERRORS):
                         raise RuntimeError(text)
-                    if "Server shutdown requested" not in text or json.loads(ledger.read_text()) != json.loads(original):
+                    saved = json.loads(ledger.read_text())
+                    expected = json.loads(original)
+                    for pilot_id, pilot in saved["pilots"].items():
+                        if not pilots.valid_skylab(pilot.get("skylab"), pilot["equipment"]):
+                            raise RuntimeError("Shutdown did not preserve valid Skylab data")
+                        pilot.pop("skylab")  # Server time advances independently of stop/restart.
+                        expected["pilots"][pilot_id].pop("skylab")
+                    if "Server shutdown requested" not in text or saved != expected:
                         raise RuntimeError("Shutdown did not preserve disposable pilot data")
                 finally:
                     if process.poll() is None:

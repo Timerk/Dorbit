@@ -16,6 +16,8 @@ func check(condition: bool, description: String) -> void:
 
 func run() -> void:
 	var packed := "--expect-export" in OS.get_cmdline_user_args()
+	var skylab_balance := Skylab.data()
+	check(not skylab_balance.is_empty(), "Skylab balance data survives export")
 	check(not packed or OS.has_feature("dedicated_server"), "Pack has dedicated-server feature")
 	if packed:
 		for directory: String in ["res://docs/ammo-art", "res://docs/sector-art"]:
@@ -51,6 +53,6 @@ func run() -> void:
 	check(space.intersect_ray(PhysicsRayQueryParameters3D.create(center + Vector3(0, 0, 20), center - Vector3(0, 0, 20), 1)).is_empty(), "Station docking aperture remains open")
 	check(not space.intersect_ray(PhysicsRayQueryParameters3D.create(center + Vector3(14, 0, 20), center + Vector3(14, 0, -20), 1)).is_empty(), "Station structure still blocks weapons and ships")
 	print("DORBIT_SERVER_EXPORT=" + JSON.stringify({"protocol": sector.session.protocol_fingerprint(),
-		"colliders": colliders, "catalog": ShipCatalog.MODELS}))
+		"colliders": colliders, "catalog": ShipCatalog.MODELS, "skylab_balance": skylab_balance}))
 	sector.free()
 	quit(0 if failures == 0 else 1)
