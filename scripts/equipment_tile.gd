@@ -8,6 +8,7 @@ var slot: String = ""
 var compact: bool = false
 var caption: Label
 var artwork: TextureRect
+var last_display: Array = []
 
 
 func _ready() -> void:
@@ -41,6 +42,10 @@ func _ready() -> void:
 
 func refresh() -> void:
 	var item: Dictionary = screen.inventory().get("items", {}).get(item_id, {})
+	var display := [item_id, item.get("model", ""), slot, screen.current_slot_model, not item_id.is_empty() and item_id == screen.selected_item]
+	if display == last_display:
+		return
+	last_display = display
 	if item.is_empty():
 		var kind: String = screen.slots_kind(slot)
 		if kind == "extra":

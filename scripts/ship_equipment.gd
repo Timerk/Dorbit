@@ -20,6 +20,8 @@ var slots: Dictionary[String, EquipmentTile] = {}
 var stored: Dictionary[String, EquipmentTile] = {}
 var selected_item: String = ""
 var last_inventory: Dictionary = {}
+var last_revision: int = -1
+var fitting_stats := Equipment.StatsCache.new()
 var drop_hint: String = ""
 var ship_title: Label
 var ship_art: TextureRect
@@ -205,9 +207,10 @@ func close() -> void:
 
 func refresh_inventory() -> void:
 	var data := inventory()
-	if data.is_empty() or data == last_inventory:
+	if data.is_empty() or (is_same(data, last_inventory) and int(data["revision"]) == last_revision):
 		return
-	last_inventory = data.duplicate(true)
+	last_inventory = data
+	last_revision = int(data["revision"])
 	var model_id: String = ShipCatalog.canonical(data["ships"][data["active_ship"]])
 	rebuild_slots(model_id)
 	ship_title.text = ShipCatalog.info(model_id)["name"].to_upper()
@@ -317,19 +320,20 @@ func quick_equip(id: String) -> void:
 
 
 func update_stats() -> void:
-	var values := ResourceBoosts.stats(Equipment.stats(inventory()), sector.player.resource_boosts)
-	stat_values["hull"].text = StationShop.credits_text(int(values["hull"]))
-	stat_values["shield"].text = StationShop.credits_text(int(values["shield"]))
-	stat_values["damage"].text = str(int(values["damage"]))
-	stat_values["speed"].text = "%d m/s" % values["speed"]
-	stat_values["cargo"].text = "%d / %d" % [CargoResources.units(sector.cargo), CargoResources.capacity(inventory())]
-	stat_notes["shield"].text = "%d%% absorption" % roundi(values["absorption"] * 100)
-	stat_notes["speed"].text = "%d m/s boost" % values["boost"]
-	ship_stats.text = ""
+	var values := ResourceBoosts.stats(fitting_stats.get_stats(inventory()), sector.player.resource_boosts)
+	StationUi.set_text(stat_values["hull"], StationShop.credits_text(int(values["hull"])))
+	StationUi.set_text(stat_values["shield"], StationShop.credits_text(int(values["shield"])))
+	StationUi.set_text(stat_values["damage"], str(int(values["damage"])))
+	StationUi.set_text(stat_values["speed"], "%d m/s" % values["speed"])
+	StationUi.set_text(stat_values["cargo"], "%d / %d" % [CargoResources.units(sector.cargo), CargoResources.capacity(inventory())])
+	StationUi.set_text(stat_notes["shield"], "%d%% absorption" % roundi(values["absorption"] * 100))
+	StationUi.set_text(stat_notes["speed"], "%d m/s boost" % values["boost"])
+	var bonuses := ""
 	if values["npc_damage"] > 0.0:
-		ship_stats.text = "+%.2f damage against aliens" % values["npc_damage"]
+		bonuses = "+%.2f damage against aliens" % values["npc_damage"]
 	if values["regen_bonus"] > 0.0:
-		ship_stats.text += ("   /   " if not ship_stats.text.is_empty() else "") + "+%.2f%% shield regeneration" % (values["regen_bonus"] * 100)
+		bonuses += ("   /   " if not bonuses.is_empty() else "") + "+%.2f%% shield regeneration" % (values["regen_bonus"] * 100)
+	StationUi.set_text(ship_stats, bonuses)
 	ship_stats.visible = not ship_stats.text.is_empty()
 
 
@@ -441,7 +445,7 @@ func _process(_delta: float) -> void:
 	remove_button.visible = not selected_item.is_empty() and not inventory()["items"].get(selected_item, {}).get("ship", "").is_empty()
 	remove_button.disabled = selected_item.is_empty() or not reason(selected_item, "").is_empty()
 	remove_button.tooltip_text = "Select an installed item to remove it." if selected_item.is_empty() else reason(selected_item, "")
-	status.text = blocked if not blocked.is_empty() else (drop_hint if not drop_hint.is_empty() else combat.station_message)
+	StationUi.set_text(status, blocked if not blocked.is_empty() else (drop_hint if not drop_hint.is_empty() else combat.station_message))
 	status.visible = not status.text.is_empty()
 	preview.visible = not preview.text.is_empty()
 	detail.visible = not selected_item.is_empty()
