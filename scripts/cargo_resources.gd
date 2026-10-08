@@ -21,7 +21,7 @@ const LOOT := {
 static func capacity(equipment: Dictionary, ship: String = "") -> int:
 	if ship.is_empty():
 		ship = equipment["active_ship"]
-	return int(ShipCatalog.info(equipment["ships"][ship])["cargo"])
+	return int(ShipCatalog.info(equipment["ships"][ship])["cargo"]) * (2 if not Equipment.extra(equipment, "cargo", ship).is_empty() else 1)
 
 static func empty_holds(equipment: Dictionary) -> Dictionary:
 	var holds := {}

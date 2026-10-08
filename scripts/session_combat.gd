@@ -179,6 +179,34 @@ func apply_equipment(id: int) -> void:
 	var ship := session.ships[id]
 	ship.resource_boosts = pilot["boosts"][pilot["equipment"]["active_ship"]].duplicate(true)
 	Equipment.apply_stats(ship, ResourceBoosts.stats(Equipment.stats(pilot["equipment"]), ship.resource_boosts))
+	ship.repair_seconds = Equipment.MODELS.get(Equipment.extra(pilot["equipment"], "repair").get("model", ""), {}).get("repair_seconds", 0.0)
+	ship.repair_auto = Extras.enabled(Equipment.extra(pilot["equipment"], "repair-auto"))
+	ship.repair_requested = false
+	ship.robot_repairing = false
+
+
+func tick_extras(id: int, delta: float) -> bool:
+	var ship := session.ships[id]
+	ship.extras_clock += delta
+	if ship.extras_clock < 1.0 or not ship.alive or ship.get_meta("docked", false):
+		return true
+	ship.extras_clock = 0.0
+	var pilot_id: String = session.pilot_ids[id]
+	var pilot: Dictionary = session.store.pilots[pilot_id].duplicate(true)
+	var boosts := ship.resource_boosts.duplicate(true)
+	if not Extras.automatic_update(pilot, boosts):
+		return true
+	if not session.store.commit({pilot_id: pilot["credits"]}, {}, {pilot_id: pilot["cargo"]}, {pilot_id: pilot["ammo"]}, {pilot_id: pilot["boosts"]}):
+		session.stop_for_save_failure()
+		return false
+	records[id]["credits"] = pilot["credits"]
+	ship.ammo = pilot["ammo"].duplicate()
+	ship.resource_boosts = boosts
+	cargo_holds[id] = pilot["cargo"].duplicate(true)
+	Equipment.apply_stats(ship, ResourceBoosts.stats(Equipment.stats(pilot["equipment"]), boosts))
+	cargo_result.rpc_id(id, pilot["cargo"][pilot["equipment"]["active_ship"]], CargoResources.capacity(pilot["equipment"]))
+	message(id, "Extras: automatic supplies applied.")
+	return true
 
 
 func flush_boosts(ids: Array = []) -> bool:
@@ -300,11 +328,16 @@ func tick(delta: float) -> void:
 				session.commands.erase(id)
 			continue
 		if ship.get_meta("docked", false):
+			ship.repair_requested = false
+			ship.robot_repairing = false
 			continue
 		if ship.position.distance_to(Sector.STATION_POSITION) > Sector.PROTECTION_RADIUS:
 			records[id]["stage"] = maxi(records[id]["stage"], 1)
 		var enemy: Alien = sector.target as Alien if id == 1 else remote_target(id)
 		var firing := sector.auto_fire and not sector.paused if id == 1 else remote_firing(id)
+		Extras.tick_repair(ship, delta, firing)
+		if sector.dedicated_server and not tick_extras(id, delta):
+			return
 		if firing and is_instance_valid(enemy) and enemy.available():
 			records[id]["stage"] = maxi(records[id]["stage"], 2)
 			ship.try_fire(enemy)
@@ -500,6 +533,14 @@ func repair(id: int, life: int) -> bool:
 	if ship.get_meta("docked", false):
 		message(id, "Launch before requesting repairs.")
 		return false
+	if ship.position.distance_to(Sector.STATION_POSITION) > Sector.REPAIR_RADIUS and ship.repair_seconds > 0.0:
+		var robot_blocker := Extras.repair_blocker(ship)
+		if not robot_blocker.is_empty():
+			message(id, robot_blocker)
+			return false
+		ship.repair_requested = not ship.repair_requested
+		message(id, "Repair robot started. Movement or combat interrupts repair." if ship.repair_requested else "Repair robot stopped.")
+		return true
 	var blocker := session.sector.repair_blocker(ship)
 	if not blocker.is_empty():
 		message(id, blocker)
@@ -538,6 +579,8 @@ func pack_player(id: int) -> Dictionary:
 	data["regen_bonus"] = ship.shield_regen_bonus
 	data["radiation"] = ship.radiation_exposure
 	data["docked"] = ship.get_meta("docked", false)
+	data["repair_seconds"] = ship.repair_seconds
+	data["robot_repairing"] = ship.robot_repairing
 	return data
 
 
@@ -591,6 +634,8 @@ func apply_health(ship: SpaceShip, data: Dictionary) -> void:
 
 func apply_player(id: int, data: Dictionary) -> bool:
 	var ship := session.ships[id]
+	ship.repair_seconds = data.get("repair_seconds", 0.0)
+	ship.robot_repairing = data.get("robot_repairing", false)
 	var reset: bool = int(ship.get_meta("life", 0)) != data["life"] or ship.alive != data["alive"]
 	ship.set_meta("life", data["life"])
 	if reset:

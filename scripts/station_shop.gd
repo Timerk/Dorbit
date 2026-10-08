@@ -2,8 +2,9 @@ class_name StationShop
 extends PanelContainer
 ## Catalog selection is local. Purchases use the authoritative station request.
 
-const CATEGORIES := {"all": "All equipment", "ships": "Ships", "ammo": "Ammo", "weapons": "Weapons", "generators": "Generators", "shields": "Shields", "engines": "Engines"}
+const CATEGORIES := {"all": "All equipment", "ships": "Ships", "ammo": "Ammo", "weapons": "Weapons", "generators": "Generators", "shields": "Shields", "engines": "Engines", "extras": "Extras"}
 const DESCRIPTIONS := {
+	"extras": "Ship utilities. Fit one item per type in a dedicated extra slot.",
 	"weapons": "A tracking laser for alien hunting. Each installed laser adds damage to every shot.",
 	"shields": "A defensive generator that adds shield capacity. Added capacity recharges through normal shield recovery.",
 	"engines": "A drive that raises both cruise and boost speed. Acceleration stays the same.",
@@ -407,6 +408,9 @@ func select_model(model: String) -> void:
 		description = "A Hellstorm launcher for dedicated ammunition. Loads one rocket per second and fires all loaded rounds together." if Equipment.MODELS[model]["kind"] == "launcher" else DESCRIPTIONS[Equipment.category(model)]
 		bonus.text = StationUi.bonus(model)
 		slot_hint = "Laser slot. Bonuses stack per installed item." if Equipment.MODELS[model]["kind"] == "laser" else ("Launcher slot. HST ammunition only." if Equipment.MODELS[model]["kind"] == "launcher" else "Generator slot. Shields and engines share these slots.")
+		if Equipment.MODELS[model]["kind"] == "extra":
+			slot_hint = "Extra slot. One per type; repair robots share one type."
+			description = Equipment.MODELS[model]["description"]
 	else:
 		description = ""
 		bonus.text = ""
