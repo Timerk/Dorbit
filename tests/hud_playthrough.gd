@@ -37,9 +37,13 @@ func run() -> void:
 			check(viewport.encloses(card), "Flight cards stay inside the %d viewport" % pixels.x)
 		for first in range(cards.size()):
 			for second in range(first + 1, cards.size()):
-				check(not cards[first].intersects(cards[second]), "Flight cards do not overlap at %d" % pixels.x)
+				check(not cards[first].intersects(cards[second]), "Flight cards do not overlap at %d: %s / %s" % [pixels.x, cards[first], cards[second]])
 		check(hud.objectives_rect().position.y == navigation.radar_rect().position.y and navigation.radar_rect().position.y <= 24, "Contracts and radar share a small top margin")
-		check(is_equal_approx(hud.ship_rect().end.y, hud.ammo_bar.get_rect().end.y) and is_equal_approx(hud.target_rect().end.y, hud.ammo_bar.get_rect().end.y), "Ship, ammo and target cards share their bottom edge")
+		check(is_equal_approx(hud.ship_rect().end.y, hud.target_rect().end.y) and hud.ammo_bar.get_rect().end.y <= hud.ship_rect().position.y - 8, "Ship and target retain their bottom edge; expanded ammo bar fits above them")
+		var hud_size := hud.size
+		hud.size.y += 16
+		check(is_equal_approx(hud.ammo_bar.get_rect().end.y, hud.ship_rect().position.y - 8), "Ammo bar follows its HUD parent immediately during resize")
+		hud.size = hud_size
 		check(navigation.guidance_rect().position.y == navigation.radar_rect().position.y, "Destination guidance moves to the top row")
 		check(navigation.autopilot_status.visible and navigation.autopilot_status.position.y >= navigation.radar_rect().end.y, "Active autopilot label sits below radar")
 		if DisplayServer.get_name() != "headless":

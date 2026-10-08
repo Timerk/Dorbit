@@ -48,7 +48,7 @@ func open(directory: String) -> bool:
 	file.close()
 	var json := JSON.new()
 	var data: Variant = json.data if json.parse(saved_text) == OK else null
-	if not data is Dictionary or not Skylab.integer(data.get("version"), 1, 6) or not data.get("pilots") is Dictionary or data["pilots"].is_empty():
+	if not data is Dictionary or not Skylab.integer(data.get("version"), 1, 7) or not data.get("pilots") is Dictionary or data["pilots"].is_empty():
 		return fail("Invalid pilots.json schema. Original file preserved.")
 	for id: Variant in data["pilots"]:
 		var pilot: Variant = data["pilots"][id]
@@ -98,19 +98,21 @@ func open(directory: String) -> bool:
 			return fail("Unexpected ammunition in legacy save. Original file preserved.")
 		if not pilot.has("ammo") and data["version"] < 5:
 			pilot["ammo"] = Ammunition.starter()
-		elif not Ammunition.valid(pilot.get("ammo")):
+		elif not Ammunition.valid(pilot.get("ammo")) and not (data["version"] < 7 and Ammunition.valid(pilot.get("ammo"), true)):
 			return fail("Invalid pilot ammunition. Original file preserved.")
+		if data["version"] < 7 and pilot["ammo"].size() == Ammunition.TYPES.size():
+			for kind: String in Ammunition.ROCKETS:
+				pilot["ammo"][kind] = Ammunition.starter()[kind]
 		for kind: String in pilot["ammo"]:
 			pilot["ammo"][kind] = int(pilot["ammo"][kind])
 		if not pilot.has("boosts") and data["version"] < 6:
 			pilot["boosts"] = ResourceBoosts.empty_holds(pilot["equipment"])
 		elif not ResourceBoosts.valid(pilot.get("boosts"), pilot["equipment"]):
 			return fail("Invalid pilot resource boosts. Original file preserved.")
-		if data["version"] < 6:
-			# Main's schema 5 contains boosts; the earlier Skylab preview's schema 5
-			# contains industry. Preserve either layout and convert the retired wallet once.
+		if data["version"] < 7:
+			# Accept either schema-6 branch layout. Convert only older industry wallets.
 			if pilot.has("skylab"):
-				if not Skylab.migrate_credits(pilot): return fail("Invalid legacy Skylab or credit conversion overflow. Original file preserved.")
+				if data["version"] < 6 and not Skylab.migrate_credits(pilot): return fail("Invalid legacy Skylab or credit conversion overflow. Original file preserved.")
 			else:
 				if pilot.has("uridium") or pilot.has("premium"): return fail("Unexpected industry fields. Original file preserved.")
 				pilot["skylab"] = Skylab.bootstrap(Skylab.now())
@@ -119,7 +121,7 @@ func open(directory: String) -> bool:
 			return fail("Invalid pilot Skylab state. Original file preserved.")
 		Skylab.normalize(pilot["skylab"])
 	pilots = data["pilots"]
-	if data["version"] < 6:
+	if data["version"] < 7:
 		if not persist(pilots): return false
 		# Newly bootstrapped labs have no earlier industry to catch up. Keep the
 		# migration backup intact until the first normal command or scheduled tick.
@@ -198,7 +200,7 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		if batches < 1 or batches > Ammunition.MAX_PURCHASE_BATCHES:
 			return "Invalid ammunition quantity."
 		var shots := batches * Ammunition.BATCH_SIZE
-		var price: int = Ammunition.TYPES[kind]["price"] * batches
+		var price: int = Ammunition.types()[kind]["price"] * batches
 		if pilot["credits"] < price:
 			return "Insufficient credits. Need %d CR." % price
 		if shots > Ammunition.MAX_SHOTS - int(pilot["ammo"][kind]):
@@ -389,7 +391,7 @@ func persist(next: Dictionary) -> bool:
 	if current == null or current.get_as_text() != saved_text:
 		return fail("pilots.json changed or became unreadable while running. Save preserved; stop and recover.")
 	current.close()
-	var text := JSON.stringify({"version": 6, "pilots": next}, "\t") + "\n"
+	var text := JSON.stringify({"version": 7, "pilots": next}, "\t") + "\n"
 	if not replace_file(path + ".bak", saved_text) or not replace_file(path, text):
 		return false
 	pilots = next

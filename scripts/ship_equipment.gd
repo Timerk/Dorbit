@@ -153,7 +153,7 @@ func rebuild_slots(model_id: String) -> void:
 		child.queue_free()
 	slots.clear()
 	var available := ShipCatalog.slots(model_id)
-	for kind: String in ["laser", "generator", "extra"]:
+	for kind: String in ["laser", "launcher", "generator", "extra"]:
 		StationUi.text(slot_rows, "%s / %d SLOTS" % [kind.to_upper() + "S", available.values().count(kind)], 13, Color("f4c778") if kind == "laser" else FlightHud.CYAN)
 		var group := GridContainer.new()
 		group.columns = 4
@@ -170,6 +170,11 @@ func rebuild_slots(model_id: String) -> void:
 			tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			group.add_child(tile)
 			slots[slot] = tile
+	# Leave clearance below the last row when the shared menu scales its scroll
+	# area; rounding must not clip the bottom tiles at minimum window size.
+	var bottom_clearance := Control.new()
+	bottom_clearance.custom_minimum_size.y = 6
+	slot_rows.add_child(bottom_clearance)
 
 
 func activate_selected() -> void:
@@ -232,7 +237,7 @@ func refresh_inventory() -> void:
 
 func storage_category(model: String) -> String:
 	var info: Dictionary = Equipment.MODELS[model]
-	if info["kind"] == "laser":
+	if info["kind"] in ["laser", "launcher"]:
 		return "weapon"
 	if info["kind"] == "generator":
 		return "shield" if info["shield"] > 0 else "engine"

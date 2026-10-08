@@ -101,6 +101,8 @@ func _ready() -> void:
 	session.name = "FlightSession"
 	session.sector = self
 	add_child(session)
+	if not dedicated_server:
+		session.combat.connect_rockets(player)
 	loot = ResourceLoot.new()
 	loot.sector = self
 	loot.name = "ResourceLoot"
@@ -244,6 +246,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			session.combat.request_ammo(kind)
 			get_viewport().set_input_as_handled()
 			return
+	if event.is_action_pressed("rocket") and not event.is_echo():
+		session.combat.request_rocket("single")
+		get_viewport().set_input_as_handled()
+	if event.is_action_pressed("launcher") and not event.is_echo():
+		session.combat.request_rocket("launcher")
+		get_viewport().set_input_as_handled()
 	if event.is_action_pressed("autopilot"):
 		autopilot.toggle()
 	if event.is_action_pressed("steer"):
@@ -398,6 +406,8 @@ func relocate_alien(enemy: Alien) -> void:
 
 
 func set_paused(value: bool) -> void:
+	if value and is_instance_valid(hud) and is_instance_valid(hud.ammo_bar) and not hud.layout.editing:
+		hud.ammo_bar.hide()
 	if preflight:
 		paused = true
 		autopilot.cancel()

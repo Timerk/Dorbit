@@ -71,7 +71,7 @@ through the existing atomic replacement, backup and save-failure path. Owner-onl
 reliable snapshots expose inventories, rates, power, blockers, jobs and robots.
 
 Ledger schema **6** combines industry, ammunition and per-ship combat boosts.
-It migrates versions 1–5, including both earlier schema-5 layouts: main's resource
+It migrates versions 1–6, including both earlier schema-5 layouts: main's resource
 boost ledger and the initial industry preview. Existing jobs, stock, cargo, boosts,
 wallets and ammunition survive. The retired industry wallet converts once at
 100 credits per unit; overflow fails without writing or discarding a balance.
@@ -141,7 +141,7 @@ python3 tools/pilots.py /absolute/data pilot /new/private/credential.json --rota
 ```
 
 The tool preserves jobs, robots, shipments, combat boosts and unrelated progression.
-It supports both schema-5 layouts and the credits-only schema 6; legacy currency
+It supports both schema-5 layouts and the credits-only schema 7; legacy currency
 conversion is backed up and never repeated. No Uridium grant option remains.
 
 Real Xenomit is also an eighth cargo/trade resource. Its ivory mineral artwork is
@@ -196,7 +196,7 @@ Both Windows `tools/dev.ps1 check` and Linux `tools/server.sh check` include:
   retries, original-recipient delivery, overfull cargo, restart and save failure.
 - `skylab_ui_test.gd`: actual module/control interactions at 960×600 and 1440×900.
   Run without `--headless` to save native captures under `build/validation/`.
-- `pilots_test.py`: provisioning, corruption preservation, schema-6 rotation,
+- `pilots_test.py`: provisioning, corruption preservation, schema-7 rotation,
   benefits and adding a pilot without changing existing industry.
 
 Current native captures: [station](menu-design/skylab-implemented.png),

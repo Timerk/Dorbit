@@ -22,6 +22,7 @@ const ACTIONS := {
 	"steer": "Hold to steer", "select_target": "Select under cursor",
 	"cycle_target": "Cycle target", "fire": "Toggle automatic fire", "repair": "Repair",
 	"autopilot": "Toggle autopilot",
+	"rocket": "Fire single rocket", "launcher": "Load / fire Hellstorm",
 }
 # Negative codes denote mouse buttons; positive codes denote physical keys.
 const DEFAULT_BINDINGS := {
@@ -30,6 +31,7 @@ const DEFAULT_BINDINGS := {
 	"boost": KEY_SHIFT, "steer": -MOUSE_BUTTON_RIGHT, "select_target": -MOUSE_BUTTON_LEFT,
 	"cycle_target": KEY_TAB, "fire": KEY_SPACE, "repair": KEY_R,
 	"autopilot": KEY_P,
+	"rocket": KEY_F, "launcher": KEY_G,
 }
 const SHORTCUTS := {
 	"pause_game": KEY_ESCAPE, "fullscreen": KEY_F11, "performance": KEY_F3,

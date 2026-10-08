@@ -14,6 +14,96 @@ var ammo_sequence: int = -1
 var boost_save_clock: float = 0.0
 var boost_sequence: int = -1
 var lab_snapshot: Dictionary = {}
+var rocket_request_sequence: int = 0
+var rocket_sequences: Dictionary[int, int] = {}
+
+
+func connect_rockets(ship: Pilot) -> void:
+	if not ship.rockets.launched.is_connected(on_rocket_launch):
+		ship.rockets.launched.connect(on_rocket_launch)
+		ship.rockets.resolved.connect(on_rocket_resolved)
+
+
+func debit_rockets(kind: String, count: int, id: int) -> bool:
+	var next := session.ships[id].ammo.duplicate()
+	next[kind] -= count
+	if session.store.commit({}, {}, {}, {session.pilot_ids[id]: next}):
+		return true
+	session.stop_for_save_failure()
+	return false
+
+
+func request_rocket(action: String, kind: String = "") -> void:
+	var sector := session.sector
+	if sector.paused or sector.preflight or not sector.player.alive or (sector.client_only and not session.active):
+		return
+	var enemy := sector.target as Alien
+	if not session.active or multiplayer.is_server():
+		var result := rocket_action(sector.player, action, kind, enemy)
+		if not result.is_empty():
+			sector.notify(result)
+	else:
+		rocket_request_sequence += 1
+		rocket_request.rpc_id(1, rocket_request_sequence, int(sector.player.get_meta("life", 0)), action, kind, enemy.alien_id if is_instance_valid(enemy) else -1, enemy.life if is_instance_valid(enemy) else -1)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func rocket_request(sequence: int, life: int, action: String, kind: String, target_id: int, encounter: int) -> void:
+	if not session.active or not multiplayer.is_server():
+		return
+	var id := multiplayer.get_remote_sender_id()
+	if not records.has(id) or sequence <= rocket_sequences.get(id, 0):
+		return
+	rocket_sequences[id] = sequence # Reject replays, including previously rejected shots.
+	var ship := session.ships[id]
+	if records[id]["life"] != life or not ship.alive or ship.get_meta("docked", false):
+		return
+	var enemy: Alien = session.sector.aliens.get(target_id)
+	if is_instance_valid(enemy) and enemy.life != encounter:
+		enemy = null
+	var result := rocket_action(ship, action, kind, enemy)
+	if not result.is_empty():
+		message(id, result)
+
+
+func rocket_action(ship: Pilot, action: String, kind: String, target: Alien) -> String:
+	match action:
+		"select":
+			return "" if ship.rockets.select(kind) else "UNKNOWN ROCKET AMMUNITION"
+		"single":
+			return ship.rockets.fire_single(target)
+		"launcher":
+			return ship.rockets.activate(target)
+		"unload":
+			ship.rockets.unload()
+			return "LAUNCHER UNLOADED"
+	return "UNKNOWN ROCKET ACTION"
+
+
+func on_rocket_launch(event: Dictionary) -> void:
+	if session.active and multiplayer.is_server():
+		show_rocket.rpc(event)
+	elif not session.active:
+		show_rocket(event)
+
+
+func on_rocket_resolved(id: String, location: Vector3, hit: bool) -> void:
+	if session.active and multiplayer.is_server():
+		resolve_rocket.rpc(id, location, hit)
+	elif not session.active:
+		resolve_rocket(id, location, hit)
+
+
+@rpc("authority", "call_local", "reliable")
+func show_rocket(event: Dictionary) -> void:
+	if not session.sector.dedicated_server:
+		RocketEffect.spawn(session.sector, event)
+
+
+@rpc("authority", "call_local", "reliable")
+func resolve_rocket(id: String, location: Vector3, hit: bool) -> void:
+	if not session.sector.dedicated_server:
+		RocketEffect.resolve(session.sector, id, location, hit)
 
 
 func begin() -> void:
@@ -57,6 +147,7 @@ func begin() -> void:
 
 func add_player(id: int, location: Vector3) -> void:
 	var ship := session.ships[id]
+	connect_rockets(ship)
 	ship.simulation_authority = multiplayer.is_server()
 	ship.set_meta("life", 0)
 	ship.set_meta("feedback_health_received", false)
@@ -67,6 +158,7 @@ func add_player(id: int, location: Vector3) -> void:
 		if session.sector.dedicated_server:
 			ship.ammo = session.store.pilots[session.pilot_ids[id]]["ammo"].duplicate()
 			ship.ammo_debit = debit_ammo.bind(id)
+			ship.rockets.debit = debit_rockets.bind(id)
 			cargo_holds[id] = session.store.pilots[session.pilot_ids[id]]["cargo"].duplicate(true)
 			records[id]["credits"] = session.store.pilots[session.pilot_ids[id]]["credits"]
 			records[id]["contracts"] = session.store.pilots[session.pilot_ids[id]]["contracts"].duplicate(true)
@@ -99,6 +191,7 @@ func flush_boosts(ids: Array = []) -> bool:
 
 
 func remove_player(id: int) -> void:
+	rocket_sequences.erase(id)
 	records.erase(id)
 	cargo_holds.erase(id)
 	for alien: Alien in session.sector.aliens.values():
@@ -127,6 +220,9 @@ func debit_ammo(id: int) -> bool:
 
 
 func request_ammo(kind: String) -> void:
+	if Ammunition.ROCKETS.has(kind):
+		request_rocket("select", kind)
+		return
 	if not Ammunition.TYPES.has(kind) or session.sector.paused or session.sector.preflight or not session.sector.player.alive:
 		return
 	if not session.active or multiplayer.is_server():
@@ -435,19 +531,24 @@ func publish_ammo(id: int, sequence: int) -> void:
 	if id == 1:
 		return # Listen-host pilot already owns its authoritative inventory.
 	var ship := session.ships[id]
-	var rounds := PackedInt32Array([ship.ammo["x1"], ship.ammo["x2"], ship.ammo["x3"], ship.ammo["x4"], Ammunition.TYPES.keys().find(ship.ammo_type)])
-	ammo_snapshot.rpc_id(id, rounds, sequence)
+	var rounds := PackedInt32Array()
+	for kind: String in Ammunition.types():
+		rounds.append(ship.ammo[kind])
+	rounds.append(Ammunition.TYPES.keys().find(ship.ammo_type))
+	ammo_snapshot.rpc_id(id, rounds, sequence, ship.rockets.state())
 
 
 @rpc("authority", "call_remote", "unreliable_ordered", 4)
-func ammo_snapshot(rounds: PackedInt32Array, sequence: int) -> void:
+func ammo_snapshot(rounds: PackedInt32Array, sequence: int, rocket_data: Dictionary = {}) -> void:
 	if not session.active or sequence <= ammo_sequence:
 		return
 	ammo_sequence = sequence
 	var ship := session.sector.player
-	for index in range(Ammunition.TYPES.size()):
-		ship.ammo[Ammunition.TYPES.keys()[index]] = int(rounds[index])
-	ship.ammo_type = Ammunition.TYPES.keys()[rounds[4]]
+	for index in range(Ammunition.types().size()):
+		ship.ammo[Ammunition.types().keys()[index]] = int(rounds[index])
+	ship.ammo_type = Ammunition.TYPES.keys()[rounds[Ammunition.types().size()]]
+	if not rocket_data.is_empty():
+		ship.rockets.apply_state(rocket_data)
 
 
 func pack_alien(alien: Alien) -> Dictionary:
@@ -562,6 +663,12 @@ func show_explosion(location: Vector3, diameter: float) -> void:
 
 
 func finish() -> void:
+	rocket_request_sequence = 0
+	rocket_sequences.clear()
+	if is_instance_valid(session.sector.player):
+		session.sector.player.rockets.pending.clear()
+		session.sector.player.rockets.debit = Callable()
+		session.sector.player.rockets.unload()
 	session.sector.active_contracts = {}
 	session.sector.loot.clear()
 	cargo_holds.clear()
@@ -629,6 +736,7 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 	if pilot["equipment"]["revision"] > previous_revision:
 		apply_equipment(id)
 	if previous_ship != pilot["equipment"]["active_ship"]:
+		session.ships[id].rockets.unload()
 		# Switching is not a repair. Keep absolute hull/shield charge (clamped by
 		# the new fitting), boost energy, cooldowns and damage timer.
 		records[id]["life"] += 1
