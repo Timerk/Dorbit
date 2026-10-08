@@ -38,7 +38,7 @@ class ServerShutdownTest(unittest.TestCase):
         self.data.mkdir()
         self.ledger = self.data / "pilots.json"
         self.lock = self.data / "pilots.json.lock"
-        self.original = json.dumps({"version": 6, "pilots": {
+        self.original = json.dumps({"version": 7, "pilots": {
             "restart_test": {"verifier": hashlib.sha256(b"disposable test token").hexdigest(), "credits": 137,
                              "equipment": pilots.starter_equipment(), "cargo": {"starter": {"seprom": 5}},
                              "ammo": pilots.starter_ammo(), "contracts": {},
@@ -126,6 +126,8 @@ class ServerShutdownTest(unittest.TestCase):
                     del record["boosts"]
                 if layout != "ammo":
                     del record["ammo"]
+                else:
+                    record["ammo"] = {kind: amount for kind, amount in record["ammo"].items() if kind.startswith("x")}
                 if version == 2:
                     del record["cargo"]
                 original = json.dumps(legacy)
@@ -135,10 +137,10 @@ class ServerShutdownTest(unittest.TestCase):
                 process.terminate()
                 self.assertEqual(process.wait(timeout=10), 0, log.read_text())
                 migrated = json.loads(self.ledger.read_text())
-                self.assertEqual(migrated["version"], 6)
+                self.assertEqual(migrated["version"], 7)
                 expected = record | {"cargo": record.get("cargo", {"starter": {}}), "contracts": {},
                                      "boosts": record.get("boosts", {"starter": {}}),
-                                     "ammo": record.get("ammo", pilots.starter_ammo())}
+                                     "ammo": pilots.starter_ammo() | record.get("ammo", {})}
                 expected.update(premium=False)
                 self.assertEqual(progression(self.ledger.read_text())["pilots"]["restart_test"], expected)
                 self.assertTrue(pilots.valid_skylab(migrated["pilots"]["restart_test"]["skylab"], expected["equipment"]))

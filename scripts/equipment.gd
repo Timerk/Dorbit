@@ -26,6 +26,8 @@ const MODELS := {
 	"g3n-6900": {"name": "G3N-6900", "kind": "generator", "price": 1000 * URIDIUM_TO_CREDITS, "damage": 0.0, "shield": 0.0, "speed": 7.0},
 	"g3n-7900": {"name": "G3N-7900", "kind": "generator", "price": 2000 * URIDIUM_TO_CREDITS, "damage": 0.0, "shield": 0.0, "speed": 10.0},
 	"engine": {"name": "Ion engine", "kind": "generator", "price": 0, "legacy": true, "unavailable": "Starter equipment only. Choose a G3N engine in the shop.", "damage": 0.0, "shield": 0.0, "speed": 8.0},
+	"hst-1": {"name": "HST-1", "kind": "launcher", "capacity": 3, "price": 500000, "damage": 0.0, "shield": 0.0, "speed": 0.0},
+	"hst-2": {"name": "HST-2", "kind": "launcher", "capacity": 5, "price": 15000 * URIDIUM_TO_CREDITS, "damage": 0.0, "shield": 0.0, "speed": 0.0},
 }
 # Keep the persisted pathfinder model ID so existing ownership and cargo stay valid.
 const STARTER_HULL: float = 116000.0
@@ -33,7 +35,7 @@ const STARTER_HULL: float = 116000.0
 
 static func category(model: String) -> String:
 	var info: Dictionary = MODELS[model]
-	return "weapons" if info["kind"] == "laser" else ("shields" if info["shield"] > 0.0 else "engines")
+	return "weapons" if info["kind"] in ["laser", "launcher"] else ("shields" if info["shield"] > 0.0 else "engines")
 
 
 static func catalog_models() -> Array[String]:
@@ -101,7 +103,7 @@ static func fitting_blocker(data: Dictionary, item_id: String, ship: String, slo
 	if ship_slots.get(slot) == "extra":
 		return "Extra slots are reserved for future equipment."
 	if not ship_slots.has(slot) or ship_slots[slot] != MODELS[data["items"][item_id]["model"]]["kind"]:
-		return "Incompatible slot. Lasers need laser slots; shields and engines share generator slots."
+		return "Incompatible slot. Lasers and launchers need their own slots; shields and engines share generator slots."
 	for item: Dictionary in data["items"].values():
 		if item["ship"] == ship and item["slot"] == slot:
 			return "Slot occupied. Remove its item first."
@@ -120,12 +122,15 @@ static func stats(data: Dictionary, ship: String = "") -> Dictionary:
 	var speed: float = hull["speed"] * ShipCatalog.SPEED_SCALE
 	var result := {"model": model, "hull": float(hull["hull"]), "damage": 0.0, "npc_damage": 0.0, "shield": 0.0, "absorption": 0.0, "regen_bonus": 0.0, "speed": speed, "boost": speed + ShipCatalog.BOOST_BONUS, "lasers": []}
 	result["laser_count"] = 0
+	result["launcher_capacity"] = 0
 	var installed: Array = data["items"].values()
 	installed.sort_custom(func(a: Dictionary, b: Dictionary): return a["slot"].naturalnocasecmp_to(b["slot"]) < 0)
 	for item: Dictionary in installed:
 		if item["ship"] != ship:
 			continue
 		var item_model: Dictionary = MODELS[item["model"]]
+		if item_model["kind"] == "launcher":
+			result["launcher_capacity"] = item_model["capacity"]
 		if item_model["kind"] == "laser":
 			result["laser_count"] += 1
 			result["lasers"].append({"damage": item_model["damage"], "npc_damage": item_model["damage"] * item_model.get("npc_bonus", 0.0)})
@@ -143,6 +148,8 @@ static func stats(data: Dictionary, ship: String = "") -> Dictionary:
 
 
 static func apply_stats(ship: Pilot, values: Dictionary) -> void:
+	if values.has("launcher_capacity"):
+		ship.rockets.equip(values["launcher_capacity"])
 	if values.has("model"):
 		ship.set_ship_model(values["model"])
 	if values.has("hull"):

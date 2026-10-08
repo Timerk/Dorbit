@@ -504,7 +504,7 @@ The same resource adds rounds or duration without changing its percentage. A dif
 
 The user chose timers that count only while online. They count with that hull active, including station menus and rescue; inactive hulls and disconnected pilots retain their time. The server checkpoints durations every five seconds and flushes them on disconnect, shutdown and successful station actions. Abrupt termination can restore up to five seconds of unused duration. Weapon-round consumption saves before damage, so consumed rounds cannot return after restart.
 
-All actions retain the station checks and persistent sequence protection. Save schema 5 adds validated per-ship boost reserves and migrates schemas 1–4 while preserving progression; provisioning and credential rotation preserve boosts. Rollback needs a pre-migration backup. Network schema 10 requires matching clients and servers. Offline preview exposes both tabs with resource actions disabled. Balance and timer feel need human playtesting; Rocket weapons remain later work; Skylab is implemented below.
+All actions retain the station checks and persistent sequence protection. Save schema 5 adds validated per-ship boost reserves and migrates schemas 1–4 while preserving progression; provisioning and credential rotation preserve boosts. Rollback needs a pre-migration backup. Network schema 10 requires matching clients and servers. Offline preview exposes both tabs with resource actions disabled. Balance and timer feel need human playtesting; Rocket weapons and Skylab are implemented below.
 
 ### Persistent Skylab industry
 
@@ -557,12 +557,82 @@ Premium off. Skylab uses credits exclusively: legacy wallets convert at 100:1;
 instant send costs a flat 125,000 credits for any valid manifest. Xenomit artwork, sale price and Heavy drops are custom
 Drobit choices requiring playtesting. Premium is an optional operator-set duration flag; no real-money purchase flow is introduced.
 
-Save schema 6 migrates versions 1–5 before admission, preserving both earlier
+Save schema 7 migrates versions 1–6 before admission, preserving both earlier
 ammunition/boost and industry layouts. Legacy industry wallets convert once at
 100 credits per unit; active/queued robots retain their lifetime.
-Network schema 11 requires matching client/server builds. See [implementation policies,
+Network schema 12 requires matching client/server builds. See [implementation policies,
 rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot's
 454/870 power budget and exact inventories/capacities remain a separate debug fixture.
+
+### Manual single rockets and classic Hellstorm
+
+The user requested independent manual single rockets and equipped Hellstorm
+launchers alongside lasers in Milestone 3. Rocket Turbo and automatic rocket
+firing are deferred at the user's request. No subscription mechanics are added.
+The shared laser ammo bar now also selects four single-rocket types and two
+launcher types, with separate counts and controls: F fires one single rocket;
+G starts loading an empty Hellstorm or fires every loaded round, including a
+partial volley. Both actions are rebindable. The bar shows cooldowns, loading
+time and capacity dots and provides an Unload button. It sits above the three
+bottom status cards to fit the additional controls at 960 x 600.
+HUD customization moves, scales, hides and restores every ammo selector and
+rocket action together as one bar. Editing disables selection and firing.
+The user requested original generated item artwork: six distinct transparent
+rocket icons and HST-1/HST-2 launcher renders are shared by the shop and ammo bar.
+The equipped launcher is also pictured on its fire/load button. Prompts are
+recorded in `docs/rocket-art/generation-prompts.md`.
+
+Single rockets are inherent to every hull and need no launcher. R-310,
+PLT-2026, PLT-2021 and PLT-3030 retain absolute maximum damages of 1,000,
+2,000, 4,000 and 6,000. Game defaults are respectively 120/170/240/240 m
+range, 70/80/90/65% hit probability and 150/170/190/190 m/s projectile speed.
+Every accepted shot consumes one round and starts a shared 2-second cooldown,
+including misses. Successful damage varies from 80 to 100% of maximum. These
+probabilities, variation, distances and timings are playtesting defaults rather
+than claims about exact DarkOrbit rules. Settings live in `Ammunition.ROCKETS`.
+Rockets use target tracking without a laser forward-arc requirement.
+
+Every hull has one dedicated launcher slot. HST-1 holds three rounds and
+HST-2 holds five. ECO-10 and HSTRM-01 are dedicated launcher ammunition,
+with fixed 2,000 and 4,000 damage respectively; configured variation defaults
+to 1.0–1.0 and accuracy to 100%. Both use 200 m range and 170 m/s speed.
+Loading reserves one unit per second; activating again fires all loaded units.
+After firing, loading is blocked for three seconds. These timings live in
+`RocketWeapons`. Single and launcher cooldowns survive ammo/ship changes.
+
+The server owns validation, hit/damage rolls and projectile travel. It rejects
+friendly targets, inactive or returning aliens, safe-zone fire, other worlds,
+out-of-range shots, empty ammo and cooldown attempts. It binds each projectile
+to the original target and encounter life. Death, encounter reset, map/world
+transition or an attacker flight-life change invalidates pending impacts with
+no refund. Existing shield absorption, hull damage and contribution/reward
+paths apply. Reliable confirmed launch/resolve events render cosmetic homing
+rockets, exhaust and impact flashes. Each volley has distinct visual paths;
+presentation never applies damage. Effects respect the existing quality budget.
+
+Owned inventory includes loaded reservations; HUD available counts exclude
+them. Loading reserves rather than permanently debiting inventory. Firing
+commits the exact volley debit before launching. Unload, ammo change, fitting
+removal, hull change, rescue and reconnect release unfired reservations. This
+also preserves unfired units through a server crash without requiring refunds
+or a second saved reservation ledger. Failed saves cancel firing and stop
+progression. Per-peer request sequences reject replayed firing intentions.
+
+Prices use the official [single-ammo guide](https://board-de.darkorbit.com/threads/faq-munition.2817/)
+and [classic Hellstorm guide](https://board-en.darkorbit.com/threads/hellstorm-rocket-launchers-faq.893/).
+The user explicitly requested Uridium reference prices × 100 credits; reference
+credit prices are retained. Per rocket: R-310 100 CR, PLT-2026 500 CR,
+PLT-2021 500 CR (5 U), PLT-3030 700 CR (7 U), ECO-10 1,500 CR,
+HSTRM-01 2,500 CR (25 U). Orders are batches of 100. HST-1 costs 500,000 CR;
+HST-2 costs 1,500,000 CR (15,000 U). Rocket economy needs playtesting.
+
+Save schema 7 migrates schema 1–6 while preserving progression and grants
+100 R-310 once, with zero other rocket ammo. New pilots receive the same grant.
+The provisioning tool supports the same migration and launcher fittings.
+Back up the ledger before upgrading; rollback needs a pre-migration backup.
+Network schema 12 requires matching client/server builds. Resource rocket
+boosts remain disabled until a separate integration; laser/timed reserves are
+unchanged.
 
 ## Multiplayer and hosting
 
@@ -786,8 +856,11 @@ Before deploying progression, configure the private network, dated off-machine b
 
 Local and LAN dedicated-server play have passed manual testing. Cross-network dedicated-server testing remains pending and does not block pilot identity and persistence work. Full Milestone 3 completion still requires purchases, additional content and repeat-session playtesting.
 
-Save schema 6 retains schema 5's combined ammunition inventory and per-ship
+Save schema 7 retains schema 5's combined laser/rocket ammunition inventory and per-ship
 resource boost reserves alongside persistent Skylab industry.
 Schema 4 ammunition saves retain their rounds and receive empty boosts; schema 4
 boost saves retain their reserves and receive the one-time starter ammunition.
-Each fired volley commits both debits together before applying damage.
+Each fired laser volley commits ammunition and boost debits together before applying damage.
+Schemas 1–6 without rocket inventory receive the one-time starter grant when
+migrating to schema 7. Both independently deployed schema-7 layouts (rockets or
+Skylab) migrate without replacing existing rounds, industry jobs or robots.

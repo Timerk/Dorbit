@@ -241,7 +241,7 @@ func run() -> void:
 		shop.categories[category].pressed.emit()
 		await settle()
 		var expected: Array = {
-			"weapons": ["laser", "mp-1", "lf-2", "lf-3", "lf-4"],
+			"weapons": ["laser", "mp-1", "lf-2", "lf-3", "lf-4", "hst-1", "hst-2"],
 			"shields": ["shield", "sg3n-a02", "fs-01", "sg3n-a03", "sg3n-b00", "sg3n-b01", "sg3n-b02"],
 			"engines": ["g3n-1010", "g3n-2010", "g3n-3210", "g3n-3310", "g3n-6900", "g3n-7900"],
 			"generators": ["shield", "sg3n-a02", "fs-01", "sg3n-a03", "sg3n-b00", "sg3n-b01", "sg3n-b02", "g3n-1010", "g3n-2010", "g3n-3210", "g3n-3310", "g3n-6900", "g3n-7900"],

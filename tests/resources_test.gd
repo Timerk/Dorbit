@@ -154,7 +154,7 @@ func run() -> void:
 	var failure_dir := store.path.get_base_dir().path_join("resource-failure")
 	DirAccess.make_dir_absolute(failure_dir)
 	var file := FileAccess.open(failure_dir.path_join("pilots.json"), FileAccess.WRITE)
-	file.store_string(JSON.stringify({"version": 6, "pilots": {"pilot0": store.pilots["pilot0"]}}))
+	file.store_string(JSON.stringify({"version": 7, "pilots": {"pilot0": store.pilots["pilot0"]}}))
 	file.close()
 	var probe := PilotStore.new()
 	check(probe.open(failure_dir), "Open isolated cargo failure fixture")

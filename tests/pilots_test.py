@@ -31,10 +31,10 @@ class ProvisioningTest(unittest.TestCase):
                                      str(root / "credential.json"), "--rotate"], capture_output=True)
             self.assertEqual(result.returncode, 0, result.stderr.decode())
             saved = json.loads(path.read_text())
-            self.assertEqual(saved["version"], 6)
+            self.assertEqual(saved["version"], 7)
             self.assertEqual(saved["pilots"]["test"]["credits"], 9345)
             self.assertNotIn("uridium", saved["pilots"]["test"])
-            self.assertEqual(saved["pilots"]["test"]["ammo"], record["ammo"])
+            self.assertEqual(saved["pilots"]["test"]["ammo"], pilots.starter_ammo() | record["ammo"])
             robots = saved["pilots"]["test"]["skylab"]["robots"]["prometiumCollector"]
             self.assertEqual(robots["advanced"], 7)
             self.assertEqual(robots["active"], [{"kind": "advanced", "startedAt": 100, "expiresAt": 172900}])
@@ -85,7 +85,7 @@ class ProvisioningTest(unittest.TestCase):
                                      "--premium", "on"], capture_output=True)
             self.assertEqual(result.returncode, 0, result.stderr.decode())
             saved = json.loads(path.read_text())
-            expected = record | {"premium": True,
+            expected = record | {"premium": True, "ammo": pilots.starter_ammo() | record["ammo"],
                                  "verifier": saved["pilots"]["test"]["verifier"]}
             self.assertEqual(saved["pilots"]["test"], expected)
             self.assertEqual(json.loads(path.with_name("pilots.json.bak").read_text()), original)
@@ -148,13 +148,13 @@ class ProvisioningTest(unittest.TestCase):
             self.assertFalse(pilots.valid_cargo(candidate, equipment))
 
     def test_reference_models(self):
-        for model in pilots.LASER_MODELS | pilots.GENERATOR_MODELS:
+        for model in pilots.LASER_MODELS | pilots.GENERATOR_MODELS | pilots.LAUNCHER_MODELS:
             with self.subTest(model=model):
                 equipment = pilots.starter_equipment()
                 equipment["items"]["reference"] = {"model": model, "ship": "", "slot": ""}
                 self.assertTrue(pilots.valid_equipment(equipment))
                 item = equipment["items"]["reference"]
-                item.update(ship="starter", slot="laser2" if model in pilots.LASER_MODELS else "generator3")
+                item.update(ship="starter", slot="launcher1" if model in pilots.LAUNCHER_MODELS else ("laser2" if model in pilots.LASER_MODELS else "generator3"))
                 self.assertTrue(pilots.valid_equipment(equipment))
                 item["slot"] = "generator3" if model in pilots.LASER_MODELS else "laser2"
                 self.assertFalse(pilots.valid_equipment(equipment))
@@ -171,7 +171,7 @@ class ProvisioningTest(unittest.TestCase):
                 self.assertFalse(pilots.valid_equipment(candidate))
 
     def test_rotation_and_migration(self):
-        for version, layout in ((1, "legacy"), (2, "legacy"), (3, "legacy"), (4, "ammo"), (4, "boosts"), (4, "both"), (5, "both")):
+        for version, layout in ((1, "legacy"), (2, "legacy"), (3, "legacy"), (4, "ammo"), (4, "boosts"), (4, "both"), (5, "both"), (6, "both")):
             with self.subTest(version=version, layout=layout), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 record = {"verifier": "a" * 64, "credits": 2345,
@@ -185,6 +185,8 @@ class ProvisioningTest(unittest.TestCase):
                     record["cargo"] = {"starter": {"seprom": 2}}
                 if layout in ("ammo", "both"):
                     record["ammo"] = {"x1": 4321, "x2": 45, "x3": 123, "x4": 7}
+                    if version == 6:
+                        record["ammo"] = pilots.starter_ammo() | record["ammo"] | {"r-310": 12, "hstrm-01": 8}
                 if layout in ("boosts", "both"):
                     record["boosts"] = {"starter": {"lasers": {"resource": "seprom", "remaining": 7},
                                                       "shields": {"resource": "duranium", "remaining": 600.25}}}
@@ -194,10 +196,10 @@ class ProvisioningTest(unittest.TestCase):
                                          str(root / "credential.json"), "--rotate"], capture_output=True)
                 self.assertEqual(result.returncode, 0, result.stderr.decode())
                 saved = json.loads(path.read_text())
-                self.assertEqual(saved["version"], 5)
+                self.assertEqual(saved["version"], 6)
                 expected = record | {"equipment": record.get("equipment", pilots.starter_equipment()),
                                      "cargo": record.get("cargo", {"starter": {}}),
-                                     "ammo": record.get("ammo", pilots.starter_ammo()),
+                                     "ammo": pilots.starter_ammo() | record.get("ammo", {}),
                                      "boosts": record.get("boosts", {"starter": {}})}
                 expected["verifier"] = saved["pilots"]["test"]["verifier"]
                 self.assertEqual(saved["pilots"]["test"], expected)

@@ -65,6 +65,13 @@ func run() -> void:
 					quit(1)
 					return
 	menu.show_home()
+	for model: String in ["r-310", "plt-2026", "plt-2021", "plt-3030", "eco-10", "hstrm-01", "hst-1", "hst-2"]:
+		var texture := StationUi.texture(model)
+		var image := texture.get_image() if texture != null else null
+		if image == null or image.get_width() < 1024 or image.get_height() < 1024 or image.get_used_rect().size == image.get_size() or image.get_pixel(0, 0).a != 0.0:
+			push_error("Packaged %s rocket artwork must be high resolution with transparent padding." % model)
+			quit(1)
+			return
 	sector.session.launch()
 	if sector.preflight or menu.visible or sector.session.active:
 		push_error("Exported offline Start did not enter solo flight.")
@@ -93,5 +100,5 @@ func run() -> void:
 		push_error("Exported solo flight could not return to Overview.")
 		quit(1)
 		return
-	print("Packaged menus: every destination, eight high-resolution transparent resources, three Settings tabs and solo launch/return loaded")
+	print("Packaged menus: every destination, eight transparent resources, eight transparent rocket/launcher icons, three Settings tabs and solo launch/return loaded")
 	quit(0)

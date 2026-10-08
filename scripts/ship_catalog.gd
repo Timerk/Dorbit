@@ -33,6 +33,7 @@ static func owned_id(data: Dictionary, model: String) -> String:
 static func slots(model: String) -> Dictionary:
 	var entry := info(model)
 	var result := {}
+	result["launcher1"] = "launcher"
 	for kind: String in ["laser", "generator", "extra"]:
 		for index in range(1, int(entry[{"laser": "lasers", "generator": "generators", "extra": "extras"}[kind]]) + 1):
 			result[kind + str(index)] = kind

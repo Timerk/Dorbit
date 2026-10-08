@@ -5,6 +5,7 @@ extends "res://tests/dedicated_server_test.gd"
 func run() -> void:
 	var server := make_sector("CompatibilityServer", true)
 	var original: Script = server.session.combat.get_script()
+	var original_source := original.source_code.replace("\r\n", "\n")
 	# Reproduce an extra RPC from another gameplay branch while keeping flight compatible.
 	var different := GDScript.new()
 	different.source_code = 'extends SessionCombat\n\n@rpc("any_peer", "call_remote", "reliable")\nfunc fixture_request(life: int, action: String, offer: String, run: String) -> void:\n\tpass\n'
@@ -32,7 +33,7 @@ func run() -> void:
 	check(server.session.pilot_ids.is_empty() and server.session.challenges.is_empty(), "Incompatible peers reserve no pilot login or challenge")
 	# A changed signature can keep the same names and still misinterpret packets.
 	different = GDScript.new()
-	different.source_code = original.source_code.replace("class_name SessionCombat\n", "").replace(
+	different.source_code = original_source.replace("class_name SessionCombat\n", "").replace(
 		'func show_laser(start: Vector3, finish: Vector3, hostile: bool, ammo_type: String = "x1")',
 		'func show_laser(start: Vector3, finish: Vector3, hostile: bool, ammo_type: String = "x1", extra: bool = false)')
 	check(different.reload() == OK, "Changed-argument fixture compiles")

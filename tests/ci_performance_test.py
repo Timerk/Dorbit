@@ -157,13 +157,14 @@ class ValidationTest(unittest.TestCase):
             checks = [check for check in settings if check[0] == script]
             self.assertEqual(checks[:2], [[script], [script, '--', '--restart']])
         self.assertEqual([check[-1] for check in settings if '--filter-restart' in check], ['2', '3', '4'])
-        self.assertEqual(sum(len(group['checks']) for group in windows), 42)
-        self.assertEqual(sum(len(group['checks']) for group in plan['linux']), 31)
+        self.assertEqual(sum(len(group['checks']) for group in windows), 43)
+        self.assertEqual(sum(len(group['checks']) for group in plan['linux']), 32)
         for suite in plan.values():
             checks = [check for group in suite for check in group['checks']]
             self.assertEqual(checks.count(['hud_customization_test.gd']), 1)
             for script in ('skylab_test.gd', 'skylab_persistence_test.gd', 'skylab_ui_test.gd'):
                 self.assertEqual(checks.count([script]), 1)
+            self.assertEqual(checks.count(['rocket_test.gd']), 1)
 
     def test_network_fixtures_map_explicit_connection_ports(self):
         plan = json.loads((ROOT / 'tools/check-suites.json').read_text())
@@ -175,7 +176,7 @@ class ValidationTest(unittest.TestCase):
             if script in seen:
                 continue
             seen.add(script)
-            text = (ROOT / 'tests' / script).read_text()
+            text = (ROOT / 'tests' / script).read_text(encoding='utf-8')
             parent = re.search(r'^extends "res://tests/(.+?)"', text)
             if parent:
                 pending.add(parent[1])

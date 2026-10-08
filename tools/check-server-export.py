@@ -68,7 +68,7 @@ def main():
         ledger = data / "pilots.json"
         # Use the current save schema so migration is not mistaken for data loss.
         # A nonempty laser boost must survive both restarts without firing.
-        original = json.dumps({"version": 6, "pilots": {
+        original = json.dumps({"version": 7, "pilots": {
             "export_test": {"verifier": hashlib.sha256(token.encode()).hexdigest(), "credits": 137,
                             "equipment": pilots.starter_equipment(), "cargo": {"starter": {"seprom": 5}},
                             "ammo": pilots.starter_ammo(), "contracts": {}, "premium": False,

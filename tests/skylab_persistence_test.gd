@@ -16,7 +16,7 @@ func run() -> void:
 		return
 	var id := client.multiplayer.get_unique_id()
 	var store := server.session.store
-	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 6, "Legacy ledger migrates atomically to schema 6")
+	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 7, "Legacy ledger migrates atomically to schema 7")
 	check(not store.pilots["pilot0"].has("uridium") and not store.pilots["pilot0"]["premium"], "Migration does not grant premium currency or status")
 	store.commit({"pilot0": 10000})
 	server.session.combat.sync_lab_accounts()
@@ -72,10 +72,31 @@ func run() -> void:
 	legacy_file.store_string(legacy_text)
 	legacy_file.close()
 	var migrated := PilotStore.new()
-	check(migrated.open(legacy_dir), "Existing ammunition schema 4 migrates to combined schema 6")
-	check(migrated.pilots["pilot0"]["ammo"] == legacy["ammo"] and migrated.pilots["pilot0"]["credits"] == legacy["credits"] and migrated.pilots["pilot0"]["equipment"] == legacy["equipment"], "Adding industry preserves spent/earned ammunition, wallet and equipment")
+	check(migrated.open(legacy_dir), "Existing ammunition schema 4 migrates to combined schema 7")
+	check(migrated.pilots["pilot0"]["ammo"] == Ammunition.starter().merged(legacy["ammo"], true) and migrated.pilots["pilot0"]["credits"] == legacy["credits"] and migrated.pilots["pilot0"]["equipment"] == legacy["equipment"], "Adding industry and rockets preserves spent/earned ammunition, wallet and equipment")
 	check(migrated.pilots["pilot0"]["skylab"]["inventory"]["prometium"] == 1200 and FileAccess.get_file_as_string(migrated.path + ".bak") == legacy_text, "Ammo-era migration initializes industry once and keeps the exact old ledger backup")
 	migrated.close()
+	# The rocket and industry branches deployed different schema-6 layouts.
+	for layout: String in ["rockets", "industry"]:
+		var branch_dir := store.path.get_base_dir().path_join("v6-" + layout)
+		DirAccess.make_dir_recursive_absolute(branch_dir)
+		var record: Dictionary = store.pilots["pilot0"].duplicate(true)
+		if layout == "rockets":
+			for field in ["skylab", "premium"]: record.erase(field)
+			record["ammo"]["r-310"] = 17
+		else:
+			record["ammo"] = {"x1": 321, "x2": 67, "x3": 89, "x4": 4}
+		var branch_text := JSON.stringify({"version": 6, "pilots": {"pilot0": record}})
+		var branch_file := FileAccess.open(branch_dir.path_join("pilots.json"), FileAccess.WRITE)
+		branch_file.store_string(branch_text)
+		branch_file.close()
+		var combined := PilotStore.new()
+		check(combined.open(branch_dir), "Schema-6 %s layout migrates" % layout)
+		check(combined.pilots["pilot0"]["ammo"] == Ammunition.starter().merged(record["ammo"], true), "Migration preserves %s ammunition without repeating a grant" % layout)
+		var saved_record: Dictionary = JSON.parse_string(branch_text)["pilots"]["pilot0"]
+		check(not saved_record.has("skylab") or JSON.parse_string(JSON.stringify(combined.pilots["pilot0"]["skylab"])) == saved_record["skylab"], "Migration preserves existing industry jobs and robots")
+		check(FileAccess.get_file_as_string(combined.path + ".bak") == branch_text, "Migration retains exact branch ledger backup")
+		combined.close()
 	var preview_dir := store.path.get_base_dir().path_join("preview-v5-migration")
 	DirAccess.make_dir_recursive_absolute(preview_dir)
 	var preview: Dictionary = store.pilots["pilot0"].duplicate(true)

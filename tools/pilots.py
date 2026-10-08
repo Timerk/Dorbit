@@ -20,6 +20,7 @@ def ship_info(model: str) -> dict:
     return SHIP_MODELS["liberator" if model == "pathfinder" else model]
 
 LASER_MODELS = {"laser", "mp-1", "lf-2", "lf-3", "lf-4"}
+LAUNCHER_MODELS = {"hst-1", "hst-2"}
 GENERATOR_MODELS = {"shield", "sg3n-a02", "fs-01", "sg3n-a03", "sg3n-b00", "sg3n-b01", "sg3n-b02",
                     "engine", "g3n-1010", "g3n-2010", "g3n-3210", "g3n-3310", "g3n-6900", "g3n-7900"}
 
@@ -31,11 +32,11 @@ def starter_equipment() -> dict:
 
 
 def starter_ammo() -> dict:
-    return {"x1": 10000, "x2": 0, "x3": 0, "x4": 0}
+    return {"x1": 10000, "x2": 0, "x3": 0, "x4": 0, "r-310": 100, "plt-2026": 0, "plt-2021": 0, "plt-3030": 0, "eco-10": 0, "hstrm-01": 0}
 
 
-def valid_ammo(data: object) -> bool:
-    return (isinstance(data, dict) and data.keys() == starter_ammo().keys()
+def valid_ammo(data: object, legacy: bool = False) -> bool:
+    return (isinstance(data, dict) and data.keys() == ({"x1", "x2", "x3", "x4"} if legacy else starter_ammo().keys())
             and all(type(amount) is int and 0 <= amount <= 2_000_000_000 for amount in data.values()))
 
 
@@ -54,7 +55,7 @@ def valid_equipment(data: object) -> bool:
     for identifier, item in data["items"].items():
         if (not re.fullmatch(r"[a-z0-9_-]{1,32}", identifier) or not isinstance(item, dict)
                 or not isinstance(item.get("model"), str)
-                or item["model"] not in LASER_MODELS | GENERATOR_MODELS
+                or item["model"] not in LASER_MODELS | GENERATOR_MODELS | LAUNCHER_MODELS
                 or not isinstance(item.get("ship"), str) or not isinstance(item.get("slot"), str)):
             return False
         location = item["ship"], item["slot"]
@@ -63,7 +64,7 @@ def valid_equipment(data: object) -> bool:
         if item["ship"] not in data["ships"]:
             return False
         hull = ship_info(data["ships"][item["ship"]])
-        kind, count = ("laser", hull["lasers"]) if item["model"] in LASER_MODELS else ("generator", hull["generators"])
+        kind, count = ("launcher", 1) if item["model"] in LAUNCHER_MODELS else (("laser", hull["lasers"]) if item["model"] in LASER_MODELS else ("generator", hull["generators"]))
         slots = tuple(f"{kind}{index}" for index in range(1, count + 1))
         if item["ship"] not in data["ships"] or item["slot"] not in slots or location in occupied:
             return False
@@ -233,10 +234,10 @@ def main() -> None:
         if args.init:
             if path.exists() or args.rotate:
                 parser.error("--init requires a new ledger and cannot be combined with --rotate")
-            data = {"version": 5, "pilots": {}}
+            data = {"version": 6, "pilots": {}}
         else:
             data = json.loads(path.read_text(encoding="utf-8"))
-            if data.get("version") not in (1, 2, 3, 4, 5, 6) or not isinstance(data.get("pilots"), dict) or not data["pilots"]:
+            if data.get("version") not in (1, 2, 3, 4, 5, 6, 7) or not isinstance(data.get("pilots"), dict) or not data["pilots"]:
                 parser.error("Invalid ledger; preserve it and recover from backup")
             for pilot, record in data["pilots"].items():
                 if (not re.fullmatch(r"[a-z0-9_-]{1,32}", pilot)
@@ -264,8 +265,10 @@ def main() -> None:
                     parser.error("Unexpected ammunition in legacy ledger; preserve it and recover")
                 if "ammo" not in record and data["version"] < 5:
                     record["ammo"] = starter_ammo()
-                elif not valid_ammo(record.get("ammo")):
+                elif not valid_ammo(record.get("ammo")) and not (data["version"] < 7 and valid_ammo(record.get("ammo"), legacy=True)):
                     parser.error("Invalid ammunition; preserve it and recover from backup")
+                if data["version"] < 7 and set(record["ammo"]) == {"x1", "x2", "x3", "x4"}:
+                    record["ammo"].update({kind: amount for kind, amount in starter_ammo().items() if kind not in record["ammo"]})
                 if "boosts" not in record and data["version"] < 6:
                     record["boosts"] = {ship: {} for ship in record["equipment"]["ships"]}
                 elif not valid_boosts(record.get("boosts"), record["equipment"]):
@@ -275,21 +278,21 @@ def main() -> None:
                 if "skylab" in record and data["version"] < 6:
                     if not migrate_skylab_credits(record):
                         parser.error("Invalid legacy industry or credit conversion overflow; original preserved")
-                if (data["version"] == 6 or "skylab" in record) and ("uridium" in record
+                if (data["version"] == 7 or "skylab" in record) and ("uridium" in record
                         or type(record.get("premium")) is not bool or not valid_skylab(record.get("skylab"), record["equipment"])):
                     parser.error("Invalid Skylab state; preserve it and recover from backup")
-            data["version"] = 6 if any("skylab" in r for r in data["pilots"].values()) else 5
+            data["version"] = 7 if any("skylab" in r for r in data["pilots"].values()) else 6
         exists = args.pilot in data["pilots"]
         if exists != args.rotate:
             parser.error("Use --rotate for an existing pilot; omit it for a new pilot")
         token = secrets.token_hex(32)
         credits = data["pilots"].get(args.pilot, {}).get("credits", 0)
         record = data["pilots"].setdefault(args.pilot, {"credits": credits, "equipment": starter_equipment(), "cargo": {"starter": {}}, "ammo": starter_ammo(), "boosts": {"starter": {}}})
-        if data["version"] == 6 and not exists:
+        if data["version"] == 7 and not exists:
             # Keep the authoritative bootstrap in Godot. Adding pilots to v6 requires it here too.
             record.update(premium=False, skylab=starter_skylab(int(time.time())))
         if args.premium is not None:
-            if data["version"] != 6 or not exists:
+            if data["version"] != 7 or not exists:
                 parser.error("Start the updated server once to initialize Skylab before setting transport benefits")
             record["premium"] = args.premium == "on"
         record["verifier"] = hashlib.sha256(token.encode()).hexdigest()

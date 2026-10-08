@@ -24,6 +24,7 @@ var ammo_debit: Callable # Dedicated server commits consumption before firing.
 
 var resource_boosts: Dictionary = {}
 var laser_loadout: Array = []
+var rockets := RocketWeapons.new()
 
 
 func firing_blocker(target: SpaceShip) -> String:
@@ -63,6 +64,7 @@ func set_ship_model(value: String) -> void:
 
 
 func _ready() -> void:
+	rockets.ship = self
 	super._ready()
 	if not render_enabled:
 		return
@@ -90,6 +92,12 @@ func reset_health() -> void:
 	super.reset_health()
 	pending_look = Vector2.ZERO
 	radiation_exposure = 0.0
+	rockets.unload()
+
+
+func tick_combat(delta: float) -> void:
+	super.tick_combat(delta)
+	rockets.tick(delta)
 
 
 func handle_mouse(event: InputEvent) -> void:

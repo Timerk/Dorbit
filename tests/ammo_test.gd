@@ -6,7 +6,7 @@ func run() -> void:
 	var server := make_sector("AmmoServer", true, 24836)
 	var store := server.session.store
 	check(store.pilots["pilot0"]["ammo"] == Ammunition.starter(), "Legacy migration grants 10,000 x1 shots once")
-	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 6, "Ammo migration writes schema 6")
+	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 7, "Ammo migration writes schema 7")
 	check(store.commit({"pilot0": 1000}), "Fund ammo purchases")
 	var client := make_sector("AmmoPilot")
 	client.get_viewport().size = Vector2i(960, 600)
@@ -26,7 +26,7 @@ func run() -> void:
 	var shop := client.shop
 	check(client.player.ammo == Ammunition.starter(), "Starter inventory replicates to the owner")
 	shop.select_category("ammo")
-	check(shop.models_in_category("ammo") == ["x1", "x2", "x3", "x4"], "Shop lists ammo in multiplier order")
+	check(shop.models_in_category("ammo") == Ammunition.types().keys(), "Shop lists ammo in multiplier order")
 	client.main_menu.select_page("shop")
 	for kind: String in ["x1", "x2", "x3"]:
 		shop.select_model(kind)
@@ -234,7 +234,7 @@ func check_failed_debit(server: Sector, client: Sector) -> void:
 	var directory := server.session.store.path.get_base_dir().path_join("failed-ammo")
 	DirAccess.make_dir_absolute(directory)
 	var file := FileAccess.open(directory.path_join("pilots.json"), FileAccess.WRITE)
-	file.store_string(JSON.stringify({"version": 6, "pilots": {"pilot0": server.session.store.pilots["pilot0"]}}))
+	file.store_string(JSON.stringify({"version": 7, "pilots": {"pilot0": server.session.store.pilots["pilot0"]}}))
 	file.close()
 	var probe := PilotStore.new()
 	check(probe.open(directory), "Open isolated debit failure ledger")
