@@ -25,7 +25,7 @@ def commands(suite: str, engine: str) -> list[tuple[str, list[list[str]]]]:
                 checks.append([sys.executable, *check, engine] if check[0].endswith('server_shutdown_test.py')
                               else [sys.executable, *check])
             else:
-                checks.append([engine, '--headless', '--path', str(ROOT), '--script', 'res://tests/' + check[0], *check[1:]])
+                checks.append([engine, '--headless', '--max-fps', '60', '--path', str(ROOT), '--script', 'res://tests/' + check[0], *check[1:]])
         result.append((group['name'], checks))
     return result
 
