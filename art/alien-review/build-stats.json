@@ -1,0 +1,71 @@
+{
+  "Scout": {
+    "mesh_components": 607,
+    "base_faces": 7652,
+    "draft": false,
+    "views": [
+      "perspective",
+      "top",
+      "side",
+      "front",
+      "rear",
+      "underside",
+      "armor-detail",
+      "mount-detail",
+      "drive-detail"
+    ],
+    "atlas_size": 4096,
+    "export": {
+      "triangles": 42936,
+      "materials": 7,
+      "bytes": 50639896,
+      "omitted_degenerate_triangles": 0
+    }
+  },
+  "Sentinel": {
+    "mesh_components": 625,
+    "base_faces": 7760,
+    "draft": false,
+    "views": [
+      "perspective",
+      "top",
+      "side",
+      "front",
+      "rear",
+      "underside",
+      "armor-detail",
+      "mount-detail",
+      "drive-detail"
+    ],
+    "atlas_size": 4096,
+    "export": {
+      "triangles": 44576,
+      "materials": 7,
+      "bytes": 50688504,
+      "omitted_degenerate_triangles": 0
+    }
+  },
+  "Heavy": {
+    "mesh_components": 662,
+    "base_faces": 8434,
+    "draft": false,
+    "views": [
+      "perspective",
+      "top",
+      "side",
+      "front",
+      "rear",
+      "underside",
+      "armor-detail",
+      "mount-detail",
+      "drive-detail"
+    ],
+    "atlas_size": 4096,
+    "export": {
+      "triangles": 48592,
+      "materials": 7,
+      "bytes": 54058232,
+      "omitted_degenerate_triangles": 0
+    }
+  }
+}
