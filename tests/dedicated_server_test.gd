@@ -4,7 +4,7 @@ extends "res://tests/network_combat_test.gd"
 
 func replicate(host: Sector) -> void:
 	var expected := host.session.snapshot_sequence + 1
-	var deadline := Time.get_ticks_msec() + 15000
+	var deadline := Time.get_ticks_msec() + 8000
 	while Time.get_ticks_msec() < deadline:
 		host.session.send_snapshot()
 		await settle(0.05)
@@ -28,6 +28,10 @@ func replicate(host: Sector) -> void:
 
 func run() -> void:
 	var server := make_sector("Dedicated", true)
+	# Ten rendered fixture worlds can starve authentication frames under CI load.
+	# This positive capacity check has its own budget; rejection tests retain the
+	# production timeout and production settings are unchanged.
+	server.multiplayer.auth_timeout = 15.0
 	check(server.player == null and server.hud == null and server.audio == null and server.session.menu == null, "Server creates no local player, HUD, audio or menu")
 	check(server.session.active and server.session.ships.is_empty(), "Dedicated server starts with zero pilots")
 	check(server.find_children("*", "MeshInstance3D", true, false).is_empty(), "Server creates no render meshes")
@@ -39,15 +43,22 @@ func run() -> void:
 		var client := make_sector("Client%d" % index)
 		client.session.credential_id = "pilot%d" % index
 		client.session.credential_token = test_token(index)
+		client.multiplayer.auth_timeout = 15.0
 		clients.append(client)
+	# Build all viewport worlds before starting authentication deadlines. Heavy
+	# synchronous scene creation must not stall the first peers' handshakes.
+	for index in range(clients.size()):
+		var client := clients[index]
 		check(client.session.join("127.0.0.1", test_port(24683)) == OK, "Client %d begins joining" % index)
 	# Admission spans several ENet/authentication frames. Wait for the actual roster,
 	# rather than assuming all ten peers finish within 500 ms on a busy CI runner.
-	var deadline := Time.get_ticks_msec() + 8000
+	var deadline := Time.get_ticks_msec() + 20000
 	while (server.session.ships.size() < 10 or clients.any(func(peer: Sector): return not peer.session.active)) and Time.get_ticks_msec() < deadline:
 		await process_frame
 	check(server.session.ships.size() == 10 and not server.session.ships.has(1), "All ten slots belong to clients, with no ghost host ship")
 	if server.session.ships.size() != 10:
+		for client in clients:
+			print("Admission diagnostic: ", client.name, " active=", client.session.active, " status=", client.session.status)
 		finish()
 		return
 	deadline = Time.get_ticks_msec() + 8000
