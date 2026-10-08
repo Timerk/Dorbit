@@ -37,7 +37,7 @@ def dependencies(project: Path, path: Path, seen: set[Path]) -> list[tuple[str, 
     result = [(path.relative_to(project).as_posix(), digest(data))]
     if path.suffix in {'.gd', '.import', '.gltf', '.tscn', '.tres'}:
         text = data.decode('utf-8')
-        for reference in re.findall(r'res://([^"\n]+)', text):
+        for reference in re.findall(r"res://([^\"'\n]+)", text):
             if not reference.startswith('.godot/'):
                 result += dependencies(project, project / reference, seen)
     if path.suffix in {'.gltf', '.glb'}:
@@ -70,7 +70,7 @@ def inputs(project: Path) -> dict:
             continue
         values = dependencies(project, path, set())
         if metadata.is_file():
-            # Normalize checkout line endings, but preserve every import parameter.
+            # Preserve every import parameter; each OS uses its own cache.
             values += dependencies(project, metadata, set())
         else:
             values.append((metadata.relative_to(project).as_posix(), 'missing'))
