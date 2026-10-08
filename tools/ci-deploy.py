@@ -138,7 +138,8 @@ def preview_prepare():
     sha = commit(os.environ["PREVIEW_SHA"])
     number = os.environ["PR_NUMBER"]
     build_run = os.environ["GITHUB_RUN_ID"]
-    attempt = os.environ["GITHUB_RUN_ATTEMPT"]
+    # The VPS keeps this reference to locate the matching client during recovery.
+    attempt = os.environ["WINDOWS_BUILD_ATTEMPT"]
     if not all(re.fullmatch(r"[1-9][0-9]*", value) for value in (number, build_run, attempt)):
         raise ValueError("Invalid preview metadata")
     with zipfile.ZipFile("dist/windows.zip") as client:
