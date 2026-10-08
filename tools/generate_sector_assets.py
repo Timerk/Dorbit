@@ -1,7 +1,7 @@
 """Original sector art. Run with Blender --background --python tools/generate_sector_assets.py.
 
 No downloaded artwork is used. GLBs are committed so players/CI do not need Blender.
-Station dimensions follow the existing docking opening and physics envelopes.
+The concept-guided station exports a shared manifest of simple physics envelopes.
 """
 from pathlib import Path
 import math
@@ -135,62 +135,11 @@ def box(name, position, size, mat, bevel=.08):
 
 
 def station():
-    clear()
-    armor = material("Ceramic gunmetal", (.30, .37, .42), .55)
-    edges = material("Titanium edges", (.55, .59, .58), .68)
-    dark = material("Recesses", (.045, .065, .085), .35)
-    panel = material("Photovoltaic blue", (.035, .11, .18), .55)
-    teal = material("Dock guidance", (.12, .85, .65), emission=1.2)
-    warm = material("Service amber", (1, .45, .12), emission=1)
-    image = metal_texture()
-    for mat in (armor, edges):
-        nodes = mat.node_tree.nodes
-        tex = nodes.new("ShaderNodeTexImage")
-        tex.image = image
-        tint = nodes.new("ShaderNodeMixRGB")
-        tint.blend_type = "MULTIPLY"
-        tint.inputs[0].default_value = 1
-        tint.inputs[2].default_value = mat.diffuse_color
-        mat.node_tree.links.new(tex.outputs["Color"], tint.inputs[1])
-        mat.node_tree.links.new(tint.outputs[0], nodes.get("Principled BSDF").inputs["Base Color"])
-    # Segmented ring, 23 m clear aperture. Ring lies in XY as in the prototype.
-    for i in range(16):
-        angle = i * math.tau / 16
-        x, y = math.sin(angle) * 13.9, math.cos(angle) * 13.9
-        block = box("Dock armor", (x, y, 0), (5.3, 3.5, 4.2), armor, .18)
-        block.rotation_euler.y = angle
-        band = box("Dock illuminated seam", (x * .86, y * .86, 2.2), (3.8, .14, .12), teal, .02)
-        band.rotation_euler.y = angle
-        plate = box("Dock outer shield", (x * 1.075, y * 1.075, .7), (4, .8, 4.5), edges)
-        plate.rotation_euler.y = angle
-    for side in (-1, 1):
-        box("Array spar", (side*23, 0, 0), (19, 1.8, 2.3), edges)
-        box("Array frame", (side*28, 0, 0), (15, 1.1, 30.5), dark)
-        for column in range(3):
-            for row in range(8):
-                px, pz = side*28 + (column-1)*4.55, (row-3.5)*3.6
-                box("Solar cell", (px, .65, pz), (4.35, .13, 3.38), panel, .025)
-                for seam in (-1, 0, 1):
-                    box("Solar conductor", (px+seam*1.32, .73, pz), (.028, .03, 3.30), edges, 0)
-        box("Dock side service module", (side*14, 0, 0), (3.8, 8, 5), dark)
-        for y in (-2, 0, 2):
-            box("Dock status lamp", (side*14, y, 2.56), (2.2, .16, .06), warm, 0)
-        box("Service neck", (side*9, -14, 0), (4, 7, 7), dark)
-    box("Service hull", (0, -19.5, 0), (25, 6, 10), armor, .24)
-    box("Service inset", (0, -19.5, 5.1), (20, 3.9, .2), dark)
-    for x in range(-9, 10, 3):
-        box("Hull rib", (x, -19.5, 5.3), (.24, 4.9, .45), edges)
-        box("Service window", (x+.7, -18.4, 5.24), (1.2, .25, .12), teal, 0)
-    box("Dock number backplate", (0, 14.1, 2.2), (7, 2, .2), dark)
-    # A physical designation is visible on approach without another UI label.
-    bpy.ops.object.text_add(location=(-2.15, -2.36, 13.5), rotation=(math.pi/2, 0, 0))
-    lettering = bpy.context.object
-    lettering.data.body = "01"
-    lettering.data.size = 1.65
-    lettering.data.extrude = .01
-    lettering.data.materials.append(teal)
-    bpy.ops.object.convert(target="MESH")
-    export("outpost-01")
+    # The concept study is the single source of the runtime station and collision.
+    import sys
+    sys.path.insert(0, str(ROOT / 'tools'))
+    from build_station import build
+    build()
 
 
 def rocks():

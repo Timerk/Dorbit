@@ -69,18 +69,35 @@ static func ship_model(hostile: bool) -> Node3D:
 
 static func station(parent: Node3D, location: Vector3, render: bool = true) -> Node3D:
 	var root := Node3D.new()
+	root.name = "Outpost01"
 	root.position = location
 	parent.add_child(root)
 	if render:
 		var model := (load("res://assets/sector/outpost-01.glb") as PackedScene).instantiate()
+		for part: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+			for index in part.mesh.get_surface_count():
+				var surface := part.mesh.surface_get_material(index) as BaseMaterial3D
+				# Keep geometric recess shading without suppressing the sun highlights.
+				surface.ao_light_affect = 0.2
+				if surface.resource_name.begins_with("Cyan guidance"):
+					# Keep the cyan hue readable in the linear Compatibility tonemapper.
+					surface.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+					surface.albedo_color = Color(0.02, 0.85, 1.0)
+					surface.emission = Color(0.02, 0.4, 0.7)
+					surface.emission_energy_multiplier = 0.6
+				if surface.resource_name.begins_with("Cobalt armor") or surface.resource_name.begins_with("Blue secondary"):
+					surface.clearcoat_enabled = true
+					surface.clearcoat = 0.8
+					surface.clearcoat_roughness = 0.12
 		configure_texture_filtering(model)
 		root.add_child(model)
-	# Separate colliders preserve the open docking ring.
-	for side in [-1.0, 1.0]:
-		add_box_collider(root, Vector3(side * 14, 0, 0), Vector3(5, 27, 5))
-		add_box_collider(root, Vector3(side * 28, 0, 0), Vector3(16, 3, 31))
-	add_box_collider(root, Vector3(0, -19, 0), Vector3(27, 8, 11))
-	add_box_collider(root, Vector3(0, 14, 0), Vector3(25, 4, 5))
+	# Blender exports simple physics envelopes separately from the render mesh.
+	# The same manifest is loaded by clients and servers; hangar throats stay open.
+	var boxes: Array = JSON.parse_string(FileAccess.get_file_as_string("res://assets/sector/outpost-01-collision.json"))
+	for entry: Dictionary in boxes:
+		var p: Array = entry["position"]
+		var s: Array = entry["size"]
+		add_box_collider(root, Vector3(p[0], p[1], p[2]), Vector3(s[0], s[1], s[2]))
 	return root
 
 

@@ -586,7 +586,7 @@ Drobit choices requiring playtesting. Premium is an optional operator-set durati
 Save schema 7 migrates versions 1–6 before admission, preserving both earlier
 ammunition/boost and industry layouts. Legacy industry wallets convert once at
 100 credits per unit; active/queued robots retain their lifetime.
-Network schema 12 requires matching client/server builds. See [implementation policies,
+Network schema 13 requires matching client/server builds. See [implementation policies,
 rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot's
 454/870 power budget and exact inventories/capacities remain a separate debug fixture.
 
@@ -657,7 +657,7 @@ Save schema 7 migrates schema 1–6 while preserving progression and grants
 100 R-310 once, with zero other rocket ammo. New pilots receive the same grant.
 The provisioning tool supports the same migration and launcher fittings.
 Back up the ledger before upgrading; rollback needs a pre-migration backup.
-Network schema 12 requires matching client/server builds. Resource rocket
+Network schema 13 requires matching client/server builds. Resource rocket
 boosts remain disabled until a separate integration; laser/timed reserves are
 unchanged.
 
@@ -775,6 +775,34 @@ are described above.
 This is a visual pass on the current huntable sector. Connected maps, jump gates,
 new ships and encounters remain separate work. Visual density and performance on
 the group's devices still need human playtesting.
+
+### Larger Outpost 01 station
+
+The user approved building the generated station concept as an editable Blender
+model and integrating its GLB into the existing sector. The design has a tall
+cobalt armored spine, six recessed hangars, exposed structural trusses, long side
+buttresses, a sloping command crown and four broad cyan-tipped docking blades.
+The rear and underside follow the same design in the single source model. See
+[station study and Godot review views](art/station-review/README.md).
+
+The provisional model is approximately 294 m tall and 170 m across. Its origin
+is the lowest main hangar's service point. The station location, launch/rescue
+spawn, 60 m service radius and 75 m protection radius retain their current values;
+protection is around the service point, not the entire station. The larger upper
+hangars and outer docking arms do not extend station services or protection.
+Clients and dedicated servers load the same 53 simple collision boxes, with
+open hangar entrances. Autopilot chooses a clear service approach when the tower
+or reactor occupies its usual radial stopping point. Network schema 13 requires
+matching builds because the physical station layout changed; saves are unchanged.
+Final visual acceptance, scale, approach comfort and group performance remain
+playtesting decisions within Milestone 3.
+
+Following model review, the user requested shinier metallic materials and
+brighter reflections. Blue armor now has smoother metallic paint and a polished
+coat, titanium trim is smoother, and machinery retains its rougher finish.
+The static sky radiance uses a brighter reflection exposure while the visible
+background compensates for that exposure; this affects other reflective sector
+materials as well. These material settings remain open to visual playtesting.
 
 ## Development milestones
 
