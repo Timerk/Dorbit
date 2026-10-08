@@ -53,7 +53,10 @@ func _ready() -> void:
 	amount.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	pressed.connect(func():
 		if bar.slot_editing:
-			if slot >= 0:
+			if bar.state_for(action_id).get("edit_toggle", false) and not (slot >= 0 and Input.is_key_pressed(KEY_SHIFT)):
+				bar.selected_slot = -1
+				bar.activate(action_id)
+			elif slot >= 0:
 				bar.select_slot(slot)
 			elif bar.selected_slot >= 0:
 				bar.assign_selected(action_id)
@@ -73,9 +76,9 @@ func refresh(state: Dictionary, shortcut: String) -> void:
 	amount.add_theme_color_override("font_color", state.get("color", FlightHud.INK))
 	set_pressed_no_signal(state.get("active", false))
 	disabled = not bar.slot_editing and (bar.sector.hud.layout.editing or not state.get("available", true))
-	tooltip_text = state.get("tooltip", "Empty slot") + ("\nPress %s or click." % shortcut if not shortcut.is_empty() else "")
+	tooltip_text = state.get("tooltip", "Empty slot") + ("\nPress %s or click." % shortcut if not shortcut.is_empty() and not state.get("edit_toggle", false) else "")
 	if bar.slot_editing:
-		tooltip_text += "\nDrag to assign or swap. Click a slot, then an item to assign."
+		tooltip_text += "\nDrag to assign or swap. Shift-click a slot to select it." if state.get("edit_toggle", false) else "\nDrag to assign or swap. Click a slot, then an item to assign."
 	var selected: bool = state.get("active", false) or (bar.slot_editing and slot >= 0 and slot == bar.selected_slot)
 	if selected != last_selected:
 		last_selected = selected

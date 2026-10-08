@@ -33,8 +33,8 @@ const MODELS := {
 	"repair-auto": {"name": "NC-RRB Repair Auto CPU", "kind": "extra", "damage": 0.0, "shield": 0.0, "speed": 0.0, "family": "repair-auto", "price": 1000000, "description": "Automatically starts a fitted repair robot when stationary and outside combat. Requires REP-1 or REP-2."},
 	"cargo-expander": {"name": "GEMINEX-XI Cargo Expander", "kind": "extra", "damage": 0.0, "shield": 0.0, "speed": 0.0, "family": "cargo", "price": 1000000, "description": "Doubles this ship's cargo capacity. Sell excess cargo before removing it."},
 	"slot-cpu-1": {"name": "Slot CPU 1", "kind": "extra", "damage": 0.0, "shield": 0.0, "speed": 0.0, "family": "slots", "price": 600000, "description": "Adds two extra slots and occupies one slot itself. Removal returns items in the added slots to inventory."},
-	"ammo-cpu": {"name": "Ammunition CPU", "kind": "extra", "damage": 0.0, "shield": 0.0, "speed": 0.0, "family": "ammo", "price": 1500000, "description": "Buys 10,000 configured rounds below 1,000 remaining, at normal shop prices. Enable spending and choose x1, x2 or x3 in Hangar."},
-	"generator-cpu": {"name": "Generator Boost CPU", "kind": "extra", "damage": 0.0, "shield": 0.0, "speed": 0.0, "family": "generators", "price": 1500000, "description": "When enabled, consumes one best available resource per expired shield or engine boost. Preserves existing reserves. Configure in Hangar."},
+	"ammo-cpu": {"name": "Ammunition CPU", "kind": "extra", "damage": 0.0, "shield": 0.0, "speed": 0.0, "family": "ammo", "price": 1500000, "description": "Buys 10,000 configured rounds below 1,000 remaining, at normal shop prices. Toggle spending in quickslot editing (+); choose x1, x2 or x3 in Hangar."},
+	"generator-cpu": {"name": "Generator Boost CPU", "kind": "extra", "damage": 0.0, "shield": 0.0, "speed": 0.0, "family": "generators", "price": 1500000, "description": "When enabled, consumes one best available resource per expired shield or engine boost. Preserves existing reserves. Toggle in quickslot editing (+)."},
 }
 # Keep the persisted pathfinder model ID so existing ownership and cargo stay valid.
 const STARTER_HULL: float = 116000.0
