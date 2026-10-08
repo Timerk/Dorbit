@@ -21,6 +21,8 @@ var counts: Dictionary[String, Label] = {}
 var upgrade_cards: Dictionary[String, Button] = {}
 var groups: Dictionary[String, Button] = {}
 var reserve_labels: Dictionary[String, Label] = {}
+var boost_icons: Dictionary[String, TextureRect] = {}
+var drop_highlight := ""
 var refine_title: Label
 var recipe: Label
 var refine_amount: SpinBox
@@ -76,14 +78,7 @@ func card(parent: Node, key: String, action: Callable, minimum: Vector2) -> Butt
 	var button := StationUi.button(parent, "", action)
 	button.custom_minimum_size = minimum
 	button.toggle_mode = true
-	var rows := VBoxContainer.new()
-	button.add_child(rows)
-	rows.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	rows.offset_left = 8
-	rows.offset_right = -8
-	rows.offset_top = 8
-	rows.offset_bottom = -8
-	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var rows := card_rows(button)
 	var name_label := StationUi.text(rows, CargoResources.TYPES[key]["name"].to_upper(), 18, CargoResources.TYPES[key]["color"])
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -93,6 +88,18 @@ func card(parent: Node, key: String, action: Callable, minimum: Vector2) -> Butt
 	count.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	counts["%s:%s" % [parent.name, key]] = count
 	return button
+
+
+func card_rows(button: Button) -> VBoxContainer:
+	var rows := VBoxContainer.new()
+	button.add_child(rows)
+	rows.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	rows.offset_left = 8
+	rows.offset_right = -8
+	rows.offset_top = 8
+	rows.offset_bottom = -8
+	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return rows
 
 
 func amount_control(parent: Node, caption: String, maximum: Callable) -> SpinBox:
@@ -159,12 +166,6 @@ func build_update(parent: Node) -> void:
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	parent.add_child(body)
 	pages["update"] = body
-	var group_row := HBoxContainer.new()
-	body.add_child(group_row)
-	for key: String in ResourceBoosts.GROUPS:
-		groups[key] = StationUi.button(group_row, ResourceBoosts.GROUPS[key].to_upper() + (" · LATER" if key == "rockets" else ""), func(): select_group(key))
-		groups[key].toggle_mode = true
-		groups[key].size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", 16)
 	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -172,23 +173,22 @@ func build_update(parent: Node) -> void:
 	var resources := VBoxContainer.new()
 	resources.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.add_child(resources)
-	StationUi.text(resources, "CHOOSE A BOOST RESOURCE", 18, StationUi.MUTED)
+	StationUi.text(resources, "RESOURCE BAR", 18, StationUi.MUTED)
 	var cards := HBoxContainer.new()
 	cards.name = "UpgradeCards"
 	cards.add_theme_constant_override("separation", 6)
 	resources.add_child(cards)
 	for key: String in ResourceBoosts.BONUSES:
-		upgrade_cards[key] = card(cards, key, func(): select_resource(key), Vector2(162, 172))
-		upgrade_cards[key].tooltip_text = BOOST_TEXT[key]
-	StationUi.text(resources, "ACTIVE BOOSTS · THIS SHIP", 18, StationUi.MUTED)
-	for key: String in ResourceBoosts.GROUPS:
-		var panel := StationUi.card(resources)
-		var row := HBoxContainer.new()
-		panel.add_child(row)
-		StationUi.text(row, ResourceBoosts.GROUPS[key].to_upper(), 17, StationUi.MUTED).custom_minimum_size.x = 100
-		reserve_labels[key] = StationUi.text(row, "", 18)
-		reserve_labels[key].size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	StationUi.text(resources, "One unit = 10 individual laser rounds or 10 minutes for shields / engines. Timers count while online in this ship, including menus and rescue; disconnecting preserves unused time.", 16, StationUi.MUTED)
+		upgrade_cards[key] = card(cards, key, func(): select_resource(key), Vector2(162, 164))
+		upgrade_cards[key].tooltip_text = BOOST_TEXT[key] + "\nDrag onto compatible equipment, or select a resource and equipment card."
+		upgrade_cards[key].set_drag_forwarding(func(position: Vector2): return resource_drag(position, key), Callable(), Callable())
+	StationUi.text(resources, "DROP ON EQUIPMENT · THEN CHOOSE AN AMOUNT", 18, StationUi.MUTED)
+	var equipment_row := HBoxContainer.new()
+	equipment_row.add_theme_constant_override("separation", 6)
+	resources.add_child(equipment_row)
+	for key: String in ["lasers", "rockets", "engines", "shields"]:
+		build_equipment_card(equipment_row, key)
+	StationUi.text(resources, "Drag a resource onto equipment, or select both cards. Confirm the amount on the right.\nOne unit = 10 individual laser rounds or 10 minutes. Timers pause when offline.", 16, StationUi.MUTED)
 	var detail := StationUi.card(columns)
 	detail.custom_minimum_size.x = 340
 	var rows := StationUi.rows(detail, 16)
@@ -202,6 +202,87 @@ func build_update(parent: Node) -> void:
 	rows.add_child(replace_warning)
 	upgrade_button = StationUi.button(rows, "APPLY BOOST", upgrade)
 	StationUi.primary(upgrade_button)
+
+
+func build_equipment_card(parent: Node, key: String) -> void:
+	var button := StationUi.button(parent, "", func(): select_group(key))
+	button.toggle_mode = true
+	button.custom_minimum_size = Vector2(162, 194)
+	groups[key] = button
+	button.set_drag_forwarding(Callable(), func(position: Vector2, data: Variant): return can_drop_resource(position, data, key), func(position: Vector2, data: Variant): drop_resource(position, data, key))
+	var rows := card_rows(button)
+	var title := StationUi.text(rows, ResourceBoosts.GROUPS[key].to_upper(), 18)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var picture := Control.new()
+	picture.custom_minimum_size.y = 100
+	picture.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rows.add_child(picture)
+	var image := StationUi.art(picture, {"lasers": "laser", "engines": "engine", "shields": "shield"}.get(key, "laser"), Vector2.ZERO)
+	if key == "rockets":
+		image.texture = load("res://assets/ui/rocket-preview.svg")
+		image.modulate = StationUi.MUTED
+	image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	image.offset_left = 24
+	image.offset_right = -12
+	image.offset_bottom = -12
+	var badge := StationUi.card(picture)
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	badge.offset_left = 0
+	badge.offset_right = 34
+	badge.offset_top = -34
+	badge.offset_bottom = 0
+	boost_icons[key] = art(badge, "prometid", Vector2(30, 30))
+	boost_icons[key].texture = null
+	reserve_labels[key] = StationUi.text(rows, "", 17, StationUi.MUTED)
+	reserve_labels[key].horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	reserve_labels[key].mouse_filter = Control.MOUSE_FILTER_IGNORE
+	reserve_labels[key].custom_minimum_size.y = 40
+
+
+func resource_drag(_position: Vector2, key: String) -> Variant:
+	if not StationUi.blocker(sector).is_empty() or int(sector.cargo.get(key, 0)) <= 0:
+		return null
+	select_resource(key)
+	var preview := TextureRect.new()
+	preview.texture = load("res://assets/ui/resources/%s.png" % key)
+	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	preview.custom_minimum_size = Vector2(64, 64)
+	upgrade_cards[key].set_drag_preview(preview)
+	return {"boost_resource": key, "workshop": self}
+
+
+func can_drop_resource(_position: Vector2, data: Variant, target: String) -> bool:
+	if not data is Dictionary or data.get("workshop") != self or not data.get("boost_resource") is String:
+		return false
+	var key: String = data["boost_resource"]
+	return page == "update" and target != "rockets" and StationUi.blocker(sector).is_empty() and int(sector.cargo.get(key, 0)) > 0 and ResourceBoosts.BONUSES.get(key, {}).has(target)
+
+
+func drop_resource(position: Vector2, data: Variant, target: String) -> void:
+	if not can_drop_resource(position, data, target):
+		return
+	select_group(target)
+	select_resource(data["boost_resource"])
+	upgrade_amount.get_line_edit().grab_focus()
+	upgrade_amount.get_line_edit().select_all()
+
+
+func highlight_drop_targets() -> void:
+	var data: Variant = get_viewport().gui_get_drag_data() if get_viewport().gui_is_dragging() else null
+	var signature := str(data) + StationUi.blocker(sector) + str(sector.cargo)
+	if signature == drop_highlight:
+		return
+	drop_highlight = signature
+	for key: String in groups:
+		for state: String in ["normal", "pressed"]:
+			if can_drop_resource(Vector2.ZERO, data, key):
+				groups[key].add_theme_stylebox_override(state, StationUi.style(Color("122128"), FlightHud.CYAN))
+			else:
+				groups[key].remove_theme_stylebox_override(state)
 
 
 func select_tab(key: String) -> void:
@@ -292,16 +373,23 @@ func _process(_delta: float) -> void:
 	refine_button.disabled = not blocked.is_empty() or int(refine_amount.value) > ResourceBoosts.maximum(sector.cargo, output)
 	refine_button.tooltip_text = blocked if not blocked.is_empty() else ("Not enough ingredients." if refine_button.disabled else "Consume these ingredients and add the selected output to cargo.")
 	var boosts := sector.player.resource_boosts
+	highlight_drop_targets()
 	for key: String in groups:
 		groups[key].set_pressed_no_signal(key == group)
 	for key: String in upgrade_cards:
-		upgrade_cards[key].disabled = not ResourceBoosts.BONUSES[key].has(group)
 		upgrade_cards[key].set_pressed_no_signal(key == resource)
 	for key: String in reserve_labels:
 		var left := ResourceBoosts.remaining(boosts, key)
 		var entry: Dictionary = boosts.get(key, {})
 		var remaining_text := "%d rounds" % int(left) if key in ["lasers", "rockets"] else "%d:%02d remaining" % [int(ceil(left)) / 60, int(ceil(left)) % 60]
-		reserve_labels[key].text = "%s +%d%% · %s" % [CargoResources.TYPES[entry["resource"]]["name"], roundi(ResourceBoosts.bonus(boosts, key) * 100), remaining_text] if left > 0 else ("Coming later · rocket weapons" if key == "rockets" else "No active boost")
+		reserve_labels[key].text = remaining_text + "\n+%d%% boost" % roundi(ResourceBoosts.bonus(boosts, key) * 100) if left > 0 else ("Coming later" if key == "rockets" else ("0 rounds" if key == "lasers" else "0:00 remaining"))
+		var active_resource: String = entry.get("resource", "") if left > 0 else ""
+		var icon_path := "res://assets/ui/resources/%s.png" % active_resource
+		if active_resource.is_empty():
+			boost_icons[key].texture = null
+		elif boost_icons[key].texture == null or boost_icons[key].texture.resource_path != icon_path:
+			boost_icons[key].texture = load(icon_path)
+		groups[key].tooltip_text = "%s +%d%% · %s" % [CargoResources.TYPES[active_resource]["name"], roundi(ResourceBoosts.bonus(boosts, key) * 100), remaining_text] if left > 0 else ("Rocket boosts are coming later." if key == "rockets" else "Drop a compatible resource here, then confirm an amount.")
 	var percent: float = ResourceBoosts.BONUSES[resource].get(group, 0.0)
 	var replacement: bool = ResourceBoosts.remaining(boosts, group) > 0 and boosts[group]["resource"] != resource
 	var signature := "%s:%s:%s" % [group, resource, boosts.get(group, {}).get("resource", "")]
@@ -314,6 +402,9 @@ func _process(_delta: float) -> void:
 	upgrade_description.text = "%s\n\n%s\n\n%s" % [CargoResources.TYPES[resource]["name"], ("Adds %d boosted rounds. Each installed laser uses one round per shot; the final volley may be partly boosted." % (amount * 10) if group == "lasers" else "Adds %d minutes at the same bonus." % (amount * 10)), ("WARNING: applying this resource discards the current boost's remaining rounds or time." if replacement else "Applying the same resource extends its reserve. The percentage does not stack.")]
 	if group == "rockets":
 		upgrade_description.text = "Rocket weapons are coming later.\n\nEach resource unit will provide 10 boosted rockets at the listed damage bonus."
+	elif percent <= 0:
+		upgrade_title.text = ResourceBoosts.GROUPS[group].to_upper()
+		upgrade_description.text = "%s cannot boost %s.\n\nDrag this resource onto compatible equipment, or choose a different resource." % [CargoResources.TYPES[resource]["name"], ResourceBoosts.GROUPS[group].to_lower()]
 	var reason := blocked
 	if reason.is_empty() and group == "rockets":
 		reason = "Rocket boosts are coming later."

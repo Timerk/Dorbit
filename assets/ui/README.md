@@ -11,6 +11,8 @@
 
 The preview is an inventory illustration, not a playable ship model. Replace its texture when final ship art is integrated.
 
+`rocket-preview.svg` is an original vector illustration for the Refining Update tab's unavailable rocket category. It is presentation only; rocket combat and resource consumption remain disabled.
+
 Final generation prompt:
 
 ```text
