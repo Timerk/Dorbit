@@ -63,7 +63,7 @@ func run() -> void:
 			check(bounds.encloses(button.get_global_rect()), "Left navigation fits at %s" % dimensions)
 		for page: String in ["shop", "hangar", "quests", "cargo", "skylab", "gates"]:
 			await click(client, menu.navigation[page])
-			var panel: Control = {"shop": client.shop, "hangar": client.equipment_menu, "quests": client.hud.contract_panel, "cargo": client.shop, "skylab": menu.placeholder, "gates": menu.placeholder}[page]
+			var panel: Control = {"shop": client.shop, "hangar": client.equipment_menu, "quests": client.hud.contract_panel, "cargo": client.shop, "skylab": client.skylab_menu, "gates": menu.placeholder}[page]
 			check(panel.visible and bounds.encloses(panel.get_global_rect()), "Page %s fits beneath navigation at %s" % [page, dimensions])
 			check(menu.content_rect().encloses(panel.get_global_rect()), "Page %s leaves the header and left navigation accessible" % page)
 			check(not menu.start_button.is_visible_in_tree() and not menu.specifications.is_visible_in_tree(), "Overview footer is hidden on %s" % page)

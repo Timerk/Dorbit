@@ -25,9 +25,8 @@ func run() -> void:
 		for page: String in ["hangar", "shop", "cargo", "refining", "quests", "skylab", "gates"]:
 			check(not menu.navigation[page].disabled, "Offline %s can be browsed" % page)
 			await click(client, menu.navigation[page])
-			var panel: Control = client.equipment_menu if page == "hangar" else (client.shop if page in ["shop", "cargo"] else (client.hud.contract_panel if page == "quests" else menu.placeholder))
-			if page == "refining":
-				panel = client.resource_workshop
+			var panel: Control = client.equipment_menu if page == "hangar" else (client.shop if page in ["shop", "cargo"] else (client.hud.contract_panel if page == "quests" else (client.skylab_menu if page == "skylab" else menu.placeholder)))
+			if page == "refining": panel = client.resource_workshop
 			check(panel.is_visible_in_tree() and not menu.start_button.is_visible_in_tree() and not menu.specifications.is_visible_in_tree(), "Offline %s stays open without Overview footer" % page)
 			check(Rect2(menu.content_rect().position - Vector2.ONE, menu.content_rect().size + Vector2.ONE * 2).encloses(panel.get_global_rect()), "Offline %s fits at %s" % [page, dimensions])
 			await capture(client, "offline-%s-%d" % [page, dimensions.x])

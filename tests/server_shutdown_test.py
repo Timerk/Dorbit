@@ -22,6 +22,13 @@ ENGINE = Path(sys.argv.pop(1)).resolve()
 PACK = Path(sys.argv.pop(1)).resolve() if len(sys.argv) > 1 and sys.argv[1].endswith(".pck") else None
 
 
+def progression(text: str) -> dict:
+    result = json.loads(text)
+    for pilot in result["pilots"].values():
+        pilot.pop("skylab", None)  # Server time advances independently of stop/restart.
+    return result
+
+
 class ServerShutdownTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory(prefix="dorbit-shutdown-test-")
@@ -31,12 +38,14 @@ class ServerShutdownTest(unittest.TestCase):
         self.data.mkdir()
         self.ledger = self.data / "pilots.json"
         self.lock = self.data / "pilots.json.lock"
-        self.original = json.dumps({"version": 5, "pilots": {
+        self.original = json.dumps({"version": 6, "pilots": {
             "restart_test": {"verifier": hashlib.sha256(b"disposable test token").hexdigest(), "credits": 137,
                              "equipment": pilots.starter_equipment(), "cargo": {"starter": {"seprom": 5}},
                              "ammo": pilots.starter_ammo(), "contracts": {},
                              "boosts": {"starter": {"lasers": {"resource": "seprom", "remaining": 7},
-                                                    "shields": {"resource": "duranium", "remaining": 600.25}}}}
+                                                    "shields": {"resource": "duranium", "remaining": 600.25}}},
+                             "premium": False,
+                             "skylab": pilots.starter_skylab(int(time.time()))}
         }})
         self.ledger.write_text(self.original)
         self.processes: list[subprocess.Popen] = []
@@ -94,7 +103,7 @@ class ServerShutdownTest(unittest.TestCase):
                 self.assertEqual(process.wait(timeout=10), 0, log.read_text())
                 self.assertIn("Server shutdown requested", log.read_text())
                 self.assertFalse(self.lock.exists())
-                self.assertEqual(self.ledger.read_text(), self.original)
+                self.assertEqual(progression(self.ledger.read_text()), progression(self.original))
 
     def test_second_server_cannot_remove_live_lock(self) -> None:
         first, log = self.start()
@@ -104,7 +113,7 @@ class ServerShutdownTest(unittest.TestCase):
         self.assertIn("Cannot acquire pilots.json.lock", second_log.read_text())
         self.assertTrue(self.lock.is_dir())
         self.assertIsNone(first.poll())
-        self.assertEqual(self.ledger.read_text(), self.original)
+        self.assertEqual(progression(self.ledger.read_text()), progression(self.original))
 
     def test_legacy_migration_preserves_progression_and_backup(self) -> None:
         for version, layout in ((2, "legacy"), (3, "legacy"), (4, "ammo"), (4, "boosts")):
@@ -112,6 +121,7 @@ class ServerShutdownTest(unittest.TestCase):
                 legacy = json.loads(self.original)
                 legacy["version"] = version
                 record = legacy["pilots"]["restart_test"]
+                for field in ("skylab", "uridium", "premium"): record.pop(field, None)
                 if layout != "boosts":
                     del record["boosts"]
                 if layout != "ammo":
@@ -125,22 +135,24 @@ class ServerShutdownTest(unittest.TestCase):
                 process.terminate()
                 self.assertEqual(process.wait(timeout=10), 0, log.read_text())
                 migrated = json.loads(self.ledger.read_text())
-                self.assertEqual(migrated["version"], 5)
+                self.assertEqual(migrated["version"], 6)
                 expected = record | {"cargo": record.get("cargo", {"starter": {}}), "contracts": {},
                                      "boosts": record.get("boosts", {"starter": {}}),
                                      "ammo": record.get("ammo", pilots.starter_ammo())}
-                self.assertEqual(migrated["pilots"]["restart_test"], expected)
+                expected.update(premium=False)
+                self.assertEqual(progression(self.ledger.read_text())["pilots"]["restart_test"], expected)
+                self.assertTrue(pilots.valid_skylab(migrated["pilots"]["restart_test"]["skylab"], expected["equipment"]))
                 self.assertEqual(self.ledger.with_name("pilots.json.bak").read_text(), original)
                 saved_text = self.ledger.read_text()
                 process, log = self.start()
                 self.ready(process, log)
                 process.terminate()
                 self.assertEqual(process.wait(timeout=10), 0, log.read_text())
-                self.assertEqual(self.ledger.read_text(), saved_text)
+                self.assertEqual(progression(self.ledger.read_text()), progression(saved_text))
 
     def test_corrupt_cargo_is_preserved(self) -> None:
         for cargo in (None, {}, {"starter": {"seprom": -1}}, {"starter": {"seprom": 1.5}},
-                      {"starter": {"unknown": 1}}, {"starter": {"prometium": 400, "seprom": 1}}):
+                      {"starter": {"unknown": 1}}, {"starter": {"prometium": 800, "seprom": 1}}):
             with self.subTest(cargo=cargo):
                 corrupted = json.loads(self.original)
                 corrupted["pilots"]["restart_test"]["cargo"] = cargo
@@ -163,7 +175,7 @@ class ServerShutdownTest(unittest.TestCase):
         restart, restart_log = self.start()
         self.assertEqual(restart.wait(timeout=10), 1, restart_log.read_text())
         self.assertIn("Cannot acquire pilots.json.lock", restart_log.read_text())
-        self.assertEqual(self.ledger.read_text(), self.original)
+        self.assertEqual(progression(self.ledger.read_text()), progression(self.original))
 
     def test_hung_server_times_out_without_removing_lock(self) -> None:
         process, log = self.start()
@@ -175,7 +187,7 @@ class ServerShutdownTest(unittest.TestCase):
         self.assertEqual(process.wait(timeout=25), 1, log.read_text())
         self.assertIn("Graceful shutdown timed out", log.read_text())
         self.assertTrue(self.lock.is_dir())
-        self.assertEqual(self.ledger.read_text(), self.original)
+        self.assertEqual(progression(self.ledger.read_text()), progression(self.original))
 
     def test_invalid_or_interrupted_saves_are_preserved(self) -> None:
         for temporary in ("pilots.json.tmp", "pilots.json.bak.tmp"):
@@ -199,3 +211,4 @@ class ServerShutdownTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+

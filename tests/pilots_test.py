@@ -12,6 +12,109 @@ import pilots
 
 
 class ProvisioningTest(unittest.TestCase):
+    def test_legacy_industry_currency_rotation_preserves_jobs_and_robots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            lab = pilots.starter_skylab(100)
+            for robots in lab["robots"].values():
+                robots["uridium"] = robots.pop("advanced")
+            lab["robots"]["prometiumCollector"]["uridium"] = 7
+            lab["robots"]["prometiumCollector"]["active"] = [
+                {"kind": "uridium", "startedAt": 100, "expiresAt": 172900}]
+            record = {"verifier": "a" * 64, "credits": 2345, "uridium": 70,
+                      "equipment": pilots.starter_equipment(), "ammo": {"x1": 12, "x2": 23, "x3": 34, "x4": 4},
+                      "cargo": {"starter": {"xenomit": 3}}, "contracts": {}, "premium": False, "skylab": lab}
+            original = {"version": 5, "pilots": {"test": record}}
+            path = root / "pilots.json"
+            path.write_text(json.dumps(original))
+            result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
+                                     str(root / "credential.json"), "--rotate"], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode())
+            saved = json.loads(path.read_text())
+            self.assertEqual(saved["version"], 6)
+            self.assertEqual(saved["pilots"]["test"]["credits"], 9345)
+            self.assertNotIn("uridium", saved["pilots"]["test"])
+            self.assertEqual(saved["pilots"]["test"]["ammo"], record["ammo"])
+            robots = saved["pilots"]["test"]["skylab"]["robots"]["prometiumCollector"]
+            self.assertEqual(robots["advanced"], 7)
+            self.assertEqual(robots["active"], [{"kind": "advanced", "startedAt": 100, "expiresAt": 172900}])
+            self.assertEqual(json.loads(path.with_name("pilots.json.bak").read_text()), original)
+            result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
+                                     str(root / "credential-2.json"), "--rotate"], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode())
+            self.assertEqual(json.loads(path.read_text())["pilots"]["test"]["credits"], 9345)
+
+    def test_legacy_currency_conversion_overflow_preserves_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            lab = pilots.starter_skylab(100)
+            for robots in lab["robots"].values():
+                robots["uridium"] = robots.pop("advanced")
+            record = {"verifier": "a" * 64, "credits": 1_999_999_950, "uridium": 1,
+                      "equipment": pilots.starter_equipment(), "ammo": pilots.starter_ammo(),
+                      "cargo": {"starter": {}}, "contracts": {}, "premium": False, "skylab": lab}
+            original = json.dumps({"version": 5, "pilots": {"test": record}})
+            path = root / "pilots.json"
+            path.write_text(original)
+            result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
+                                     str(root / "credential.json"), "--rotate"], capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(path.read_text(), original)
+            self.assertFalse((root / "credential.json").exists())
+
+    def test_skylab_rotation_benefits_and_new_pilot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            lab = pilots.starter_skylab(100)
+            lab["carry"]["xeno"] = 1.75
+            lab["shipment"] = {"id": "shipment-1", "recipientId": "starter",
+                               "manifest": {"promerium": 3}, "dispatchedAt": 100,
+                               "arrivesAt": 160, "delivered": False}
+            lab["robots"]["prometiumCollector"]["active"] = [
+                {"kind": "credit", "startedAt": 100, "expiresAt": 172900}]
+            record = {"verifier": "a" * 64, "credits": 2345,
+                      "equipment": pilots.starter_equipment(),
+                      "cargo": {"starter": {"xenomit": 500}},
+                      "ammo": {"x1": 4321, "x2": 45, "x3": 123, "x4": 7}, "premium": False, "skylab": lab,
+                      "contracts": {}, "boosts": {"starter": {}}}
+            path = root / "pilots.json"
+            original = {"version": 6, "pilots": {"test": record}}
+            path.write_text(json.dumps(original))
+            result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
+                                     str(root / "credential.json"), "--rotate",
+                                     "--premium", "on"], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode())
+            saved = json.loads(path.read_text())
+            expected = record | {"premium": True,
+                                 "verifier": saved["pilots"]["test"]["verifier"]}
+            self.assertEqual(saved["pilots"]["test"], expected)
+            self.assertEqual(json.loads(path.with_name("pilots.json.bak").read_text()), original)
+            result = subprocess.run([sys.executable, pilots.__file__, str(root), "new",
+                                     str(root / "new.json")], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode())
+            added = json.loads(path.read_text())
+            self.assertEqual(added["pilots"]["test"], expected)
+            self.assertTrue(pilots.valid_skylab(added["pilots"]["new"]["skylab"], added["pilots"]["new"]["equipment"]))
+            self.assertNotIn("uridium", added["pilots"]["new"])
+
+    def test_corrupt_skylab_preserved(self):
+        for field, value in [("carry", {"xeno": float("nan")}), ("modules", {}),
+                             ("shipment", {"manifest": {"xenomit": -1}})]:
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                lab = pilots.starter_skylab(100)
+                lab[field] = value
+                path = root / "pilots.json"
+                original = json.dumps({"version": 6, "pilots": {"test": {
+                    "verifier": "a" * 64, "credits": 1, "equipment": pilots.starter_equipment(),
+                    "ammo": pilots.starter_ammo(), "cargo": {"starter": {}}, "premium": False, "skylab": lab}}})
+                path.write_text(original)
+                result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
+                                         str(root / "credential.json"), "--rotate"], capture_output=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(path.read_text(), original)
+                self.assertFalse((root / "credential.json").exists())
+
     def test_ship_catalog_and_rotation(self):
         equipment = pilots.starter_equipment()
         for model, info in pilots.SHIP_MODELS.items():
@@ -41,7 +144,7 @@ class ProvisioningTest(unittest.TestCase):
             candidate["items"][model + "-laser"]["slot"] = f'laser{info["lasers"] + 1}'
             self.assertFalse(pilots.valid_equipment(candidate))
             candidate = json.loads(json.dumps(cargo))
-            candidate[model]["prometium"] += 1
+            candidate[model]["prometium"] = 2 * info["cargo"] + 1
             self.assertFalse(pilots.valid_cargo(candidate, equipment))
 
     def test_reference_models(self):
@@ -133,7 +236,7 @@ class ProvisioningTest(unittest.TestCase):
 
     def test_invalid_cargo_preserved(self):
         for cargo in ({}, {"starter": {"seprom": -1}}, {"starter": {"seprom": 1.5}},
-                      {"starter": {"unknown": 1}}, {"starter": {"prometium": 400, "seprom": 1}}):
+                      {"starter": {"unknown": 1}}, {"starter": {"prometium": 800, "seprom": 1}}):
             with self.subTest(cargo=cargo), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 path = root / "pilots.json"

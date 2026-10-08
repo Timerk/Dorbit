@@ -44,7 +44,7 @@ func run() -> void:
 		if model in ["lf-4", "sg3n-b00"]:
 			var before := FileAccess.get_file_as_string(store.path)
 			await request(client, sequence + 1, "buy", model)
-			check(combat.station_message.contains("Unavailable") and combat.inventory["revision"] == sequence and FileAccess.get_file_as_string(store.path) == before, "Server rejects unavailable " + info["name"] + " without changing the save")
+			check(combat.station_message.contains("Unavailable") and combat.inventory["revision"] == sequence and conserved_ledger(FileAccess.get_file_as_string(store.path)) == conserved_ledger(before), "Server rejects unavailable " + info["name"] + " without changing saved ownership or currency")
 			continue
 		sequence += 1
 		var item_id := "purchase-%d" % sequence

@@ -289,8 +289,9 @@ speed. See README.md for configuration and use.
 
 Normal clients connect to the persistent server into a docked pilot console before
 entering the map. The graphite-and-amber console presents saved credits, active-ship
-preparation, Hangar, Shop, Quests, Cargo Trade, Settings and Connection. Skylab
-and Galaxy Gates remain coming-soon pages without gameplay in this milestone.
+preparation, Hangar, Shop, Quests, Cargo Trade, Settings and Connection. The user
+approved persistent Skylab industry on 2026-10-08 as a Milestone 3 extension;
+Galaxy Gates remains a coming-soon page.
 
 Docked pilots can buy ships/equipment, activate owned hulls, fit items, trade saved
 cargo and accept or abandon hunts through the same server-validated persistence
@@ -408,12 +409,13 @@ and hulls. These are provisional Dorbit values, not reference-game rewards.
 | --- | ---: | ---: | ---: | ---: |
 | Scout | 300 | 3 / 900 | 140 / 200 / 260 | 800 |
 | Sentinel | 1,500 | 2 / 4,500 | 700 / 970 / 1,240 | 4,720 |
-| Heavy | 10,000 | 1 / 30,000 | 3,140 / 4,270 / 5,400 | 44,270 |
+| Heavy | 10,000 | 1 / 30,000 | 3,340 / 4,670 / 6,000 | 44,670 |
 
 Means use uniform loot rolls. Kill pools and boxes are shared; each contributor
 with an accepted matching contract receives its full contract reward. Resource
-prices are ten times the original values, preserving the seven-resource value
-order and existing quantities. A box still belongs to whoever collects it;
+prices are ten times the original values, preserving the original seven-resource
+value order and quantities. Skylab adds Xenomit at a custom 200 CR with Heavy
+drops of 1–3, adding 400 CR mean loot value. A box still belongs to whoever collects it;
 there is no automatic cargo split.
 
 Five Scout contracts (15 kills) earn 11,100 to 12,900 CR including sold loot,
@@ -429,7 +431,7 @@ At the mean contracted Sentinel income, about 22 kills fund the 100,000-CR
 Piranha and 32 fund either 150,000-CR hull, before repairs and fitting expenses.
 For three contributors all running Heavy contracts, each kill pays each pilot
 33,333 or 33,334 CR before loot. With equal loot collection over time, the mean
-is about 34,757 CR each: a 1-million-CR item takes about 29 hunts, and an
+is about 34,890 CR each: a 1-million-CR item takes about 29 hunts, and an
 8-million-CR hull about 231 hunts. Assuming 1 to 3 minutes per Heavy and
 contract return gives about 4 to 12 hours for the hull, spread over several
 sessions. Travel, survival, fitting purchases, unequal pickups and downtime
@@ -446,7 +448,7 @@ matching builds so price and offer previews agree with the server.
 
 ### Enemy resources, cargo and station sales
 
-This agreed Milestone 3 addition extends alien hunting with physical resource boxes, limited ship cargo and resource sales at Outpost 01. The seven resources follow the supplied reference order, with increasing value. Existing kill credits and hunting-contract rewards remain in place.
+This agreed Milestone 3 addition extends alien hunting with physical resource boxes, limited ship cargo and resource sales at Outpost 01. The original seven resources follow the supplied reference order, with increasing value; the approved Skylab extension adds real Xenomit. Existing kill credits and hunting-contract rewards remain in place.
 
 | Resource | Credits per unit | Scout drop | Sentinel drop | Heavy drop |
 | --- | --- | --- | --- | --- |
@@ -455,6 +457,7 @@ This agreed Milestone 3 addition extends alien hunting with physical resource bo
 | Terbium | 40 | 1 to 2 | 4 to 6 | 8 to 12 |
 | Prometid | 80 | None | 2 to 4 | 6 to 10 |
 | Duranium | 160 | None | 1 to 2 | 4 to 6 |
+| Xenomit | 200 | None | None | 1 to 3 |
 | Promerium | 320 | None | None | 2 to 4 |
 | Seprom | 640 | None | None | 1 to 2 |
 
@@ -464,7 +467,7 @@ Living ships collect automatically within 12 m. The nearest ship with free capac
 
 The Liberator holds 400 units; every resource uses one unit. Capacity is defined by ship model for future ship types, and cargo belongs to each individual owned ship. The approved header-free flight HUD retains a cargo FULL warning; routine usage moves to the existing station cargo page, alongside resource quantities, prices and total sale value. Collected cargo survives death, reconnects and server restarts. A future death penalty needs a separate decision.
 
-Press B at Outpost 01 and choose Trade raw materials. Seven horizontal ore cards use generated high-resolution transparent mineral renders in the supplied reference colors, with unit prices, held amounts, minus/plus and editable quantity controls, sale totals and Sell buttons. Select a quantity of one resource or sell all active-ship cargo. Sales use the station restrictions: alive, within 60 m, at most 8 m/s and five seconds since damage. The server validates the selected amount and saves cargo removal, credit payment and the transaction sequence together before confirming success. Duplicate and stale requests cannot pay twice. A sale that exceeds the wallet limit leaves all cargo intact. Cargo collection also commits before removing units from space; a save failure stops progression.
+Press B at Outpost 01 and choose Trade raw materials. Eight horizontal ore cards use generated high-resolution transparent mineral renders in the supplied reference colors, with unit prices, held amounts, minus/plus and editable quantity controls, sale totals and Sell buttons. Select a quantity of one resource or sell all active-ship cargo. Sales use the station restrictions: alive, within 60 m, at most 8 m/s and five seconds since damage. The server validates the selected amount and saves cargo removal, credit payment and the transaction sequence together before confirming success. Duplicate and stale requests cannot pay twice. A sale that exceeds the wallet limit leaves all cargo intact. Cargo collection also commits before removing units from space; a save failure stops progression.
 
 Save schema 3 adds validated per-ship cargo. Versions 1 and 2 migrate once to empty holds while retaining credits, equipment, contracts and unrelated progression. The operator provisioning tool preserves cargo when rotating credentials. Older servers cannot read schema 3; rollback requires a pre-migration ledger backup.
 
@@ -482,7 +485,7 @@ Refining automatically makes missing intermediate ingredients from raw ores. Exi
 | Duranium | 10 Endurium + 20 Terbium |
 | Promerium | 10 Prometid + 10 Duranium |
 
-Xenomit is omitted because it does not exist in Dorbit. Seprom cannot be refined aboard the ship; production, automation and the Xeno module wait for Skylab. Existing Seprom loot can already be applied to equipment.
+Ship refining omits the Xenomit catalyst as its existing policy. Seprom production and virtual Xeno support belong to Skylab below; Seprom cannot be refined aboard the ship. Existing Seprom loot can already be applied to equipment.
 
 | Resource | Laser / rocket damage | Shield capacity | Speed |
 | --- | --- | --- | --- |
@@ -501,7 +504,65 @@ The same resource adds rounds or duration without changing its percentage. A dif
 
 The user chose timers that count only while online. They count with that hull active, including station menus and rescue; inactive hulls and disconnected pilots retain their time. The server checkpoints durations every five seconds and flushes them on disconnect, shutdown and successful station actions. Abrupt termination can restore up to five seconds of unused duration. Weapon-round consumption saves before damage, so consumed rounds cannot return after restart.
 
-All actions retain the station checks and persistent sequence protection. Save schema 5 adds validated per-ship boost reserves and migrates schemas 1–4 while preserving progression; provisioning and credential rotation preserve boosts. Rollback needs a pre-migration backup. Network schema 10 requires matching clients and servers. Offline preview exposes both tabs with resource actions disabled. Balance and timer feel need human playtesting; Skylab and rocket weapons remain later work.
+All actions retain the station checks and persistent sequence protection. Save schema 5 adds validated per-ship boost reserves and migrates schemas 1–4 while preserving progression; provisioning and credential rotation preserve boosts. Rollback needs a pre-migration backup. Network schema 10 requires matching clients and servers. Offline preview exposes both tabs with resource actions disabled. Balance and timer feel need human playtesting; Rocket weapons remain later work; Skylab is implemented below.
+
+### Persistent Skylab industry
+
+The user approved the original station concept and the supplied Skylab specification
+on 2026-10-08, then requested a closer match to its detailed station artwork and
+reference module windows using the shared graphite/amber styling. The live page
+uses original concept-derived illustration with clickable labels and leader lines,
+module-specific tables/recipe diagrams, comparison build costs and footer controls.
+It fills the navigation content area and uses detailed transparent Standard/Advanced
+robot renders in Productivity, as requested in the follow-up visual review.
+Skylab replaces its coming-soon menu page and is available docked
+or while browsing menus in flight, independently of station service restrictions.
+It uses the existing authenticated dedicated server, pilot ledger, economy request
+sequence and per-ship cargo; there is no client-owned economy.
+
+Twelve clickable modules provide Basic, Solar, Storage, level-1 Transport, three
+raw collectors, four refineries and Xeno. Exact recipes are 20 Prometium +
+10 Endurium → Prometid; 10 Endurium + 20 Terbium → Duranium; 10 Prometid +
+10 Duranium + one catalyst → Promerium; 10 Promerium → Seprom. Xeno supplies
+virtual throughput, consumed before real Xenomit. Virtual support never becomes
+stock, cargo or saleable ore. Lower Xeno limits throughput rather than upgrades.
+
+Independent ore capacities, deterministic power admission, proportional shared
+Endurium allocation, manual controls and blockers constrain production. Concurrent
+upgrades deduct configured credits and raw ore, pause industrial output and keep
+the completed level until the timer finishes. Basic caps other target levels at
+20; Transport cannot upgrade. Canceling forfeits credits/raw ore. Infrastructure
+retains completed-level service; construction uses completed-level power and
+continues while disabled. Instant construction also requires the ordinary cost.
+Instant construction costs twice the normal build credits and requires the same
+raw ore; finishing a paid job scales its equal-to-normal acceleration fee by the
+remaining construction time. Instant transport remains a flat 125,000 credits.
+
+The server settles ore on fixed UTC minute boundaries and integrates job, robot
+and delivery events at their real times. Saved fractional progress and clock phase
+make offline advancement independent of menu refresh frequency. Blocked work
+cannot accumulate a large catch-up burst. Robots have twelve slots per collector,
+48-hour active lifetimes, Advanced-first queued replacement and additive +1% Standard
+or +4% Advanced boosts, priced at 250 / 5,000 credits respectively. Queued robots do not age.
+
+One lab-to-ship shipment removes stock at dispatch, validates free cargo then and
+delivers once to that dispatch ship, even after hull switching or cargo filling.
+Delivery may overfill cargo, blocking collection until space is freed. Premium
+halves duration. Ship-to-lab transfer and ore combat bonuses are outside this work.
+
+[Balance v1](assets/skylab/balance-v1.json) explicitly supplies all level values as
+custom development data, not recovered historical DarkOrbit curves. New/migrated
+pilots get all modules at level 1, 1,200 of each raw ore, sufficient solar power,
+Premium off. Skylab uses credits exclusively: legacy wallets convert at 100:1;
+instant send costs a flat 125,000 credits for any valid manifest. Xenomit artwork, sale price and Heavy drops are custom
+Drobit choices requiring playtesting. Premium is an optional operator-set duration flag; no real-money purchase flow is introduced.
+
+Save schema 6 migrates versions 1–5 before admission, preserving both earlier
+ammunition/boost and industry layouts. Legacy industry wallets convert once at
+100 credits per unit; active/queued robots retain their lifetime.
+Network schema 11 requires matching client/server builds. See [implementation policies,
+rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot's
+454/870 power budget and exact inventories/capacities remain a separate debug fixture.
 
 ## Multiplayer and hosting
 
@@ -725,7 +786,8 @@ Before deploying progression, configure the private network, dated off-machine b
 
 Local and LAN dedicated-server play have passed manual testing. Cross-network dedicated-server testing remains pending and does not block pilot identity and persistence work. Full Milestone 3 completion still requires purchases, additional content and repeat-session playtesting.
 
-Save schema 5 combines ammunition inventory and per-ship resource boost reserves.
+Save schema 6 retains schema 5's combined ammunition inventory and per-ship
+resource boost reserves alongside persistent Skylab industry.
 Schema 4 ammunition saves retain their rounds and receive empty boosts; schema 4
 boost saves retain their reserves and receive the one-time starter ammunition.
 Each fired volley commits both debits together before applying damage.

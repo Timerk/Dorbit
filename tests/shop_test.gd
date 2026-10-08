@@ -97,11 +97,11 @@ func check_bulk_purchase(server: Sector, client: Sector) -> void:
 	var disk_before := FileAccess.get_file_as_string(server.session.store.path)
 	combat.station_request.rpc_id(1, sequence, "buy", "g3n-1010:3", "", "", 0)
 	await settle()
-	check(client.credits == 94000 and server.session.store.pilots["pilot0"] == saved, "Duplicate batch request cannot charge or grant items again")
+	check(client.credits == 94000 and without_industry(server.session.store.pilots["pilot0"]) == without_industry(saved), "Duplicate batch request cannot charge or grant items again")
 	for subject: String in ["g3n-1010:0", "g3n-1010:-1", "g3n-1010:1000", "g3n-1010:1.5", "g3n-1010:", "g3n-1010:2:3", "lf-4:3", "g3n-1010:999"]:
 		combat.station_request.rpc_id(1, sequence + 1, "buy", subject, "", "", 0)
 		await settle()
-		check(server.session.store.pilots["pilot0"] == saved and FileAccess.get_file_as_string(server.session.store.path) == disk_before, "Invalid or unaffordable batch leaves wallet, inventory, revision and disk unchanged: " + subject)
+		check(without_industry(server.session.store.pilots["pilot0"]) == without_industry(saved) and conserved_ledger(FileAccess.get_file_as_string(server.session.store.path)) == conserved_ledger(disk_before), "Invalid or unaffordable batch preserves saved wallet, inventory, cargo and revision while industry advances: " + subject)
 	shop.select_model("g3n-2010")
 	check(shop.purchase_quantity == 1, "Selecting another item resets its quantity to one")
 	shop.select_category("ships")
@@ -156,6 +156,7 @@ func check_flight_pages(client: Sector, prefix: String) -> void:
 				"quests": panel = client.hud.contract_panel
 				"settings": panel = client.settings_menu.panel
 				"connection": panel = client.session.menu
+				"skylab": panel = client.skylab_menu
 				_: panel = menu.placeholder
 			check(panel.is_visible_in_tree() and menu.selected_page == page and menu.resume_button.is_visible_in_tree(), "%s flight %s remains reachable at %s" % [prefix, page, dimensions])
 			check(menu.content_rect().grow(1).encloses(panel.get_global_rect()), "%s flight %s fits beside the navigation at %s" % [prefix, page, dimensions])
@@ -215,7 +216,7 @@ func run() -> void:
 	check(shop.visible and client.paused and not client.settings_menu.pause_panel.visible, "B opens the shop and suppresses flight and pause controls")
 	check(shop.selected_model == "laser" and shop.cards.keys().filter(func(model: String): return shop.cards[model].visible) == Equipment.catalog_models(), "All equipment opens with equipment only and the laser selected")
 	await click(client, client.main_menu.navigation["cargo"])
-	check(shop.cargo_page.visible and not shop.equipment_page.visible and shop.sells.size() == 7, "Trading navigation opens all seven ore cards without overlapping the equipment catalog")
+	check(shop.cargo_page.visible and not shop.equipment_page.visible and shop.sells.size() == 8, "Trading navigation opens all eight ore cards without overlapping the equipment catalog")
 	check(Rect2(Vector2.ZERO, Vector2(960, 600)).encloses(shop.get_global_rect()), "Trading fits the minimum viewport with category-shop navigation")
 	await capture(client, "shop-cargo")
 	await click(client, client.main_menu.navigation["shop"])
