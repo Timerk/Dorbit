@@ -119,10 +119,13 @@ static func stats(data: Dictionary, ship: String = "") -> Dictionary:
 	var hull := ShipCatalog.info(model)
 	var speed: float = hull["speed"] * ShipCatalog.SPEED_SCALE
 	var result := {"model": model, "hull": float(hull["hull"]), "damage": 0.0, "npc_damage": 0.0, "shield": 0.0, "absorption": 0.0, "regen_bonus": 0.0, "speed": speed, "boost": speed + ShipCatalog.BOOST_BONUS}
+	result["laser_count"] = 0
 	for item: Dictionary in data["items"].values():
 		if item["ship"] != ship:
 			continue
 		var item_model: Dictionary = MODELS[item["model"]]
+		if item_model["kind"] == "laser":
+			result["laser_count"] += 1
 		for stat in ["damage", "shield", "speed"]:
 			result[stat] += item_model[stat]
 		result["boost"] += item_model["speed"]
@@ -143,6 +146,8 @@ static func apply_stats(ship: Pilot, values: Dictionary) -> void:
 		ship.max_hull = values["hull"]
 		ship.hull = minf(ship.hull, ship.max_hull)
 	ship.laser_damage = values["damage"]
+	if values.has("laser_count"):
+		ship.laser_count = values["laser_count"]
 	ship.npc_laser_damage = values["npc_damage"]
 	ship.max_shield = values["shield"]
 	ship.shield_absorption = values["absorption"]

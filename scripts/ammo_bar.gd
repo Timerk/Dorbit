@@ -63,5 +63,5 @@ func _process(_delta: float) -> void:
 		var amount := int(sector.player.ammo[kind])
 		buttons[kind].set_pressed_no_signal(sector.player.ammo_type == kind)
 		counts[kind].text = StationShop.credits_text(amount) if amount < 1000000 else ("%.1fM" % (amount / 1000000.0) if amount < 1000000000 else "%.1fB" % (amount / 1000000000.0))
-		counts[kind].add_theme_color_override("font_color", FlightHud.INK if amount > 0 else FlightHud.RED)
-		buttons[kind].tooltip_text = "%s / %dx laser damage / %s shots\nPress %s or click to select.%s" % [kind, Ammunition.TYPES[kind]["multiplier"], StationShop.credits_text(amount), kind.trim_prefix("x"), "\nReserved for future quests and special rewards." if kind == "x4" else "\nBuy at Outpost 01 in batches of 100."]
+		counts[kind].add_theme_color_override("font_color", FlightHud.INK if amount > 0 and amount >= sector.player.laser_count else FlightHud.RED)
+		buttons[kind].tooltip_text = "%s / %dx laser damage / %s shots\n%d rounds per volley (%d installed lasers)\nPress %s or click to select.%s" % [kind, Ammunition.TYPES[kind]["multiplier"], StationShop.credits_text(amount), sector.player.laser_count, sector.player.laser_count, kind.trim_prefix("x"), "\nReserved for future quests and special rewards." if kind == "x4" else "\nBuy at Outpost 01 in batches of 100."]

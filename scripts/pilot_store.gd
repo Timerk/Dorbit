@@ -151,14 +151,14 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		return "Inventory changed. Review it and try again."
 	if action == "buy_ammo":
 		var parts := subject.split(":")
-		if parts.size() != 2 or not ship.is_empty() or not slot.is_empty() or parts[1].length() > 3 or not parts[1].is_valid_int():
+		if parts.size() != 2 or not ship.is_empty() or not slot.is_empty() or parts[1].length() > 5 or not parts[1].is_valid_int():
 			return "Invalid ammunition purchase."
 		var kind: String = parts[0]
 		var blocker := Ammunition.purchase_blocker(kind)
 		if not blocker.is_empty():
 			return blocker
 		var batches := parts[1].to_int()
-		if batches < 1 or batches > Equipment.MAX_PURCHASE_QUANTITY:
+		if batches < 1 or batches > Ammunition.MAX_PURCHASE_BATCHES:
 			return "Invalid ammunition quantity."
 		var shots := batches * Ammunition.BATCH_SIZE
 		var price: int = Ammunition.TYPES[kind]["price"] * batches
