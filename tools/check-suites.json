@@ -2,6 +2,7 @@
   "windows": [
     {"name": "encounter_test", "checks": [["encounter_test.gd"]]},
     {"name": "ammo_test", "checks": [["ammo_test.gd"]]},
+    {"name": "quickslots_test", "checks": [["quickslots_test.gd"]]},
     {"name": "rocket_test", "checks": [["rocket_test.gd"]]},
     {"name": "sector_visuals_test", "checks": [["sector_visuals_test.gd"]]},
     {"name": "combat_effects_test", "checks": [["combat_effects_test.gd"]]},
@@ -54,6 +55,7 @@
     {"name": "equipment_test", "checks": [["equipment_test.gd"]]},
     {"name": "shop_test", "checks": [["shop_test.gd"]]},
     {"name": "ammo_test", "checks": [["ammo_test.gd"]]},
+    {"name": "quickslots_test", "checks": [["quickslots_test.gd"]]},
     {"name": "rocket_test", "checks": [["rocket_test.gd"]]},
     {"name": "main_menu_test", "checks": [["main_menu_test.gd"]]},
     {"name": "offline_main_menu_test", "checks": [["offline_main_menu_test.gd", "--", "--offline"]]},
