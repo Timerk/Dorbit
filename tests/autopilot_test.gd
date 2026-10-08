@@ -187,7 +187,7 @@ func network_checks() -> void:
 	var client := make_sector("AutopilotClient")
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
-	client.session.join("127.0.0.1", 24693)
+	client.session.join("127.0.0.1", test_port(24693))
 	await settle(0.5)
 	await replicate(server)
 	check(client.session.active and server.session.ships.size() == 1, "Authenticated autopilot client connects")
@@ -226,7 +226,7 @@ func network_checks() -> void:
 		var friend := make_sector("AutopilotFriend")
 		friend.session.credential_id = "pilot1"
 		friend.session.credential_token = test_token(1)
-		friend.session.join("127.0.0.1", 24693)
+		friend.session.join("127.0.0.1", test_port(24693))
 		await settle(0.5)
 		var friend_id := friend.multiplayer.get_unique_id()
 		server.session.ships[friend_id].position = Vector3(400, 250, 0)

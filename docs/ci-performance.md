@@ -1,9 +1,39 @@
 # CI performance investigation — 8 October 2026
 
-The import caches work, and removing duplicate Linux validation works. The main
+The original import caches work, and removing duplicate Linux validation works. The main
 remaining problems are frequent whole-cache invalidation and roughly six minutes
-of serial tests even when imports are warm. This investigation changes no
-workflow or game settings. Deploy preview is outside its scope.
+of serial tests even when imports are warm. PR 62 now implements the optimizations
+described below. Deploy preview is outside its scope.
+
+## Implementation
+
+- Validation restores `.ci/import-cache` using OS/engine-specific fallback keys.
+  `tools/import-cache.py` verifies each resource's source, import settings,
+  recursively referenced dependencies, project context and cached output hashes.
+  It copies only matching derived files into `.godot/imported`; affected resources
+  are cold. Unknown project setting changes invalidate all entries. The known
+  runtime-only stdout-flush setting and comments do not invalidate imports.
+  Successful builds capture a manifest using inputs recorded before Godot rewrites
+  import metadata. No tracked source or editor index is restored.
+- Both CI jobs use two test workers after one import. Each test group has a fresh
+  APPDATA/XDG profile and distinct port offset. The settings restart checks stay
+  together in their original order. The full 38 Windows and 27 Linux invocations
+  are preserved, including Linux shutdown/pilot checks. Local helpers default to
+  one worker; set `DORBIT_TEST_WORKERS=2` for parallel validation.
+- Authentication helpers wait for actual admission and initial snapshots rather
+  than sleeping 400 ms. Menu event helpers wait for layout frames rather than a
+  fixed 150 ms. Physics and deliberate network/timing waits remain intact.
+- Superseded runs cancel only within the same PR. Main builds retain unique
+  concurrency groups and continue publishing paired releases for every push.
+- Documentation-only PRs keep successful `linux-server` and `windows` checks,
+  while skipping game setup/check/export/upload steps. The classifier accepts
+  Markdown and existing ignored art/review trees, rejects import-boundary changes,
+  and treats unknown files as runtime changes.
+- Validation uploads ZIP/TAR.GZ artifacts with outer `compression-level: 0`.
+  Inner packages, provenance and release consumers keep their existing format.
+
+Preview retains its existing workflow and legacy exact-input import-cache path.
+Its cache migration belongs to the separate preview work.
 
 The reviewed source is `origin/main` at
 `0eeb9613f1e1264e949605523d805ee963afb1d2`. Measurements come from job logs and

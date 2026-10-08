@@ -123,7 +123,7 @@ func run() -> void:
 	await settle()
 	check(client.player.alive and not menu.start_button.disabled and client.preflight, "Rescue completes while the offline main menu is open")
 	await click(client, menu.navigation["connection"])
-	check(client.session.host(24743) == OK, "Development host starts from the offline main menu")
+	check(client.session.host(test_port(24743)) == OK, "Development host starts from the offline main menu")
 	check(client.session.active and not client.preflight and not client.paused and not menu.visible, "Development hosting leaves the offline menu and enters flight")
 	await press(client, KEY_ESCAPE)
 	check(client.settings_menu.main_menu_button.is_visible_in_tree(), "Development flight exposes Quit to main menu")

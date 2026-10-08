@@ -25,7 +25,7 @@ func run() -> void:
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
 	client.client_only = true
-	client.session.join("127.0.0.1", 24683)
+	client.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	check(not client.session.active and server.session.ships.is_empty(), "Different Combat RPC tables cannot enter the sector")
 	check(client.session.status.contains("build"), "Build mismatch gives an actionable connection message")
@@ -38,7 +38,7 @@ func run() -> void:
 	check(different.reload() == OK, "Changed-argument fixture compiles")
 	server.session.combat.set_script(different)
 	server.session.combat.session = server.session
-	client.session.join("127.0.0.1", 24683)
+	client.session.join("127.0.0.1", test_port(24683))
 	await settle(0.3)
 	check(not client.session.active and server.session.ships.is_empty(), "Changed RPC arguments are rejected before gameplay")
 	different = GDScript.new()
@@ -46,7 +46,7 @@ func run() -> void:
 	check(different.reload() == OK, "Changed-channel fixture compiles")
 	server.session.combat.set_script(different)
 	server.session.combat.session = server.session
-	client.session.join("127.0.0.1", 24683)
+	client.session.join("127.0.0.1", test_port(24683))
 	await settle(0.3)
 	check(not client.session.active and server.session.ships.is_empty(), "Changed RPC transport settings are rejected before gameplay")
 	server.session.combat.set_script(original)
@@ -54,7 +54,7 @@ func run() -> void:
 	server.multiplayer.peer_authenticating.disconnect(server.session.begin_authentication)
 	var legacy := func(id: int): server.multiplayer.send_auth(id, Crypto.new().generate_random_bytes(32))
 	server.multiplayer.peer_authenticating.connect(legacy)
-	client.session.join("127.0.0.1", 24683)
+	client.session.join("127.0.0.1", test_port(24683))
 	await settle(0.3)
 	check(not client.session.active and client.session.status.contains("build"), "Older servers without a compatibility handshake are rejected clearly")
 	server.multiplayer.peer_authenticating.disconnect(legacy)
@@ -65,11 +65,11 @@ func run() -> void:
 		var nonce: PackedByteArray = envelope["nonce"].hex_decode()
 		var proof := Crypto.new().hmac_digest(HashingContext.HASH_SHA256, client.session.credential_token.sha256_buffer(), nonce)
 		client.multiplayer.send_auth(id, JSON.stringify({"id": "pilot0", "proof": proof.hex_encode(), "protocol": "wrong"}).to_utf8_buffer())
-	client.session.join("127.0.0.1", 24683)
+	client.session.join("127.0.0.1", test_port(24683))
 	await settle(0.3)
 	check(not client.session.active and server.session.pilot_ids.is_empty(), "Server rejects incompatible proofs without reserving a pilot")
 	client.multiplayer.auth_callback = client.session.authenticate
-	client.session.join("127.0.0.1", 24683)
+	client.session.join("127.0.0.1", test_port(24683))
 	await settle(0.4)
 	await replicate(server)
 	check(client.session.active and server.session.ships.size() == 1, "Matching builds connect after mismatch rejection")

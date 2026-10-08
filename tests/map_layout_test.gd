@@ -9,7 +9,7 @@ func run() -> void:
 	var late := make_sector("MapLate")
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
-	client.session.join("127.0.0.1", 24683)
+	client.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	check(server.session.ships.size() == 1, "Authenticated map pilot connects")
 	if server.session.ships.size() != 1:
@@ -52,7 +52,7 @@ func run() -> void:
 	check(client.aliens[1].home_position == enemy.home_position, "New random home replicates to connected client")
 	late.session.credential_id = "pilot1"
 	late.session.credential_token = test_token(1)
-	late.session.join("127.0.0.1", 24683)
+	late.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	await replicate(server)
 	check(late.aliens[1].home_position == enemy.home_position and late.aliens[1].life == enemy.life, "Late join receives current home and life")
