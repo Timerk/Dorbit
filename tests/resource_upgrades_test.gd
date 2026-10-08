@@ -11,6 +11,32 @@ func screenshot(client: Sector, label: String) -> void:
 	await capture(client, label)
 
 
+func drag_resource(client: Sector, key: String, target: String, corner: bool = false) -> void:
+	var viewport := client.get_viewport()
+	var start := client.resource_workshop.upgrade_cards[key].get_global_rect().get_center()
+	var destination: Control = client.resource_workshop.boost_icons[target] if corner else client.resource_workshop.groups[target]
+	var finish := destination.get_global_rect().get_center()
+	var down := InputEventMouseButton.new()
+	down.button_index = MOUSE_BUTTON_LEFT
+	down.button_mask = MOUSE_BUTTON_MASK_LEFT
+	down.position = start
+	down.pressed = true
+	viewport.push_input(down)
+	await process_frame
+	for point: Vector2 in [start + Vector2(20, 0), finish]:
+		var motion := InputEventMouseMotion.new()
+		motion.position = point
+		motion.relative = point - start
+		motion.button_mask = MOUSE_BUTTON_MASK_LEFT
+		viewport.push_input(motion)
+		await process_frame
+	var up := InputEventMouseButton.new()
+	up.button_index = MOUSE_BUTTON_LEFT
+	up.position = finish
+	viewport.push_input(up)
+	await settle()
+
+
 func run() -> void:
 	var server := make_sector("UpgradeServer", true, 24743)
 	var client := make_sector("UpgradeClient")
@@ -74,28 +100,46 @@ func run() -> void:
 		await click(client, menu.tabs["update"])
 		await click(client, menu.groups["rockets"])
 		check(menu.upgrade_button.disabled and menu.upgrade_description.text.contains("coming later"), "Rocket preview cannot spend resources")
+		var held := client.cargo.duplicate(true)
+		await drag_resource(client, "promerium", "rockets")
+		check(client.cargo == held and menu.group == "rockets" and menu.upgrade_button.disabled, "Rocket drops remain Coming later without consuming cargo")
 		await click(client, menu.groups["engines"])
-		check(menu.upgrade_cards["seprom"].disabled and menu.upgrade_cards["prometid"].disabled, "Engine tab excludes unsupported resources")
-		await click(client, menu.groups["lasers"])
-		await click(client, menu.upgrade_cards["seprom"])
+		await drag_resource(client, "seprom", "engines")
+		check(menu.group == "engines" and client.cargo == held and menu.upgrade_button.disabled, "Incompatible Seprom engine drop cannot apply a boost")
+		await drag_resource(client, "promerium", "shields")
+		check(menu.group == "shields" and menu.resource == "promerium" and client.cargo == held and client.player.resource_boosts.is_empty(), "Compatible drop selects equipment and resource without spending before confirmation")
+		for key: String in menu.groups:
+			check(menu.get_global_rect().encloses(menu.groups[key].get_global_rect()) and menu.groups[key].get_global_rect().encloses(menu.boost_icons[key].get_global_rect()), "Equipment card and corner badge fit at %s: %s" % [dimensions, key])
+		await drag_resource(client, "seprom", "lasers")
+		check(menu.group == "lasers" and menu.resource == "seprom" and menu.boost_icons["lasers"].texture == null, "Resource bar stays draggable across categories and empty badge does not preview an unconfirmed boost")
 		await screenshot(client, "resource-upgrades-%d" % dimensions.x)
+	var drop := {"boost_resource": "seprom", "workshop": menu}
+	client.session.combat.station_pending = true
+	check(not menu.can_drop_resource(Vector2.ZERO, drop, "lasers") and menu.resource_drag(Vector2.ZERO, "seprom") == null, "Pending server action blocks new resource drags and drops")
+	client.session.combat.station_pending = false
+	check(not menu.can_drop_resource(Vector2.ZERO, {"equipment_item": "laser"}, "lasers"), "Equipment inventory drags cannot be treated as boost resources")
 	menu.upgrade_amount.value = 1
 	await click(client, menu.upgrade_button)
 	await replicate(server)
 	check(client.player.resource_boosts["lasers"] == {"resource": "seprom", "remaining": 10} and client.cargo["seprom"] == 9, "Update button consumes one unit for ten individual rounds")
-	await click(client, menu.upgrade_cards["prometid"])
+	check(menu.boost_icons["lasers"].texture.resource_path.ends_with("seprom.png") and menu.reserve_labels["lasers"].text.contains("10 rounds"), "Confirmed laser boost shows Seprom in its corner badge and remaining rounds")
+	await drag_resource(client, "prometid", "lasers", true)
 	check(menu.replace_warning.visible and menu.upgrade_button.disabled and menu.upgrade_description.text.contains("WARNING"), "Changing resource requires an explicit warning and confirmation")
+	check(menu.boost_icons["lasers"].texture.resource_path.ends_with("seprom.png"), "Replacement preview retains the currently applied resource icon")
 	before = store.pilots.duplicate(true)
 	await request(client, 5, "boost", "prometid:1", "lasers")
 	check(store.pilots == before, "Server rejects an unconfirmed replacement")
 	await click(client, menu.replace_warning)
 	await click(client, menu.upgrade_button)
 	check(client.player.resource_boosts["lasers"]["resource"] == "prometid" and client.player.resource_boosts["lasers"]["remaining"] == 10, "Confirmed replacement discards the old reserve")
+	check(menu.boost_icons["lasers"].texture.resource_path.ends_with("prometid.png"), "Confirmed replacement changes the active corner resource icon")
 	await request(client, 6, "boost", "prometid:1", "lasers")
 	check(client.player.resource_boosts["lasers"]["remaining"] == 20 and ResourceBoosts.bonus(ship.resource_boosts, "lasers") == 0.15, "Same resource adds rounds without stacking percentage")
+	check(menu.resource_drag(Vector2.ZERO, "prometid") == null, "Empty resource card cannot start a drag")
 	await request(client, 7, "boost", "duranium:1", "shields")
 	await request(client, 8, "boost", "duranium:1", "engines")
 	await replicate(server)
+	check(menu.boost_icons["shields"].texture.resource_path.ends_with("duranium.png") and menu.boost_icons["engines"].texture.resource_path.ends_with("duranium.png"), "Each timed equipment card shows its own authoritative resource")
 	check(is_equal_approx(ship.max_shield, 1100) and is_equal_approx(ship.cruise_speed, 45.1) and is_equal_approx(ship.boost_speed, 91.3), "Shield and engine boosts multiply the fitted capacity and cruise/boost speed")
 	check(ship.shield == 1000 and ship.shield_absorption == 0.4, "Applying a shield boost does not grant charge or change absorption")
 	combat.tick(30)
@@ -141,6 +185,8 @@ func run() -> void:
 		check(is_equal_approx(health - alien.hull - alien.shield, expected), "Volley %d boosts only lasers with remaining rounds, including LF-3's own NPC damage" % volley)
 		check(ResourceBoosts.remaining(ship.resource_boosts, "lasers") == maxi(0, 10 - (volley + 1) * 4), "Four installed lasers consume four rounds per volley")
 	check(not store.pilots["pilot0"]["boosts"]["starter"].has("lasers"), "Depleted laser reserve is persisted before damage")
+	await replicate(server)
+	check(menu.boost_icons["lasers"].texture == null and menu.reserve_labels["lasers"].text == "0 rounds", "Depleting laser rounds clears the corner badge")
 	# Range, cooldown and client authority cannot spend boosted rounds.
 	ship.position = combat.records[id]["spawn"]
 	ship.velocity = Vector3.ZERO
@@ -180,6 +226,9 @@ func run() -> void:
 	check(is_equal_approx(ResourceBoosts.remaining(ship.resource_boosts, "shields"), saved_duration), "Disconnect flushes sub-checkpoint time; offline time consumes none")
 	await request(client, 12, "boost", "seprom:2", "lasers")
 	check(ResourceBoosts.remaining(ship.resource_boosts, "lasers") == 20, "Restart preserves duplicate-boost protection")
+	client.main_menu.select_page("refining")
+	menu.select_tab("update")
+	await settle()
 	var expired: Dictionary = store.pilots["pilot0"]["boosts"].duplicate(true)
 	for key: String in ["shields", "engines"]:
 		expired["starter"][key]["remaining"] = 0.001
@@ -189,6 +238,7 @@ func run() -> void:
 	await replicate(server)
 	check(ship.max_shield == 1000 and ship.shield <= 1000 and ship.cruise_speed == 41 and client.player.max_shield == 1000, "Expired timed boosts return to fitted stats, clamp excess charge and replicate")
 	check(ResourceBoosts.remaining(ship.resource_boosts, "lasers") == 20, "Timed expiry leaves weapon rounds alone")
+	check(menu.boost_icons["shields"].texture == null and menu.boost_icons["engines"].texture == null and menu.boost_icons["lasers"].texture.resource_path.ends_with("seprom.png"), "Timer expiry clears only the expired equipment icons")
 	var fleet := store.pilots.duplicate(true)
 	fleet["pilot0"]["equipment"]["ships"]["spare"] = "phoenix"
 	fleet["pilot0"]["cargo"]["spare"] = {}
