@@ -252,6 +252,25 @@ class ProvisioningTest(unittest.TestCase):
                 candidate["items"][f"starter-{model}"]["slot"] = slot
                 self.assertFalse(pilots.valid_equipment(candidate))
 
+    def test_extra_fitting_and_cargo(self):
+        equipment = pilots.starter_equipment()
+        for model, slot in [("slot-cpu-1", "extra1"), ("rep-1", "extra2"),
+                            ("cargo-expander", "extra3"), ("ammo-cpu", "extra4")]:
+            equipment["items"][model] = {"model": model, "ship": "starter", "slot": slot}
+        equipment["items"]["ammo-cpu"].update(enabled=True, ammo_type="x2")
+        self.assertTrue(pilots.valid_equipment(equipment))
+        self.assertTrue(pilots.valid_cargo({"starter": {"prometium": 800}}, equipment))
+        self.assertFalse(pilots.valid_cargo({"starter": {"prometium": 801}}, equipment))
+        equipment["items"]["ammo-cpu"]["ammo_type"] = "x4"
+        self.assertFalse(pilots.valid_equipment(equipment))
+        equipment["items"]["ammo-cpu"]["ammo_type"] = "x2"
+        equipment["items"]["cargo-expander"]["model"] = "rep-2"
+        self.assertFalse(pilots.valid_equipment(equipment))
+        equipment["items"]["cargo-expander"]["model"] = "cargo-expander"
+        equipment["items"]["slot-cpu-1"]["slot"] = "extra3"
+        equipment["items"]["cargo-expander"]["slot"] = "extra1"
+        self.assertFalse(pilots.valid_equipment(equipment))
+
     def test_rotation_and_migration(self):
         for version, layout in ((1, "legacy"), (2, "legacy"), (3, "legacy"), (4, "ammo"), (4, "boosts"), (4, "both"), (5, "both"), (6, "both")):
             with self.subTest(version=version, layout=layout), tempfile.TemporaryDirectory() as directory:

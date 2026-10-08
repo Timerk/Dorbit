@@ -1,0 +1,30 @@
+[
+  {
+    "id": "rep-1",
+    "prompt": "Use case: stylized-concept. Asset type: individual square inventory equipment artwork for Dorbit. Primary request: a compact floating hull repair robot, two articulated welding arms, a central round cyan optical sensor, silver armored shell with amber maintenance accents. Polished readable science fiction 3D product render; machined brushed silver metal, dark graphite recesses, restrained copper details, subtle wear. Center one entire object, three-quarter isometric view, generous 15 percent padding, strong silhouette legible in a 64px tile. Soft studio key light and restrained luminous accents. Uniform very dark navy background #091522, no floor or environment. No text, labels, logos, borders, watermark, UI or extra objects. Match a coherent space equipment catalog."
+  },
+  {
+    "id": "rep-2",
+    "prompt": "Use case: stylized-concept. Asset type: individual square inventory equipment artwork for Dorbit. Primary request: an advanced floating hull repair robot, four articulated precision welding arms around a cyan optical sensor, layered silver armor and twin amber power cells; clearly a more capable repair robot. Polished readable science fiction 3D product render; machined brushed silver metal, dark graphite recesses, restrained copper details, subtle wear. Center one entire object, three-quarter isometric view, generous 15 percent padding, strong silhouette legible in a 64px tile. Soft studio key light and restrained luminous accents. Uniform very dark navy background #091522, no floor or environment. No text, labels, logos, borders, watermark, UI or extra objects. Match a coherent space equipment catalog."
+  },
+  {
+    "id": "repair-auto",
+    "prompt": "Use case: stylized-concept. Asset type: individual square inventory equipment artwork for Dorbit. Primary request: a square silver automation CPU cartridge, recessed green luminous circuit paths and a small inset wrench-shaped mechanical motif, chunky connector teeth. Polished readable science fiction 3D product render; machined brushed silver metal, dark graphite recesses, restrained copper details, subtle wear. Center one entire object, three-quarter isometric view, generous 15 percent padding, strong silhouette legible in a 64px tile. Soft studio key light and restrained luminous accents. Uniform very dark navy background #091522, no floor or environment. No text, labels, logos, borders, watermark, UI or extra objects. Match a coherent space equipment catalog."
+  },
+  {
+    "id": "cargo-expander",
+    "prompt": "Use case: stylized-concept. Asset type: individual square inventory equipment artwork for Dorbit. Primary request: a molecular cargo compression module, a silver cubic industrial frame enclosing a violet glowing compressed energy cube, four clamping corner struts. Polished readable science fiction 3D product render; machined brushed silver metal, dark graphite recesses, restrained copper details, subtle wear. Center one entire object, three-quarter isometric view, generous 15 percent padding, strong silhouette legible in a 64px tile. Soft studio key light and restrained luminous accents. Uniform very dark navy background #091522, no floor or environment. No text, labels, logos, borders, watermark, UI or extra objects. Match a coherent space equipment catalog."
+  },
+  {
+    "id": "slot-cpu-1",
+    "prompt": "Use case: stylized-concept. Asset type: individual square inventory equipment artwork for Dorbit. Primary request: a silver hardware expansion CPU board with two prominently visible empty rectangular connector sockets, amber luminous bus circuitry and thick connector teeth. Polished readable science fiction 3D product render; machined brushed silver metal, dark graphite recesses, restrained copper details, subtle wear. Center one entire object, three-quarter isometric view, generous 15 percent padding, strong silhouette legible in a 64px tile. Soft studio key light and restrained luminous accents. Uniform very dark navy background #091522, no floor or environment. No text, labels, logos, borders, watermark, UI or extra objects. Match a coherent space equipment catalog."
+  },
+  {
+    "id": "ammo-cpu",
+    "prompt": "Use case: stylized-concept. Asset type: individual square inventory equipment artwork for Dorbit. Primary request: a silver ammunition logistics CPU cartridge with three small ice-blue laser energy cells nested along its edge, cyan illuminated circuitry and connector teeth. Polished readable science fiction 3D product render; machined brushed silver metal, dark graphite recesses, restrained copper details, subtle wear. Center one entire object, three-quarter isometric view, generous 15 percent padding, strong silhouette legible in a 64px tile. Soft studio key light and restrained luminous accents. Uniform very dark navy background #091522, no floor or environment. No text, labels, logos, borders, watermark, UI or extra objects. Match a coherent space equipment catalog."
+  },
+  {
+    "id": "generator-cpu",
+    "prompt": "Use case: stylized-concept. Asset type: individual square inventory equipment artwork for Dorbit. Primary request: a silver generator boost CPU cartridge with two miniature luminous cylindrical power coils, blue and amber, exposed circuitry and connector teeth. Polished readable science fiction 3D product render; machined brushed silver metal, dark graphite recesses, restrained copper details, subtle wear. Center one entire object, three-quarter isometric view, generous 15 percent padding, strong silhouette legible in a 64px tile. Soft studio key light and restrained luminous accents. Uniform very dark navy background #091522, no floor or environment. No text, labels, logos, borders, watermark, UI or extra objects. Match a coherent space equipment catalog."
+  }
+]

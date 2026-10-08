@@ -33,6 +33,8 @@ var current_slot_model: String = ""
 var specifications: PanelContainer
 var stat_values: Dictionary[String, Label] = {}
 var stat_notes: Dictionary[String, Label] = {}
+var extra_toggle: Button
+var extra_ammo: OptionButton
 
 
 func _ready() -> void:
@@ -73,6 +75,14 @@ func _ready() -> void:
 	remove_button = StationUi.button(fitting_rows, "REMOVE", func(): move_item(selected_item, ""))
 	remove_button.mouse_entered.connect(preview_removal)
 	remove_button.focus_entered.connect(preview_removal)
+	extra_toggle = StationUi.button(fitting_rows, "", configure_extra)
+	extra_ammo = OptionButton.new()
+	for kind: String in ["x1", "x2", "x3"]:
+		extra_ammo.add_item(kind)
+	extra_ammo.item_selected.connect(func(_index: int): configure_extra(false))
+	fitting_rows.add_child(extra_ammo)
+	extra_toggle.hide()
+	extra_ammo.hide()
 	storage_panel = StationUi.card(body)
 	storage_panel.custom_minimum_size.x = 260
 	storage_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -143,18 +153,18 @@ func inventory() -> Dictionary:
 
 
 func slots_kind(slot: String) -> String:
-	return ShipCatalog.slots(current_slot_model).get(slot, "")
+	return (Equipment.slots(inventory()) if not inventory().is_empty() else ShipCatalog.slots(current_slot_model)).get(slot, "")
 
 
 func rebuild_slots(model_id: String) -> void:
-	if current_slot_model == model_id:
+	var available := Equipment.slots(inventory()) if not inventory().is_empty() else ShipCatalog.slots(model_id)
+	if current_slot_model == model_id and slots.keys() == available.keys():
 		return
 	current_slot_model = model_id
 	for child in slot_rows.get_children():
 		slot_rows.remove_child(child)
 		child.queue_free()
 	slots.clear()
-	var available := ShipCatalog.slots(model_id)
 	for kind: String in ["laser", "launcher", "generator", "extra"]:
 		StationUi.text(slot_rows, "%s / %d SLOTS" % [kind.to_upper() + "S", available.values().count(kind)], 13, Color("f4c778") if kind == "laser" else FlightHud.CYAN)
 		var group := GridContainer.new()
@@ -236,6 +246,7 @@ func refresh_inventory() -> void:
 	update_stats()
 	drop_hint = ""
 	preview.text = ""
+	update_extra_controls()
 
 
 func storage_category(model: String) -> String:
@@ -345,6 +356,31 @@ func select_item(id: String) -> void:
 	if not item.is_empty():
 		detail.text = "%s / %s" % [Equipment.MODELS[item["model"]]["name"], StationUi.bonus(item["model"])]
 	preview.text = ""
+	update_extra_controls()
+
+
+func update_extra_controls() -> void:
+	var item: Dictionary = inventory().get("items", {}).get(selected_item, {})
+	var configurable: bool = not item.is_empty() and Equipment.MODELS[item["model"]].get("family", "") in ["ammo", "generators", "repair-auto"]
+	extra_toggle.visible = configurable
+	extra_ammo.visible = configurable and item["model"] == "ammo-cpu"
+	if configurable:
+		extra_toggle.text = "DISABLE AUTOMATION" if Extras.enabled(item) else "ENABLE AUTOMATION"
+		extra_toggle.tooltip_text = Equipment.MODELS[item["model"]]["description"]
+		extra_toggle.disabled = not StationUi.blocker(sector).is_empty()
+		extra_ammo.disabled = extra_toggle.disabled
+		if item["model"] == "ammo-cpu":
+			extra_ammo.select(["x1", "x2", "x3"].find(item.get("ammo_type", "x1")))
+
+
+func configure_extra(toggle: bool = true) -> void:
+	if not StationUi.blocker(sector).is_empty():
+		return
+	var item: Dictionary = inventory().get("items", {}).get(selected_item, {})
+	if item.is_empty():
+		return
+	var enabled: bool = not Extras.enabled(item) if toggle else Extras.enabled(item)
+	sector.session.combat.request_station("configure_extra", selected_item, "on" if enabled else "off", ["x1", "x2", "x3"][extra_ammo.selected] if item["model"] == "ammo-cpu" else "")
 
 
 func choose(tile: EquipmentTile) -> void:
@@ -377,14 +413,14 @@ func show_proposal(id: String, slot: String) -> void:
 		preview.text = blocked
 		return
 	var proposed := inventory().duplicate(true)
-	proposed["items"][id]["ship"] = proposed["active_ship"] if not slot.is_empty() else ""
-	proposed["items"][id]["slot"] = slot
+	Equipment.move(proposed, id, proposed["active_ship"] if not slot.is_empty() else "", slot)
 	var values := ResourceBoosts.stats(Equipment.stats(proposed), sector.player.resource_boosts)
 	preview.text = "After %s: %d damage / %d shield (%d%%) / %d m/s cruise / %d m/s boost" % ["install" if not slot.is_empty() else "removal", values["damage"], values["shield"], roundi(values["absorption"] * 100), values["speed"], values["boost"]]
 	if values["npc_damage"] > 0.0:
 		preview.text += " / +%.2f alien damage" % values["npc_damage"]
 	if values["regen_bonus"] > 0.0:
 		preview.text += " / +%.2f%% shield regeneration" % (values["regen_bonus"] * 100)
+	preview.text += " / %d cargo / %d extra slots" % [CargoResources.capacity(proposed), Equipment.slots(proposed).values().count("extra")]
 
 
 func valid_drag(data: Variant) -> bool:
@@ -439,6 +475,7 @@ func _process(_delta: float) -> void:
 	refresh_inventory()
 	update_stats()
 	var blocked := StationUi.blocker(sector)
+	update_extra_controls()
 	activate_button.disabled = not blocked.is_empty() or ship_choice.selected < 0 or owned_ships[ship_choice.selected] == inventory()["active_ship"]
 	activate_button.tooltip_text = blocked if not blocked.is_empty() else "Switch for free. Fittings and cargo stay with each ship; switching does not repair hull or recharge shields."
 	activate_button.text = "ACTIVE" if ship_choice.selected >= 0 and owned_ships[ship_choice.selected] == inventory()["active_ship"] else "ACTIVATE"

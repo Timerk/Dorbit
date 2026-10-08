@@ -321,6 +321,33 @@ disabled; Extras is empty until usable extras are implemented. See
 [quickslot controls, integration and validation](docs/quickslots.md) for details
 and current screenshots.
 
+### Extras
+
+Buy the seven utilities under **Shop > Extras**, then fit them in **Hangar**.
+REP-1 and REP-2 repair hull outside combat; NC-RRB starts a fitted robot
+automatically. GEMINEX-XI doubles cargo capacity. Slot CPU 1 adds two extra slots
+while occupying one base slot. Each ship can fit one utility per type, with
+REP-1 and REP-2 sharing the repair type.
+
+Away from Outpost 01, stop moving and press **R** (the rebindable Repair action)
+to start a fitted robot after five seconds outside combat. Movement, incoming
+damage or firing interrupts it. Station repairs retain their paid instant behavior.
+Select a configurable CPU in Hangar to enable automation. Ammunition spending
+and generator resource use default off; choose x1/x2/x3 for the buyer. It purchases
+10,000 rounds below 1,000 remaining at ordinary ammo prices. The Generator CPU
+consumes one best available resource when a shield/engine boost expires and
+preserves existing reserves. Both require a launched living ship.
+
+Removing Slot CPU 1 returns equipment from its added slots to inventory. Cargo
+capacity removal is blocked until excess cargo is sold. Items and settings persist
+with the pilot. Client and server must both use network schema 11. See
+[the agreed mechanics and prices](GAME_PLAN.md#extras-equipment) and
+[generated artwork and prompts](assets/ui/extras/README.md).
+
+Run `tests/extras_test.gd` with Godot to validate authenticated purchases, fitting,
+repair interruption, automatic supplies and reload. A rendered run captures shop,
+hangar and repair HUD screenshots under `build/validation/extras-*.png`.
+
 ### Laser ammunition
 
 Select laser ammo through a quickslot (**1 / 2 / 3 / 4** by default) or the picker.

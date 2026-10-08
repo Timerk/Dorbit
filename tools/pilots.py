@@ -23,6 +23,14 @@ LASER_MODELS = {"laser", "mp-1", "lf-2", "lf-3", "lf-4"}
 LAUNCHER_MODELS = {"hst-1", "hst-2"}
 GENERATOR_MODELS = {"shield", "sg3n-a02", "fs-01", "sg3n-a03", "sg3n-b00", "sg3n-b01", "sg3n-b02",
                     "engine", "g3n-1010", "g3n-2010", "g3n-3210", "g3n-3310", "g3n-6900", "g3n-7900"}
+EXTRA_FAMILIES = {"rep-1": "repair", "rep-2": "repair", "repair-auto": "repair-auto",
+                  "cargo-expander": "cargo", "slot-cpu-1": "slots", "ammo-cpu": "ammo", "generator-cpu": "generators"}
+
+
+def fitted_extra(equipment: dict, model: str, ship: str) -> bool:
+    return any(isinstance(item, dict) and item.get("model") == model and item.get("ship") == ship
+               and isinstance(item.get("slot"), str) and item["slot"].startswith("extra")
+               for item in equipment["items"].values())
 
 
 def starter_equipment() -> dict:
@@ -52,11 +60,16 @@ def valid_equipment(data: object) -> bool:
                 or not isinstance(model, str) or model not in (*SHIP_MODELS, "pathfinder")):
             return False
     occupied = set()
+    families = set()
     for identifier, item in data["items"].items():
         if (not re.fullmatch(r"[a-z0-9_-]{1,32}", identifier) or not isinstance(item, dict)
                 or not isinstance(item.get("model"), str)
-                or item["model"] not in LASER_MODELS | GENERATOR_MODELS | LAUNCHER_MODELS
+                or item["model"] not in LASER_MODELS | GENERATOR_MODELS | LAUNCHER_MODELS | EXTRA_FAMILIES.keys()
                 or not isinstance(item.get("ship"), str) or not isinstance(item.get("slot"), str)):
+            return False
+        if "enabled" in item and (type(item["enabled"]) is not bool or item["model"] not in {"ammo-cpu", "generator-cpu", "repair-auto"}):
+            return False
+        if "ammo_type" in item and (item["model"] != "ammo-cpu" or item["ammo_type"] not in ("x1", "x2", "x3")):
             return False
         location = item["ship"], item["slot"]
         if location == ("", ""):
@@ -65,6 +78,14 @@ def valid_equipment(data: object) -> bool:
             return False
         hull = ship_info(data["ships"][item["ship"]])
         kind, count = ("launcher", 1) if item["model"] in LAUNCHER_MODELS else (("laser", hull["lasers"]) if item["model"] in LASER_MODELS else ("generator", hull["generators"]))
+        if item["model"] in EXTRA_FAMILIES:
+            family = item["ship"], EXTRA_FAMILIES[item["model"]]
+            if family in families:
+                return False
+            families.add(family)
+            kind, count = "extra", hull["extras"]
+            if item["model"] != "slot-cpu-1" and fitted_extra(data, "slot-cpu-1", item["ship"]):
+                count += 2
         slots = tuple(f"{kind}{index}" for index in range(1, count + 1))
         if item["ship"] not in data["ships"] or item["slot"] not in slots or location in occupied:
             return False
@@ -79,6 +100,8 @@ def valid_cargo(data: object, equipment: dict) -> bool:
         if not isinstance(hold, dict):
             return False
         capacity = ship_info(equipment["ships"][ship])["cargo"]
+        if fitted_extra(equipment, "cargo-expander", ship):
+            capacity *= 2
         if any(resource not in prices or type(amount) is not int or not 1 <= amount <= 2 * capacity
                for resource, amount in hold.items()) or sum(hold.values()) > 2 * capacity:
             return False
