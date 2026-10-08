@@ -407,9 +407,11 @@ class ReleaseSelectionTest(unittest.TestCase):
         with patch.dict(os.environ, PR_NUMBER="15", GITHUB_REPOSITORY="test/dorbit",
                         GITHUB_OUTPUT="output", GITHUB_STEP_SUMMARY="summary"), \
              patch.object(ci, "api", return_value={"state": "open", "head": {
-                 "repo": {"full_name": "test/dorbit"}, "sha": NEW}}):
+                 "repo": {"full_name": "test/dorbit"}, "sha": NEW}}), \
+             patch.object(ci, "reusable_preview", return_value={"run": "", "attempt": "", "prefix": "", "linux": "", "windows": ""}) as reuse:
             ci.preview_select()
-        self.assertEqual(Path("output").read_text(), f"sha={NEW}\npr=15\n")
+        reuse.assert_called_once_with(NEW)
+        self.assertEqual(Path("output").read_text(), f"sha={NEW}\npr=15\nreuse_run=\nreuse_attempt=\nreuse_prefix=\nreuse_linux=\nreuse_windows=\n")
 
     def test_preview_rejects_closed_fork_and_deleted_branches(self):
         for state, repository in (("closed", {"full_name": "test/dorbit"}),
@@ -480,8 +482,10 @@ class ArtifactBoundaryTest(unittest.TestCase):
         with patch.dict(os.environ, PREVIEW_SHA=NEW, GITHUB_REPOSITORY="test/dorbit",
                         GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="2",
                         LINUX_BUILD_ATTEMPT="2", WINDOWS_BUILD_ATTEMPT="2"), \
-             patch.object(ci, "api", side_effect=listing), patch.object(ci, "run", side_effect=raw_download):
+             patch.object(ci, "api", side_effect=listing), patch.object(ci, "run", side_effect=raw_download), \
+             patch.object(ci, "verify_preview_packages") as verify:
             ci.download_builds(preview=True)
+        verify.assert_called_once_with(NEW)
         self.assertTrue(Path("dist/server.tar.gz").is_file())
         self.assertTrue(Path("dist/windows.zip").is_file())
 
