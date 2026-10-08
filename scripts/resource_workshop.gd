@@ -196,6 +196,7 @@ func build_update(parent: Node) -> void:
 	upgrade_description = StationUi.text(rows, "", 18)
 	upgrade_description.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	upgrade_amount = amount_control(rows, "RESOURCE UNITS TO APPLY", func(): return int(sector.cargo.get(resource, 0)))
+	upgrade_amount.get_line_edit().text_changed.connect(clamp_upgrade_input)
 	replace_warning = CheckButton.new()
 	replace_warning.text = "Replace remaining boost"
 	replace_warning.tooltip_text = "The current resource's remaining rounds or time will be discarded."
@@ -308,10 +309,12 @@ func select_group(key: String) -> void:
 				resource = candidate
 				break
 	replace_warning.button_pressed = false
+	update_upgrade_limit()
 
 
 func select_resource(key: String) -> void:
 	resource = key
+	update_upgrade_limit()
 	upgrade_amount.value = 1
 	replace_warning.button_pressed = false
 
@@ -323,9 +326,31 @@ func refine() -> void:
 
 
 func upgrade() -> void:
+	update_upgrade_limit()
 	upgrade_amount.apply()
 	if not upgrade_button.disabled:
 		sector.session.combat.request_station("replace_boost" if replace_warning.button_pressed else "boost", "%s:%d" % [resource, int(upgrade_amount.value)], group)
+
+
+func update_upgrade_limit() -> void:
+	var held := int(sector.cargo.get(resource, 0))
+	upgrade_amount.min_value = mini(1, held)
+	upgrade_amount.max_value = held
+	upgrade_amount.editable = held > 0
+	var input := upgrade_amount.get_line_edit()
+	if input.text.is_valid_int() and input.text.to_int() > held:
+		clamp_upgrade_input(input.text)
+
+
+func clamp_upgrade_input(text: String) -> void:
+	if text.is_empty():
+		return # Allow clearing the field while entering a new amount.
+	var input := upgrade_amount.get_line_edit()
+	var caret := input.caret_column
+	var amount := clampi(text.to_int(), int(upgrade_amount.min_value), int(upgrade_amount.max_value)) if text.is_valid_int() else int(upgrade_amount.value)
+	upgrade_amount.set_value_no_signal(amount)
+	input.text = str(amount)
+	input.caret_column = mini(caret, input.text.length())
 
 
 func fit_window() -> void:
@@ -358,6 +383,7 @@ func close() -> void:
 func _process(_delta: float) -> void:
 	if not visible:
 		return
+	update_upgrade_limit()
 	var blocked := StationUi.blocker(sector)
 	cargo_summary.text = "CARGO %d / %d" % [CargoResources.units(sector.cargo), sector.cargo_capacity]
 	for key: String in counts:
@@ -366,11 +392,17 @@ func _process(_delta: float) -> void:
 		resource_cards[key].set_pressed_no_signal(key == output)
 	refine_title.text = "REFINE " + CargoResources.TYPES[output]["name"].to_upper()
 	var ingredients: PackedStringArray = []
-	for key: String in ResourceBoosts.RECIPES[output]:
-		ingredients.append("%d %s  /  %d held" % [int(ResourceBoosts.RECIPES[output][key]) * int(refine_amount.value), CargoResources.TYPES[key]["name"], sector.cargo.get(key, 0)])
-	recipe.text = "CONSUMES\n" + "\n".join(ingredients) + "\n\nPRODUCES\n%d %s\n\nMaximum now: %d" % [int(refine_amount.value), CargoResources.TYPES[output]["name"], ResourceBoosts.maximum(sector.cargo, output)]
+	var plan := ResourceBoosts.refining_plan(sector.cargo, output, int(refine_amount.value))
+	for key: String in CargoResources.TYPES:
+		if plan["consumed"].has(key):
+			ingredients.append("%d %s  /  %d held" % [plan["consumed"][key], CargoResources.TYPES[key]["name"], sector.cargo.get(key, 0)])
+	var intermediates: PackedStringArray = []
+	for key: String in plan["intermediates"]:
+		intermediates.append("%d %s" % [plan["intermediates"][key], CargoResources.TYPES[key]["name"]])
+	var maximum := ResourceBoosts.maximum(sector.cargo, output)
+	recipe.text = "CONSUMES\n" + "\n".join(ingredients) + ("\n\nAUTO-REFINES\n" + " + ".join(intermediates) if not intermediates.is_empty() else "") + "\nPRODUCES\n%d %s\nMaximum now: %d" % [int(refine_amount.value), CargoResources.TYPES[output]["name"], maximum]
 	refine_button.text = "REFINE %d UNITS" % int(refine_amount.value)
-	refine_button.disabled = not blocked.is_empty() or int(refine_amount.value) > ResourceBoosts.maximum(sector.cargo, output)
+	refine_button.disabled = not blocked.is_empty() or int(refine_amount.value) > maximum
 	refine_button.tooltip_text = blocked if not blocked.is_empty() else ("Not enough ingredients." if refine_button.disabled else "Consume these ingredients and add the selected output to cargo.")
 	var boosts := sector.player.resource_boosts
 	highlight_drop_targets()
@@ -410,7 +442,7 @@ func _process(_delta: float) -> void:
 		reason = "Rocket boosts are coming later."
 	if reason.is_empty() and percent <= 0:
 		reason = "That resource cannot boost this equipment."
-	if reason.is_empty() and amount > int(sector.cargo.get(resource, 0)):
+	if reason.is_empty() and (amount < 1 or amount > int(sector.cargo.get(resource, 0))):
 		reason = "Not enough of this resource in cargo."
 	if reason.is_empty() and replacement and not replace_warning.button_pressed:
 		reason = "Confirm replacement to discard the current boost."

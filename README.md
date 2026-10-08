@@ -513,6 +513,12 @@ confirm. Prometid uses 20 Prometium + 10 Endurium; Duranium uses 10 Endurium +
 20 Terbium; Promerium uses 10 Prometid + 10 Duranium without Xenomit. Seprom
 production waits for Skylab, while existing Seprom loot is usable now.
 
+Missing intermediates are refined automatically: existing Prometid and Duranium
+are used first, then only their shortfall is made from raw ores. The preview shows
+the actual cargo cost and automatic steps; Max includes shared Endurium costs.
+One Promerium from raw ores uses 200 each of Prometium, Endurium and Terbium.
+The complete batch saves together, with no partial spending on shortages or failure.
+
 The **Update** tab has a resource bar above illustrated equipment cards. Drag a
 held resource onto lasers, shields or engines, then choose an amount and confirm
 on the right. Selecting both cards also works without dragging. Compatible drop
@@ -520,6 +526,10 @@ targets highlight; a drop never spends cargo by itself. Each equipment card's
 bottom-left square shows its currently applied resource, with remaining rounds
 or time below. Previewing a replacement keeps the old icon until confirmed;
 depletion clears it.
+
+The boost amount field caps typed input, spinner changes and Max at current stock.
+Selecting another resource or receiving a cargo update refreshes the cap. Empty
+stock shows zero and disables editing and applying boosts.
 
 Prometid adds 15% weapon damage; Duranium adds 10% shield capacity/speed; Promerium adds
 30% weapon damage and 20% capacity/speed; Seprom adds 60% weapon damage and

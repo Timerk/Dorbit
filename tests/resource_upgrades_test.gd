@@ -11,6 +11,41 @@ func screenshot(client: Sector, label: String) -> void:
 	await capture(client, label)
 
 
+func type_upgrade_amount(client: Sector, text: String) -> void:
+	var input := client.resource_workshop.upgrade_amount.get_line_edit()
+	await click(client, input)
+	input.select_all()
+	var erase := InputEventKey.new()
+	erase.keycode = KEY_BACKSPACE
+	erase.pressed = true
+	client.get_viewport().push_input(erase)
+	for character in text:
+		var event := InputEventKey.new()
+		event.unicode = character.unicode_at(0)
+		event.pressed = true
+		client.get_viewport().push_input(event)
+	await settle()
+
+
+func check_refining_costs() -> void:
+	for fixture: Array in [
+		[{"prometium": 200, "endurium": 200, "terbium": 200}, 1, {"promerium": 1}],
+		[{"prometid": 6, "duranium": 3, "prometium": 80, "endurium": 110, "terbium": 140, "seprom": 4}, 1, {"promerium": 1, "seprom": 4}],
+		[{"prometid": 25, "duranium": 22, "prometium": 50, "endurium": 50, "terbium": 50}, 2, {"prometid": 5, "duranium": 2, "prometium": 50, "endurium": 50, "terbium": 50, "promerium": 2}],
+	]:
+		var hold: Dictionary = fixture[0].duplicate(true)
+		check(ResourceBoosts.maximum(hold, "promerium") == fixture[1], "Max accounts for existing intermediates and raw ores: %s" % hold)
+		check(ResourceBoosts.refine(hold, "promerium", fixture[1]).is_empty() and hold == fixture[2], "Refining uses existing intermediates first and creates only the missing units")
+	var scarce := {"prometium": 400, "endurium": 300, "terbium": 400}
+	var before := scarce.duplicate()
+	check(ResourceBoosts.maximum(scarce, "promerium") == 1, "Max shares Endurium between both intermediate recipes")
+	check(not ResourceBoosts.refine(scarce, "promerium", 2).is_empty() and scarce == before, "An unaffordable chain consumes no partial ingredients")
+	for output: String in ["promerium", "seprom", "unknown"]:
+		check(not ResourceBoosts.refine(scarce, output, 0).is_empty() and scarce == before, "Invalid chained refining preserves cargo: " + output)
+	var plan := ResourceBoosts.refining_plan({"prometid": 6, "duranium": 3}, "promerium", 1)
+	check(plan["intermediates"] == {"prometid": 4, "duranium": 7} and plan["consumed"] == {"prometid": 6, "duranium": 3, "prometium": 80, "endurium": 110, "terbium": 140}, "Preview lists actual cargo costs and exactly the missing intermediates")
+
+
 func drag_resource(client: Sector, key: String, target: String, corner: bool = false) -> void:
 	var viewport := client.get_viewport()
 	var start := client.resource_workshop.upgrade_cards[key].get_global_rect().get_center()
@@ -38,6 +73,7 @@ func drag_resource(client: Sector, key: String, target: String, corner: bool = f
 
 
 func run() -> void:
+	check_refining_costs()
 	var server := make_sector("UpgradeServer", true, 24743)
 	var client := make_sector("UpgradeClient")
 	client.session.credential_id = "pilot0"
@@ -112,7 +148,28 @@ func run() -> void:
 			check(menu.get_global_rect().encloses(menu.groups[key].get_global_rect()) and menu.groups[key].get_global_rect().encloses(menu.boost_icons[key].get_global_rect()), "Equipment card and corner badge fit at %s: %s" % [dimensions, key])
 		await drag_resource(client, "seprom", "lasers")
 		check(menu.group == "lasers" and menu.resource == "seprom" and menu.boost_icons["lasers"].texture == null, "Resource bar stays draggable across categories and empty badge does not preview an unconfirmed boost")
+		await type_upgrade_amount(client, "9999")
+		check(menu.upgrade_amount.value == 10 and menu.upgrade_amount.get_line_edit().text == "10" and client.cargo == held, "Typed boost amounts clamp immediately to current cargo without spending resources")
+		await click(client, menu.upgrade_amount.get_parent().get_child(1))
+		check(menu.upgrade_amount.value == 10, "Boost Max uses current stock")
+		menu.select_resource("duranium")
+		check(menu.upgrade_amount.max_value == 2 and menu.upgrade_amount.value <= 2, "Changing resource immediately updates the input cap")
+		menu.select_resource("seprom")
+		menu.upgrade_amount.value = 1
 		await screenshot(client, "resource-upgrades-%d" % dimensions.x)
+	menu.upgrade_amount.value = 10
+	var reduced_cargo: Dictionary = store.pilots["pilot0"]["cargo"].duplicate(true)
+	reduced_cargo["starter"]["seprom"] = 3
+	check(store.commit({}, {}, {"pilot0": reduced_cargo}), "Reduce selected resource through an authoritative cargo update")
+	combat.cargo_holds[id] = reduced_cargo.duplicate(true)
+	combat.publish_inventory(id)
+	await settle()
+	check(menu.upgrade_amount.value == 3 and menu.upgrade_amount.max_value == 3 and menu.upgrade_amount.get_line_edit().text == "3", "A cargo update clamps an already-entered amount down to the new stock")
+	reduced_cargo["starter"]["seprom"] = 10
+	check(store.commit({}, {}, {"pilot0": reduced_cargo}), "Restore resource fixture after quantity-cap check")
+	combat.cargo_holds[id] = reduced_cargo.duplicate(true)
+	combat.publish_inventory(id)
+	await settle()
 	var drop := {"boost_resource": "seprom", "workshop": menu}
 	client.session.combat.station_pending = true
 	check(not menu.can_drop_resource(Vector2.ZERO, drop, "lasers") and menu.resource_drag(Vector2.ZERO, "seprom") == null, "Pending server action blocks new resource drags and drops")
@@ -122,6 +179,7 @@ func run() -> void:
 	await click(client, menu.upgrade_button)
 	await replicate(server)
 	check(client.player.resource_boosts["lasers"] == {"resource": "seprom", "remaining": 10} and client.cargo["seprom"] == 9, "Update button consumes one unit for ten individual rounds")
+	check(menu.upgrade_amount.max_value == 9, "Server cargo changes reduce the boost amount cap")
 	check(menu.boost_icons["lasers"].texture.resource_path.ends_with("seprom.png") and menu.reserve_labels["lasers"].text.contains("10 rounds"), "Confirmed laser boost shows Seprom in its corner badge and remaining rounds")
 	await drag_resource(client, "prometid", "lasers", true)
 	check(menu.replace_warning.visible and menu.upgrade_button.disabled and menu.upgrade_description.text.contains("WARNING"), "Changing resource requires an explicit warning and confirmation")
@@ -136,6 +194,9 @@ func run() -> void:
 	await request(client, 6, "boost", "prometid:1", "lasers")
 	check(client.player.resource_boosts["lasers"]["remaining"] == 20 and ResourceBoosts.bonus(ship.resource_boosts, "lasers") == 0.15, "Same resource adds rounds without stacking percentage")
 	check(menu.resource_drag(Vector2.ZERO, "prometid") == null, "Empty resource card cannot start a drag")
+	check(menu.upgrade_amount.value == 0 and menu.upgrade_amount.max_value == 0 and not menu.upgrade_amount.editable and menu.upgrade_button.disabled, "Empty stock shows zero and disables amount input and applying boosts")
+	await click(client, menu.upgrade_amount.get_parent().get_child(1))
+	check(menu.upgrade_amount.value == 0, "Max cannot select resources from empty stock")
 	await request(client, 7, "boost", "duranium:1", "shields")
 	await request(client, 8, "boost", "duranium:1", "engines")
 	await replicate(server)
@@ -277,6 +338,57 @@ func run() -> void:
 	var purchased: Dictionary = store.pilots["pilot0"]
 	check(purchased["equipment"]["items"].has("purchase-15") and purchased["equipment"]["items"].has("purchase-15-2") and purchased["credits"] == 80000, "Quantity purchases remain atomic alongside resource upgrades")
 	check(ResourceBoosts.remaining(ship.resource_boosts, "shields") == current_time and purchased["boosts"]["starter"]["shields"]["remaining"] == current_time and ResourceBoosts.remaining(ship.resource_boosts, "lasers") == 20, "Batch purchase saves live shield time without changing remaining laser rounds")
+	# A larger test hull can hold the 600 raw ore units needed for one Promerium.
+	var raw_fixture := store.pilots.duplicate(true)
+	raw_fixture["pilot0"]["equipment"]["ships"]["starter"] = "goliath"
+	raw_fixture["pilot0"]["cargo"]["starter"] = {"prometium": 200, "endurium": 200, "terbium": 200, "seprom": 5}
+	check(store.persist(raw_fixture), "Seed authenticated raw-only refining fixture")
+	server.session.combat.cargo_holds[id] = raw_fixture["pilot0"]["cargo"].duplicate(true)
+	server.session.combat.apply_equipment(id)
+	server.session.combat.publish_inventory(id)
+	await replicate(server)
+	client.main_menu.select_page("refining")
+	menu.select_tab("refining")
+	menu.select_output("promerium")
+	await settle()
+	check(not menu.refine_button.disabled and menu.recipe.text.contains("200 Endurium") and menu.recipe.text.contains("AUTO-REFINES") and menu.recipe.text.contains("10 Prometid + 10 Duranium"), "Raw-only cargo enables Promerium and previews both intermediate steps")
+	await click(client, menu.refine_amount.get_parent().get_child(1))
+	check(menu.refine_amount.value == 1, "Refining Max includes automatically produced intermediates")
+	for dimensions: Vector2i in [Vector2i(960, 600), Vector2i(1440, 900)]:
+		client.get_viewport().size = dimensions
+		await settle()
+		check(menu.get_global_rect().encloses(menu.recipe.get_global_rect()) and menu.get_global_rect().encloses(menu.refine_button.get_global_rect()), "Automatic recipe and confirmation fit at %s" % dimensions)
+		await screenshot(client, "refining-auto-intermediates-%d" % dimensions.x)
+	await click(client, menu.refine_button)
+	check(client.cargo == {"promerium": 1, "seprom": 5} and store.pilots["pilot0"]["cargo"]["starter"] == client.cargo, "One confirmed server transaction refines raw ores through both intermediates into Promerium")
+	await request(client, 16, "refine", "promerium:1", "", "", 2)
+	check(client.cargo == {"promerium": 1, "seprom": 5}, "Duplicate chained refining cannot consume cargo again")
+	client.session.disconnect_session("Chained refining restart")
+	await settle()
+	server.session.disconnect_session("Chained refining restart")
+	check(server.session.host(24743) == OK, "Restart chained refining server")
+	client.session.join("127.0.0.1", 24743)
+	await settle(0.5)
+	await replicate(server)
+	store = server.session.store
+	check(client.cargo == {"promerium": 1, "seprom": 5}, "Restart retains the completed chain without intermediate leftovers")
+	id = client.multiplayer.get_unique_id()
+	var mixed_cargo: Dictionary = store.pilots["pilot0"]["cargo"].duplicate(true)
+	mixed_cargo["starter"] = {"prometid": 6, "duranium": 3, "prometium": 80, "endurium": 110, "terbium": 140, "seprom": 5}
+	check(store.commit({}, {}, {"pilot0": mixed_cargo}), "Seed authenticated mixed-ingredient refining fixture")
+	server.session.combat.cargo_holds[id] = mixed_cargo.duplicate(true)
+	server.session.combat.publish_inventory(id)
+	await replicate(server)
+	client.main_menu.select_page("refining")
+	menu.select_tab("refining")
+	menu.select_output("promerium")
+	for dimensions: Vector2i in [Vector2i(960, 600), Vector2i(1440, 900)]:
+		client.get_viewport().size = dimensions
+		await settle()
+		check(menu.recipe.text.contains("4 Prometid + 7 Duranium") and menu.get_global_rect().encloses(menu.refine_button.get_global_rect()), "Mixed recipe previews only missing intermediates and fits at %s" % dimensions)
+		await screenshot(client, "refining-mixed-intermediates-%d" % dimensions.x)
+	await click(client, menu.refine_button)
+	check(client.cargo == {"promerium": 1, "seprom": 5}, "Authenticated mixed refining consumes existing intermediates before making their shortfall")
 	# Save failures must leave both cargo and reserves untouched.
 	var failed_dir := store.path.get_base_dir().path_join("boost-failure")
 	DirAccess.make_dir_absolute(failed_dir)
@@ -287,7 +399,20 @@ func run() -> void:
 	check(probe.open(failed_dir), "Open isolated failure ledger")
 	before = probe.pilots.duplicate(true)
 	DirAccess.make_dir_absolute(probe.path + ".tmp")
-	probe.transact("pilot0", 16, "boost", "seprom:1", "lasers", "")
+	probe.transact("pilot0", int(probe.pilots["pilot0"]["equipment"]["revision"]) + 1, "boost", "seprom:1", "lasers", "")
 	check(probe.failed and probe.pilots == before, "Failed boost persistence consumes neither resource nor reserve")
+	probe.close()
+	var failed_refine_dir := store.path.get_base_dir().path_join("refining-failure")
+	DirAccess.make_dir_absolute(failed_refine_dir)
+	file = FileAccess.open(failed_refine_dir.path_join("pilots.json"), FileAccess.WRITE)
+	file.store_string(JSON.stringify({"version": 5, "pilots": {"pilot0": raw_fixture["pilot0"]}}))
+	file.close()
+	probe = PilotStore.new()
+	check(probe.open(failed_refine_dir), "Open isolated chained refining failure ledger")
+	before = probe.pilots.duplicate(true)
+	var disk_before := FileAccess.get_file_as_string(probe.path)
+	DirAccess.make_dir_absolute(probe.path + ".tmp")
+	probe.transact("pilot0", 16, "refine", "promerium:1", "", "")
+	check(probe.failed and probe.pilots == before and FileAccess.get_file_as_string(probe.path) == disk_before, "Failed chained refining persistence consumes no ores or intermediates")
 	probe.close()
 	finish()

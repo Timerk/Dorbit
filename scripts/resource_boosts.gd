@@ -53,10 +53,50 @@ static func bonus(boosts: Dictionary, group: String) -> float:
 static func maximum(hold: Dictionary, output: String) -> int:
 	if not RECIPES.has(output):
 		return 0
-	var amount := MAX_RESERVE
+	# Every recipe consumes more units than it produces. Binary search the
+	# affordable batch using one combined cost, including shared raw ingredients.
+	var low := 0
+	var high := mini(MAX_RESERVE, CargoResources.units(hold))
+	while low < high:
+		var amount := low + int((high - low + 1) / 2)
+		if can_refine(hold, refining_plan(hold, output, amount)):
+			low = amount
+		else:
+			high = amount - 1
+	return low
+
+
+static func refining_plan(hold: Dictionary, output: String, amount: int) -> Dictionary:
+	if not RECIPES.has(output) or amount < 1 or amount > MAX_RESERVE:
+		return {}
+	var plan := {"consumed": {}, "intermediates": {}}
 	for ingredient: String in RECIPES[output]:
-		amount = mini(amount, int(int(hold.get(ingredient, 0)) / int(RECIPES[output][ingredient])))
-	return amount
+		add_ingredient_cost(hold, ingredient, amount * int(RECIPES[output][ingredient]), plan)
+	return plan
+
+
+static func add_ingredient_cost(hold: Dictionary, resource: String, amount: int, plan: Dictionary) -> void:
+	var consumed: Dictionary = plan["consumed"]
+	if not RECIPES.has(resource):
+		consumed[resource] = int(consumed.get(resource, 0)) + amount
+		return
+	var held := mini(amount, maxi(0, int(hold.get(resource, 0)) - int(consumed.get(resource, 0))))
+	if held > 0:
+		consumed[resource] = int(consumed.get(resource, 0)) + held
+	var missing := amount - held
+	if missing > 0:
+		plan["intermediates"][resource] = int(plan["intermediates"].get(resource, 0)) + missing
+		for ingredient: String in RECIPES[resource]:
+			add_ingredient_cost(hold, ingredient, missing * int(RECIPES[resource][ingredient]), plan)
+
+
+static func can_refine(hold: Dictionary, plan: Dictionary) -> bool:
+	if plan.is_empty():
+		return false
+	for ingredient: String in plan["consumed"]:
+		if int(plan["consumed"][ingredient]) > int(hold.get(ingredient, 0)):
+			return false
+	return true
 
 
 static func spend(hold: Dictionary, resource: String, amount: int) -> void:
@@ -68,10 +108,11 @@ static func spend(hold: Dictionary, resource: String, amount: int) -> void:
 static func refine(hold: Dictionary, output: String, amount: int) -> String:
 	if not RECIPES.has(output):
 		return "This resource cannot be refined on the ship."
-	if amount < 1 or amount > maximum(hold, output):
+	var plan := refining_plan(hold, output, amount)
+	if not can_refine(hold, plan):
 		return "Not enough ingredients for that refining amount."
-	for ingredient: String in RECIPES[output]:
-		spend(hold, ingredient, amount * int(RECIPES[output][ingredient]))
+	for ingredient: String in plan["consumed"]:
+		spend(hold, ingredient, int(plan["consumed"][ingredient]))
 	hold[output] = int(hold.get(output, 0)) + amount
 	return ""
 

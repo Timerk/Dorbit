@@ -454,6 +454,8 @@ Capacity, pickup distance, box lifetime, quantities and prices are provisional p
 
 The user requested one Refining menu with **Refining** and **Update** tabs, using the current Cargo Trade resource renders and the shared graphite/amber styling. The first tab follows the supplied ore tree: three raw ores above Prometid and Duranium, which feed Promerium. Select an output, choose an integer amount or Max, review the ingredient totals and confirm. The active ship's cargo supplies all ingredients and receives the output.
 
+Refining automatically makes missing intermediate ingredients from raw ores. Existing Prometid and Duranium are used first; only their shortfall is produced for Promerium. The preview lists the actual resources consumed from cargo and intermediate units made, and Max includes the whole chain with shared Endurium accounted for once across both recipes. One Promerium made entirely from raw ores requires 200 Prometium, 200 Endurium and 200 Terbium. The whole batch is one saved transaction; shortages or failed saves consume nothing.
+
 | Output | Ingredients per unit |
 | --- | --- |
 | Prometid | 20 Prometium + 10 Endurium |
@@ -470,6 +472,8 @@ Xenomit is omitted because it does not exist in Dorbit. Seprom cannot be refined
 | Seprom | +60% | +40% | — |
 
 The Update tab follows the user's two-row reference: a four-resource bar above illustrated Lasers, Rockets, Engines and Shields cards. Drag a held resource onto compatible equipment (or select both cards), then choose an amount and confirm. A drop never spends cargo by itself. Compatible targets highlight during dragging; incompatible, empty-cargo, pending and offline drops cannot apply boosts. Each equipment card shows remaining rounds/time and a small bottom-left square containing its currently applied resource image; it stays empty without a boost and clears on expiry. Previewing a replacement leaves the active resource icon unchanged until the server confirms.
+
+The Update quantity field caps typed values and spinner/Max changes at the selected resource's current cargo stock. The cap refreshes when selecting another resource or when server cargo changes. Empty stock shows zero with editing and boost application disabled.
 
 One unit provides ten boosted **individual laser rounds**, or ten minutes for shields/engines. Each installed laser consumes one round when an authoritative volley actually fires; blocked shots and cooldowns consume none. A final partial volley boosts only as many lasers as rounds remain, in laser-slot order. Each laser's own NPC bonus is included before the resource multiplier. Rocket boosts show Coming later and cannot consume cargo until rocket combat exists, as chosen by the user.
 
