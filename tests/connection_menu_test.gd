@@ -34,7 +34,7 @@ func run() -> void:
 	session.address.text = " localhost "
 	session.port_field.get_line_edit().text = "24731"
 	session.join_button.pressed.emit()
-	await settle(0.5)
+	await wait_for_connection(session)
 	check(session.active and not session.menu.visible, "Menu submits edited port and connects to a real server")
 	check(session.address.text == "localhost" and session.preferences.port == 24731, "Successful endpoint is normalized and remembered")
 	session.open_menu()
@@ -44,7 +44,7 @@ func run() -> void:
 	check(session.menu.visible and session.address.text == "localhost" and int(session.port_field.value) == 24731, "Manual disconnect preserves both fields")
 	check(session.join_button.has_focus() and not session.join_button.disabled, "Disconnect focuses manual reconnect")
 	session.join_button.pressed.emit()
-	await settle(0.5)
+	await wait_for_connection(session)
 	check(session.active, "One button reconnects to the same server")
 	client.settings_menu.open()
 	await settle()
@@ -69,3 +69,11 @@ func run() -> void:
 	saved.load_from()
 	check(saved.address == "localhost" and saved.port == 24731, "Failed and cancelled attempts do not replace successful preferences")
 	finish()
+
+
+func wait_for_connection(session: FlightSession) -> void:
+	# Hosted runners can take longer than a fixed half-second to resolve localhost.
+	# Keep assertions and a deadline so failed connections still fail the test.
+	var deadline := Time.get_ticks_msec() + 5000
+	while not session.active and Time.get_ticks_msec() < deadline:
+		await process_frame
