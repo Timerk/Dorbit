@@ -203,6 +203,22 @@ Following playtesting, the user approved replacing the paired world-axis maps wi
 
 The user accepted the current map and navigation after playtesting. The center destination panel aligns its bottom with the ship-health and selected-enemy panels at every supported window size.
 
+The user requested device-local HUD customization during flight. Press Ctrl + Alt
+together to toggle the editor; Escape or Done finishes. A visible placement grid,
+window outlines, close controls and an icon sidebar identify the mode. Every
+flight instrument can be dragged, resized proportionally from its lower-right
+corner, hidden and reopened from the sidebar. Minimum scale is provisionally 80%
+of the default panel size, with a maximum of 300% and screen bounds enforced.
+Grid snapping can be disabled. The sidebar can be hidden to place panels across
+the full screen; selecting a panel it covers exposes that panel without changing
+its saved position. Reset restores the approved default layout and visibility.
+Position, scale and visibility persist locally in `user://hud-layout.cfg` and
+adapt to window resizing. Local movement, steering, autopilot and fire stop while
+editing; the multiplayer world continues. Conditional notifications and navigation
+status retain their gameplay triggers after editing. Contact markers track their
+world positions, and rescue/radiation screen effects retain their gameplay role.
+Minimum sizes, grid spacing and editor comfort remain playtesting settings.
+
 The native flight HUD follows the [approved shared UI design](docs/hud-design/README.md).
 Contracts and radar share a small top margin; ship, destination and target cards
 align along the bottom. Contextual objectives, pending rewards, cargo FULL,

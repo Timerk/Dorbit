@@ -35,6 +35,7 @@ var contract_preview: ContractPreview
 var contract_back: Button
 var navigation: FlightNavigation
 var ammo_bar: AmmoBar
+var layout: HudLayout
 
 
 func _ready() -> void:
@@ -49,6 +50,9 @@ func _ready() -> void:
 	ammo_bar = AmmoBar.new()
 	ammo_bar.sector = sector
 	add_child(ammo_bar)
+	layout = HudLayout.new()
+	layout.hud = self
+	add_child(layout)
 
 
 func fire_feedback() -> String:
@@ -334,6 +338,8 @@ func draw_controls() -> void:
 
 
 func draw_context() -> void:
+	if not layout.begin_draw(self, "context"):
+		return
 	var point := Vector2(SIDE_MARGIN, objectives_rect().end.y + 12)
 	var messages: Array[String] = []
 	if CargoResources.units(sector.cargo) >= sector.cargo_capacity:
@@ -342,24 +348,34 @@ func draw_context() -> void:
 		messages.append(sector.toast)
 	if sector.client_only and not sector.session.active:
 		messages.append("DISCONNECTED / " + sector.session.status)
+	if layout.editing and messages.is_empty():
+		messages.append("Notifications appear here.")
 	for message: String in messages:
 		var width := minf(440, size.x - 2 * SIDE_MARGIN - 322)
 		var dimensions := font.get_multiline_string_size(message, HORIZONTAL_ALIGNMENT_LEFT, width - 24, 16)
 		var rect := Rect2(point, Vector2(width, dimensions.y + 16))
 		draw_style_box(background, rect)
 		paragraph(point + Vector2(12, 20), message, width - 24, 16, AMBER)
-		marker_labels.append(rect)
+		marker_labels.append(layout.transform_rect("context", rect))
 		point.y = rect.end.y + 8
-	if sector.show_performance:
+	layout.end_draw(self)
+
+
+func draw_performance() -> void:
+	if (sector.show_performance or layout.editing) and layout.begin_draw(self, "performance"):
+		var point := layout.default_rect("performance").position
 		var fps := Engine.get_frames_per_second()
 		var draws := Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
 		text_at(point + Vector2(0, 18), "%d FPS / %.1f ms / %d draws / %s" % [fps, 1000.0 / maxf(fps, 1), draws, ["AA OFF", "2x MSAA", "4x MSAA", "8x MSAA"][sector.settings.msaa_3d]], 14, MUTED)
-		marker_labels.append(Rect2(point, Vector2(320, 24)))
+		layout.end_draw(self)
+		marker_labels.append(layout.rect_for("performance"))
 
 
 func draw_station_actions() -> void:
 	var player := sector.player
-	if not player.alive or player.global_position.distance_to(Sector.STATION_POSITION) > Sector.REPAIR_RADIUS:
+	if not layout.editing and (not player.alive or player.global_position.distance_to(Sector.STATION_POSITION) > Sector.REPAIR_RADIUS):
+		return
+	if not layout.begin_draw(self, "station"):
 		return
 	var rect := Rect2(target_rect().position - Vector2(0, 88 if sector.session.active else 66), Vector2(290, 78 if sector.session.active else 56))
 	draw_style_box(background, rect)
@@ -372,7 +388,8 @@ func draw_station_actions() -> void:
 	text_at(rect.position + Vector2(12, 43), label, 16, GREEN, 266)
 	if sector.session.active:
 		text_at(rect.position + Vector2(12, 65), "C  HUNTING CONTRACTS", 16, AMBER)
-	marker_labels.append(rect)
+	layout.end_draw(self)
+	marker_labels.append(layout.rect_for("station"))
 
 
 func _draw() -> void:
@@ -381,29 +398,38 @@ func _draw() -> void:
 	if sector.preflight or (is_instance_valid(sector.main_menu) and sector.main_menu.visible) or not is_instance_valid(sector.player):
 		return
 	var player := sector.player
-	marker_labels.assign([objectives_rect(), navigation.radar_rect(), ship_rect(), target_rect(), navigation.guidance_rect()])
+	for id: String in ["objectives", "radar", "ship", "target", "guidance"]:
+		if layout.shown(id):
+			marker_labels.append(layout.rect_for(id))
 	if ammo_bar.visible:
 		marker_labels.append(ammo_bar.get_rect())
 	if navigation.autopilot_status.visible:
 		marker_labels.append(navigation.autopilot_status.get_rect().grow(3))
-	draw_objectives()
+	if layout.begin_draw(self, "objectives"):
+		draw_objectives()
+		layout.end_draw(self)
 	draw_context()
-	var rect := ship_rect()
-	card_title(rect, ShipCatalog.info(player.ship_model)["name"].to_upper())
-	meter(rect.position + Vector2(18, 64), "SHIELD", player.shield, player.max_shield, CYAN)
-	meter(rect.position + Vector2(18, 107), "HULL", player.hull, player.max_hull, GREEN if player.hull > player.max_hull * 0.3 else RED)
-	meter(rect.position + Vector2(18, 150), "BOOST", player.energy, 100.0, AMBER)
-	var speed := Vector2(rect.end.x + 20, size.y - (212 if size.x < 1200 else 100))
-	text_at(speed, "%d m/s" % roundi(player.velocity.length()), 24)
-	text_at(speed + Vector2(0, 22), "BOOST" if player.boosting else "FLIGHT ASSIST", 12, MUTED)
-	marker_labels.append(Rect2(speed - Vector2(0, 24), Vector2(130, 50)))
-	draw_target_panel()
+	draw_performance()
+	if layout.begin_draw(self, "ship"):
+		draw_ship_panel()
+		layout.end_draw(self)
+	if layout.begin_draw(self, "speed"):
+		draw_speed()
+		layout.end_draw(self)
+		marker_labels.append(layout.rect_for("speed"))
+	if layout.begin_draw(self, "target"):
+		draw_target_panel()
+		layout.end_draw(self)
 	draw_station_actions()
-	draw_controls()
+	if layout.begin_draw(self, "controls"):
+		draw_controls()
+		layout.end_draw(self)
 	var center := size * 0.5
-	draw_line(center - Vector2(8, 0), center - Vector2(3, 0), Color(INK, 0.5))
-	draw_line(center + Vector2(3, 0), center + Vector2(8, 0), Color(INK, 0.5))
-	draw_circle(center, 2.0, AMBER)
+	if layout.begin_draw(self, "reticle"):
+		draw_line(center - Vector2(8, 0), center - Vector2(3, 0), Color(INK, 0.5))
+		draw_line(center + Vector2(3, 0), center + Vector2(8, 0), Color(INK, 0.5))
+		draw_circle(center, 2.0, AMBER)
+		layout.end_draw(self)
 	marker(Sector.STATION_POSITION, "OUTPOST 01", GREEN, false)
 	if is_instance_valid(sector.target):
 		alien_marker(sector.target as Alien)
@@ -422,9 +448,25 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.015, 0.025, 0.04, 0.65))
 		text_at(center + Vector2(-150, -20), "RESCUE INBOUND", 30, RED)
 		text_at(center + Vector2(-150, 15), "Returning to the outpost in %d..." % ceili(sector.player_respawn), 18)
-	if sector.paused:
+	if sector.paused and not layout.editing:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.006, 0.012, 0.025, 0.88))
 	draw_boundary_warning()
+
+
+func draw_ship_panel() -> void:
+	var player := sector.player
+	var rect := ship_rect()
+	card_title(rect, ShipCatalog.info(player.ship_model)["name"].to_upper())
+	meter(rect.position + Vector2(18, 64), "SHIELD", player.shield, player.max_shield, CYAN)
+	meter(rect.position + Vector2(18, 107), "HULL", player.hull, player.max_hull, GREEN if player.hull > player.max_hull * 0.3 else RED)
+	meter(rect.position + Vector2(18, 150), "BOOST", player.energy, 100.0, AMBER)
+
+
+func draw_speed() -> void:
+	var player := sector.player
+	var speed := layout.default_rect("speed").position + Vector2(0, 24)
+	text_at(speed, "%d m/s" % roundi(player.velocity.length()), 24)
+	text_at(speed + Vector2(0, 22), "BOOST" if player.boosting else "FLIGHT ASSIST", 12, MUTED)
 
 
 func draw_target_panel() -> void:
@@ -451,7 +493,7 @@ func draw_boundary_warning() -> void:
 	if not player.alive or (sector.client_only and not sector.session.active):
 		return
 	var remaining := Sector.MAP_RADIUS - player.position.length()
-	if remaining > Sector.BOUNDARY_WARNING_DISTANCE:
+	if remaining > Sector.BOUNDARY_WARNING_DISTANCE and not layout.editing:
 		return
 	var outside := remaining < 0.0
 	var color := RED if outside else AMBER
@@ -460,12 +502,19 @@ func draw_boundary_warning() -> void:
 		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * TAU / 1000.0)
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.8, 0.01, 0.02, 0.025 + pulse * 0.09))
 		draw_rect(Rect2(3, 3, size.x - 6, size.y - 6), Color(RED, 0.35 + pulse * 0.6), false, 6)
-	var rect := Rect2(maxf(SIDE_MARGIN, (size.x - 764) * 0.5), 248, 410, 62 if outside else 42)
-	panel(rect, color)
-	text_at(rect.position + Vector2(14, 23), "RADIATION ZONE / RETURN TO SAFE SPACE" if outside else "SECTOR EDGE / %d m / RADIATION AHEAD" % ceili(remaining), 15, color)
+	if layout.begin_draw(self, "radiation"):
+		var rect := Rect2(maxf(SIDE_MARGIN, (size.x - 764) * 0.5), 248, 410, 62 if outside else 42)
+		panel(rect, color)
+		var caption := "RADIATION ZONE / RETURN TO SAFE SPACE" if outside else "SECTOR EDGE / %d m / RADIATION AHEAD" % ceili(remaining)
+		if layout.editing and remaining > Sector.BOUNDARY_WARNING_DISTANCE:
+			caption = "RADIATION ALERT / PREVIEW"
+		text_at(rect.position + Vector2(14, 23), caption, 15, color)
+		if outside:
+			var rate := (Sector.RADIATION_BASE_RATE + Sector.RADIATION_RAMP_RATE * player.radiation_exposure) * 100.0
+			text_at(rect.position + Vector2(14, 46), "%d m outside / %.1f s exposed / %.1f%% max hull/s" % [ceili(-remaining), player.radiation_exposure, rate], 12, INK)
+		layout.end_draw(self)
+		marker_labels.append(layout.rect_for("radiation"))
 	if outside:
-		var rate := (Sector.RADIATION_BASE_RATE + Sector.RADIATION_RAMP_RATE * player.radiation_exposure) * 100.0
-		text_at(rect.position + Vector2(14, 46), "%d m outside / %.1f s exposed / %.1f%% max hull/s" % [ceili(-remaining), player.radiation_exposure, rate], 12, INK)
 		var safe_point := player.position.normalized() * (Sector.MAP_RADIUS - 50.0)
 		marker(safe_point, "RETURN TO SAFE SPACE", RED, false)
 
