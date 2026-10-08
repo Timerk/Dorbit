@@ -68,13 +68,15 @@ def main():
         ledger = data / "pilots.json"
         # Use the current save schema so migration is not mistaken for data loss.
         # A nonempty laser boost must survive both restarts without firing.
-        original = json.dumps({"version": 7, "pilots": {
+        metadata = {"id": "a" * 32, "sequence": 0}
+        original = json.dumps({"version": 8, "combat_journal": metadata, "pilots": {
             "export_test": {"verifier": hashlib.sha256(token.encode()).hexdigest(), "credits": 137,
                             "equipment": pilots.starter_equipment(), "cargo": {"starter": {"seprom": 5}},
                             "ammo": pilots.starter_ammo(), "contracts": {}, "premium": False,
                             "skylab": pilots.starter_skylab(int(time.time())),
                             "boosts": {"starter": {"lasers": {"resource": "seprom", "remaining": 7}}}}}})
         ledger.write_text(original)
+        ledger.with_name("pilots.json.combat").write_text(json.dumps(metadata) + "\n")
         environment = dict(os.environ, DORBIT_DATA_DIR=str(data), APPDATA=str(clean / "appdata"),
                            HOME=str(clean), XDG_DATA_HOME=str(clean / "userdata"))
         environment.pop("DORBIT_PILOT_FILE", None)

@@ -31,7 +31,7 @@ func run() -> void:
 	var weapons := remote.rockets
 	var store := server.session.store
 	var combat := client.session.combat
-	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 7, "Old saves migrate to schema 7")
+	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 8, "Old saves migrate to schema 8")
 	check(remote.ammo["r-310"] == 100 and weapons.capacity == 0, "Starter gets 100 inherent single rockets without a launcher")
 	check(store.commit({"pilot0": 10_000_000}), "Fund rocket shop purchases")
 	server.session.combat.records[id]["credits"] = 10_000_000
@@ -252,7 +252,7 @@ func failed_debit(server: Sector, remote: Pilot, enemy: Alien) -> void:
 	remote.rockets.debit = func(kind: String, count: int):
 		var next := remote.ammo.duplicate()
 		next[kind] -= count
-		return probe.commit({}, {}, {}, {"pilot0": next})
+		return probe.commit_combat({"pilot0": next})
 	check(remote.rockets.fire_single(enemy) == "AMMUNITION SAVE FAILED" and probe.failed, "Failed durable single debit cancels the shot")
 	remote.rockets.select("hstrm-01")
 	remote.rockets.activate(null)

@@ -16,7 +16,7 @@ func run() -> void:
 		return
 	var id := client.multiplayer.get_unique_id()
 	var store := server.session.store
-	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 7, "Legacy ledger migrates atomically to schema 7")
+	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 8, "Legacy ledger migrates atomically to schema 8")
 	check(not store.pilots["pilot0"].has("uridium") and not store.pilots["pilot0"]["premium"], "Migration does not grant premium currency or status")
 	store.commit({"pilot0": 10000})
 	server.session.combat.sync_lab_accounts()
