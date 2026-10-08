@@ -27,6 +27,15 @@ def starter_equipment() -> dict:
                       for model, slot in [("laser", "laser1"), ("shield", "generator1"), ("engine", "generator2")]}}
 
 
+def starter_ammo() -> dict:
+    return {"x1": 10000, "x2": 0, "x3": 0, "x4": 0}
+
+
+def valid_ammo(data: object) -> bool:
+    return (isinstance(data, dict) and data.keys() == starter_ammo().keys()
+            and all(type(amount) is int and 0 <= amount <= 2_000_000_000 for amount in data.values()))
+
+
 def valid_equipment(data: object) -> bool:
     if (not isinstance(data, dict) or type(data.get("revision")) is not int
             or not 0 <= data["revision"] <= 2_000_000_000
@@ -100,10 +109,10 @@ def main() -> None:
         if args.init:
             if path.exists() or args.rotate:
                 parser.error("--init requires a new ledger and cannot be combined with --rotate")
-            data = {"version": 3, "pilots": {}}
+            data = {"version": 4, "pilots": {}}
         else:
             data = json.loads(path.read_text(encoding="utf-8"))
-            if data.get("version") not in (1, 2, 3) or not isinstance(data.get("pilots"), dict) or not data["pilots"]:
+            if data.get("version") not in (1, 2, 3, 4) or not isinstance(data.get("pilots"), dict) or not data["pilots"]:
                 parser.error("Invalid ledger; preserve it and recover from backup")
             for pilot, record in data["pilots"].items():
                 if (not re.fullmatch(r"[a-z0-9_-]{1,32}", pilot)
@@ -125,13 +134,19 @@ def main() -> None:
                     record["cargo"] = {ship: {} for ship in record["equipment"]["ships"]}
                 elif not valid_cargo(record.get("cargo"), record["equipment"]):
                     parser.error("Invalid cargo; preserve it and recover from backup")
-            data["version"] = 3
+                if data["version"] < 4:
+                    if "ammo" in record:
+                        parser.error("Unexpected ammunition in legacy ledger; preserve it and recover")
+                    record["ammo"] = starter_ammo()
+                elif not valid_ammo(record.get("ammo")):
+                    parser.error("Invalid ammunition; preserve it and recover from backup")
+            data["version"] = 4
         exists = args.pilot in data["pilots"]
         if exists != args.rotate:
             parser.error("Use --rotate for an existing pilot; omit it for a new pilot")
         token = secrets.token_hex(32)
         credits = data["pilots"].get(args.pilot, {}).get("credits", 0)
-        record = data["pilots"].setdefault(args.pilot, {"credits": credits, "equipment": starter_equipment(), "cargo": {"starter": {}}})
+        record = data["pilots"].setdefault(args.pilot, {"credits": credits, "equipment": starter_equipment(), "cargo": {"starter": {}}, "ammo": starter_ammo()})
         record["verifier"] = hashlib.sha256(token.encode()).hexdigest()
         temporary = path.with_name("pilots.json.tmp")
         if temporary.exists():

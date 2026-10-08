@@ -47,7 +47,7 @@ func open(directory: String) -> bool:
 	file.close()
 	var json := JSON.new()
 	var data: Variant = json.data if json.parse(saved_text) == OK else null
-	if not data is Dictionary or (data.get("version") != 1 and data.get("version") != 2 and data.get("version") != 3) or not data.get("pilots") is Dictionary or data["pilots"].is_empty():
+	if not data is Dictionary or (data.get("version") != 1 and data.get("version") != 2 and data.get("version") != 3 and data.get("version") != 4) or not data.get("pilots") is Dictionary or data["pilots"].is_empty():
 		return fail("Invalid pilots.json schema. Original file preserved.")
 	for id: Variant in data["pilots"]:
 		var pilot: Variant = data["pilots"][id]
@@ -90,8 +90,16 @@ func open(directory: String) -> bool:
 		for hold: Dictionary in pilot["cargo"].values():
 			for resource: String in hold:
 				hold[resource] = int(hold[resource])
+		if data["version"] < 4:
+			if pilot.has("ammo"):
+				return fail("Unexpected ammunition in legacy save. Original file preserved.")
+			pilot["ammo"] = Ammunition.starter()
+		elif not Ammunition.valid(pilot.get("ammo")):
+			return fail("Invalid pilot ammunition. Original file preserved.")
+		for kind: String in pilot["ammo"]:
+			pilot["ammo"][kind] = int(pilot["ammo"][kind])
 	pilots = data["pilots"]
-	return persist(pilots) if data["version"] < 3 else true
+	return persist(pilots) if data["version"] < 4 else true
 
 
 func verifies(id: String, nonce: PackedByteArray, proof: PackedByteArray) -> bool:
@@ -102,7 +110,7 @@ func verifies(id: String, nonce: PackedByteArray, proof: PackedByteArray) -> boo
 
 
 # Commit all shares of a kill together, before combat publishes the new balances.
-func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}) -> bool:
+func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}, ammo: Dictionary = {}) -> bool:
 	if failed or not locked:
 		return false
 	var next := pilots.duplicate(true)
@@ -119,6 +127,10 @@ func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary 
 		if not next.has(id) or not CargoResources.valid(cargo[id], next[id]["equipment"]):
 			return fail("Invalid server cargo update.")
 		next[id]["cargo"] = cargo[id].duplicate(true)
+	for id: String in ammo:
+		if not next.has(id) or not Ammunition.valid(ammo[id]):
+			return fail("Invalid server ammunition update.")
+		next[id]["ammo"] = ammo[id].duplicate(true)
 	return persist(next)
 
 
@@ -137,7 +149,26 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		return "Request already processed. Inventory refreshed."
 	if sequence != equipment["revision"] + 1 or sequence > MAX_CREDITS:
 		return "Inventory changed. Review it and try again."
-	if action == "buy":
+	if action == "buy_ammo":
+		var parts := subject.split(":")
+		if parts.size() != 2 or not ship.is_empty() or not slot.is_empty() or parts[1].length() > 3 or not parts[1].is_valid_int():
+			return "Invalid ammunition purchase."
+		var kind: String = parts[0]
+		var blocker := Ammunition.purchase_blocker(kind)
+		if not blocker.is_empty():
+			return blocker
+		var batches := parts[1].to_int()
+		if batches < 1 or batches > Equipment.MAX_PURCHASE_QUANTITY:
+			return "Invalid ammunition quantity."
+		var shots := batches * Ammunition.BATCH_SIZE
+		var price: int = Ammunition.TYPES[kind]["price"] * batches
+		if pilot["credits"] < price:
+			return "Insufficient credits. Need %d CR." % price
+		if shots > Ammunition.MAX_SHOTS - int(pilot["ammo"][kind]):
+			return "Ammunition limit reached."
+		pilot["ammo"][kind] += shots
+		pilot["credits"] -= price
+	elif action == "buy":
 		# Legacy model-only requests buy one; model:quantity buys one atomic batch.
 		var parts := subject.split(":")
 		var model: String = parts[0]
@@ -227,6 +258,8 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		return "Persistence unavailable."
 	if action == "test_credits":
 		return "Preview: added %d test credits." % (pilot["credits"] - previous_credits)
+	if action == "buy_ammo":
+		return "Purchased %d %s shots." % [subject.get_slice(":", 1).to_int() * Ammunition.BATCH_SIZE, subject.get_slice(":", 0)]
 	if action == "sell":
 		return "Resources sold. +%d credits." % (pilot["credits"] - previous_credits)
 	if action == "buy_ship":
@@ -245,7 +278,7 @@ func persist(next: Dictionary) -> bool:
 	if current == null or current.get_as_text() != saved_text:
 		return fail("pilots.json changed or became unreadable while running. Save preserved; stop and recover.")
 	current.close()
-	var text := JSON.stringify({"version": 3, "pilots": next}, "\t") + "\n"
+	var text := JSON.stringify({"version": 4, "pilots": next}, "\t") + "\n"
 	if not replace_file(path + ".bak", saved_text) or not replace_file(path, text):
 		return false
 	pilots = next

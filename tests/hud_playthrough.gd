@@ -32,17 +32,18 @@ func run() -> void:
 		DisplayServer.window_set_size(pixels)
 		await capture("hud-flight-%d" % pixels.x)
 		var viewport := Rect2(Vector2.ZERO, Vector2(pixels))
-		var cards: Array[Rect2] = [hud.objectives_rect(), navigation.radar_rect(), hud.ship_rect(), navigation.guidance_rect(), hud.target_rect()]
+		var cards: Array[Rect2] = [hud.objectives_rect(), navigation.radar_rect(), hud.ship_rect(), navigation.guidance_rect(), hud.target_rect(), hud.ammo_bar.get_rect()]
 		for card: Rect2 in cards:
 			check(viewport.encloses(card), "Flight cards stay inside the %d viewport" % pixels.x)
 		for first in range(cards.size()):
 			for second in range(first + 1, cards.size()):
 				check(not cards[first].intersects(cards[second]), "Flight cards do not overlap at %d" % pixels.x)
 		check(hud.objectives_rect().position.y == navigation.radar_rect().position.y and navigation.radar_rect().position.y <= 24, "Contracts and radar share a small top margin")
-		check(is_equal_approx(hud.ship_rect().end.y, navigation.guidance_rect().end.y) and is_equal_approx(hud.target_rect().end.y, navigation.guidance_rect().end.y), "Ship, guidance and target cards share their bottom edge")
+		check(is_equal_approx(hud.ship_rect().end.y, hud.ammo_bar.get_rect().end.y) and is_equal_approx(hud.target_rect().end.y, hud.ammo_bar.get_rect().end.y), "Ship, ammo and target cards share their bottom edge")
+		check(navigation.guidance_rect().position.y == navigation.radar_rect().position.y, "Destination guidance moves to the top row")
 		check(navigation.autopilot_status.visible and navigation.autopilot_status.position.y >= navigation.radar_rect().end.y, "Active autopilot label sits below radar")
 		if DisplayServer.get_name() != "headless":
-			for caption in hud.marker_labels.slice(5):
+			for caption in hud.marker_labels.slice(cards.size()):
 				for card: Rect2 in cards:
 					check(not caption.intersects(card), "World captions avoid every HUD card after displacement")
 		for button in [navigation.range_less, navigation.range_more, navigation.map_button]:

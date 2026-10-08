@@ -246,6 +246,34 @@ Graphics menu and effect screenshots under `build/validation/graphics`.
 
 These values are initial tuning settings, not a finished economy or combat balance.
 
+### Laser ammunition
+
+Laser ammo is selected with **1 / 2 / 3 / 4** or the bottom-center ammo symbols.
+x1 uses fitted laser damage; x2, x3 and x4 apply 2x, 3x and 4x damage, including
+laser bonuses against aliens. Each successful volley uses one shot. Blocked shots
+use none. An empty selected type stops fire until you choose another type.
+The destination tracker is now at top center.
+
+Each new pilot receives **10,000 x1 shots**. Ammo is shared across owned ships and
+survives rescue, reconnects and server restart. In **Shop > Ammo**, x1/x2/x3 cost
+**10 / 50 / 100 credits per 100 shots**; the x3 price is provisional. The quantity
+field buys batches of 100. x4 is reserved for future quests and special rewards
+and cannot be bought. Station purchase restrictions and duplicate protection apply.
+
+Save schema **4** adds ammo and gives existing pilots the starter inventory once.
+Back up the ledger before updating; older servers cannot read schema 4. Consumption
+is committed before each volley, and a failed save stops progression. Client and
+server need matching builds. Run `res://tests/ammo_test.gd` headlessly or with a
+renderer to check purchases, multipliers, inventory recovery and HUD interactions;
+rendered runs save shop and flight views under `build/validation/ammo-*.png`.
+
+Review the [flight ammo bar](docs/feedback/ammo-flight-1440.png) and
+[ammo shop](docs/feedback/ammo-shop-960.png). Windows ammo checks passed 99
+assertions headlessly and 104 with OpenGL; the rendered HUD replay passed 220,
+the full Windows check helper passed, and seven Python provisioning tests passed.
+Human pricing and group-combat performance playtesting remain necessary; Linux
+and exported-client checks are left to CI.
+
 ## Dedicated server and connections
 
 The server supports **ten client pilots**, with no host player. It controls movement, boost, all five aliens, damage, repairs, rewards, destruction and respawning. It keeps running when the last player leaves. **F7** opens the connection menu; **Disconnect** returns to that menu. A server shutdown also returns clients to the menu.
