@@ -73,6 +73,7 @@ PY
     checked --headless --path . --script res://tests/economy_test.gd
     checked --headless --path . --script res://tests/equipment_test.gd
     checked --headless --path . --script res://tests/shop_test.gd
+    checked --headless --path . --script res://tests/ammo_test.gd
     checked --headless --path . --script res://tests/main_menu_test.gd
     checked --headless --path . --script res://tests/offline_main_menu_test.gd -- --offline
     checked --headless --path . --script res://tests/ship_hangar_test.gd

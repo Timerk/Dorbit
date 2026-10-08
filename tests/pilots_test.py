@@ -68,7 +68,7 @@ class ProvisioningTest(unittest.TestCase):
                 self.assertFalse(pilots.valid_equipment(candidate))
 
     def test_rotation_and_migration(self):
-        for version in (1, 2, 3):
+        for version in (1, 2, 3, 4):
             with self.subTest(version=version), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 record = {"verifier": "a" * 64, "credits": 2345,
@@ -78,19 +78,39 @@ class ProvisioningTest(unittest.TestCase):
                     record["equipment"]["items"]["starter-laser"].update(ship="", slot="")
                     for model in pilots.LASER_MODELS | pilots.GENERATOR_MODELS:
                         record["equipment"]["items"][model] = {"model": model, "ship": "", "slot": ""}
-                if version == 3:
+                if version >= 3:
                     record["cargo"] = {"starter": {"seprom": 2}}
+                if version == 4:
+                    record["ammo"] = {"x1": 4321, "x2": 45, "x3": 123, "x4": 7}
                 path = root / "pilots.json"
                 path.write_text(json.dumps({"version": version, "pilots": {"test": record}}))
                 result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
                                          str(root / "credential.json"), "--rotate"], capture_output=True)
                 self.assertEqual(result.returncode, 0, result.stderr.decode())
                 saved = json.loads(path.read_text())
-                self.assertEqual(saved["version"], 3)
+                self.assertEqual(saved["version"], 4)
                 expected = record | {"equipment": record.get("equipment", pilots.starter_equipment()),
-                                     "cargo": record.get("cargo", {"starter": {}})}
+                                     "cargo": record.get("cargo", {"starter": {}}),
+                                     "ammo": record.get("ammo", pilots.starter_ammo())}
                 expected["verifier"] = saved["pilots"]["test"]["verifier"]
                 self.assertEqual(saved["pilots"]["test"], expected)
+
+    def test_invalid_ammo_preserved(self):
+        for ammo in ({}, pilots.starter_ammo() | {"x1": -1}, pilots.starter_ammo() | {"x2": 1.5},
+                     pilots.starter_ammo() | {"x4": True}, pilots.starter_ammo() | {"x3": 2_000_000_001},
+                     pilots.starter_ammo() | {"unknown": 1}):
+            with self.subTest(ammo=ammo), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                path = root / "pilots.json"
+                original = json.dumps({"version": 4, "pilots": {"test": {
+                    "verifier": "a" * 64, "credits": 1, "equipment": pilots.starter_equipment(),
+                    "cargo": {"starter": {}}, "ammo": ammo}}})
+                path.write_text(original)
+                result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
+                                         str(root / "credential.json"), "--rotate"], capture_output=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(path.read_text(), original)
+                self.assertFalse((root / "credential.json").exists())
 
     def test_invalid_equipment_preserved(self):
         with tempfile.TemporaryDirectory() as directory:

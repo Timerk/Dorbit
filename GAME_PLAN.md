@@ -107,6 +107,36 @@ The starting combat proposal is:
 
 Weapon ranges, firing arcs, damage, shield recovery, and alien behavior need playtesting. Additional weapons and abilities can follow after basic laser combat is enjoyable.
 
+### Laser ammunition
+
+The user requested four pilot-wide ammunition types, shared across owned ships:
+x1 applies the fitted laser damage, x2 doubles it, x3 triples it and x4 quadruples
+it. The multiplier includes each fitted laser's existing alien damage bonus.
+One successful laser volley consumes one shot, regardless of installed laser
+count. Cooldown, range, arc, obstacles, protection and other rejected shots spend
+no ammo. Aliens retain their existing damage and do not consume pilot ammunition.
+Empty selected ammo blocks fire until the pilot selects another type; there is
+no automatic substitution of ammunition.
+
+New pilots start with 10,000 x1 shots and none of the other types. Existing pilots
+receive the same one-time grant on migration to save schema 4; reconnect, rescue,
+ship changes and server restart preserve remaining ammo. The server commits each
+debit before firing and saves purchases together with credits and transaction
+sequence. Back up the ledger before migration; older servers cannot read schema 4.
+
+x1, x2 and x3 are sold at Outpost 01 in batches of 100 shots. The requested prices
+are 10 credits for x1 and 50 credits for x2. x3 provisionally costs 100 credits per
+batch, pending user price selection and economy playtesting. x4 is visible but
+cannot be bought; its special quests and other acquisition mechanics are reserved
+for follow-up design. No x4 earning quest is introduced in this slice.
+
+The flight HUD has a compact framed ammo bar at bottom center, in x1, x2, x3, x4
+order, with distinct symbols, remaining counts and selected-type highlighting.
+Press 1, 2, 3 or 4, or click a symbol, to select its ammo. These shortcuts are
+reserved from other control bindings and are inactive in menus. The destination
+tracker moves to top center. The ammo bar is a separate HUD control for the
+parallel HUD customization work to position later.
+
 ### Combat feedback and station navigation
 
 Implemented for Scout, Sentinel and Heavy encounters during Milestone 3:

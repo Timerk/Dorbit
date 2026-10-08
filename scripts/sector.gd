@@ -228,6 +228,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_tree().quit()
 	if paused or not player.alive:
 		return
+	for kind: String in Ammunition.TYPES:
+		if event.is_action_pressed("ammo_" + kind):
+			session.combat.request_ammo(kind)
+			get_viewport().set_input_as_handled()
+			return
 	if event.is_action_pressed("autopilot"):
 		autopilot.toggle()
 	if event.is_action_pressed("steer"):

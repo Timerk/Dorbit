@@ -298,7 +298,7 @@ func radar_rect() -> Rect2:
 
 
 func guidance_rect() -> Rect2:
-	return Rect2(size.x * 0.5 - 140, size.y - FlightHud.BOTTOM_MARGIN - 114, 280, 114)
+	return Rect2(size.x * 0.5 - 140, FlightHud.TOP_MARGIN, 280, 114)
 
 
 func card(rect: Rect2, title: String, accent: Color = FlightHud.AMBER) -> void:

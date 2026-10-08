@@ -17,6 +17,27 @@ var arm: SpringArm3D
 var pending_look: Vector2 = Vector2.ZERO
 var ship_model: String = "liberator"
 var radiation_exposure: float = 0.0
+var ammo: Dictionary = Ammunition.starter()
+var ammo_type: String = "x1"
+var ammo_debit: Callable # Dedicated server commits consumption before firing.
+
+
+func firing_blocker(target: SpaceShip) -> String:
+	var reason := super.firing_blocker(target)
+	if reason.is_empty() and int(ammo.get(ammo_type, 0)) <= 0:
+		return "OUT OF AMMO / SELECT ANOTHER TYPE"
+	return reason
+
+
+func spend_ammo() -> bool:
+	if ammo_debit.is_valid() and not ammo_debit.call():
+		return false
+	ammo[ammo_type] -= 1
+	return true
+
+
+func shot_damage(target: SpaceShip) -> float:
+	return super.shot_damage(target) * int(Ammunition.TYPES[ammo_type]["multiplier"])
 
 
 func set_ship_model(value: String) -> void:

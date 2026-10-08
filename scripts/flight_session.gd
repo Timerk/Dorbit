@@ -7,7 +7,7 @@ const MAX_PLAYERS: int = 10
 const COMMAND_TIMEOUT: float = 0.5
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when gameplay packet contents change without an RPC signature change.
-const NETWORK_SCHEMA: int = 8
+const NETWORK_SCHEMA: int = 9
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
@@ -698,6 +698,8 @@ func send_snapshot() -> void:
 	snapshot_sequence += 1
 	for id: int in ships:
 		var ship := ships[id]
+		# Private ammunition travels separately to keep three-hunt flight packets below MTU.
+		combat.publish_ammo(id, snapshot_sequence)
 		var state := {id: {"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}}
 		state[id].merge(combat.pack_player(id))
 		if ship.get_meta("docked", false):
