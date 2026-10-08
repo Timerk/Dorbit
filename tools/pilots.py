@@ -173,7 +173,7 @@ def valid_skylab(lab: object, equipment: dict) -> bool:
                 or shipment.get("recipientId") not in equipment["ships"]
                 or not isinstance(shipment.get("manifest"), dict) or not shipment["manifest"]
                 or any(r not in resources or not integer(a, 1) for r, a in shipment["manifest"].items())
-                or sum(shipment["manifest"].values()) > ship_info(equipment["ships"][shipment["recipientId"]])["cargo"]
+                or sum(shipment["manifest"].values()) > ship_info(equipment["ships"][shipment["recipientId"]])["cargo"] * (2 if fitted_extra(equipment, "cargo-expander", shipment["recipientId"]) else 1)
                 or not integer(shipment.get("dispatchedAt"), high=10_000_000_000)
                 or not integer(shipment.get("arrivesAt"), high=10_000_000_000)
                 or shipment["arrivesAt"] < shipment["dispatchedAt"] or shipment.get("delivered") is not False):
