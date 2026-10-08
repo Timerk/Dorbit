@@ -1,8 +1,8 @@
 # Linux dedicated server deployment
 
-Use Ubuntu 24.04 LTS on x86-64 with systemd. This runs the current server from
-source using the checksum-pinned Godot runtime in `tools/server.sh`. No export
-templates or deployment framework are needed. Use matching client and server
+Use Ubuntu 24.04 LTS on x86-64 with systemd. Releases run a dedicated-server export
+using the checksum-pinned Godot release template. CI imports and exports the project;
+the VPS starts the finished pack without importing assets. Use matching client and server
 revisions. The current server requires provisioned pilot credentials and a save
 directory. The first VPS is a netcup nano G11s in Nuremberg.
 
@@ -18,8 +18,11 @@ Deployment verifies those signatures against this repository, that workflow on
 the signed run attempt completed successfully. Replacing a release asset and its
 manifest checksum cannot produce a valid signature. Missing attestations fail
 before any VPS connection. Both builds use that commit. The Linux archive
-contains the checked source and pinned runtime; it excludes import caches, test
-output and downloaded ZIP files. Neither build contains real pilot credentials.
+contains `runtime/DorbitServer.x86_64`, its dedicated-server PCK, service and
+provisioning helpers, the shared ship catalog, and license notices. Textures and
+materials are stripped to placeholders inside the pack. Raw project source,
+import caches, tests, editor binaries and downloads are excluded. Neither build
+contains real pilot credentials.
 
 Publishing does not contact the VPS. Only **Actions > Deploy server > Run workflow**
 deploys production. The separate preview actions below support PR playtesting.
@@ -330,9 +333,10 @@ Enter the preview address and port in the game's connection menu. Keep this
 PowerShell session separate from your production launcher. A successful job means
 the new game's listening log and service-owned UDP socket stayed ready for ten
 seconds. It still needs your human playtest. Run Deploy preview again after fixes.
-Fresh preview releases may spend several minutes importing the textured ship
-assets before opening the socket. Preview readiness allows up to twenty minutes;
-the deployment job allows thirty minutes including transfers. Production retains
+Dedicated-server releases skip startup imports entirely. Older source releases
+still import assets when started. Preview readiness retains its twenty-minute
+allowance for rollback compatibility; the deployment job allows thirty minutes
+including transfers. Production retains
 its existing two-minute readiness limit. Install the reviewed updated
 `tools/vps-deploy.py` as `/usr/local/sbin/dorbit-preview-deploy` to enable this
 allowance; updating a gameplay release alone cannot replace the root-owned helper.
@@ -539,13 +543,22 @@ revision=$(git rev-parse --verify "${revision}^{commit}")
 release="$PWD/build/server-releases/$revision"
 ```
 
-The script archives only committed files, downloads and verifies Godot, imports
-the project and runs the existing dedicated-server checks. Failed preparation
+The script archives only committed files, verifies Godot, imports the project,
+runs the existing checks, then exports the dedicated server with stripped visual
+resources. It compares the exported protocol, ship catalog and collision geometry
+with source, boots/restarts the pack without a checkout or import cache, and runs
+the Linux signal/save safety tests against the actual release executable.
+The published directory contains only the runtime/pack and deployment helpers.
+Failed preparation
 removes its temporary directory. Existing releases are never overwritten. To
 rebuild the same commit, pass a different output directory as the second argument.
-Preparation needs outbound HTTPS and enough disk space for a runtime and import
-cache per retained release. Run only one preparation at a time because the server
-checks use fixed test ports. No compilation is required.
+Preparation needs outbound HTTPS and space for temporary source/imports and the
+official 1.3 GB export-template download on the first build. Later builds reuse a
+checksum-verified Linux release template; the full template archive is not cached
+or shipped. Retained releases need no import cache. Run only one preparation at a
+time because the checks use fixed test ports. No compilation is required.
+Preview branches must contain the server export/build support; rebase branches
+created before this packaging change before requesting their preview.
 
 ## Install once
 
@@ -571,8 +584,8 @@ sudo systemctl enable --now dorbit
 
 Stop if a command fails. If the user or release already exists, inspect it instead
 of repeating creation or copying over it. The `dorbit` account has no login shell
-or sudo access. It owns releases because the existing helper imports on startup
-and Godot writes its import cache. `/var/lib/dorbit` is its home, with saves in
+or sudo access. Release ownership remains unchanged for compatibility with older
+source releases; new exports do not write an import cache. `/var/lib/dorbit` is its home, with saves in
 `/var/lib/dorbit/data`, outside release directories. Give the pilot only their
 credential file through a private channel and set `DORBIT_PILOT_FILE` when
 launching their matching Windows client. See README.md for provisioning, token
@@ -653,7 +666,8 @@ sudo systemctl start dorbit
 
 Confirm the log reports the dedicated server listening on the configured port
 and `ss` shows its UDP socket. `Type=simple` being active alone does not prove
-readiness. Startup includes the project's import step. Logs go to journald;
+readiness. Exported releases start directly; legacy source releases still import
+the project. Logs go to journald;
 retention and survival across reboots follow the host's journald configuration.
 
 systemd attempts to restart crashes after five seconds, with a limit of five starts per

@@ -21,14 +21,22 @@ fi
 staging=$(mktemp -d "$releases/.prepare.XXXXXX")
 trap 'rm -rf -- "$staging"' EXIT
 git archive "$revision" | tar -x -C "$staging"
+if [[ ! -f "$staging/tools/check-server-export.py" ]]; then
+  echo "Revision predates dedicated-server packaging; rebase the preview branch before building." >&2
+  exit 1
+fi
 # setup verifies the pinned archive and extracts a fresh executable in the release.
-# Reuse downloads, never an executable from the working checkout.
+# Reuse editor downloads and the separately checksum-verified release template.
 tool_cache="${DORBIT_TOOL_CACHE:-.tools/godot-linux}"
 for archive in "$tool_cache"/*.zip; do
   [[ -f "$archive" ]] || continue
   mkdir -p "$staging/.tools/godot-linux"
   cp "$archive" "$staging/.tools/godot-linux/"
 done
+if [[ -f "$tool_cache/linux_release.x86_64" ]]; then
+  mkdir -p "$staging/.tools/godot-linux"
+  cp "$tool_cache/linux_release.x86_64" "$staging/.tools/godot-linux/"
+fi
 # CI supplies an exact-input, OS-specific import cache. Keep all scripts and source
 # assets from git archive; only Godot's derived imported resources are seeded.
 import_cache="${DORBIT_IMPORT_CACHE:-}"
@@ -38,10 +46,23 @@ if [[ -n "$import_cache" && -d "$import_cache" ]]; then
 fi
 bash "$staging/tools/server.sh" setup
 bash "$staging/tools/server.sh" check
+bash "$staging/tools/server.sh" build
 if [[ -n "$import_cache" && -d "$staging/.godot/imported" ]]; then
   mkdir -p "$import_cache"
   cp -a "$staging/.godot/imported/." "$import_cache/"
 fi
-printf '%s\n' "$revision" > "$staging/REVISION"
-mv -- "$staging" "$release"
+# Publish only the exported server and existing service/provisioning entry points.
+# Keep the checkout/imports exclusively in disposable build staging.
+package="$staging/package"
+mkdir -p "$package/runtime" "$package/tools" "$package/deploy" "$package/assets/ships" "$package/licenses"
+cp "$staging/build/linux/DorbitServer.x86_64" "$staging/build/linux/DorbitServer.pck" "$package/runtime/"
+cp "$staging/build/linux/THIRD_PARTY_NOTICES.txt" "$package/"
+cp "$staging/tools/server.sh" "$staging/tools/run_server.py" "$staging/tools/pilots.py" "$package/tools/"
+cp "$staging/deploy/dorbit.service" "$package/deploy/"
+cp "$staging/assets/ships/catalog.json" "$package/assets/ships/"
+cp "$staging/assets/ui/fonts/OFL.txt" "$package/licenses/Rajdhani-OFL.txt"
+mkdir -p "$tool_cache"
+cp "$staging/.tools/godot-linux/linux_release.x86_64" "$tool_cache/"
+printf '%s\n' "$revision" > "$package/REVISION"
+mv -- "$package" "$release"
 printf 'Prepared release: %s\n' "$release"

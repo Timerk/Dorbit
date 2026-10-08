@@ -603,8 +603,19 @@ file sizes to `build/validation/import-profile-results.json`; it never changes
 the game's import settings. Use the Linux executable on Linux. The current
 2048-pixel atlases and Basis compression remain in place: faster uncompressed
 imports need a separate assessment of GPU memory and runtime performance before
-changing game assets. CI caches are not included in the server archive, so the
-VPS's first-start asset import remains a separate deployment cost.
+changing game assets. CI caches stay on GitHub runners. VPS runs use the
+dedicated-server export described below and skip asset imports.
+
+`tools/deploy-server.sh` validates the exact source commit, then builds the
+`Linux Dedicated Server` preset. Godot strips textures/materials to placeholders
+while preserving resource references. The package contains the pinned Linux
+release runtime, PCK and existing service/provisioning helpers, without source
+art or an editor/import cache. `tools/server.sh run` starts the exported runtime
+directly; local source runs and older releases retain their existing import path.
+CI compares source/exported protocol, ship data and all 30 obstacle colliders,
+checks clean startup/restart without source assets, and exercises Linux
+shutdown/save safety against the exported executable. No VPS service unit change
+is required. New preview branches must include this export support.
 
 ## Code layout
 

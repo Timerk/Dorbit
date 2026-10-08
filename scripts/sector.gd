@@ -57,7 +57,7 @@ var autopilot := FlightAutopilot.new()
 func _ready() -> void:
 	autopilot.sector = self
 	spawn_rng.randomize()
-	dedicated_server = dedicated_server or "--server" in OS.get_cmdline_user_args()
+	dedicated_server = dedicated_server or OS.has_feature("dedicated_server") or "--server" in OS.get_cmdline_user_args()
 	offline = offline or "--offline" in OS.get_cmdline_user_args()
 	client_only = client_only and not offline
 	if not dedicated_server:
