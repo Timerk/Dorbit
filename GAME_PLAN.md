@@ -618,6 +618,9 @@ Add saved progression, equipment purchases, a second ship, a few alien types, an
 Implementation order after the agreed server architecture change:
 
 1. Dedicated Linux server, normal Windows clients, WSL2 connection and shared-encounter validation.
+   Deployment uses a dedicated-server export with visual resources stripped to
+   placeholders, retaining the shared protocol, hull data and collision geometry.
+   CI prepares the pack; VPS startup does not import the client asset roster.
 2. Stable pilot identities, private-group access and server-owned saves, including restart recovery and backups.
 3. Equipment purchases, a second ship, additional alien types and simple missions, with provisional prices tuned through playtesting.
 

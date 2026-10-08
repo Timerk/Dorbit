@@ -58,7 +58,7 @@ jobs:
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: .tools/godot-linux
-          key: godot-linux-4.7.2-v1
+          key: godot-linux-4.7.2-v2
       - name: Restore trusted imported Linux assets
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
@@ -74,8 +74,7 @@ jobs:
           # Copy only the packaging helper. The PR supplies its game and check scripts.
           cp tools/deploy-server.sh source/tools/deploy-server.sh
           bash source/tools/deploy-server.sh "$PREVIEW_SHA"
-          tar --exclude='./.godot' --exclude='./build' --exclude='*.zip' \
-            -czf server.tar.gz -C "source/build/server-releases/$PREVIEW_SHA" .
+          tar -czf server.tar.gz -C "source/build/server-releases/$PREVIEW_SHA" .
           echo "attempt=$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

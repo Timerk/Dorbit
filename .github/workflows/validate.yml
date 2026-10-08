@@ -18,7 +18,7 @@ jobs:
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: .tools/godot-linux
-          key: godot-linux-4.7.2-v1
+          key: godot-linux-4.7.2-v2
       - name: Set up pinned Linux Godot
         run: bash tools/server.sh setup
       - name: Cache imported Linux assets
@@ -38,8 +38,7 @@ jobs:
           DORBIT_IMPORT_CACHE: ${{ github.workspace }}/.godot/imported
         run: |
           bash tools/deploy-server.sh "$GITHUB_SHA"
-          tar --exclude='./.godot' --exclude='./build' --exclude='*.zip' \
-            -czf server.tar.gz -C "build/server-releases/$GITHUB_SHA" .
+          tar -czf server.tar.gz -C "build/server-releases/$GITHUB_SHA" .
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: Dorbit-Linux-${{ github.sha }}-${{ github.run_attempt }}

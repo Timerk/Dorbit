@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import pilots
 
 ENGINE = Path(sys.argv.pop(1)).resolve()
+PACK = Path(sys.argv.pop(1)).resolve() if len(sys.argv) > 1 and sys.argv[1].endswith(".pck") else None
 
 
 class ServerShutdownTest(unittest.TestCase):
@@ -57,7 +58,9 @@ class ServerShutdownTest(unittest.TestCase):
         with log.open("w") as output:
             process = subprocess.Popen(
                 [sys.executable, str(ROOT / "tools/run_server.py"), str(ENGINE),
-                 "--headless", "--max-fps", "60", "--path", str(ROOT), "--", "--server", f"--port={port}"],
+                 "--headless", "--max-fps", "60", *([] if PACK else ["--path", str(ROOT)]),
+                 "--", "--server", f"--port={port}"],
+                cwd=PACK.parent if PACK else ROOT,
                 env=dict(os.environ, DORBIT_DATA_DIR=str(self.data)),
                 stdout=output, stderr=subprocess.STDOUT, start_new_session=True,
             )
