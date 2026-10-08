@@ -13,7 +13,7 @@ func run() -> void:
 	client.get_viewport().render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
-	client.session.join("127.0.0.1", 24836)
+	client.session.join("127.0.0.1", test_port(24836))
 	await settle(0.5)
 	await replicate(server)
 	if not client.session.active:
@@ -173,8 +173,8 @@ func run() -> void:
 	client.session.disconnect_session("Ammo restart")
 	server.session.disconnect_session("Ammo restart")
 	await settle()
-	check(server.session.host(24836) == OK, "Restart loads the ammo ledger")
-	client.session.join("127.0.0.1", 24836)
+	check(server.session.host(test_port(24836)) == OK, "Restart loads the ammo ledger")
+	client.session.join("127.0.0.1", test_port(24836))
 	await settle(0.5)
 	await replicate(server)
 	check(client.player.ammo == saved_ammo, "Restart and reconnect retain consumed ammo without another starter grant")

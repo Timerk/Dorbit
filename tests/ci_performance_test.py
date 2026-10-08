@@ -3,6 +3,7 @@ import importlib.util
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -112,6 +113,24 @@ class ValidationTest(unittest.TestCase):
         self.assertEqual([check[-1] for check in settings if '--filter-restart' in check], ['2', '3', '4'])
         self.assertEqual(sum(len(group['checks']) for group in windows), 38)
         self.assertEqual(sum(len(group['checks']) for group in plan['linux']), 27)
+
+    def test_network_fixtures_map_explicit_connection_ports(self):
+        plan = json.loads((ROOT / 'tools/check-suites.json').read_text())
+        pending = {check[0] for groups in plan.values() for group in groups
+                   for check in group['checks'] if check[0].endswith('.gd')}
+        seen = set()
+        while pending:
+            script = pending.pop()
+            if script in seen:
+                continue
+            seen.add(script)
+            text = (ROOT / 'tests' / script).read_text()
+            parent = re.search(r'^extends "res://tests/(.+?)"', text)
+            if parent:
+                pending.add(parent[1])
+            # Factory ports are deliberately unshifted; connection ports are shifted once.
+            raw = re.findall(r'session\.(?:join\([^,]+,|host\()\s*(\d{4,5})', text)
+            self.assertEqual(raw, [], script)
 
     def test_process_profiles_ports_and_zero_exit_errors(self):
         with tempfile.TemporaryDirectory() as directory:

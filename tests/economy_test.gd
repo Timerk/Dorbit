@@ -2,13 +2,6 @@ extends "res://tests/hunting_contracts_test.gd"
 ## Earn an upgrade from an empty wallet, then conserve a three-pilot Heavy payout.
 
 
-func connect_pilot(client: Sector, index: int) -> void:
-	await super.connect_pilot(client, index)
-	var deadline := Time.get_ticks_msec() + 5000
-	while client.session.active and not client.session.received_snapshot and Time.get_ticks_msec() < deadline:
-		await process_frame
-
-
 func run() -> void:
 	var server := make_sector("EconomyServer", true, CONTRACT_PORT)
 	var pilot := make_sector("EconomyPilot")

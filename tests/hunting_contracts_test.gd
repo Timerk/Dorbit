@@ -8,9 +8,17 @@ func connect_pilot(client: Sector, index: int) -> void:
 	client.session.credential_token = test_token(index)
 	client.session.join("127.0.0.1", test_port(CONTRACT_PORT))
 	var deadline := Time.get_ticks_msec() + 8000
-	while (not client.session.active or not client.session.received_snapshot) and Time.get_ticks_msec() < deadline:
+	while not client.session.active and Time.get_ticks_msec() < deadline:
 		await process_frame
-	check(client.session.active and client.session.received_snapshot, "Pilot authenticates and receives initial state within the timeout")
+	check(client.session.active, "Pilot authenticates within the timeout")
+	if client.session.active:
+		# These fixtures disable simulation ticks, so request the initial snapshot.
+		for viewport in worlds:
+			var server: Sector = viewport.get_child(0)
+			if server.dedicated_server and server.session.active and server.server_port == test_port(CONTRACT_PORT):
+				await replicate(server)
+				break
+		check(client.session.received_snapshot, "Pilot receives initial state within the convergence timeout")
 
 func station(server: Sector, client: Sector) -> void:
 	var ship := server.session.ships[client.multiplayer.get_unique_id()]
