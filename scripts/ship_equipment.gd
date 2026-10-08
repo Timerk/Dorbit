@@ -33,7 +33,7 @@ var current_slot_model: String = ""
 var specifications: PanelContainer
 var stat_values: Dictionary[String, Label] = {}
 var stat_notes: Dictionary[String, Label] = {}
-var extra_toggle: Button
+var extra_status: Label
 var extra_ammo: OptionButton
 
 
@@ -75,13 +75,14 @@ func _ready() -> void:
 	remove_button = StationUi.button(fitting_rows, "REMOVE", func(): move_item(selected_item, ""))
 	remove_button.mouse_entered.connect(preview_removal)
 	remove_button.focus_entered.connect(preview_removal)
-	extra_toggle = StationUi.button(fitting_rows, "", configure_extra)
+	extra_status = StationUi.text(fitting_rows, "", 14, StationUi.MUTED)
 	extra_ammo = OptionButton.new()
 	for kind: String in ["x1", "x2", "x3"]:
 		extra_ammo.add_item(kind)
-	extra_ammo.item_selected.connect(func(_index: int): configure_extra(false))
+	extra_ammo.item_selected.connect(func(_index: int): configure_extra())
+	extra_ammo.tooltip_text = "Ammunition CPU purchase type"
 	fitting_rows.add_child(extra_ammo)
-	extra_toggle.hide()
+	extra_status.hide()
 	extra_ammo.hide()
 	storage_panel = StationUi.card(body)
 	storage_panel.custom_minimum_size.x = 260
@@ -362,24 +363,22 @@ func select_item(id: String) -> void:
 func update_extra_controls() -> void:
 	var item: Dictionary = inventory().get("items", {}).get(selected_item, {})
 	var configurable: bool = not item.is_empty() and Equipment.MODELS[item["model"]].get("family", "") in ["ammo", "generators", "repair-auto"]
-	extra_toggle.visible = configurable
+	extra_status.visible = configurable
 	extra_ammo.visible = configurable and item["model"] == "ammo-cpu"
 	if configurable:
-		extra_toggle.text = "DISABLE AUTOMATION" if Extras.enabled(item) else "ENABLE AUTOMATION"
-		extra_toggle.tooltip_text = Equipment.MODELS[item["model"]]["description"]
-		extra_toggle.disabled = not StationUi.blocker(sector).is_empty()
-		extra_ammo.disabled = extra_toggle.disabled
+		extra_status.text = "Automation %s / toggle in quickslots (+)." % ("ON" if Extras.enabled(item) else "OFF")
+		extra_ammo.disabled = not StationUi.blocker(sector).is_empty()
 		if item["model"] == "ammo-cpu":
 			extra_ammo.select(["x1", "x2", "x3"].find(item.get("ammo_type", "x1")))
 
 
-func configure_extra(toggle: bool = true) -> void:
+func configure_extra() -> void:
 	if not StationUi.blocker(sector).is_empty():
 		return
 	var item: Dictionary = inventory().get("items", {}).get(selected_item, {})
 	if item.is_empty():
 		return
-	var enabled: bool = not Extras.enabled(item) if toggle else Extras.enabled(item)
+	var enabled: bool = Extras.enabled(item)
 	sector.session.combat.request_station("configure_extra", selected_item, "on" if enabled else "off", ["x1", "x2", "x3"][extra_ammo.selected] if item["model"] == "ammo-cpu" else "")
 
 

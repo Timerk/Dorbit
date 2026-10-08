@@ -31,6 +31,7 @@ var repair_requested: bool = false
 var robot_repairing: bool = false
 var time_since_attack: float = 100.0
 var extras_clock: float = 0.0
+var repair_visual: RepairBotVisual
 
 
 func firing_blocker(target: SpaceShip) -> String:
@@ -81,6 +82,8 @@ func _ready() -> void:
 	model = ShipCatalog.model_scene(ship_model)
 	add_child(model)
 	SectorVisuals.configure_texture_filtering(model, SectorVisuals.texture_filtering_enabled(self))
+	repair_visual = RepairBotVisual.new()
+	add_child(repair_visual)
 	arm = SpringArm3D.new()
 	arm.position = Vector3(0.0, 2.5, 0.0)
 	arm.rotation.x = -0.12

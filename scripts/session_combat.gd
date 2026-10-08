@@ -775,12 +775,18 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 		return
 	var active_ship: Pilot = session.ships[id]
 	var blocker := ("" if active_ship.alive else "Wait for rescue.") if action == "refine" else session.sector.repair_blocker(active_ship)
+	var pilot_id := session.pilot_ids[id]
+	var fitting: Dictionary = session.store.pilots[pilot_id]["equipment"]
+	var item: Dictionary = fitting["items"].get(subject, {})
+	# Fitted automation settings are available in flight; fitting and purchases
+	# still use station rules. Ownership, life and settings remain authoritative.
+	if action == "configure_extra" and session.ships[id].alive and not item.is_empty() and item.get("ship", "") == fitting["active_ship"] and Equipment.MODELS[item["model"]].get("family", "") in ["repair-auto", "ammo", "generators"]:
+		blocker = ""
 	if records[id]["life"] != life:
 		blocker = "Ship changed. Review your fitting after rescue."
 	if not blocker.is_empty():
 		publish_inventory(id, blocker)
 		return
-	var pilot_id := session.pilot_ids[id]
 	var previous_revision: int = session.store.pilots[pilot_id]["equipment"]["revision"]
 	var previous_ship: String = session.store.pilots[pilot_id]["equipment"]["active_ship"]
 	var result := session.store.transact(pilot_id, sequence, action, subject, ship, slot, session.can_grant_test_credits(id), session.ships[id].resource_boosts)
@@ -792,7 +798,13 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 	session.ships[id].ammo = pilot["ammo"].duplicate()
 	cargo_holds[id] = pilot["cargo"].duplicate(true)
 	if pilot["equipment"]["revision"] > previous_revision:
-		apply_equipment(id)
+		if action == "configure_extra":
+			var remote: Pilot = session.ships[id]
+			remote.repair_auto = Extras.enabled(Equipment.extra(pilot["equipment"], "repair-auto"))
+			if not remote.repair_auto and not remote.repair_requested:
+				remote.robot_repairing = false
+		else:
+			apply_equipment(id)
 	if previous_ship != pilot["equipment"]["active_ship"]:
 		session.ships[id].rockets.unload()
 		# Switching is not a repair. Keep absolute hull/shield charge (clamped by
