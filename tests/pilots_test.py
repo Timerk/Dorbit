@@ -260,7 +260,15 @@ class ProvisioningTest(unittest.TestCase):
         equipment["items"]["ammo-cpu"].update(enabled=True, ammo_type="x2")
         self.assertTrue(pilots.valid_equipment(equipment))
         self.assertTrue(pilots.valid_cargo({"starter": {"prometium": 800}}, equipment))
-        self.assertFalse(pilots.valid_cargo({"starter": {"prometium": 801}}, equipment))
+        self.assertTrue(pilots.valid_cargo({"starter": {"prometium": 1600}}, equipment))
+        self.assertFalse(pilots.valid_cargo({"starter": {"prometium": 1601}}, equipment))
+        lab = pilots.starter_skylab(100)
+        lab["shipment"] = {"id": "shipment-1", "recipientId": "starter",
+                           "manifest": {"prometium": 800}, "dispatchedAt": 100,
+                           "arrivesAt": 900, "delivered": False}
+        self.assertTrue(pilots.valid_skylab(lab, equipment))
+        lab["shipment"]["manifest"]["prometium"] = 801
+        self.assertFalse(pilots.valid_skylab(lab, equipment))
         equipment["items"]["ammo-cpu"]["ammo_type"] = "x4"
         self.assertFalse(pilots.valid_equipment(equipment))
         equipment["items"]["ammo-cpu"]["ammo_type"] = "x2"

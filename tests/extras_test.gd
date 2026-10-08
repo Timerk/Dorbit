@@ -4,6 +4,12 @@ extends "res://tests/shop_test.gd"
 var owned: Dictionary = {}
 
 
+func extra_state(store: PilotStore) -> Dictionary:
+	var state: Dictionary = store.pilots["pilot0"].duplicate(true)
+	state.erase("skylab") # Station requests independently advance industry time.
+	return state
+
+
 func station(client: Sector, action: String, subject: String, ship: String = "", slot: String = "") -> void:
 	client.session.combat.request_station(action, subject, ship, slot)
 	await settle()
@@ -47,16 +53,26 @@ func run() -> void:
 	await station(client, "fit", owned["cargo-expander"], "starter", "extra4")
 	check(Equipment.valid(combat.inventory) and Equipment.slots(combat.inventory).values().count("extra") == 4, "Slot CPU adds two valid slots")
 	check(CargoResources.capacity(combat.inventory) == 800 and client.cargo_capacity == 800, "Cargo expansion replicates")
-	var before := store.saved_text
+	var before := extra_state(store)
 	await station(client, "fit", owned["rep-2"], "starter", "extra3")
-	check(store.saved_text == before, "A second robot cannot stack with REP-1")
+	check(extra_state(store) == before, "A second robot cannot stack with REP-1")
 	check(store.commit({}, {}, {"pilot0": {"starter": {"prometium": 500}}}), "Load expanded cargo")
 	server.session.combat.cargo_holds[id] = store.pilots["pilot0"]["cargo"].duplicate(true)
-	before = store.saved_text
+	before = extra_state(store)
 	await station(client, "fit", owned["slot-cpu-1"])
-	check(store.saved_text == before and combat.station_message.contains("Sell excess"), "Slot CPU removal cannot indirectly destroy expanded cargo")
+	check(extra_state(store) == before and combat.station_message.contains("Sell excess"), "Slot CPU removal cannot indirectly destroy expanded cargo")
 	check(store.commit({}, {}, {"pilot0": {"starter": {}}}), "Clear disposable cargo")
 	server.session.combat.cargo_holds[id] = {"starter": {}}
+	var shipment_pilot: Dictionary = store.pilots["pilot0"].duplicate(true)
+	var at := Skylab.now()
+	shipment_pilot["skylab"]["shipment"] = {"id": "shipment-extras", "recipientId": "starter", "manifest": {"prometium": 800}, "dispatchedAt": at, "arrivesAt": at + 3600, "delivered": false}
+	check(store.persist(store.pilots.merged({"pilot0": shipment_pilot}, true)), "Save a shipment that requires expanded capacity")
+	before = extra_state(store)
+	await station(client, "fit", owned["slot-cpu-1"])
+	check(extra_state(store) == before and store.pilots["pilot0"]["skylab"]["shipment"]["manifest"] == {"prometium": 800} and combat.station_message.contains("shipment"), "Capacity removal preserves an in-flight expanded shipment")
+	shipment_pilot = store.pilots["pilot0"].duplicate(true)
+	shipment_pilot["skylab"]["shipment"] = null
+	check(store.persist(store.pilots.merged({"pilot0": shipment_pilot}, true)), "Clear disposable shipment")
 	await station(client, "fit", owned["slot-cpu-1"])
 	check(combat.inventory["items"][owned["repair-auto"]]["ship"].is_empty() and combat.inventory["items"][owned["cargo-expander"]]["ship"].is_empty(), "Removing expansion returns both displaced items to storage")
 	await station(client, "fit", owned["slot-cpu-1"], "starter", "extra1")
@@ -84,9 +100,9 @@ func run() -> void:
 	await settle()
 	check(scroll.get_global_rect().encloses(client.equipment_menu.slots["extra4"].get_global_rect()), "Expanded fitting slots remain accessible by scrolling")
 	await capture(client, "extras-hangar-960")
-	before = store.saved_text
+	before = extra_state(store)
 	await station(client, "configure_extra", owned["ammo-cpu"], "on", "x4")
-	check(store.saved_text == before, "Automatic x4 purchase is rejected without changing the save")
+	check(extra_state(store) == before, "Automatic x4 purchase is rejected without changing progression")
 	client.session.launch()
 	await settle()
 	client.main_menu.hide()
@@ -173,6 +189,6 @@ func run() -> void:
 	check(store.pilots["pilot0"]["ammo"]["x3"] == 10000 and remote.ammo["x3"] == 10000 and client.player.ammo["x3"] == 10000 and client.credits == 90000 and remote.ammo_type == selected, "Automatic x3 purchase saves and replicates exact rounds and price without changing selected ammo")
 	var reloaded := PilotStore.new()
 	store.close()
-	check(reloaded.open(store.path.get_base_dir()) and reloaded.pilots == store.pilots, "Extra items, settings, cargo and automatic costs survive reload")
+	check(reloaded.open(store.path.get_base_dir()) and extra_state(reloaded) == extra_state(store), "Extra items, settings, cargo and automatic costs survive reload")
 	reloaded.close()
 	finish()
