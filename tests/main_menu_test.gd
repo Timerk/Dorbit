@@ -223,6 +223,18 @@ func run() -> void:
 	server.session.combat.tick(2.0)
 	await replicate(server)
 	check(ship.time_since_hit == 5 and ship.shot_cooldown == 0 and ship.shield == 350, "Station cooldown expires in the menu without an instant shield refill")
+	# A docked pilot can send a valid-life repair RPC despite having no repair UI.
+	check(server.repair_blocker(ship).is_empty(), "Docked repair fixture satisfies normal station service checks")
+	var repair_record: Dictionary = server.session.combat.records[id].duplicate(true)
+	var repair_wallet: int = server.session.store.pilots["pilot0"]["credits"]
+	client.session.combat.repair_request.rpc_id(1, int(ship.get_meta("life")))
+	await settle()
+	await replicate(server)
+	check(ship.get_meta("docked") and not ship.visible and ship.collision_layer == 0, "Authenticated repair request cannot expose a docked server ship")
+	check(client.preflight and not client.player.visible and client.player.collision_layer == 0 and not observer.session.ships.has(id), "Rejected docked repair preserves owner and observer visibility")
+	check(ship.hull == 50000 and ship.shield == 350 and ship.energy == 42 and ship.time_since_hit == 5, "Rejected docked repair preserves health, energy and damage timer")
+	check(server.session.combat.records[id] == repair_record and server.session.store.pilots["pilot0"]["credits"] == repair_wallet and client.credits == repair_wallet, "Rejected docked repair preserves progression and persisted credits")
+	await capture(client, "main-menu-docked-repair-rejected")
 	await click(client, menu.navigation["hangar"])
 	check(client.equipment_menu.visible and client.session.combat.inventory["items"]["purchase-1"]["slot"] == "laser2", "Returned pilot can access the prepared hangar")
 	await click(client, menu.navigation["overview"])
