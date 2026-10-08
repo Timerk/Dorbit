@@ -40,6 +40,9 @@ minimum sizes, closing/reopening, saved layouts, screen bounds and moved radar
 buttons. Run with a renderer for editor and customized-flight screenshots in
 `build/validation`, at 960, 1440 and 1920 pixel widths. Use an isolated APPDATA
 profile for tests, as with the other settings/HUD checks.
+The Windows build helper also runs `tests/hud_shortcut_export_test.gd` against
+the exported pack: it launches actual offline flight and verifies Ctrl + left
+Alt in both key orders with native Windows modifier flags.
 
 See the [approved concept](docs/hud-design/README.md) and native
 screenshots at [960×600](docs/feedback/hud-flight-960.png),
