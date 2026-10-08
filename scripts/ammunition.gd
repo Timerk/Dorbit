@@ -1,8 +1,9 @@
 class_name Ammunition
 extends RefCounted
-## Pilot-wide shot inventory. One round fuels one volley from the whole fitting.
+## Pilot-wide shot inventory. Each fitted laser consumes one round per volley.
 
 const BATCH_SIZE: int = 100
+const MAX_PURCHASE_BATCHES: int = 10_000 # One million rounds per order.
 const MAX_SHOTS: int = 2_000_000_000
 const TYPES := {
 	"x1": {"name": "x1 ammunition", "multiplier": 1, "price": 10, "color": Color("b7d7ef")},

@@ -250,8 +250,9 @@ These values are initial tuning settings, not a finished economy or combat balan
 
 Laser ammo is selected with **1 / 2 / 3 / 4** or the bottom-center ammo symbols.
 x1 uses fitted laser damage; x2, x3 and x4 apply 2x, 3x and 4x damage, including
-laser bonuses against aliens. Each successful volley uses one shot. Blocked shots
-use none. An empty selected type stops fire until you choose another type.
+laser bonuses against aliens. Each fitted laser on the active ship consumes one
+round per successful volley. For example, four fitted lasers consume four rounds.
+Blocked shots use none, and insufficient rounds for the whole volley stop fire.
 The destination tracker is now at top center.
 
 The HUD and shop use generated metallic energy-cartridge artwork. Pilot lasers
@@ -262,7 +263,8 @@ See the [ImageGen prompts](docs/ammo-art/generation-prompts.md) for the asset so
 Each new pilot receives **10,000 x1 shots**. Ammo is shared across owned ships and
 survives rescue, reconnects and server restart. In **Shop > Ammo**, x1/x2/x3 cost
 **10 / 50 / 100 credits per 100 shots**, as confirmed by the user. The quantity
-field buys batches of 100. x4 is reserved for future quests and special rewards
+field buys batches of 100, up to 10,000 batches / 1,000,000 rounds per order.
+x4 is reserved for future quests and special rewards
 and cannot be bought. Station purchase restrictions and duplicate protection apply.
 
 Save schema **4** adds ammo and gives existing pilots the starter inventory once.
@@ -273,10 +275,12 @@ renderer to check purchases, multipliers, inventory recovery and HUD interaction
 rendered runs save shop and flight views under `build/validation/ammo-*.png`.
 
 Review the [flight ammo bar](docs/feedback/ammo-flight-1440.png) and
-[ammo shop](docs/feedback/ammo-shop-960.png). Windows ammo checks passed 99
-assertions headlessly and 108 with OpenGL, including all four network shot colors;
-combat effect checks passed 28 and the rendered color gallery passed. The HUD replay passed 220,
-the full Windows check helper passed, and seven Python provisioning tests passed.
+[ammo shop](docs/feedback/ammo-shop-960.png). Windows ammo checks passed 129
+assertions headlessly and 138 with OpenGL, covering million-round orders,
+per-laser consumption, fitting changes, ship switches and all four network colors.
+Related equipment, reference-equipment, ships, shop and network combat checks passed.
+Earlier validation passed 28 combat effect checks, the rendered color gallery,
+220 rendered HUD checks, the full Windows check helper and seven Python tests.
 Human pricing and group-combat performance playtesting remain necessary; Linux
 and exported-client checks are left to CI.
 

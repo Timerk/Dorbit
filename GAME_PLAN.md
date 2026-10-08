@@ -112,8 +112,10 @@ Weapon ranges, firing arcs, damage, shield recovery, and alien behavior need pla
 The user requested four pilot-wide ammunition types, shared across owned ships:
 x1 applies the fitted laser damage, x2 doubles it, x3 triples it and x4 quadruples
 it. The multiplier includes each fitted laser's existing alien damage bonus.
-One successful laser volley consumes one shot, regardless of installed laser
-count. Cooldown, range, arc, obstacles, protection and other rejected shots spend
+Each fitted laser on the active ship consumes one round per successful volley.
+The full volley requires enough selected ammo for every fitted laser; otherwise
+it fires no lasers and consumes no rounds. Stored equipment and inactive ships
+do not add to consumption. Cooldown, range, arc, obstacles, protection and other rejected shots spend
 no ammo. Aliens retain their existing damage and do not consume pilot ammunition.
 Empty selected ammo blocks fire until the pilot selects another type; there is
 no automatic substitution of ammunition.
@@ -126,6 +128,8 @@ sequence. Back up the ledger before migration; older servers cannot read schema 
 
 x1, x2 and x3 are sold at Outpost 01 in batches of 100 shots. The user confirmed
 prices of 10 credits for x1, 50 credits for x2 and 100 credits for x3 per batch.
+The user requested orders of up to 1,000,000 rounds (10,000 batches) at once;
+ammo has its own purchase limit independent of the equipment quantity limit.
 Economy balance remains subject to playtesting. The user confirmed that x4 is
 visible but cannot be bought, with its special quests and other acquisition
 mechanics reserved for future work. No x4 earning quest is introduced in this slice.

@@ -44,18 +44,40 @@ func run() -> void:
 	shop.select_model("x4")
 	check(shop.buys["x4"].disabled and shop.price.text == "Not for sale", "x4 remains a special reward, unavailable in the shop")
 	var before := store.pilots.duplicate(true)
-	for subject: String in ["x4:1", "x0:1", "x1:0", "x1:-1", "x1:1000", "x1:1.5", "x1:", "x1:1:2", "x2:999"]:
+	for subject: String in ["x4:1", "x0:1", "x1:0", "x1:-1", "x1:10001", "x1:100000", "x1:1.5", "x1:", "x1:1:2", "x2:999"]:
 		combat.station_request.rpc_id(1, int(combat.inventory["revision"]) + 1, "buy_ammo", subject, "", "", 0)
 		await settle()
 		check(store.pilots == before, "Invalid or unaffordable purchase preserves the whole ledger: " + subject)
-	shop.select_model("x3")
-	shop.set_purchase_quantity(3)
+	check(store.commit({"pilot0": 3_000_000}), "Fund million-round orders")
+	server.session.combat.records[id]["credits"] = 3_000_000
+	await replicate(server)
+	for kind: String in ["x1", "x2", "x3"]:
+		shop.select_model(kind)
+		shop.edit_purchase_quantity("10000")
+		var credits := client.credits
+		var rounds: int = remote.ammo[kind]
+		var sequence: int = combat.inventory["revision"] + 1
+		check(shop.purchase_quantity == 10_000 and shop.buys[kind].text == "BUY 1,000,000 SHOTS" and shop.purchase_increase.disabled, "Shop accepts the million-round limit for " + kind)
+		await click(client, shop.buys[kind])
+		await replicate(server)
+		check(remote.ammo[kind] == rounds + 1_000_000 and client.player.ammo[kind] == rounds + 1_000_000 and store.pilots["pilot0"]["ammo"][kind] == rounds + 1_000_000, "Million-round " + kind + " purchase is saved and replicated")
+		check(client.credits == credits - int(Ammunition.TYPES[kind]["price"]) * 10_000, "Million-round " + kind + " order charges the exact batch price")
+		combat.station_request.rpc_id(1, sequence, "buy_ammo", kind + ":10000", "", "", 0)
+		await settle()
+		check(remote.ammo[kind] == rounds + 1_000_000 and client.credits == credits - int(Ammunition.TYPES[kind]["price"]) * 10_000, "Duplicate million-round order cannot charge or deliver twice")
+	shop.set_purchase_quantity(10_001)
+	check(shop.purchase_quantity == 10_000, "Ammo input clamps to one million rounds per order")
+	var funded_before := store.pilots.duplicate(true)
+	combat.station_request.rpc_id(1, int(combat.inventory["revision"]) + 1, "buy_ammo", "x3:10001", "", "", 0)
+	await settle()
+	check(store.pilots == funded_before, "Server rejects over-limit orders even with sufficient credits")
 	combat.station_message = "" # Capture the current offer after adversarial requests.
 	for dimensions in [Vector2i(960, 600), Vector2i(1440, 900)]:
 		client.get_viewport().size = dimensions
 		await settle()
 		check(shop.get_global_rect().encloses(shop.purchase_controls.get_global_rect()) and shop.get_global_rect().encloses(shop.buys["x3"].get_global_rect()), "Ammo order controls fit at %s" % dimensions)
 		await capture(client, "ammo-shop-%d" % dimensions.x)
+	await prepare_lasers(server, client)
 	client.main_menu.hide()
 	client.main_menu.hide_pages()
 	client.set_paused(false)
@@ -86,14 +108,19 @@ func run() -> void:
 		remote.npc_laser_damage = 26.25
 		check(remote.try_fire(enemy), "Authoritative " + kind + " shot fires")
 		check(is_equal_approx(total - enemy.hull - enemy.shield, (remote.laser_damage + 26.25) * int(Ammunition.TYPES[kind]["multiplier"])), kind + " multiplies fitted laser damage including alien bonuses")
-		check(remote.ammo[kind] == amount - 1 and store.pilots["pilot0"]["ammo"][kind] == amount - 1, "One successful volley consumes and saves exactly one " + kind + " shot")
-		check(not remote.try_fire(enemy) and remote.ammo[kind] == amount - 1, "Cooldown rejection consumes no extra ammo")
+		check(remote.ammo[kind] == amount - 4 and store.pilots["pilot0"]["ammo"][kind] == amount - 4, "Four fitted lasers consume and save four " + kind + " rounds")
+		check(not remote.try_fire(enemy) and remote.ammo[kind] == amount - 4, "Cooldown rejection consumes no extra ammo")
 		if DisplayServer.get_name() != "headless":
 			await check_network_beam(client, kind)
 		await replicate(server)
 		check(client.player.ammo == remote.ammo, "Consumed inventory replicates")
 		check(not client.player.try_fire(client.alien), "Client cannot fire or debit ammunition locally")
 	remote.npc_laser_damage = 0
+	remote.shot_cooldown = 0
+	var insufficient_before := store.pilots.duplicate(true)
+	var health_before := enemy.hull + enemy.shield
+	check(remote.ammo["x4"] == 1 and remote.firing_blocker(enemy).contains("NEED 4 ROUNDS") and not remote.try_fire(enemy), "Four lasers cannot fire with only one round remaining")
+	check(store.pilots == insufficient_before and remote.ammo["x4"] == 1 and enemy.hull + enemy.shield == health_before and remote.shot_cooldown == 0, "Incomplete volley preserves rounds, damage, cooldown and ledger")
 	remote.ammo_type = "x1"
 	remote.shot_cooldown = 0
 	var ammo_before := remote.ammo.duplicate()
@@ -107,7 +134,7 @@ func run() -> void:
 	check(not remote.try_fire(enemy) and remote.ammo == ammo_before, "Station protection spends no ammo")
 	# Purchases still require station range even when the shop can be opened in flight.
 	remote.position = Vector3(0, 200, 0)
-	combat.station_request.rpc_id(1, int(combat.inventory["revision"]) + 1, "buy_ammo", "x1:1", "", "", 0)
+	combat.station_request.rpc_id(1, int(combat.inventory["revision"]) + 1, "buy_ammo", "x1:1", "", "", int(remote.get_meta("life", 0)))
 	await settle()
 	check(remote.ammo == ammo_before, "Out-of-station purchase is rejected")
 	await replicate(server)
@@ -132,6 +159,7 @@ func run() -> void:
 		client.get_viewport().render_target_update_mode = SubViewport.UPDATE_ALWAYS
 		await settle()
 		var bar := client.hud.ammo_bar.get_rect()
+		check(client.hud.ammo_bar.counts["x4"].get_theme_color("font_color") == FlightHud.RED and client.hud.ammo_bar.buttons["x4"].tooltip_text.contains("4 rounds per volley"), "HUD marks an incomplete volley and explains the fitted round cost")
 		check(not bar.intersects(client.hud.navigation.guidance_rect()) and not bar.intersects(client.hud.ship_rect()) and not bar.intersects(client.hud.target_rect()), "Ammo bar clears other HUD panels at %s" % dimensions)
 		check(absf(bar.get_center().x - client.hud.size.x * 0.5) < 1 and bar.end.y < client.hud.size.y - 45, "Ammo bar is centered above controls at %s" % dimensions)
 		for button: Button in client.hud.ammo_bar.buttons.values():
@@ -150,12 +178,41 @@ func run() -> void:
 	await settle(0.5)
 	await replicate(server)
 	check(client.player.ammo == saved_ammo, "Restart and reconnect retain consumed ammo without another starter grant")
+	check(server.session.ships[client.multiplayer.get_unique_id()].laser_count == 4 and client.player.laser_count == 4, "Reconnect restores ammo consumption from the persisted active fitting")
 	var confirmed_sequence := combat.ammo_sequence
 	combat.ammo_snapshot(PackedInt32Array([10000, 0, 0, 0, 0]), confirmed_sequence - 1)
 	combat.station_result(combat.inventory, "", false, {}, -1, Ammunition.starter(), confirmed_sequence - 1)
 	check(client.player.ammo == saved_ammo, "Delayed snapshots and station replies cannot restore older ammunition counts")
 	await check_failed_debit(server, client)
 	finish()
+
+
+func station_action(server: Sector, client: Sector, action: String, subject: String, ship: String = "", slot: String = "") -> void:
+	var combat := client.session.combat
+	combat.station_request.rpc_id(1, int(combat.inventory["revision"]) + 1, action, subject, ship, slot, int(client.player.get_meta("life", 0)))
+	await settle()
+	await replicate(server)
+
+
+func prepare_lasers(server: Sector, client: Sector) -> void:
+	var remote := server.session.ships[client.multiplayer.get_unique_id()]
+	check(remote.laser_count == 1 and client.player.laser_count == 1, "Starter shield and engine do not consume laser rounds")
+	var sequence: int = client.session.combat.inventory["revision"] + 1
+	await station_action(server, client, "buy", "laser:3")
+	check(remote.laser_count == 1, "Stored lasers do not increase ammo consumption")
+	var items := ["purchase-%d" % sequence, "purchase-%d-2" % sequence, "purchase-%d-3" % sequence]
+	for index in range(items.size()):
+		await station_action(server, client, "fit", items[index], "starter", "laser%d" % (index + 2))
+		check(remote.laser_count == index + 2 and client.player.laser_count == index + 2, "Fitting laser %d updates the server and owner round cost" % (index + 2))
+	await station_action(server, client, "fit", items[0])
+	check(remote.laser_count == 3 and client.player.laser_count == 3, "Removing a fitted laser lowers the round cost")
+	await station_action(server, client, "fit", items[0], "starter", "laser2")
+	await station_action(server, client, "buy_ship", "phoenix")
+	var phoenix := ShipCatalog.owned_id(client.session.combat.inventory, "phoenix")
+	await station_action(server, client, "switch_ship", phoenix)
+	check(remote.laser_count == 0 and client.player.laser_count == 0, "Inactive ship lasers do not contribute to the empty ship's round cost")
+	await station_action(server, client, "switch_ship", "starter")
+	check(remote.laser_count == 4 and client.player.laser_count == 4, "Returning to the fitted ship restores four rounds per volley")
 
 
 func check_network_beam(client: Sector, kind: String) -> void:
@@ -203,7 +260,7 @@ func check_failed_debit(server: Sector, client: Sector) -> void:
 	DirAccess.make_dir_absolute(probe.path + ".tmp")
 	remote.ammo_debit = func():
 		var next := remote.ammo.duplicate()
-		next[remote.ammo_type] -= 1
+		next[remote.ammo_type] -= remote.laser_count
 		return probe.commit({}, {}, {}, {"pilot0": next})
 	check(not remote.try_fire(server.alien) and probe.failed, "Failed durable debit cancels the shot")
 	check(remote.ammo == ammo_before and server.alien.hull + server.alien.shield == health_before and remote.shot_cooldown == 0 and FileAccess.get_file_as_string(probe.path) == disk_before, "Debit failure preserves ammunition, damage, cooldown and disk")

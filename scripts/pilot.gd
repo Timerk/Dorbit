@@ -19,20 +19,23 @@ var ship_model: String = "liberator"
 var radiation_exposure: float = 0.0
 var ammo: Dictionary = Ammunition.starter()
 var ammo_type: String = "x1"
+var laser_count: int = 1 # Offline starter fitting; server fittings update this.
 var ammo_debit: Callable # Dedicated server commits consumption before firing.
 
 
 func firing_blocker(target: SpaceShip) -> String:
 	var reason := super.firing_blocker(target)
-	if reason.is_empty() and int(ammo.get(ammo_type, 0)) <= 0:
-		return "OUT OF AMMO / SELECT ANOTHER TYPE"
+	if reason.is_empty() and int(ammo.get(ammo_type, 0)) < laser_count:
+		return "OUT OF AMMO / NEED %d ROUNDS / SELECT ANOTHER TYPE" % laser_count
 	return reason
 
 
 func spend_ammo() -> bool:
+	if laser_count <= 0 or int(ammo.get(ammo_type, 0)) < laser_count:
+		return false
 	if ammo_debit.is_valid() and not ammo_debit.call():
 		return false
-	ammo[ammo_type] -= 1
+	ammo[ammo_type] -= laser_count
 	return true
 
 

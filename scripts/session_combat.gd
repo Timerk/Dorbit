@@ -79,7 +79,7 @@ func remove_player(id: int) -> void:
 func debit_ammo(id: int) -> bool:
 	var ship := session.ships[id]
 	var next := ship.ammo.duplicate()
-	next[ship.ammo_type] -= 1
+	next[ship.ammo_type] -= ship.laser_count
 	if session.store.commit({}, {}, {}, {session.pilot_ids[id]: next}):
 		return true
 	session.stop_for_save_failure()
@@ -588,6 +588,7 @@ func publish_inventory(id: int, result: String = "") -> void:
 func station_result(data: Dictionary, result: String, test_credits_allowed: bool = false, holds: Dictionary = {}, credits: int = -1, ammo: Dictionary = {}, sequence: int = -1) -> void:
 	if session.active:
 		inventory = data
+		session.sector.player.laser_count = Equipment.stats(data)["laser_count"]
 		if not ammo.is_empty():
 			# A delayed purchase reply must not restore ammunition spent afterward.
 			if sequence >= ammo_sequence:
