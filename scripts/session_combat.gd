@@ -575,12 +575,9 @@ func pack_player(id: int) -> Dictionary:
 	data["absorption"] = ship.shield_absorption
 	data["model"] = ship.ship_model
 	data["max_hull"] = ship.max_hull
-	data["npc_damage"] = ship.npc_laser_damage
-	data["regen_bonus"] = ship.shield_regen_bonus
-	data["radiation"] = ship.radiation_exposure
+	# Compact secondary stats leave room for all hunts and utility state below MTU.
+	data["systems"] = PackedFloat32Array([ship.npc_laser_damage, ship.shield_regen_bonus, ship.radiation_exposure, ship.repair_seconds, 1.0 if ship.robot_repairing else 0.0])
 	data["docked"] = ship.get_meta("docked", false)
-	data["repair_seconds"] = ship.repair_seconds
-	data["robot_repairing"] = ship.robot_repairing
 	return data
 
 
@@ -634,16 +631,17 @@ func apply_health(ship: SpaceShip, data: Dictionary) -> void:
 
 func apply_player(id: int, data: Dictionary) -> bool:
 	var ship := session.ships[id]
-	ship.repair_seconds = data.get("repair_seconds", 0.0)
-	ship.robot_repairing = data.get("robot_repairing", false)
+	var systems: PackedFloat32Array = data["systems"]
+	ship.repair_seconds = systems[3]
+	ship.robot_repairing = systems[4] > 0.0
 	var reset: bool = int(ship.get_meta("life", 0)) != data["life"] or ship.alive != data["alive"]
 	ship.set_meta("life", data["life"])
 	if reset:
 		ship.set_meta("feedback_health_received", false)
 	var stats: Vector4 = data["stats"]
-	Equipment.apply_stats(ship, {"model": data["model"], "hull": data["max_hull"], "npc_damage": data["npc_damage"], "regen_bonus": data["regen_bonus"], "damage": stats.x, "shield": stats.y, "absorption": data["absorption"], "speed": stats.z, "boost": stats.w})
+	Equipment.apply_stats(ship, {"model": data["model"], "hull": data["max_hull"], "npc_damage": systems[0], "regen_bonus": systems[1], "damage": stats.x, "shield": stats.y, "absorption": data["absorption"], "speed": stats.z, "boost": stats.w})
 	apply_health(ship, data)
-	ship.radiation_exposure = data.get("radiation", 0.0)
+	ship.radiation_exposure = systems[2]
 	if ship == session.sector.player:
 		update_local(data)
 		if reset:

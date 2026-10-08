@@ -94,6 +94,8 @@ func run() -> void:
 	check(pilot.active_contracts == first, "Duplicate acceptance and manual claims do nothing")
 	var packet: Dictionary = {id: combat.pack_player(id)}
 	packet[id].merge({"position": Vector3.ZERO, "rotation": Vector3.ZERO, "velocity": Vector3.ZERO, "energy": 100.0})
+	packet[id]["systems"][3] = 165.0
+	packet[id]["systems"][4] = 1.0
 	check(var_to_bytes([packet, {}, 1]).size() < 1300, "One player with all hunts fits the snapshot datagram budget")
 	packet[id]["docked"] = true
 	check(var_to_bytes([packet, {}, 1]).size() < 1300 and not packet[id].has("spawn"), "Docked quests fit the packet budget without a server-only spawn origin")
