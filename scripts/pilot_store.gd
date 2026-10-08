@@ -382,6 +382,12 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		Equipment.move(equipment, subject, ship, slot)
 		if not CargoResources.valid(pilot["cargo"], equipment):
 			return "Sell excess cargo before removing cargo capacity. No items were moved."
+		for cargo_ship: String in equipment["ships"]:
+			var capacity := CargoResources.capacity(equipment, cargo_ship)
+			if capacity < CargoResources.capacity(pilots[id]["equipment"], cargo_ship) and CargoResources.units(pilot["cargo"][cargo_ship]) > capacity:
+				return "Sell excess cargo before removing cargo capacity. No items were moved."
+		if not Skylab.valid(pilot["skylab"], equipment):
+			return "Wait for the Skylab shipment before removing cargo capacity. No items were moved."
 	elif action == "configure_extra":
 		var item: Dictionary = equipment["items"].get(subject, {})
 		if item.is_empty() or not Equipment.MODELS[item["model"]].get("family", "") in ["ammo", "generators", "repair-auto"] or not ship in ["on", "off"]:
