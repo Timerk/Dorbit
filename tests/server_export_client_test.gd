@@ -13,6 +13,9 @@ func run() -> void:
 		await process_frame
 	check(client.session.active and client.session.received_snapshot, "Exported server authenticates a real client and replicates state")
 	check(client.credits == 137 and client.cargo.get("seprom", 0) == 5, "Exported server loads the disposable pilot's progression")
+	check(client.player.ammo == Ammunition.starter(), "Exported server replicates the saved ammunition inventory")
+	var boosts := client.player.resource_boosts
+	check(boosts.size() == 1 and boosts.get("lasers", {}).get("resource") == "seprom" and ResourceBoosts.remaining(boosts, "lasers") == 7, "Exported server replicates the saved laser boost reserve")
 	check(client.session.ships.size() == 1 and client.aliens.size() == 5, "Server replicates one pilot and the complete alien roster")
 	client.session.launch()
 	deadline = Time.get_ticks_msec() + 8000
