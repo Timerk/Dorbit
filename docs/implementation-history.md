@@ -1,0 +1,117 @@
+# Historical implementation and validation notes
+
+These records were moved from the README during documentation reconciliation on
+9 October 2026. They preserve evidence from earlier builds. Reward amounts,
+assertion counts, schemas, screenshots and feature status may differ from the
+current game. Some undated entries record feature follow-ups rather than a
+specific test date. Follow the [current README](../README.md) for play, setup,
+compatibility and validation commands; these notes are not an upgrade procedure.
+
+## Feedback and integration records
+
+Cursor targeting and persistent locks were checked on 2 October 2026 with Godot 4.7.2 on Windows. Run `res://tests/targeting_test.gd` headlessly for 13 assertions, or with a renderer for 14 assertions including captured-mouse steering and real cursor/Tab input. The checks cover cursor retargeting, repeated Tab, acquisition beyond 550 m, lock retention beyond weapon range and behind the camera, returning enemies, snapshot resets, destruction and candidate filtering. The [900 m lock capture](../docs/feedback/targeting-distant-lock.png) shows the retained target with OUT OF RANGE feedback. The rendered Scout hunt-and-repair replay and gameplay, network, dedicated-server, persistence and connection checks also passed. These are automated local checks; the revised targeting still needs human playtesting.
+
+The RPC compatibility regression, `res://tests/rpc_compatibility_test.gd`, reproduces the checksum and wrong-argument errors from mixed gameplay branches. Its 13 checks now reject extra methods, changed arguments or transport channels, legacy servers and incompatible pilot proofs before spawning. Matching builds reconnect, apply authoritative pilot laser damage and create the client's laser mesh. A rendered run also captured the [replicated pilot laser](../docs/feedback/network-pilot-laser.png). `tools/dev.ps1 build` compares the source runtime's fingerprint with the actual exported Windows executable and fails the build if they differ. RPC names are sorted as ordinary strings because Godot's `StringName` order differs between editor and release runtimes. The Linux source runtime under WSL and the Windows source/release runtimes produce the same fingerprint. Packet-content changes without signature changes must increment `FlightSession.NETWORK_SCHEMA`.
+
+For a connection diagnostic, launch the game or source runtime with `--headless -- --print-protocol`. It prints one `DORBIT_PROTOCOL=<hash>` line and exits without starting a server or joining one; credentials are not needed. Matching builds should report the same hash.
+
+Combat feedback was checked on 13 September 2026 with Godot 4.7.2, Windows and an NVIDIA RTX A500 Laptop GPU. The rendered flight replay passed click/Tab targeting, disabled fire, range, arc and real wall obstruction, shield/hull impacts, kill reward and return/repair. The final hunt measured 2.35 ms average and 3.70 ms p95 at 2560 x 1440 with VSync disabled. These local development measurements are not a reference-hardware performance guarantee.
+
+The two-process shared replay passed on UDP 29682, including authoritative rewards of 38 and 37 credits and both pilots returning to repair. Headless encounter checks passed 43 assertions, shared combat 42, and the dedicated server 44 with ten authenticated clients. The dedicated run used UDP 29683 to avoid another thread's fixed test port. Display checks passed at 960 x 600, 1440 x 900 and 1920 x 1080, including changing the volume/mute controls and loading the saved values into a fresh audio node.
+
+Run `res://tests/feedback_busy_playthrough.gd` with the renderer to inspect ten pilot models and one alien under 100 laser and 100 impact requests per second. Two eight-second runs measured 4.17 and 5.56 ms p95 at 1440p and kept transient effects below the 80-node limit. They exercise presentation load, not multiplayer simulation or the unmerged multi-alien content. Screenshots are saved under `build/validation`; checked-in review captures are linked from the PR. Desktop automation could not connect to its native helper, so validation used Godot's input-driven replays and rendered captures. Listening comfort and a representative group fight on the reference PC still need human playtesting.
+
+### Sound and integration
+
+Review captures: [range](../docs/feedback/feedback-range.png), [arc](../docs/feedback/feedback-arc.png), [obstruction](../docs/feedback/feedback-los.png), [shield hit](../docs/feedback/feedback-shield-impact.png), [hull hit](../docs/feedback/feedback-hull-impact.png), [co-op reward and destruction](../docs/feedback/shared-reward-client.png), [station return](../docs/feedback/04-repaired.png), [busy encounter](../docs/feedback/feedback-busy.png), and [audio controls at minimum window size](../docs/feedback/display-960.png).
+
+Settings > Audio opens master and effects volume controls and mute. Preferences stay on this device in `user://audio.cfg`. All cues are original procedural PCM generated by `scripts/feedback_audio.gd`; no third-party audio assets or audio attribution are required. Up to six sounds play at once, with per-cue repetition limits and attenuation to silence beyond 350 m.
+
+Lasers now use bright cores, soft additive halos and brief muzzle/contact flashes. Pilot fire is cyan; hostile fire is orange-red. Hits ripple across curved shields and throw hot, cooling sparks from hulls. Larger destruction flashes, flares and radial streaks scale to the destroyed ship's modeled diameter and last 1.2 seconds. Scouts produce smaller blasts than Sentinels and Heavies; player hulls use their catalog diameter (3.5 m for Phoenix, 7 m by default). The loot box and its HUD marker appear after the explosion has gone. The effects work in Compatibility rendering without bloom. Each short-lived effect root owns its meshes and animations, with a 64-root ordinary limit and a destruction reserve to 80. Incoming laser cues provide cosmetic contact direction; missing or reordered cues fall back to the camera-facing side. Damage, rewards and loot collection remain unchanged. The reliable destruction cue now carries its diameter, so clients and servers need matching updated builds.
+
+Review the [laser and shield hit](../docs/feedback/combat-laser-shield-1440.png), [hull sparks](../docs/feedback/combat-laser-hull-1440.png), [incoming fire](../docs/feedback/combat-hostile-1440.png), [larger destruction](../docs/feedback/combat-destruction-1440.png) and [loot revealed afterward](../docs/feedback/combat-loot-1440.png). Run `res://tests/combat_effects_playthrough.gd` with a renderer for fresh 960 x 600 and 1440 x 900 captures under `build/validation`. It exercises real shot validation, shield/hull damage, death, rewards and delayed loot presentation. The headless combat-effects test runs in both check helpers and covers moving hits, death visibility, cleanup, saturated budgets, modeled destruction size and unchanged combat state. Resource integration checks cover replicated explosion sizes and loot visibility on real ENet clients.
+
+The October rework passed the full Windows headless check, 12 focused effect assertions, the rendered gallery at both sizes, and 13 rendered protocol/shot assertions. The hunt-and-repair replay passed at 2560 x 1440 with an isolated settings profile (13.42 ms average / 16.05 ms p95). The busy presentation fixture passed its 80-root limit with ten pilot models, one alien, and 100 laser plus 100 impact requests per second at 2560 x 1440 (24.24 ms p95 on AMD Radeon(TM) Graphics). The busy fixture applies VSync and sizing after device settings load, and verifies its actual render size. These are local presentation measurements, not a reference-hardware or multiplayer capacity benchmark. Existing integration fixtures still occasionally emit collinear-up or ObjectDB exit warnings.
+
+The larger-explosion follow-up passed 21 focused effect assertions, 89 resource integration assertions both headlessly and with OpenGL, 75 encounter assertions with an isolated settings profile, and 13 protocol/shot assertions. Rendered captures verify hidden loot during destruction and its reveal afterward at 960 x 600 and 1440 x 900, plus [Scout](../docs/feedback/combat-destruction-scout-1440.png) and [Heavy](../docs/feedback/combat-destruction-heavy-1440.png) blasts from the same camera and wreck position. The 2560 x 1440 busy fixture retained its effect limit with the longer explosions (23.97 ms p95 on this machine).
+
+On 18 September, alien variety was integrated with the merged feedback changes. Enemy captions use type and slot number; the station and selected target take priority over secondary contacts. The Windows gameplay/network/persistence checks passed, as did the rendered 2560 x 1440 Scout hunt and feedback replay. A separate 60-second run with one rendered client, nine headless clients and a dedicated server kept ten pilots connected: all five aliens fought and died, with overlapping encounters on 33.8% of ticks. The capped 1440 x 900 client averaged 59.97 FPS with 16.82 ms p95 frame time on the RTX A500 Laptop GPU. This is a local integration check, not an internet or reference-hardware benchmark. The busy encounter capture above now shows that run.
+
+Purchases play a confirmation cue only after the server commits a new transaction. Failed and duplicate purchases stay silent. Clients and server must use matching builds.
+
+`tests/hunting_contracts_test.gd` checks authenticated concurrent contracts, shared kill progress, automatic payouts, restart recovery, abandonment, repeatability, legacy migration and failed saves. Both check helpers run it. For a rendered replay, run Godot with `--path . --script res://tests/contracts_playthrough.gd`. It provisions a disposable pilot and server on UDP 24690, accepts all three hunts, follows Scout respawns and repairs between kills, completes the Scout hunt with automatic payment in flight, and saves frames under `build/validation/contracts-*.png`.
+
+The contract board hides pause-menu audio controls. Equipment purchases and fitting share the version-7 persistence path with concurrent contracts, automatic payouts and industry. The replay starts with a 10,000-credit purchase budget, buys and installs a second LF-1 after the Scout hunt, and checks that credits, all accepted contracts and fitting survive a server restart. Inventory uses an owner-only reliable channel; world snapshots send one player per packet with equipment stats and active contracts.
+
+On 2 October 2026, the full Windows check command passed after the concurrent-hunt update, and the expanded contract checks passed 43 assertions. The rendered replay accepted all three hunts, paid the Scout reward in flight for 180 total credits, kept the other hunts active, and repeated the Scout offer at the station. The board was inspected at 960 x 600.
+
+The Mission Control board now separates hunt selection from acceptance. Hunting contracts and Active contracts tabs share a left-hand list; the right pane shows the selected briefing, accepted objective progress and reward. The footer accepts or abandons that run, reports remaining slots and explains station restrictions. Saved terms and wallet-full pending rewards remain visible. Review the [available hunts](../docs/feedback/contracts-offers.png) and [active contracts](../docs/feedback/contracts-active.png) at 960 x 600. The rendered replay checks mouse selection and actions, keyboard selection and acceptance, retained focus, filtering, abandonment, saved terms, pending rewards and minimum-window layout before continuing the live hunt, purchase and restart loop.
+
+On 3 October 2026, the revised rendered contract replay passed 26 checks on Windows OpenGL, with captures inspected at 960 x 600 and 1440 x 900. Headless hunting-contract checks passed 43 assertions and equipment checks passed 68. The replay verifies the exact Scout payout in flight and preserves the returned wallet through repeat acceptance, purchase and restart; rescue fees incurred during the live return are accounted for separately.
+
+
+## Earlier feature validation reports
+
+Review the [960 x 600 autopilot HUD](../docs/feedback/autopilot-960.png) and
+[1440 x 900 HUD](../docs/feedback/autopilot-1440.png). The Windows check suite passed
+on 7 October 2026; the autopilot fixture passed 37 rendered assertions,
+including rebound keyboard input and status visibility. Linux execution is left to PR
+CI. Routes and arrival tuning still need human playtesting.
+
+Review the [flight ammo bar](../docs/feedback/ammo-flight-1440.png) and
+[ammo shop](../docs/feedback/ammo-shop-960.png). Windows ammo checks passed 129
+assertions headlessly and 138 with OpenGL, covering million-round orders,
+per-laser consumption, fitting changes, ship switches and all four network colors.
+Related equipment, reference-equipment, ships, shop and network combat checks passed.
+Earlier validation passed 28 combat effect checks, the rendered color gallery,
+220 rendered HUD checks, the full Windows check helper and seven Python tests.
+Human pricing and group-combat performance playtesting remain necessary; Linux
+and exported-client checks are left to CI.
+
+On 2 October 2026, the resource integration test passed 47 assertions on Windows headless, Windows OpenGL and Linux headless. Both full check scripts passed. Rendered equipment checks passed 53 assertions after adding the cargo page. The Windows release export passed, and its protocol fingerprint matched the Windows and WSL Linux source runtimes. Operator-tool tests passed three cases; Linux shutdown and migration checks passed seven cases, including corrupt cargo and a version-2 ledger backup. Some combat and compatibility replays emitted ObjectDB cleanup warnings on exit while passing their assertions; the resource runs did not.
+
+Review quantity purchasing at [960 x 600](../docs/feedback/shop-quantity-960.png) and [1440 x 900](../docs/feedback/shop-quantity-1440.png). On 7 October 2026, the shop test passed 82 headless and 90 rendered Windows checks, including real typing and plus/minus clicks, invalid input, batch affordability, unique stored item IDs, duplicate requests, restart persistence and a 999-item purchase. Equipment checks passed 134 assertions including an atomic failed bulk save; the reference catalog passed 131, main menus 277, offline menus 258 and RPC compatibility 13. The compatibility fixture retains its existing ObjectDB cleanup warning. Linux and exported-client checks are left to PR CI.
+
+The reference catalog test (`res://tests/darkorbit_equipment_test.gd`) runs in both check helpers. It exercises every purchasable model through authenticated purchase, duplicate protection, installation, stat replication and removal. It rejects LF-4, SG3N-B00 and legacy-engine purchases, then checks mixed shields, cumulative fusion regeneration, fractional LF-3 alien damage through real physics shots, UI bonus displays, bonus restoration when switching hulls and restart persistence. A rendered run produces the review captures above under `build/validation`. On 6 October 2026 it passed 131 assertions both headlessly and on Windows OpenGL; the rendered shop test passed 53. The full Windows check script passed, including ten authenticated clients and the flight replay. The compatibility and flight replays emitted their existing ObjectDB cleanup warnings on exit; the new rendered runs were clean. Six Python operator-tool tests passed, including credential rotation preserving all new models. Linux execution and exported client checks are left to PR CI; WSL is unavailable on this machine. Item artwork remains the existing category placeholders, and reference prices need human economy playtesting.
+
+Rebalance validation on 3 October 2026: the complete Windows headless check passed, the rendered equipment replay passed 70 assertions at 960 x 600 and 1440 x 900, and the rendered Scout hunt completed with survival, reward and station repair. The dedicated server check included ten authenticated clients. The new balance fixture passed 26 assertions covering damage split, depletion, destruction with remaining shield, regeneration, all laser/generator slot limits, authoritative fitting/replication and restart. Its stationary physics fights measured 9.67 seconds for one laser against a Scout, 12.61 seconds for three lasers against a Sentinel, and 7.99 seconds for three four-laser pilots against a Heavy. These controlled fights do not measure pursuit, evasive flight or the live economy. Four Python provisioning tests passed. The Linux runner includes the new balance test; Linux execution is left to PR CI. Human balance and progression playtesting remain necessary.
+
+Credit-income validation on 6 October 2026: the full Windows check passed,
+including the 18-assertion economy fixture and ten authenticated clients. The
+rendered resource replay passed 82 assertions; the rendered contract replay
+passed 28, including pursuit, station repairs preserving partial progress,
+automatic payment, fitting and restart. Six Python provisioning tests passed.
+The contract replay seeds a 10,000-CR purchase budget; zero-wallet funding is
+checked separately by the economy fixture. Review the
+[updated resource prices](../docs/feedback/economy-resources.png) and
+[confirmed Scout payment](../docs/feedback/economy-contract-reward.png). Existing
+ObjectDB cleanup warnings remain in some older checks. Linux-only deployment
+and shutdown tests cannot run on Windows and are left to CI. Human progression
+playtesting is still required.
+
+## Earlier save rollout notes
+
+Save schema 7 retains schema 5's combined laser/rocket ammunition inventory and per-ship
+resource boost reserves alongside persistent Skylab industry.
+Schema 4 ammunition saves retain their rounds and receive empty boosts; schema 4
+boost saves retain their reserves and receive the one-time starter ammunition.
+Each fired volley commits both debits together before applying damage.
+
+Skylab now follows the approved detailed station concept with live module labels and
+reference-style graphite/amber windows. All builds, acceleration and robots use
+credits. Instant builds cost twice the normal build credit price with the same
+ore requirements. Instant send and immediate delivery of an
+active shipment both cost a flat **125,000 CR**, independent of amount. See
+[Skylab policies and migration](../docs/skylab.md) for schema-7 rollout details.
+
+## Superseded feature instructions
+
+The map update originally required network schema 7, and the manual-rocket and
+resource-upgrade instructions later required network schema 12. The current
+schema is 13; these earlier requirements describe their rollout builds only.
+Network and save schemas are independent: the current save schema remains 7.
+
+The original ammunition HUD had four fixed x1-x4 tiles. It has been replaced by
+the ten-slot customizable quickslot bar. Save schema 4 originally introduced
+laser ammunition; current schema-7 migration also preserves rocket inventory,
+resource boosts and Skylab industry.
