@@ -137,6 +137,12 @@ reserved from other control bindings and are inactive in menus. The destination
 tracker moves to top center. The ammo bar is a separate HUD control for the
 parallel HUD customization work to position later.
 
+The user requested generated metallic laser-energy cartridge pictures for the
+four ammo types. Their ice-blue, cyan, amber and violet colors also tint each
+pilot's beam and glow. The server sends the ammo type with each shot so other
+pilots see its firing color, including when selection changes between shots.
+Alien shots retain their hostile red color.
+
 ### Combat feedback and station navigation
 
 Implemented for Scout, Sentinel and Heavy encounters during Milestone 3:

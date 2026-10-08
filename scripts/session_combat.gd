@@ -492,9 +492,9 @@ func receive_message(text: String, sound_cue: String = "") -> void:
 
 
 @rpc("authority", "call_local", "unreliable", 3)
-func show_laser(start: Vector3, finish: Vector3, hostile: bool) -> void:
+func show_laser(start: Vector3, finish: Vector3, hostile: bool, ammo_type: String = "x1") -> void:
 	if session.active and not session.sector.dedicated_server:
-		SectorVisuals.laser(session.sector, start, finish, hostile)
+		SectorVisuals.laser(session.sector, start, finish, hostile, ammo_type)
 
 
 @rpc("authority", "call_local", "reliable")

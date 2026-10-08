@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d3vhmvsgqct6b"
-path="res://.godot/imported/x2.svg-5d6928e22af34cbf2298e2cd6bf0bcdb.ctex"
+uid="uid://drcoklku4g41a"
+path="res://.godot/imported/x4.png-c80181a308bb872e14f65b1dc8824964.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/ammo/x2.svg"
-dest_files=["res://.godot/imported/x2.svg-5d6928e22af34cbf2298e2cd6bf0bcdb.ctex"]
+source_file="res://assets/ui/ammo/x4.png"
+dest_files=["res://.godot/imported/x4.png-c80181a308bb872e14f65b1dc8824964.ctex"]
 
 [params]
 
@@ -38,6 +38,3 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false

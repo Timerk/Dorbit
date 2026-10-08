@@ -88,6 +88,8 @@ func run() -> void:
 		check(is_equal_approx(total - enemy.hull - enemy.shield, (remote.laser_damage + 26.25) * int(Ammunition.TYPES[kind]["multiplier"])), kind + " multiplies fitted laser damage including alien bonuses")
 		check(remote.ammo[kind] == amount - 1 and store.pilots["pilot0"]["ammo"][kind] == amount - 1, "One successful volley consumes and saves exactly one " + kind + " shot")
 		check(not remote.try_fire(enemy) and remote.ammo[kind] == amount - 1, "Cooldown rejection consumes no extra ammo")
+		if DisplayServer.get_name() != "headless":
+			await check_network_beam(client, kind)
 		await replicate(server)
 		check(client.player.ammo == remote.ammo, "Consumed inventory replicates")
 		check(not client.player.try_fire(client.alien), "Client cannot fire or debit ammunition locally")
@@ -154,6 +156,21 @@ func run() -> void:
 	check(client.player.ammo == saved_ammo, "Delayed snapshots and station replies cannot restore older ammunition counts")
 	await check_failed_debit(server, client)
 	finish()
+
+
+func check_network_beam(client: Sector, kind: String) -> void:
+	# Inspect the received shot, rather than calling the presentation RPC locally.
+	var deadline := Time.get_ticks_msec() + 500
+	while Time.get_ticks_msec() < deadline:
+		await process_frame
+		for effect: Node in get_nodes_in_group("transient_feedback"):
+			if effect.get_parent() != client or not effect.get_meta("laser", false):
+				continue
+			var mesh := effect.get_child(0) as MeshInstance3D
+			var surface := mesh.material_override as StandardMaterial3D
+			check(surface.emission.is_equal_approx(Ammunition.TYPES[kind]["color"].lerp(Color.WHITE, 0.35)), "Network shot renders the firing color for " + kind)
+			return
+	check(false, "Receive the network beam for " + kind)
 
 
 func check_failed_debit(server: Sector, client: Sector) -> void:

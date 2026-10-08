@@ -147,7 +147,7 @@ static func button(parent: Node, content: String, action: Callable) -> Button:
 
 static func texture(model: String) -> Texture2D:
 	if Ammunition.TYPES.has(model):
-		return load("res://assets/ui/ammo/%s.svg" % model)
+		return load("res://assets/ui/ammo/%s.png" % model)
 	if model == "ship" or ShipCatalog.MODELS.has(model):
 		return load("res://assets/ui/ships/%s.png" % ("liberator" if model == "ship" else model))
 	if atlas == null:
