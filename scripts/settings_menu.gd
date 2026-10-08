@@ -447,7 +447,7 @@ func _input(event: InputEvent) -> void:
 func _process(_delta: float) -> void:
 	main_menu_button.visible = sector.session.active or sector.session.offline_main_menu()
 	main_menu_button.tooltip_text = "Stops the development host and disconnects its pilots." if sector.session.active and multiplayer.is_server() else ""
-	var show_pause := sector.paused and not sector.preflight and not sector.main_menu.visible and not sector.session.menu.visible and not panel.visible and not sector.shop.visible and not sector.equipment_menu.visible and not sector.hud.contract_panel.visible and not sector.hud.navigation.overview.visible
+	var show_pause := sector.paused and not sector.hud.layout.editing and not sector.preflight and not sector.main_menu.visible and not sector.session.menu.visible and not panel.visible and not sector.shop.visible and not sector.equipment_menu.visible and not sector.hud.contract_panel.visible and not sector.hud.navigation.overview.visible
 	if show_pause and not pause_panel.visible:
 		pause_panel.show()
 		resume_button.grab_focus()

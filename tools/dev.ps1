@@ -107,6 +107,7 @@ switch ($Task) {
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/map_layout_test.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/map_layout_playthrough.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/hud_playthrough.gd')
+            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/hud_customization_test.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/autopilot_test.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/pilot_persistence_test.gd')
             Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/hunting_contracts_test.gd')
