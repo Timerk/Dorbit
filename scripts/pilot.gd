@@ -25,6 +25,12 @@ var ammo_debit: Callable # Dedicated server commits consumption before firing.
 var resource_boosts: Dictionary = {}
 var laser_loadout: Array = []
 var rockets := RocketWeapons.new()
+var repair_seconds: float = 0.0
+var repair_auto: bool = false
+var repair_requested: bool = false
+var robot_repairing: bool = false
+var time_since_attack: float = 100.0
+var extras_clock: float = 0.0
 
 
 func firing_blocker(target: SpaceShip) -> String:
@@ -40,6 +46,8 @@ func spend_ammo() -> bool:
 	if ammo_debit.is_valid() and not ammo_debit.call():
 		return false
 	ammo[ammo_type] -= laser_count
+	time_since_attack = 0.0
+	repair_requested = false
 	return true
 
 
@@ -90,6 +98,9 @@ func _ready() -> void:
 
 func reset_health() -> void:
 	super.reset_health()
+	repair_requested = false
+	robot_repairing = false
+	time_since_attack = 100.0
 	pending_look = Vector2.ZERO
 	radiation_exposure = 0.0
 	rockets.unload()

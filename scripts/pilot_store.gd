@@ -379,8 +379,18 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		var blocker := Equipment.fitting_blocker(equipment, subject, ship, slot)
 		if not blocker.is_empty():
 			return blocker
-		equipment["items"][subject]["ship"] = ship
-		equipment["items"][subject]["slot"] = slot
+		Equipment.move(equipment, subject, ship, slot)
+		if not CargoResources.valid(pilot["cargo"], equipment):
+			return "Sell excess cargo before removing cargo capacity. No items were moved."
+	elif action == "configure_extra":
+		var item: Dictionary = equipment["items"].get(subject, {})
+		if item.is_empty() or not Equipment.MODELS[item["model"]].get("family", "") in ["ammo", "generators", "repair-auto"] or not ship in ["on", "off"]:
+			return "Invalid extra configuration."
+		if (item["model"] == "ammo-cpu" and not slot in ["x1", "x2", "x3"]) or (item["model"] != "ammo-cpu" and not slot.is_empty()):
+			return "Invalid automatic ammunition type."
+		item["enabled"] = ship == "on"
+		if item["model"] == "ammo-cpu":
+			item["ammo_type"] = slot
 	else:
 		return "Unknown station action."
 	equipment["revision"] = sequence
@@ -388,6 +398,8 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		return "Persistence unavailable."
 	if action == "test_credits":
 		return "Preview: added %d test credits." % (pilot["credits"] - previous_credits)
+	if action == "configure_extra":
+		return "Extra settings saved."
 	if action == "buy_ammo":
 		return "Purchased %d %s shots." % [subject.get_slice(":", 1).to_int() * Ammunition.BATCH_SIZE, subject.get_slice(":", 0)]
 	if action == "sell":
