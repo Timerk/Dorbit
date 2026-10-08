@@ -61,10 +61,13 @@ def download_builds(preview=False):
         raise ValueError("Invalid build run")
     Path("dist").mkdir()
     for platform, filename in (("Linux", "server.tar.gz"), ("Windows", "windows.zip")):
-        name = f"{'Preview' if preview else 'Dorbit'}-{platform}-{sha}-{attempt}"
+        build_attempt = os.environ[f"{platform.upper()}_BUILD_ATTEMPT"] if preview else attempt
+        if not re.fullmatch(r"[1-9][0-9]*", build_attempt) or int(build_attempt) > int(attempt):
+            raise ValueError("Invalid build attempt")
+        name = f"{'Preview' if preview else 'Dorbit'}-{platform}-{sha}-{build_attempt}"
         listing = api(f"repos/{repo}/actions/runs/{run_id}/artifacts?name={name}")
         if listing["total_count"] != 1 or len(listing["artifacts"]) != 1:
-            raise ValueError("Expected exactly one artifact from this build attempt")
+            raise ValueError("Expected exactly one artifact from the successful build job's attempt")
         artifact = listing["artifacts"][0]
         if artifact["name"] != name or artifact["expired"]:
             raise ValueError("Build artifact unavailable")
@@ -163,7 +166,7 @@ def preview_report():
     if re.fullmatch(r"[0-9a-f]{40}", sha):
         message += f"Commit: `{sha}`. Connect through Tailscale to `100.86.199.82:24568` with your private preview pilot.\n\n"
         message += f"[Matching Windows client and encrypted recovery copy](https://github.com/{repo}/actions/runs/{run_id}#artifacts). "
-        message += f"Download `Preview-Windows-{sha}-{os.environ['GITHUB_RUN_ATTEMPT']}`, then extract windows.zip.\n\n"
+        message += f"Download `Preview-Windows-{sha}-{os.environ['WINDOWS_BUILD_ATTEMPT']}`, then extract windows.zip.\n\n"
     message += ("Use **Stop preview** when finished. Production has separate controls. "
                 "If deployment failed, preview may be stopped with a pending transaction. "
                 f"[Preview recovery instructions](https://github.com/{repo}/blob/main/DEPLOYMENT.md#preview-failure-and-recovery).\n")

@@ -228,6 +228,46 @@ class PreviewDeploymentTest(DeploymentFixture, unittest.TestCase):
                            {"pr": pr, "fresh": fresh, "build_run": 123, "attempt": 1})
         return json.loads((deploy.STATE / "pending.json").read_text())
 
+    def test_cold_import_can_finish_before_preview_readiness_deadline(self):
+        elapsed = [0]
+        observed_ports = []
+        import_seconds = 16 * 60
+
+        def command(*args):
+            if "--property=InvocationID" in args:
+                return "preview-invocation"
+            if args[:2] == ("systemctl", "is-active"):
+                return "active"
+            if "--property=ControlGroup" in args:
+                return "/system.slice/dorbit-preview.service"
+            if args[0] == "journalctl":
+                return "Server listening on UDP 24568." if elapsed[0] >= import_seconds else ""
+            if args[0] == "ss":
+                observed_ports.append(args[-1])
+                return 'users:(("godot",pid=123,fd=4))' if elapsed[0] >= import_seconds else ""
+            return ""
+
+        deploy.ENV.write_text("DORBIT_PORT=24568\n")
+
+        def read(path):
+            return "DORBIT_PORT=24568\n" if path == deploy.ENV else "0::/system.slice/dorbit-preview.service\n"
+
+        with patch.object(deploy, "run", side_effect=command), \
+             patch.object(deploy.time, "monotonic", side_effect=lambda: elapsed[0]), \
+             patch.object(deploy.time, "sleep", side_effect=lambda seconds: elapsed.__setitem__(0, elapsed[0] + seconds)), \
+             patch.object(deploy.Path, "exists", return_value=True), \
+             patch.object(deploy.Path, "read_text", autospec=True, side_effect=read):
+            deploy.ready()
+            preview_elapsed = elapsed[0]
+            elapsed[0] = 0
+            with patch.object(deploy, "PREVIEW", False):
+                with self.assertRaisesRegex(RuntimeError, "timed out"):
+                    deploy.ready()
+            production_elapsed = elapsed[0]
+        self.assertEqual(preview_elapsed, import_seconds + 10, "Cold import must still pass ten seconds of game readiness")
+        self.assertEqual(production_elapsed, 120, "Production retains its existing startup deadline")
+        self.assertTrue(observed_ports and all(port == "sport = :24568" for port in observed_ports))
+
     def test_first_start_stop_and_redeploy_same_commit(self):
         self.activate(self.prepare())
         first_release = deploy.CURRENT.resolve()
@@ -438,7 +478,8 @@ class ArtifactBoundaryTest(unittest.TestCase):
             filename = "windows.zip" if Path("dist/server.tar.gz").exists() else "server.tar.gz"
             stdout.write(self.archive([filename]).getvalue())
         with patch.dict(os.environ, PREVIEW_SHA=NEW, GITHUB_REPOSITORY="test/dorbit",
-                        GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="2"), \
+                        GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="2",
+                        LINUX_BUILD_ATTEMPT="2", WINDOWS_BUILD_ATTEMPT="2"), \
              patch.object(ci, "api", side_effect=listing), patch.object(ci, "run", side_effect=raw_download):
             ci.download_builds(preview=True)
         self.assertTrue(Path("dist/server.tar.gz").is_file())

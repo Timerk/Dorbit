@@ -309,8 +309,9 @@ Each must contain exactly one expected regular file, `server.tar.gz` or
 `windows.zip`. It copies that member to a fixed new file without extracting ZIP
 paths. Extra entries, traversal paths, links and existing output files are rejected
 before Tailscale or SSH credentials are used. Release publication uses the same
-downloader. Artifact names include the run attempt; start a new full run instead
-of rerunning only some failed jobs.
+downloader. Preview builds record their own run attempts. A partial rerun uses
+each successful build job's exact commit and attempt, even when that job was
+retained from an earlier attempt. Release publication still requires a full run.
 
 When the job finishes, open its summary and download
 `Preview-Windows-<commit>-<attempt>` from the linked run's artifacts. Extract that
@@ -329,8 +330,18 @@ Enter the preview address and port in the game's connection menu. Keep this
 PowerShell session separate from your production launcher. A successful job means
 the new game's listening log and service-owned UDP socket stayed ready for ten
 seconds. It still needs your human playtest. Run Deploy preview again after fixes.
-Use a new workflow run rather than rerunning only failed jobs: artifact names
-include the attempt number, so partial reruns cannot mix old and new builds.
+Fresh preview releases may spend several minutes importing the textured ship
+assets before opening the socket. Preview readiness allows up to twenty minutes;
+the deployment job allows thirty minutes including transfers. Production retains
+its existing two-minute readiness limit. Install the reviewed updated
+`tools/vps-deploy.py` as `/usr/local/sbin/dorbit-preview-deploy` to enable this
+allowance; updating a gameplay release alone cannot replace the root-owned helper.
+Workflow changes take effect after merging into `main` and starting a new run;
+reruns use their original workflow commit. A partial rerun can reuse successful
+build artifacts, but cannot bypass a pending VPS transaction. Follow the recovery
+instructions below before retrying a deployment that reached the VPS. Start a
+new run to select a newer PR head. The summary names the matching Windows build's
+attempt, which can differ from the deployment attempt.
 
 Open **Actions > Stop preview > Run workflow** when finished or before a production
 session with friends. It stops only `dorbit-preview.service` and verifies that no
