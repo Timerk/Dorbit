@@ -68,6 +68,7 @@ static func primary(button: Button) -> void:
 	for state: String in ["normal", "hover", "pressed"]:
 		button.add_theme_stylebox_override(state, style(AMBER.lightened(0.12) if state == "hover" else AMBER, AMBER))
 		button.add_theme_color_override("font_" + ("color" if state == "normal" else state + "_color"), SURFACE)
+	button.add_theme_color_override("font_focus_color", SURFACE)
 	button.custom_minimum_size.y = 48
 	button.add_theme_font_size_override("font_size", 24)
 
