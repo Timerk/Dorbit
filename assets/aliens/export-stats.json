@@ -1,0 +1,47 @@
+{
+  "Scout": {
+    "triangles": 42936,
+    "materials": 7,
+    "bytes": 12290304,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 7.547966,
+    "bounds_godot": [
+      4.864836,
+      1.061592,
+      5.672582
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
+  },
+  "Sentinel": {
+    "triangles": 44576,
+    "materials": 7,
+    "bytes": 12415576,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 9.702295,
+    "bounds_godot": [
+      6.378223,
+      1.598126,
+      7.134339
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
+  },
+  "Heavy": {
+    "triangles": 48592,
+    "materials": 7,
+    "bytes": 13317112,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 13.5157,
+    "bounds_godot": [
+      9.295927,
+      2.993719,
+      9.343314
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
+  }
+}

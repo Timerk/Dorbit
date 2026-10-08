@@ -60,12 +60,20 @@ These files work without the original workspace or external texture paths.
 
 Blender models use -Y forward and +Z up, in review units. GLB uses the standard
 glTF Y-up conversion; importing it back into Blender restores the review axes
-and dimensions. These exports are for model review, not sized/oriented for the
-current Godot alien node. Game integration, runtime LODs and representative
-hardware performance measurement remain follow-up work. The existing
-`art/.gdignore` excludes this collection from Godot's imports; alien gameplay
-and collision geometry are unchanged. The added detail and 4K maps increase the
-review asset budget; these exports are not measured runtime LODs.
+and dimensions. These exports preserve review units. Derived game exports live
+under [assets/aliens](../../assets/aliens), centered with -Z forward and +Y up.
+They retain the previous Scout/Sentinel/Heavy visual bounding diameters
+(7.548/9.702/13.516 m) independently of the unchanged 2.2 m collision sphere.
+Flight and contract previews share one mesh per type, seven material surfaces,
+three shared 2K maps and Godot-generated distance LODs. The runtime maps average
+albedo in linear space and renormalize normal vectors; the 4K sources remain
+intact. Server-only aliens do not load these visual assets.
+
+![Actual Godot contract previews and rear views](../../docs/feedback/alien-models-godot.png)
+
+The existing `art/.gdignore` excludes this source collection from Godot's imports.
+Alien statistics, combat, collision geometry and destruction sizes are unchanged.
+Representative-hardware performance still requires playtesting.
 
 ## Rebuilding and validation
 
@@ -74,6 +82,7 @@ Run from the repository root with Blender 5.2.2 LTS:
 ```powershell
 rtk proxy "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" --background --factory-startup --python-exit-code 1 --python art/alien-review/build_models.py
 rtk proxy "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" --background --factory-startup --python-exit-code 1 --python art/alien-review/validate_models.py
+rtk proxy "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" --background --factory-startup --python-exit-code 1 --python tools/export_aliens.py
 $alienSheetPython = rtk proxy python -c "import sys; print(sys.executable)"
 rtk proxy uv pip install --python $alienSheetPython --target .tools/art-python pillow
 rtk proxy python art/alien-review/build_review_sheets.py
@@ -97,5 +106,25 @@ single-mesh GLB round trips and unobstructed emissive rear exhaust centers.
 all twenty-seven 1600 x 1200 PNGs for nonempty images and checks the eighteen
 full views for sufficient boundary clearance. Detail views intentionally crop
 the craft. The sheet builder composes six-view sheets, three close-ups per craft,
-concept comparisons and the overview from those renders. Art review is still
-required for acceptance of the final models.
+concept comparisons and the overview from those renders.
+
+Runtime [export statistics](../../assets/aliens/export-stats.json) record geometry,
+orientation, dimensions and texture resolution. After Godot import,
+`tests/alien_assets_test.gd` checks all three models, shared preview resources,
+material maps, generated LODs, server isolation and destruction/respawn. Both
+check suites and the Windows exported-pack build run it. Run Godot with
+`--path . --script res://tools/render_alien_preview.gd` for fresh actual game
+preview captures, and `res://tests/flight_playthrough.gd` for the rendered
+hunt-and-repair replay.
+
+On 8 October 2026, all 172 source and exported-pack alien checks passed, together
+with the full Windows suite and Windows build checks. The actual Godot preview
+gallery and 960 × 600 contract board were visually inspected. The rendered
+contract replay passed all 28 checks, including three Scout kills, automatic
+payment, station repairs, repeat acceptance, equipment fitting and restart.
+Its test-only server keeps Scout respawns nearby; full-sector randomized
+navigation remains covered separately. The rendered
+2560 × 1440 hunt-and-repair replay passed with 16.49 ms average and 21.70 ms p95
+frame time on AMD Radeon(TM) Graphics. This is a local validation measurement,
+not a representative friend-group hardware benchmark. Existing scene UID fallback
+and test-exit ObjectDB warnings remain outside this art integration.
