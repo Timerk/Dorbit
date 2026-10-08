@@ -124,6 +124,9 @@ func activate(target: SpaceShip) -> String:
 
 
 func launch(target: Alien, kind: String, index: int, count: int, bonus: float = 0.0) -> void:
+	ship.time_since_attack = 0.0
+	ship.repair_requested = false
+	ship.robot_repairing = false
 	sequence += 1
 	var info: Dictionary = Ammunition.ROCKETS[kind]
 	var id := "%d-%d" % [ship.get_instance_id(), sequence]
