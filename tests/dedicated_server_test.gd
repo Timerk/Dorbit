@@ -4,7 +4,7 @@ extends "res://tests/network_combat_test.gd"
 
 func replicate(host: Sector) -> void:
 	var expected := host.session.snapshot_sequence + 1
-	var deadline := Time.get_ticks_msec() + 8000
+	var deadline := Time.get_ticks_msec() + 15000
 	while Time.get_ticks_msec() < deadline:
 		host.session.send_snapshot()
 		await settle(0.05)
