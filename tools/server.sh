@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Linux x86-64 / WSL2 helper; no desktop, GPU or export templates required.
+# Linux x86-64 / WSL2 helper; source checks/builds and import-free release startup.
 set -euo pipefail
 umask 077 # Saves and their backups contain authentication verifiers.
 cd "$(dirname "$0")/.."
@@ -8,6 +8,20 @@ if (( $# > 0 )); then shift; fi
 engine=".tools/godot-linux/Godot_v4.7.2-stable_linux.x86_64"
 archive="${engine}.zip"
 checksum="cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4"
+template=".tools/godot-linux/linux_release.x86_64"
+template_checksum="d9f79ab89b5ae369aeed11c6052d402e8218cd503bf85b4a235f9c30c46a7c63"
+
+# Published releases contain only the exported runtime/pack and service helpers.
+# Keep the existing unit entry point, and never fall back to a source import when
+# an exported release is incomplete.
+if [[ "$task" == run && ( -d runtime || ! -f project.godot ) ]]; then
+  if [[ ! -x runtime/DorbitServer.x86_64 || ! -f runtime/DorbitServer.pck ]]; then
+    echo "Incomplete exported server release; runtime and pack are required." >&2
+    exit 1
+  fi
+  exec python3 tools/run_server.py "$PWD/runtime/DorbitServer.x86_64" \
+    --headless --max-fps 60 -- --server "$@"
+fi
 
 checked_command() {
   local output status=0 started=$SECONDS label="$*"
@@ -24,6 +38,25 @@ checked_command() {
 }
 
 checked() { checked_command "$engine" "$@"; }
+
+setup_template() {
+  if [[ ! -f "$template" ]]; then
+    local download=".tools/godot-linux/Godot_v4.7.2-stable_export_templates.tpz"
+    curl --fail --location --retry 3 \
+      "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/$(basename "$download")" \
+      --output "$download"
+    echo "f298490b8d44d934be425a5a65a51bf15f422428b229a06a6e11d9ffea248011  $download" | sha256sum --check
+    python3 - "$download" "$template" <<'PY'
+import sys, zipfile
+from pathlib import Path
+with zipfile.ZipFile(sys.argv[1]) as source:
+    Path(sys.argv[2]).write_bytes(source.read('templates/linux_release.x86_64'))
+PY
+    rm -- "$download"
+  fi
+  echo "$template_checksum  $template" | sha256sum --check
+  chmod +x "$template"
+}
 
 case "$task" in
   setup)
@@ -84,8 +117,16 @@ PY
     checked --headless --path . --script res://tests/resources_test.gd
     checked_command python3 tests/pilots_test.py
     ;;
+  build)
+    setup_template
+    mkdir -p build/linux
+    checked --headless --path . --export-release "Linux Dedicated Server"
+    checked --headless --path . --script res://tools/export_notices.gd -- res://build/linux/THIRD_PARTY_NOTICES.txt
+    checked_command python3 tools/check-server-export.py "$engine" build/linux/DorbitServer.pck --runtime build/linux/DorbitServer.x86_64
+    checked_command python3 tests/server_shutdown_test.py build/linux/DorbitServer.x86_64 build/linux/DorbitServer.pck
+    ;;
   *)
-    echo "Usage: bash tools/server.sh {setup|run|check} [--port=24567]" >&2
+    echo "Usage: bash tools/server.sh {setup|run|check|build} [--port=24567]" >&2
     exit 1
     ;;
 esac

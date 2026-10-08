@@ -1,9 +1,11 @@
 extends SceneTree
-## Bundle the engine and dependency notices with the Windows executable.
+## Bundle the engine and dependency notices with client or server exports.
 
 
 func _initialize() -> void:
 	var path := "res://build/windows/THIRD_PARTY_NOTICES.txt"
+	if not OS.get_cmdline_user_args().is_empty():
+		path = OS.get_cmdline_user_args()[0]
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	if file == null:
 		push_error("Could not write third-party notices")
