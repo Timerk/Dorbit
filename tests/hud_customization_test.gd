@@ -160,6 +160,8 @@ func run() -> void:
 	await process_frame
 	var button := hud.navigation.range_more
 	check(layout.rect_for("radar").encloses(button.get_global_rect()), "Resized radar controls stay inside the moved radar")
+	check(button.get_global_rect().size.is_equal_approx(Vector2(26, 26) * 1.4), "Compact radar controls scale with the customized panel")
+	check(button.get_global_rect().end.y <= layout.rect_for("radar").position.y + 34 * 1.4, "Customized radar controls retain the gap above the header divider")
 	var previous_range := hud.navigation.range_index
 	await click(button.get_global_rect().get_center())
 	check(hud.navigation.range_index == previous_range + 1, "Radar button remains clickable after moving and resizing")
