@@ -513,8 +513,15 @@ confirm. Prometid uses 20 Prometium + 10 Endurium; Duranium uses 10 Endurium +
 20 Terbium; Promerium uses 10 Prometid + 10 Duranium without Xenomit. Seprom
 production waits for Skylab, while existing Seprom loot is usable now.
 
-The **Update** tab applies resources to lasers, shields or engines. Prometid
-adds 15% weapon damage; Duranium adds 10% shield capacity/speed; Promerium adds
+The **Update** tab has a resource bar above illustrated equipment cards. Drag a
+held resource onto lasers, shields or engines, then choose an amount and confirm
+on the right. Selecting both cards also works without dragging. Compatible drop
+targets highlight; a drop never spends cargo by itself. Each equipment card's
+bottom-left square shows its currently applied resource, with remaining rounds
+or time below. Previewing a replacement keeps the old icon until confirmed;
+depletion clears it.
+
+Prometid adds 15% weapon damage; Duranium adds 10% shield capacity/speed; Promerium adds
 30% weapon damage and 20% capacity/speed; Seprom adds 60% weapon damage and
 40% capacity, with no engine bonus. Each unit provides ten individual laser
 rounds or ten minutes. Four lasers use four rounds per volley, and a final
@@ -541,13 +548,13 @@ Run it with a renderer for 960 × 600 and 1440 × 900 screenshots under
 `build/validation`. Both check runners include it. Human balance playtesting
 remains necessary.
 
-On 7 October 2026, the full Windows check passed. The new upgrade fixture
-passed 75 assertions headlessly and 81 with Windows OpenGL, including real
-mouse actions at 960 × 600 and 1440 × 900. Seven Python provisioning tests
-passed. Review the [refining menu](docs/feedback/refining-menu.png) and
+The upgrade fixture includes real drag-and-drop at 960 × 600 and 1440 × 900,
+including drops onto corner badges, compatibility, replacement confirmation,
+pending/offline actions and icon updates on depletion. Review the
+[refining menu](docs/feedback/refining-menu.png),
+[compact Update tab](docs/feedback/resource-upgrades-compact.png) and
 [active boosts and replacement warning](docs/feedback/resource-upgrades-menu.png).
-The new rendered run was clean; some older checks still report ObjectDB cleanup
-warnings. Linux-only execution and release-export checks remain for PR CI.
+Human economy and balance playtesting remains necessary.
 
 ### Existing gameplay checks
 

@@ -52,6 +52,7 @@ func run() -> void:
 				client.resource_workshop.select_tab("update")
 				await settle()
 				check(client.resource_workshop.upgrade_button.disabled, "Offline resource upgrades remain unavailable")
+				check(client.resource_workshop.resource_drag(Vector2.ZERO, "seprom") == null and not client.resource_workshop.can_drop_resource(Vector2.ZERO, {"boost_resource": "seprom", "workshop": client.resource_workshop}, "lasers"), "Offline resource cards cannot start or accept boost drags")
 				client.resource_workshop.select_tab("refining")
 			elif page == "quests":
 				client.hud.select_contract("heavy")
