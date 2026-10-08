@@ -108,6 +108,19 @@ func run() -> void:
 	# A sidebar icon selects even a covered panel without altering its saved layout.
 	await click(layout.buttons["ship"].get_global_rect().get_center())
 	check(not layout.sidebar.visible and layout.rail_toggle.visible, "Selecting a covered panel exposes its handles by hiding the sidebar")
+	layout.selected_id = "reticle"
+	layout.entries["reticle"] = {"position": Vector2(0.1, 0.9), "scale": 1.2, "visible": true}
+	var reticle := layout.rect_for("reticle")
+	check(reticle.get_center().is_equal_approx(layout.size * 0.5), "Previously saved reticle positions are ignored")
+	await drag(reticle.position + Vector2(20, -12), reticle.position + Vector2(200, 60))
+	check(layout.rect_for("reticle") == reticle, "Dragging the reticle title cannot move or resize it")
+	await drag(reticle.get_center(), reticle.get_center() + Vector2(100, 80))
+	check(layout.rect_for("reticle") == reticle, "Dragging the reticle body cannot move it")
+	await drag(reticle.end - Vector2(8, 8), reticle.end + Vector2(25, 10))
+	reticle = layout.rect_for("reticle")
+	check(reticle.size.x > layout.default_rect("reticle").size.x * 1.2 and reticle.get_center().is_equal_approx(layout.size * 0.5), "Reticle resizing grows around the screen center")
+	check(not layout.entries["reticle"].has("position"), "Reticle customization saves only scale and visibility")
+	layout.selected_id = "ship"
 	var original := layout.rect_for("ship")
 	await drag(original.position + Vector2(80, -12), original.position + Vector2(413, -225))
 	var moved := layout.rect_for("ship")
@@ -155,6 +168,7 @@ func run() -> void:
 	layout.entries.clear()
 	layout.load_layout()
 	check(layout.entries == saved, "Positions, scales and hidden state survive a fresh configuration load")
+	check(layout.rect_for("reticle").get_center().is_equal_approx(layout.size * 0.5), "Reloading retains the centered, resized reticle")
 	var fresh := HudLayout.new()
 	fresh.save_path = layout.save_path
 	fresh.load_layout()
@@ -165,6 +179,7 @@ func run() -> void:
 		root.content_scale_size = pixels
 		DisplayServer.window_set_size(pixels)
 		await sync_physics()
+		check(layout.rect_for("reticle").get_center().is_equal_approx(layout.size * 0.5), "Reticle stays centered when resizing the viewport")
 		for id: String in HudLayout.ITEMS:
 			check(Rect2(Vector2.ZERO, layout.size).encloses(layout.rect_for(id)), "Saved %s remains reachable at %d" % [id, pixels.x])
 		await chord()
