@@ -7,6 +7,11 @@ func _initialize() -> void:
 
 
 func run() -> void:
+	for directory: String in ["res://docs/ammo-art", "res://docs/sector-art"]:
+		if DirAccess.dir_exists_absolute(directory):
+			push_error("Documentation artwork must not enter the client pack: " + directory)
+			quit(1)
+			return
 	var sector := (load("res://scenes/sector.tscn") as PackedScene).instantiate() as Sector
 	root.add_child(sector)
 	await process_frame

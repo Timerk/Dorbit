@@ -143,8 +143,9 @@ class ValidationTest(unittest.TestCase):
 
     def test_documentation_allowlist_requires_runtime_changes(self):
         self.assertTrue(changes.documentation_only(['README.md', 'docs/ci-performance.md', 'art/ship-review/reference.png']))
+        self.assertTrue(changes.documentation_only(['docs/ammo-art/laser-x1.png', 'docs/sector-art/asteroid-detail.png']))
         for path in ('assets/ui/new.svg', 'project.godot', 'tools/server.sh', 'tests/network_test.gd',
-                     '.github/workflows/validate.yml', 'art/.gdignore', 'docs/sector-art/runtime.png'):
+                     '.github/workflows/validate.yml', 'art/.gdignore', 'docs/sector-art/.gdignore', 'docs/ammo-art/.gdignore'):
             self.assertFalse(changes.documentation_only(['README.md', path]), path)
         self.assertFalse(changes.documentation_only([]))
 
