@@ -40,6 +40,8 @@ jobs:
   linux:
     needs: select
     runs-on: ubuntu-latest
+    # PR code must not publish caches into this workflow_dispatch's main scope.
+    cache-mode: read
     timeout-minutes: 30
     outputs:
       attempt: ${{ steps.build.outputs.attempt }}
@@ -52,10 +54,22 @@ jobs:
           ref: ${{ needs.select.outputs.sha }}
           path: source
           persist-credentials: false
+      - name: Restore pinned Linux Godot
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .tools/godot-linux
+          key: godot-linux-4.7.2-v1
+      - name: Restore trusted imported Linux assets
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .godot/imported
+          key: imports-v1-${{ runner.os }}-godot-4.7.2-${{ hashFiles('source/project.godot', 'source/assets/**', 'source/tools/import*.gd') }}
       - name: Prepare checked PR release using the trusted packaging helper
         id: build
         env:
           PREVIEW_SHA: ${{ needs.select.outputs.sha }}
+          DORBIT_IMPORT_CACHE: ${{ github.workspace }}/.godot/imported
+          DORBIT_TOOL_CACHE: ${{ github.workspace }}/.tools/godot-linux
         run: |
           # Copy only the packaging helper. The PR supplies its game and check scripts.
           cp tools/deploy-server.sh source/tools/deploy-server.sh
@@ -73,6 +87,7 @@ jobs:
   windows:
     needs: select
     runs-on: windows-latest
+    cache-mode: read
     timeout-minutes: 20
     outputs:
       attempt: ${{ steps.build.outputs.attempt }}
@@ -81,6 +96,18 @@ jobs:
         with:
           ref: ${{ needs.select.outputs.sha }}
           persist-credentials: false
+      - name: Restore pinned Windows Godot tools
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            .tools/godot
+            .tools/templates
+          key: godot-windows-4.7.2-v1
+      - name: Restore trusted imported Windows assets
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .godot/imported
+          key: imports-v1-${{ runner.os }}-godot-4.7.2-${{ hashFiles('project.godot', 'assets/**', 'tools/import*.gd') }}
       - name: Check and export the selected Windows client
         id: build
         shell: pwsh
