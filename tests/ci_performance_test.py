@@ -68,9 +68,20 @@ class CacheTest(unittest.TestCase):
                 path.write_bytes(original)
 
     def test_hook_and_its_dependencies_invalidate_scenes(self):
-        (self.root / 'tools/import.gd').write_text('preload("res://tools/helper.gd")\n')
-        (self.root / 'tools/helper.gd').write_text('changed dependency')
+        (self.root / 'tools/import.gd').write_text("preload('res://tools/helper.gd')\n")
+        helper = self.root / 'tools/helper.gd'
+        helper.write_text('initial dependency')
         self.assertEqual(self.restored(), ['b.svg'])
+        initial = cache_tool.inputs(self.root)['resources']['assets/a.glb']
+        helper.write_text('changed dependency')
+        self.assertNotEqual(cache_tool.inputs(self.root)['resources']['assets/a.glb'], initial)
+
+    def test_external_gltf_images_and_their_import_settings(self):
+        source = self.root / 'assets/external.gltf'
+        source.write_text(json.dumps({'images': [{'uri': 'b.svg'}]}))
+        initial = cache_tool.inputs(self.root)['resources']['assets/external.gltf']
+        (self.root / 'assets/b.svg.import').write_text('[params]\nchanged=true')
+        self.assertNotEqual(cache_tool.inputs(self.root)['resources']['assets/external.gltf'], initial)
 
     def test_renderer_change_invalidates_all(self):
         (self.root / 'project.godot').write_text('config_version=5\n[rendering]\nrenderer/rendering_method="forward_plus"')
@@ -96,6 +107,40 @@ class CacheTest(unittest.TestCase):
 
 
 class ValidationTest(unittest.TestCase):
+    def test_real_git_diff_gates_docs_and_preserves_main_builds(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            def git(*args):
+                return subprocess.check_output(['git', *args], cwd=root, stderr=subprocess.PIPE).decode().strip()
+            git('init', '-q')
+            git('config', 'user.name', 'CI fixture')
+            git('config', 'user.email', 'ci-fixture@example.invalid')
+            (root / 'README.md').write_text('initial docs')
+            (root / 'assets').mkdir()
+            (root / 'assets/runtime.svg').write_text('runtime source')
+            git('add', '.')
+            git('commit', '-qm', 'fixture base')
+            base = git('rev-parse', 'HEAD')
+            git('remote', 'add', 'origin', str(root))
+            (root / 'README.md').write_text('updated docs')
+            git('commit', '-qam', 'fixture docs')
+            output = root / 'output'
+            env = dict(os.environ, GITHUB_EVENT_NAME='pull_request', PR_BASE_SHA=base, GITHUB_OUTPUT=str(output))
+            def classify():
+                output.write_text('')
+                subprocess.run([sys.executable, str(ROOT / 'tools/ci-changes.py')], cwd=root, env=env,
+                               check=True, capture_output=True)
+                return output.read_text().strip()
+            self.assertEqual(classify(), 'build=false')
+            env['GITHUB_EVENT_NAME'] = 'push'
+            self.assertEqual(classify(), 'build=true')
+            env['GITHUB_EVENT_NAME'] = 'pull_request'
+            # Both sides of a rename must be classified, even into an ignored tree.
+            (root / 'art').mkdir()
+            git('mv', 'assets/runtime.svg', 'art/reference.svg')
+            git('commit', '-qm', 'fixture rename')
+            self.assertEqual(classify(), 'build=true')
+
     def test_documentation_allowlist_requires_runtime_changes(self):
         self.assertTrue(changes.documentation_only(['README.md', 'docs/ci-performance.md', 'art/ship-review/reference.png']))
         for path in ('assets/ui/new.svg', 'project.godot', 'tools/server.sh', 'tests/network_test.gd',
