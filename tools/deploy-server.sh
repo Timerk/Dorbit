@@ -21,8 +21,27 @@ fi
 staging=$(mktemp -d "$releases/.prepare.XXXXXX")
 trap 'rm -rf -- "$staging"' EXIT
 git archive "$revision" | tar -x -C "$staging"
+# setup verifies the pinned archive and extracts a fresh executable in the release.
+# Reuse downloads, never an executable from the working checkout.
+tool_cache="${DORBIT_TOOL_CACHE:-.tools/godot-linux}"
+for archive in "$tool_cache"/*.zip; do
+  [[ -f "$archive" ]] || continue
+  mkdir -p "$staging/.tools/godot-linux"
+  cp "$archive" "$staging/.tools/godot-linux/"
+done
+# CI supplies an exact-input, OS-specific import cache. Keep all scripts and source
+# assets from git archive; only Godot's derived imported resources are seeded.
+import_cache="${DORBIT_IMPORT_CACHE:-}"
+if [[ -n "$import_cache" && -d "$import_cache" ]]; then
+  mkdir -p "$staging/.godot/imported"
+  cp -a "$import_cache/." "$staging/.godot/imported/"
+fi
 bash "$staging/tools/server.sh" setup
 bash "$staging/tools/server.sh" check
+if [[ -n "$import_cache" && -d "$staging/.godot/imported" ]]; then
+  mkdir -p "$import_cache"
+  cp -a "$staging/.godot/imported/." "$import_cache/"
+fi
 printf '%s\n' "$revision" > "$staging/REVISION"
 mv -- "$staging" "$release"
 printf 'Prepared release: %s\n' "$release"
