@@ -205,14 +205,60 @@ def migrate_skylab_credits(record: dict) -> bool:
     return True
 
 
-def write_new(path: Path, data: dict) -> None:
+def write_new(path: Path, data: dict, *, indent: int | None = 2) -> None:
     # Exclusive creation preserves interrupted files and existing credentials.
-    with path.open("x", encoding="utf-8") as file:
+    with path.open("x", encoding="utf-8", newline="\n") as file:
         os.chmod(path, 0o600)
-        json.dump(data, file, indent=2)
+        json.dump(data, file, indent=indent)
         file.write("\n")
         file.flush()
         os.fsync(file.fileno())
+
+
+def valid_journal_metadata(value: object) -> bool:
+    return (isinstance(value, dict) and value.keys() == {"id", "sequence"}
+            and isinstance(value.get("id"), str) and re.fullmatch(r"[0-9a-f]{32}", value["id"]) is not None
+            and type(value.get("sequence")) is int and 0 <= value["sequence"] <= 9_007_199_254_740_991)
+
+
+def replay_combat_journal(data: dict, path: Path) -> None:
+    """Validate the snapshot/journal pair before provisioning writes any files."""
+    metadata = data.get("combat_journal")
+    if not valid_journal_metadata(metadata):
+        raise ValueError("Invalid combat journal metadata")
+    text = path.read_text(encoding="utf-8")
+    if not text.endswith("\n"):
+        raise ValueError("Interrupted combat journal")
+    lines = text[:-1].split("\n")
+    base = json.loads(lines[0])
+    if (not valid_journal_metadata(base) or base["id"] != metadata["id"]
+            or base["sequence"] > metadata["sequence"]):
+        raise ValueError("Mismatched combat journal")
+    sequence = base["sequence"]
+    for line in lines[1:]:
+        entry = json.loads(line)
+        if (not isinstance(entry, list) or len(entry) != 2 or not all(isinstance(x, str) for x in entry)
+                or hashlib.sha256(entry[0].encode()).hexdigest() != entry[1]):
+            raise ValueError("Damaged combat journal record")
+        body = json.loads(entry[0])
+        if (not isinstance(body, dict) or body.keys() != {"sequence", "ammo", "boosts"}
+                or type(body["sequence"]) is not int or body["sequence"] != sequence + 1
+                or body["sequence"] > 9_007_199_254_740_991):
+            raise ValueError("Unordered combat journal")
+        sequence += 1
+        if sequence <= metadata["sequence"]:
+            continue  # Snapshot replacement completed before journal compaction.
+        ammo, boosts = body["ammo"], body["boosts"]
+        if (not isinstance(ammo, dict) or not isinstance(boosts, dict) or not (ammo or boosts)
+                or any(pilot not in data["pilots"] or not valid_ammo(value) for pilot, value in ammo.items())
+                or any(pilot not in data["pilots"] or not valid_boosts(value, data["pilots"][pilot]["equipment"])
+                       for pilot, value in boosts.items())):
+            raise ValueError("Invalid combat journal update")
+        for pilot, value in ammo.items(): data["pilots"][pilot]["ammo"] = value
+        for pilot, value in boosts.items(): data["pilots"][pilot]["boosts"] = value
+    if sequence < metadata["sequence"]:
+        raise ValueError("Truncated combat journal")
+    metadata["sequence"] = sequence
 
 
 def main() -> None:
@@ -222,7 +268,7 @@ def main() -> None:
     parser.add_argument("credential", type=Path, help="New private client credential file")
     parser.add_argument("--init", action="store_true", help="Explicitly initialize a new ledger")
     parser.add_argument("--rotate", action="store_true", help="Replace an existing pilot token, preserving credits")
-    parser.add_argument("--premium", choices=("on", "off"), help="Operator-set transport-duration flag for an existing schema-6 pilot")
+    parser.add_argument("--premium", choices=("on", "off"), help="Operator-set transport-duration flag for a pilot with initialized industry")
     args = parser.parse_args()
     if not re.fullmatch(r"[a-z0-9_-]{1,32}", args.pilot):
         parser.error("Invalid pilot ID")
@@ -231,14 +277,20 @@ def main() -> None:
     lock = args.directory / "pilots.json.lock"
     lock.mkdir()  # Same exclusive lock as the game server.
     try:
+        for name in ("pilots.json.tmp", "pilots.json.bak.tmp", "pilots.json.combat.tmp"):
+            if os.path.lexists(args.directory / name):
+                parser.error(f"Interrupted {name} exists; preserve it and recover first")
+        journal = path.with_name("pilots.json.combat")
         if args.init:
-            if path.exists() or args.rotate:
+            if path.exists() or journal.exists() or args.rotate:
                 parser.error("--init requires a new ledger and cannot be combined with --rotate")
             data = {"version": 6, "pilots": {}}
         else:
             data = json.loads(path.read_text(encoding="utf-8"))
-            if data.get("version") not in (1, 2, 3, 4, 5, 6, 7) or not isinstance(data.get("pilots"), dict) or not data["pilots"]:
+            if data.get("version") not in (1, 2, 3, 4, 5, 6, 7, 8) or not isinstance(data.get("pilots"), dict) or not data["pilots"]:
                 parser.error("Invalid ledger; preserve it and recover from backup")
+            if data["version"] < 8 and journal.exists():
+                parser.error("Unexpected combat journal beside a legacy ledger; preserve and recover both files")
             for pilot, record in data["pilots"].items():
                 if (not re.fullmatch(r"[a-z0-9_-]{1,32}", pilot)
                         or not isinstance(record, dict)
@@ -278,21 +330,29 @@ def main() -> None:
                 if "skylab" in record and data["version"] < 6:
                     if not migrate_skylab_credits(record):
                         parser.error("Invalid legacy industry or credit conversion overflow; original preserved")
-                if (data["version"] == 7 or "skylab" in record) and ("uridium" in record
+                if (data["version"] >= 7 or "skylab" in record) and ("uridium" in record
                         or type(record.get("premium")) is not bool or not valid_skylab(record.get("skylab"), record["equipment"])):
                     parser.error("Invalid Skylab state; preserve it and recover from backup")
-            data["version"] = 7 if any("skylab" in r for r in data["pilots"].values()) else 6
+            if data["version"] == 8:
+                try:
+                    replay_combat_journal(data, journal)
+                except (OSError, ValueError, TypeError, KeyError):
+                    parser.error("Missing, mismatched or damaged combat journal; preserve and recover both files")
+            else:
+                data["version"] = 7 if any("skylab" in r for r in data["pilots"].values()) else 6
+        # A schema-8 backup includes pending debits, rather than stale snapshot ammo.
+        backup_data = json.loads(json.dumps(data)) if data["version"] == 8 else None
         exists = args.pilot in data["pilots"]
         if exists != args.rotate:
             parser.error("Use --rotate for an existing pilot; omit it for a new pilot")
         token = secrets.token_hex(32)
         credits = data["pilots"].get(args.pilot, {}).get("credits", 0)
         record = data["pilots"].setdefault(args.pilot, {"credits": credits, "equipment": starter_equipment(), "cargo": {"starter": {}}, "ammo": starter_ammo(), "boosts": {"starter": {}}})
-        if data["version"] == 7 and not exists:
+        if data["version"] >= 7 and not exists:
             # Keep the authoritative bootstrap in Godot. Adding pilots to v6 requires it here too.
             record.update(premium=False, skylab=starter_skylab(int(time.time())))
         if args.premium is not None:
-            if data["version"] != 7 or not exists:
+            if data["version"] < 7 or not exists:
                 parser.error("Start the updated server once to initialize Skylab before setting transport benefits")
             record["premium"] = args.premium == "on"
         record["verifier"] = hashlib.sha256(token.encode()).hexdigest()
@@ -304,9 +364,13 @@ def main() -> None:
         write_new(temporary, data)
         if path.exists():
             backup = path.with_name("pilots.json.bak.tmp")
-            write_new(backup, json.loads(path.read_text(encoding="utf-8")))
+            write_new(backup, backup_data if backup_data is not None else json.loads(path.read_text(encoding="utf-8")))
             os.replace(backup, path.with_name("pilots.json.bak"))
         os.replace(temporary, path)
+        if data["version"] == 8:
+            journal_temporary = journal.with_name(journal.name + ".tmp")
+            write_new(journal_temporary, data["combat_journal"], indent=None)
+            os.replace(journal_temporary, journal)
         if os.name == "posix":
             descriptor = os.open(args.directory, os.O_RDONLY | os.O_DIRECTORY)
             try:

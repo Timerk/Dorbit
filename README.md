@@ -342,8 +342,8 @@ field buys batches of 100, up to 10,000 batches / 1,000,000 rounds per order.
 x4 is reserved for future quests and special rewards
 and cannot be bought. Station purchase restrictions and duplicate protection apply.
 
-Current saves use schema **7**; migration grants missing starter ammo once.
-Back up the ledger before updating; older servers cannot read the current schema 7. Consumption
+Current saves use schema **8**; migration grants missing starter ammo once.
+Back up the entire data directory before updating; older servers cannot read the current schema 8. Consumption
 is committed before each volley, and a failed save stops progression. Client and
 server need matching builds. Run `res://tests/ammo_test.gd` headlessly or with a
 renderer to check purchases, multipliers, inventory recovery and HUD interactions;
@@ -362,7 +362,7 @@ Buy rocket batches under Shop > Ammo and HST-1/HST-2 under Weapons, then fit the
 launcher in Hangar's launcher slot. Uridium reference prices use **100 credits per
 Uridium**. Balance settings are in `scripts/ammunition.gd` and
 `scripts/rocket_weapons.gd`; see [the game plan](GAME_PLAN.md#manual-single-rockets-and-classic-hellstorm).
-Use matching network-schema-13 client/server builds and save schema 7. Back up server data before upgrading; older servers need the previous
+Use matching network-schema-13 client/server builds and save schema 8. Back up server data before upgrading; older servers need the previous
 ledger for rollback. New/migrated pilots receive 100 R-310 once.
 
 Run `tests/rocket_test.gd` with Godot (headless for authoritative checks, rendered
@@ -375,7 +375,7 @@ Destroyed Scouts, Sentinels and Heavies leave glowing resource boxes. Fly within
 
 Press B at Outpost 01 and select **Trade raw materials**. Eight ore cards show the resource images, unit prices, held quantities and sale totals. Use minus/plus or type a quantity, then choose **SELL** to sell that amount; **Sell all cargo** sells the entire hold. Sales require the usual station conditions: alive, within 60 m, no faster than 8 m/s and five seconds since the last hit. Resource value increases in this order: Prometium, Endurium, Terbium, Prometid, Duranium, Xenomit, Promerium, Seprom. Provisional prices are 10, 20, 40, 80, 160, 200, 320 and 640 CR per unit. Stronger aliens drop larger quantities and higher resource tiers. Full drop tables are in [GAME_PLAN.md](GAME_PLAN.md#enemy-resources-cargo-and-station-sales).
 
-Cargo belongs to each owned ship and survives death, reconnects and restarts. Collected cargo and sale credits are server-owned saves. Uncollected boxes remain session state. Skylab shipments can overfill their dispatch ship if cargo fills during transit; collection then waits for free space. Real Xenomit is an eighth collectible and saleable mineral, with a custom development price of 200 CR and Heavy drops of 1–3 units. Save versions 1–6 migrate to schema 7; preserve a pre-migration backup when deploying. Credential rotation with `tools/pilots.py` retains cargo and industry.
+Cargo belongs to each owned ship and survives death, reconnects and restarts. Collected cargo and sale credits are server-owned saves. Uncollected boxes remain session state. Skylab shipments can overfill their dispatch ship if cargo fills during transit; collection then waits for free space. Real Xenomit is an eighth collectible and saleable mineral, with a custom development price of 200 CR and Heavy drops of 1–3 units. Save versions 1–7 migrate to schema 8; preserve a pre-migration backup when deploying. Credential rotation with `tools/pilots.py` retains cargo and industry.
 
 `res://tests/resources_test.gd` checks actual ENet kills, replicated and late-join loot, two-pilot pickup conservation, full and partial holds, client authority, station restrictions, per-resource and sell-all actions, duplicate sales, restart recovery, wallet limits, expiry and failed writes. Run it headlessly or with the renderer to capture the cargo panel and loot markers at 960 x 600 under `build/validation`. Windows and Linux check scripts include it. Operator-tool tests cover cargo-preserving migration and credential rotation, and reject corrupted cargo without altering the ledger.
 
@@ -425,8 +425,8 @@ successful station changes; an abrupt crash can restore up to five seconds.
 Weapon rounds commit before damage. Server writes validate ingredients,
 compatibility, quantities, station restrictions and duplicate protection.
 
-This requires matching network-schema-13 builds. Ledger schemas 1–6 migrate to
-schema 7, preserving progression and adding any missing reserves and rocket ammo; keep a backup for
+This requires matching network-schema-13 builds. Ledger schemas 1–7 migrate to
+schema 8, preserving progression and adding any missing reserves and rocket ammo; keep a backup for
 rollback. The provisioning tool preserves and validates boosts during rotation.
 `res://tests/resource_upgrades_test.gd` exercises authenticated refining and
 upgrades, partial volleys with mixed lasers, online timing, restart, duplicate
@@ -450,9 +450,9 @@ Human economy and balance playtesting remains necessary.
 The current **network schema is 13** (`FlightSession.NETWORK_SCHEMA`), including
 the larger station's shared collision layout. Clients and servers must use
 matching builds and protocol fingerprints; the connection handshake rejects
-incompatible builds before gameplay. **Save schema 7** is separate from the
+incompatible builds before gameplay. **Save schema 8** is separate from the
 network schema. Update the provisioning tool alongside the server and back up
-the ledger before upgrading. See [Saves, backups and recovery](#saves-backups-and-recovery)
+the entire data directory before upgrading. See [Saves, backups and recovery](#saves-backups-and-recovery)
 for migration and rollback instructions.
 
 The server supports **ten client pilots**, with no host player. It controls movement, boost, all five aliens, damage, repairs, rewards, destruction and respawning. It keeps running when the last player leaves. **F7** opens the connection menu; **Disconnect** returns to that menu. A server shutdown also returns clients to the menu.
@@ -529,7 +529,7 @@ The regular Liberator has 116,000 hull. New pilots start with LF-1, SG3N-A01 and
 
 LF-3 adds 175 base damage and 15% more for that laser against aliens (201.25 total) per installed copy. Its bonus never multiplies other lasers. FS-01 adds 3,200 shield, 70% absorption and +6.25% regeneration; its regeneration bonuses add together and multiply normal shield recovery after the existing six-second delay. Shield capacity adds, while absorption is weighted by each generator's capacity. Current fitting and installation previews show these special bonuses. Fitting changes do not repair or refill your ship. Inventory and fittings survive rescue, reconnects and restart. Equipment purchases require the persistent dedicated server; the offline development fixture uses the same starter combat and flight values. Reference prices need human progression playtesting with the existing rewards.
 
-Client and server must use matching network-schema-13 builds; the compatibility handshake rejects older builds before gameplay. Save schema 7 combines persistent industry, ammunition and combat boosts; Skylab uses credits exclusively. Update the operator provisioning tool with the server so credential rotation recognizes every new model and preserves industry jobs.
+Client and server must use matching network-schema-13 builds; the compatibility handshake rejects older builds before gameplay. Save schema 8 adds the combat journal to schema 7's persistent industry, ammunition and combat boosts; Skylab uses credits exclusively. Update the operator provisioning tool with the server so credential rotation preserves pending combat debits, every equipment model and industry jobs.
 
 ### Credit income
 
@@ -550,22 +550,22 @@ playtesting; the test exercises transactions rather than travel time.
 
 ### Saves, backups and recovery
 
-The ledger is `DORBIT_DATA_DIR/pilots.json`, schema version 7. Version 1 saves migrate before the server opens its port, retaining credits and adding starter equipment once; versions 1 and 2 also receive empty per-ship cargo. Legacy pilots without industry receive the documented Skylab bootstrap and Premium off. Existing industry wallets convert once at 100 credits per retired unit, preserving robots and timers. Existing equipment, credits, cargo, ammunition and contracts are preserved. Keep matching server, client and provisioning-tool versions; older builds cannot read schema 7. The migration uses the normal backup and failure path. Preserve a separate pre-migration backup for rollback: the rolling `.bak` advances with normal saves. Modern records with missing or invalid equipment or industry fail validation rather than receiving replacements. Credential rotation preserves inventory, fittings, cargo and industry jobs.
+The save is a **schema-8 pair**: `DORBIT_DATA_DIR/pilots.json` is the full snapshot and `pilots.json.combat` holds subsequent ammunition and boost transactions. Both files are required, even when the journal has only its header. Versions 1–7 migrate before the server opens its port, retaining progression and the existing industry/rocket migrations. Keep a dated copy of the entire data directory before upgrading: older servers and provisioning tools cannot read schema 8. Migration preserves the previous snapshot in `.bak`, which advances with normal saves. Modern records with missing or invalid equipment or industry fail validation rather than receiving replacements. The updated provisioning tool replays pending combat before rotating credentials, adding pilots or changing Premium, and checkpoints without restoring spent ammunition. See [combat persistence](docs/combat-persistence.md) for format, recovery boundaries and benchmarks.
 
-Every reward, repair charge, rescue fee, purchase and fitting change is committed before the server confirms it. All contributors' shares use one commit. Writes go to a sibling temporary file, flush and verify its contents, then rename over the destination. `pilots.json.bak` keeps the previous complete ledger. A save failure stops simulation and exits the server with code 1 before granting the pending transaction.
+Every reward, repair charge, rescue fee, purchase and fitting change is committed before the server confirms it. All contributors' shares use one commit. Full snapshot writes use a sibling temporary file, flush and verify its contents, then rename over the destination. `pilots.json.bak` includes all committed combat debits preceding that checkpoint. Each laser/rocket debit appends a small ordered, checksummed journal record, flushes and verifies it **before damage or launch**; laser ammo and resource reserves commit together. Full economy saves, scheduled industry saves, clean shutdown and a 1 MiB journal limit checkpoint the journal. A save failure stops simulation and exits with code 1 before granting the pending transaction.
 
 Each pilot's equipment record contains owned ship IDs, the active ship, item IDs with a single ship/slot location, and a successful-request sequence. Empty ship and slot strings mean storage. Inventory is sent reliably only to its owner; snapshots carry combat and movement stats for all ships. Purchase and fitting requests supply the next sequence and the current life, never a pilot ID, price or stat bonus. Retrying a successful sequence refreshes inventory without applying another transaction. After reconnecting, review the server inventory before making a new purchase.
 
-Only one server or provisioning tool may own the directory. `pilots.json.lock` is an exclusive directory lock. Clean shutdown removes it. On Linux, use `tools/server.sh run`: its launcher translates SIGTERM and Ctrl+C into a scene-tree shutdown, allowing the server to release the lock. Signaling Godot directly bypasses this launcher. A crash, SIGKILL, power loss or shutdown timeout can still leave the lock behind and requires operator recovery. Missing, malformed, unsupported or out-of-range data fails closed. The server does not replace an invalid ledger with zero balances, and it detects primary-file edits made while running.
+Only one server or provisioning tool may own the directory. `pilots.json.lock` is an exclusive directory lock. Clean shutdown checkpoints pending combat and removes it. On Linux, use `tools/server.sh run`: its launcher translates SIGTERM and Ctrl+C into a scene-tree shutdown, allowing the server to release the lock. Signaling Godot directly bypasses this launcher. A crash, SIGKILL, power loss or shutdown timeout can still leave the lock behind and requires operator recovery. Missing, malformed, unsupported or out-of-range data fails closed, including a missing, mismatched, damaged or incomplete journal. The server does not replace invalid progression with zero balances. Never edit or replace either file while the server runs.
 
 Recovery is an operator action:
 
 1. Stop the server and confirm no other process uses this data directory. Copy the entire directory elsewhere before changing anything, including `.bak`, `.tmp`, `.bak.tmp` and the lock.
-2. Inspect the primary and backup. If the primary is valid, keep it. If it is invalid or missing, copy a known-good backup to `pilots.json`. A temporary file may contain an unconfirmed transaction; preserve it for inspection rather than promoting it automatically.
-3. Move leftover temporary files out of the data directory, remove the now-stale empty `pilots.json.lock` directory, and fix any disk-space or permission problem. Restart with the same `DORBIT_DATA_DIR`. The server validates the ledger before opening its port.
-4. Reconnect with an existing pilot and verify their credits. Restoring an older backup rolls back later transactions and credential rotations. Rotate exposed credentials again after a restore.
+2. Inspect the snapshot **and journal** together. A crash alone leaves their complete records replayable; retain both when valid. If either is invalid or missing, restore a known-good stopped-server copy of the whole directory. A temporary file may contain an unconfirmed transaction; preserve it for inspection rather than promoting it automatically. To recover from the rolling snapshot backup, follow the explicit journal reset procedure in [combat persistence](docs/combat-persistence.md); copying `.bak` alone can mismatch the journal or roll back spent rounds.
+3. Move leftover `.tmp`, `.bak.tmp` and `.combat.tmp` files out of the data directory, remove the now-stale empty `pilots.json.lock` directory, and fix any disk-space or permission problem. Restart with the same `DORBIT_DATA_DIR`. The server validates and replays the pair before opening its port.
+4. Reconnect with an existing pilot and verify credits, ammunition and boosts. Restoring an older backup rolls back later transactions and credential rotations. Rotate exposed credentials again after a restore.
 
-Keep dated copies of the ledger on another disk or machine, especially before provisioning and server updates. Stop the server while taking a copy. The automatic `.bak` is only one transaction old and does not protect against disk loss. Godot's runtime flush does not guarantee directory metadata reaches physical storage before sudden power loss; recovery may require the backup after a machine or storage failure. Process restarts retain completed saves. Public accounts remain outside this slice; owned ships, fittings and cargo persist.
+Keep dated copies of the entire data directory on another disk or machine, especially before provisioning and server updates. Stop the server while taking a copy. The automatic `.bak` is one full checkpoint old, not one volley old, and does not protect against disk loss. Godot's runtime flush does not guarantee directory metadata reaches physical storage before sudden power loss; recovery may require a backup after a machine or storage failure. Process restarts replay complete combat transactions. Public accounts remain outside this slice; owned ships, fittings and cargo persist.
 
 ### Start a server in Ubuntu / WSL2
 
@@ -745,7 +745,7 @@ is required. New preview branches must include this export support.
 - `scripts/sector.gd`: encounter lifecycle, targeting, rewards, repairs, and rescue.
 - `scripts/flight_session.gd`: session menu, ENet connection lifecycle, host flight simulation, and client prediction/interpolation.
 - `scripts/session_combat.gd`: server-owned independent alien encounters, per-player wallets, repairs, respawns, and combat snapshots/effects.
-- `scripts/pilot_store.gd`: validated pilot ledger, challenge verification, atomic replacement and previous-save backup.
+- `scripts/pilot_store.gd`: validated pilot snapshot/journal pair, challenge verification, combat debits, checkpoints and previous-save backup.
 - `scripts/cargo_resources.gd`: resource values, enemy loot tables, per-model capacities and cargo validation.
 - `scripts/resource_loot.gd`: bounded shared resource boxes, collection timing and placeholder visuals.
 - `tools/pilots.py`: operator provisioning and credential rotation with the server stopped.

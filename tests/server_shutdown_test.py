@@ -38,7 +38,10 @@ class ServerShutdownTest(unittest.TestCase):
         self.data.mkdir()
         self.ledger = self.data / "pilots.json"
         self.lock = self.data / "pilots.json.lock"
-        self.original = json.dumps({"version": 7, "pilots": {
+        metadata = {"id": "a" * 32, "sequence": 0}
+        self.journal = self.data / "pilots.json.combat"
+        self.journal.write_text(json.dumps(metadata) + "\n")
+        self.original = json.dumps({"version": 8, "combat_journal": metadata, "pilots": {
             "restart_test": {"verifier": hashlib.sha256(b"disposable test token").hexdigest(), "credits": 137,
                              "equipment": pilots.starter_equipment(), "cargo": {"starter": {"seprom": 5}},
                              "ammo": pilots.starter_ammo(), "contracts": {},
@@ -120,6 +123,8 @@ class ServerShutdownTest(unittest.TestCase):
             with self.subTest(version=version, layout=layout):
                 legacy = json.loads(self.original)
                 legacy["version"] = version
+                legacy.pop("combat_journal")
+                self.journal.unlink()
                 record = legacy["pilots"]["restart_test"]
                 for field in ("skylab", "uridium", "premium"): record.pop(field, None)
                 if layout != "boosts":
@@ -137,7 +142,7 @@ class ServerShutdownTest(unittest.TestCase):
                 process.terminate()
                 self.assertEqual(process.wait(timeout=10), 0, log.read_text())
                 migrated = json.loads(self.ledger.read_text())
-                self.assertEqual(migrated["version"], 7)
+                self.assertEqual(migrated["version"], 8)
                 expected = record | {"cargo": record.get("cargo", {"starter": {}}), "contracts": {},
                                      "boosts": record.get("boosts", {"starter": {}}),
                                      "ammo": pilots.starter_ammo() | record.get("ammo", {})}
@@ -192,7 +197,7 @@ class ServerShutdownTest(unittest.TestCase):
         self.assertEqual(progression(self.ledger.read_text()), progression(self.original))
 
     def test_invalid_or_interrupted_saves_are_preserved(self) -> None:
-        for temporary in ("pilots.json.tmp", "pilots.json.bak.tmp"):
+        for temporary in ("pilots.json.tmp", "pilots.json.bak.tmp", "pilots.json.combat.tmp"):
             with self.subTest(temporary=temporary):
                 path = self.data / temporary
                 path.write_text("interrupted transaction")

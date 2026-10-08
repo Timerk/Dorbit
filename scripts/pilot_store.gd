@@ -11,6 +11,15 @@ var saved_text: String
 var locked: bool = false
 var failed: bool = false
 var next_lab_due: int = 0
+var journal_metadata: Dictionary = {}
+var journal_text: String = ""
+var journal_sequence: int = 0
+var checkpoint_sequence: int = 0
+var journal_file: FileAccess
+var journal_modified_time: int = 0
+var journal_bytes: int = 0
+var combat_tick_active: bool = false
+var combat_tick_verified: bool = false
 
 
 static func valid_id(value: String) -> bool:
@@ -32,13 +41,17 @@ static func valid_hex(value: String) -> bool:
 
 
 func open(directory: String) -> bool:
+	if failed: return false
+	if locked: return fail("Pilot store already owns a ledger lock.")
+	journal_sequence = 0
+	checkpoint_sequence = 0
 	if directory.is_empty() or not directory.is_absolute_path():
 		return fail("DORBIT_DATA_DIR must be an absolute path to a provisioned directory.")
 	path = directory.path_join("pilots.json")
 	if DirAccess.make_dir_absolute(path + ".lock") != OK:
 		return fail("Cannot acquire pilots.json.lock. Check permissions or recover a stale lock while the server is stopped.")
 	locked = true
-	for temporary in [path + ".tmp", path + ".bak.tmp"]:
+	for temporary in [path + ".tmp", path + ".bak.tmp", path + ".combat.tmp"]:
 		if FileAccess.file_exists(temporary) or DirAccess.dir_exists_absolute(temporary):
 			return fail("Interrupted save found: " + temporary + ". Preserve and recover it before starting.")
 	var file := FileAccess.open(path, FileAccess.READ)
@@ -48,8 +61,12 @@ func open(directory: String) -> bool:
 	file.close()
 	var json := JSON.new()
 	var data: Variant = json.data if json.parse(saved_text) == OK else null
-	if not data is Dictionary or not Skylab.integer(data.get("version"), 1, 7) or not data.get("pilots") is Dictionary or data["pilots"].is_empty():
+	if not data is Dictionary or not Skylab.integer(data.get("version"), 1, 8) or not data.get("pilots") is Dictionary or data["pilots"].is_empty():
 		return fail("Invalid pilots.json schema. Original file preserved.")
+	if data["version"] < 8 and (FileAccess.file_exists(path + ".combat") or DirAccess.dir_exists_absolute(path + ".combat")):
+		return fail("Unexpected combat journal beside a legacy ledger. Preserve and recover both files.")
+	if data["version"] == 8 and not CombatJournal.valid_metadata(data.get("combat_journal")):
+		return fail("Invalid combat journal metadata. Original file preserved.")
 	for id: Variant in data["pilots"]:
 		var pilot: Variant = data["pilots"][id]
 		if not id is String or not valid_id(id) or not pilot is Dictionary:
@@ -121,13 +138,71 @@ func open(directory: String) -> bool:
 			return fail("Invalid pilot Skylab state. Original file preserved.")
 		Skylab.normalize(pilot["skylab"])
 	pilots = data["pilots"]
-	if data["version"] < 7:
+	if data["version"] == 8:
+		journal_metadata = data["combat_journal"]
+		checkpoint_sequence = int(journal_metadata["sequence"])
+		journal_text = FileAccess.get_file_as_bytes(path + ".combat").get_string_from_utf8()
+		journal_sequence = CombatJournal.replay(journal_text, journal_metadata, pilots)
+		if journal_sequence < 0: return fail("Missing, mismatched or damaged combat journal. Preserve and recover both files.")
+		journal_bytes = journal_text.to_utf8_buffer().size()
+	else:
+		journal_metadata = {"id": Crypto.new().generate_random_bytes(16).hex_encode(), "sequence": 0}
+		journal_text = CombatJournal.header(journal_metadata)
+		if not replace_file(path + ".combat", journal_text): return false
+		if data["version"] == 7:
+			for pilot: Dictionary in pilots.values(): Skylab.advance(pilot, Skylab.now())
 		if not persist(pilots): return false
 		# Newly bootstrapped labs have no earlier industry to catch up. Keep the
 		# migration backup intact until the first normal command or scheduled tick.
 		schedule_labs(Skylab.now())
 		return true
 	return advance_labs(Skylab.now())
+
+
+# Flush and verify one small transaction before the caller changes ammo or damage.
+# Equipment, cargo, wallets and industry are neither copied nor serialized here.
+func commit_combat(ammo: Dictionary, boosts: Dictionary = {}) -> bool:
+	if failed or not locked: return false
+	if not CombatJournal.valid_updates(pilots, ammo, boosts): return fail("Invalid server combat update.")
+	if journal_sequence >= CombatJournal.MAX_SEQUENCE: return fail("Combat journal sequence exhausted.")
+	var entry := CombatJournal.record(journal_sequence + 1, ammo, boosts)
+	var entry_bytes := entry.to_utf8_buffer()
+	# Bound replay and live verification cost. Ordinary economy/industry saves
+	# also checkpoint pending combat; this limit covers extended quiet sessions.
+	if journal_bytes + entry_bytes.size() > CombatJournal.MAX_BYTES:
+		if not persist(pilots): return false
+	# All pilot volleys in one synchronous physics pass share the integrity read.
+	# Every individual debit still writes, flushes and verifies before its damage.
+	if not combat_tick_active or not combat_tick_verified:
+		if not unchanged_files(): return false
+		combat_tick_verified = combat_tick_active
+	var file := journal_file
+	# Keep one handle between debits. Reopening a recently written file took
+	# 8–20 ms in the Windows benchmark, versus fractions of a ms for flush.
+	file.seek_end()
+	var start := file.get_position()
+	file.store_string(entry)
+	file.flush()
+	var result := file.get_error()
+	file.seek(start)
+	var verified := file.get_buffer(entry_bytes.size()).get_string_from_utf8() == entry
+	if result != OK or not verified: return fail("Combat journal write failed. Files preserved for recovery.")
+	journal_modified_time = FileAccess.get_modified_time(path + ".combat")
+	journal_text += entry
+	journal_bytes += entry_bytes.size()
+	journal_sequence += 1
+	CombatJournal.apply_updates(pilots, ammo, boosts)
+	return true
+
+
+func begin_combat_tick() -> void:
+	combat_tick_active = true
+	combat_tick_verified = false
+
+
+func end_combat_tick() -> void:
+	combat_tick_active = false
+	combat_tick_verified = false
 
 
 func verifies(id: String, nonce: PackedByteArray, proof: PackedByteArray) -> bool:
@@ -385,18 +460,55 @@ func transact_lab(id: String, sequence: int, action: String, payload: Dictionary
 
 
 func persist(next: Dictionary) -> bool:
+	combat_tick_verified = false
 	if failed or not locked:
 		return false
-	var current := FileAccess.open(path, FileAccess.READ)
+	close_journal()
+	if not unchanged_files(): return false
+	close_journal() # Release the append handle before any atomic replacement.
+	var metadata := {"id": journal_metadata["id"], "sequence": journal_sequence}
+	var text := JSON.stringify({"version": 8, "combat_journal": metadata, "pilots": next}, "\t") + "\n"
+	# The backup must include every flushed combat debit, even when the primary
+	# snapshot predates them. Preserve the original bytes during legacy migration.
+	var backup := saved_text if checkpoint_sequence == journal_sequence else JSON.stringify({"version": 8, "combat_journal": metadata, "pilots": pilots}, "\t") + "\n"
+	if not replace_file(path + ".bak", backup) or not replace_file(path, text): return false
+	pilots = next
+	saved_text = text
+	journal_metadata = metadata
+	checkpoint_sequence = journal_sequence
+	var compacted := CombatJournal.header(metadata)
+	# Replace only after the snapshot is safe. Old records are harmless on replay
+	# if a process stops between these two replacements.
+	if journal_text != compacted and not replace_file(path + ".combat", compacted): return false
+	journal_text = compacted
+	journal_bytes = compacted.to_utf8_buffer().size()
+	return true
+
+
+func unchanged_files() -> bool:
+	for temporary in [path + ".tmp", path + ".bak.tmp", path + ".combat.tmp"]:
+		if FileAccess.file_exists(temporary) or DirAccess.dir_exists_absolute(temporary):
+			return fail("Interrupted save found: " + temporary + ". Preserve and recover it before saving.")
+	var current := FileAccess.open(path, FileAccess.READ_WRITE)
 	if current == null or current.get_as_text() != saved_text:
 		return fail("pilots.json changed or became unreadable while running. Save preserved; stop and recover.")
 	current.close()
-	var text := JSON.stringify({"version": 7, "pilots": next}, "\t") + "\n"
-	if not replace_file(path + ".bak", saved_text) or not replace_file(path, text):
-		return false
-	pilots = next
-	saved_text = text
+	if journal_file == null:
+		journal_file = FileAccess.open(path + ".combat", FileAccess.READ_WRITE)
+		journal_modified_time = FileAccess.get_modified_time(path + ".combat")
+	if journal_file == null: return fail("Combat journal became unreadable while running. Stop and recover both files.")
+	if not FileAccess.file_exists(path + ".combat") or FileAccess.get_modified_time(path + ".combat") != journal_modified_time:
+		return fail("Combat journal changed or disappeared while running. Stop and recover both files.")
+	journal_file.seek(0)
+	if journal_file.get_buffer(journal_file.get_length()).get_string_from_utf8() != journal_text:
+		return fail("Combat journal changed or became unreadable while running. Stop and recover both files.")
 	return true
+
+
+func close_journal() -> void:
+	if journal_file != null:
+		journal_file.close()
+		journal_file = null
 
 
 func replace_file(destination: String, text: String) -> bool:
@@ -419,12 +531,17 @@ func replace_file(destination: String, text: String) -> bool:
 
 
 func fail(message: String) -> bool:
+	combat_tick_verified = false
 	error = message
 	failed = true
 	return false
 
 
-func close() -> void:
+func close() -> bool:
+	end_combat_tick()
 	if locked:
+		if not failed and journal_sequence > checkpoint_sequence and not persist(pilots): push_error(error)
+		close_journal()
 		DirAccess.remove_absolute(path + ".lock")
 		locked = false
+	return not failed

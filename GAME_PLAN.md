@@ -126,6 +126,14 @@ ship changes and server restart preserve remaining ammo. The server commits each
 debit before firing and saves purchases together with credits and transaction
 sequence. Back up the ledger before migration; older servers cannot read schema 5.
 
+The user requested reducing combat save stalls while retaining commit-before-damage.
+Save schema 8 pairs the full pilot snapshot with a small combat journal: each
+laser or rocket debit is flushed and verified before firing, with laser ammunition
+and boost reserves in one record. The synchronous pilot combat pass shares its
+integrity check; full economy saves, scheduled industry saves and clean shutdown
+checkpoint the journal. Recovery and provisioning must preserve or replay the
+snapshot/journal pair. This changes persistence, not combat costs or shot timing.
+
 x1, x2 and x3 are sold at Outpost 01 in batches of 100 shots. The user confirmed
 prices of 10 credits for x1, 50 credits for x2 and 100 credits for x3 per batch.
 The user requested orders of up to 1,000,000 rounds (10,000 batches) at once;
