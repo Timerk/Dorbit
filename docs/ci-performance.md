@@ -35,6 +35,65 @@ described below. Deploy preview is outside its scope.
 Preview retains its existing workflow and legacy exact-input import-cache path.
 Its cache migration belongs to the separate preview work.
 
+## Implementation validation
+
+- All 38 Windows invocations passed locally with two workers in 211.27 s.
+  The same suite also passed with one worker in 344.97 s: two workers reduced
+  elapsed time by 38.8% on this machine. Other local work can affect either run.
+  Windows export, protocol comparison, packaged ship/menu resources and notices
+  passed. The export command took 5.36 s. These local timings are not directly
+  comparable with the earlier hosted serial measurements.
+- A fresh editor index restored all 78 resources from the validated manifest.
+  Godot completed import in 8.30 s without running a hull import hook.
+- The 13 focused CI-helper checks and eight packaging checks passed. They cover
+  individual invalidation, recursive/single-quoted hook dependencies, external
+  glTF images/settings, corrupt outputs/manifests, removed resources, isolated
+  profiles/ports, restart ordering, zero-exit script errors, successful-only cache
+  capture and real Git diffs for documentation/main/rename classification.
+- Actionlint, Python compilation, Bash syntax and PowerShell parsing passed.
+- The ten-client capacity fixture initializes worlds before starting concurrent
+  joins and uses a bounded test-only authentication budget. Production and
+  rejection-test authentication timeouts remain unchanged.
+- The exported-server save fixture now uses schema 5 with boosts. Its previous
+  schema-4 data migrated during startup, falsely failing the unchanged-save check.
+  Existing dedicated migration tests continue checking legacy saves separately.
+
+Both hosted jobs passed in
+[the first successful new-cache run](https://github.com/Timerk/Dorbit/actions/runs/37804636135).
+The first run necessarily misses the new cache namespace:
+
+| Hosted stage | Linux | Windows |
+| --- | ---: | ---: |
+| Initial import, 0/78 cached resources | 360 s | 515.81 s |
+| Parallel checks, all existing invocations | 162.53 s | 174.73 s |
+| Export command | 6 s | 4.70 s |
+| Complete job, including cold import/setup/packaging | 629 s | 778 s |
+
+Each job captured all 78 resources after successful checks/export and saved its
+OS-specific PR-scoped cache. Compared with the previously observed 359.89 s
+Windows serial suite, the hosted 174.73 s parallel suite is 51.4% shorter. Hosted
+machines/revisions differ, so this is observed improvement rather than a controlled
+benchmark. The final warm run and its results are recorded in PR 62.
+
+`python tests/import_cache_godot_test.py PATH_TO_PINNED_GODOT` verifies generated
+scene data in disposable projects. It stays outside routine CI because intentional
+hull invalidations perform several cold imports. The real Godot 4.7.2 results are:
+
+| Change | Import seconds | Resources reused | Hull reimported | Generated scene |
+| --- | ---: | ---: | --- | --- |
+| Cold hull + SVG | 21.202 | 0/2 | Yes | Baseline |
+| Identical inputs | 3.593 | 2/2 | No | Baseline |
+| Runtime script | 4.423 | 2/2 | No | Baseline |
+| SVG source | 3.598 | 1/2 | No | Baseline hull |
+| Hull root-scale setting | 20.215 | 1/2 | Yes | Measured hull extent doubles |
+| Shared import hook | 20.944 | 1/2 | Yes | Changed hook metadata is present |
+| Hull source bytes | 21.158 | 1/2 | Yes | Baseline geometry retained |
+
+The new cache namespace needs one successful cold build per scope before it is
+warm. GitHub scopes PR caches to their merge ref; the first main build after merge
+must populate main's new cache too. Existing tool caches remain reusable.
+See [GitHub's cache scope documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#restrictions-for-accessing-a-cache).
+
 The reviewed source is `origin/main` at
 `0eeb9613f1e1264e949605523d805ee963afb1d2`. Measurements come from job logs and
 step timestamps, with an additional disposable-project experiment on Windows.
@@ -175,7 +234,7 @@ until separate runtime/quality and font-import reliability checks justify a
 change. Larger runners would help CPU-bound cold imports but do not eliminate
 serial timer waits; they are a later option to benchmark against cost.
 
-## Validation for a follow-up implementation
+## Regression checks
 
 - Compare a cold run and identical-input warm run on each OS, recording restore,
   import, tests and export separately. Preserve all current test coverage.
@@ -188,6 +247,5 @@ serial timer waits; they are a later option to benchmark against cost.
 - For parallel tests, repeat complete suites with isolated ports/profiles/data;
   preserve restart sequences and surface every process failure.
 
-The durable next step is safe incremental asset reuse, followed by isolated
-test concurrency. Small upload/setup tweaks cannot explain or remove the
-multi-minute runtime by themselves.
+Safe incremental asset reuse and isolated test concurrency address the measured
+bottlenecks. Small upload/setup tweaks contribute less than import and test work.

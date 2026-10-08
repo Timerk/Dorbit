@@ -42,7 +42,22 @@ def main(engine: Path) -> None:
             shutil.copyfile(ROOT / 'assets/ui' / name, project / 'assets/ui' / name)
         shutil.copyfile(ROOT / 'tools/import_ship_materials.gd', project / 'tools/import_ship_materials.gd')
         (project / 'project.godot').write_text('config_version=5\n[application]\nconfig/features=PackedStringArray("4.7", "GL Compatibility")\n[editor]\nimport/use_multiple_threads=false\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n')
-        (project / 'inspect.gd').write_text('extends SceneTree\nfunc _initialize():\n\tvar scene = load("res://assets/ships/liberator.glb").instantiate()\n\troot.add_child(scene)\n\tvar bounds := AABB()\n\tvar initialized := false\n\tfor mesh: MeshInstance3D in scene.find_children("*", "MeshInstance3D", true, false):\n\t\tvar box: AABB = mesh.global_transform * mesh.mesh.get_aabb()\n\t\tbounds = bounds.merge(box) if initialized else box\n\t\tinitialized = true\n\tprint("CACHE_SCENE:", JSON.stringify({"extent": bounds.size.x, "hook": scene.has_meta("changed_hook")}))\n\tscene.free()\n\tquit()\n')
+        (project / 'inspect.gd').write_text('''extends SceneTree
+func _initialize():
+	inspect.call_deferred()
+func inspect():
+	var scene = load("res://assets/ships/liberator.glb").instantiate()
+	root.add_child(scene)
+	var bounds := AABB()
+	var initialized := false
+	for mesh: MeshInstance3D in scene.find_children("*", "MeshInstance3D", true, false):
+		var box: AABB = mesh.global_transform * mesh.mesh.get_aabb()
+		bounds = bounds.merge(box) if initialized else box
+		initialized = true
+	print("CACHE_SCENE:", JSON.stringify({"extent": bounds.size.x, "hook": scene.has_meta("changed_hook")}))
+	scene.free()
+	quit()
+''')
         cache = parent / 'cache'
         cache_tool.prepare(project, cache)
         output, duration = run(engine, project, '--editor', '--import')
@@ -77,6 +92,7 @@ def main(engine: Path) -> None:
                 path.write_bytes(data.replace(b'Khronos glTF Blender', b'Khronos glTF BLENDER', 1))
             cache_tool.prepare(restored, cache)
             reused = len(list((restored / '.godot/imported').glob('*.md5')))
+            assert reused == (2 if case in {'same_inputs', 'runtime_script'} else 1), (case, reused)
             output, duration = run(engine, restored, '--editor', '--import')
             hook_ran = 'Ship import:' in output
             assert hook_ran == (case in {'import_settings', 'import_hook', 'source'}), (case, output)
