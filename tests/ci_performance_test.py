@@ -157,10 +157,13 @@ class ValidationTest(unittest.TestCase):
             checks = [check for check in settings if check[0] == script]
             self.assertEqual(checks[:2], [[script], [script, '--', '--restart']])
         self.assertEqual([check[-1] for check in settings if '--filter-restart' in check], ['2', '3', '4'])
-        self.assertEqual(sum(len(group['checks']) for group in windows), 45)
-        self.assertEqual(sum(len(group['checks']) for group in plan['linux']), 34)
         for suite in plan.values():
+            names = [group['name'] for group in suite]
+            self.assertEqual(len(names), len(set(names)), 'Suite groups must be unique')
             checks = [check for group in suite for check in group['checks']]
+            commands = [tuple(check) for check in checks]
+            self.assertEqual(len(commands), len(set(commands)), 'Suite commands must be unique')
+            self.assertEqual(checks.count(['alien_assets_test.gd']), 1)
             self.assertEqual(checks.count(['hud_customization_test.gd']), 1)
             self.assertEqual(checks.count(['station_assets_test.gd']), 1)
             for script in ('skylab_test.gd', 'skylab_persistence_test.gd', 'skylab_ui_test.gd'):
