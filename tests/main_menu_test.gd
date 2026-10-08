@@ -2,6 +2,62 @@ extends "res://tests/shop_test.gd"
 ## Docked admission, server authority, real preparation transactions and launch.
 
 
+func check_cached_readouts(client: Sector) -> void:
+	var combat := client.session.combat
+	var committed := combat.inventory
+	var fixture := committed.duplicate(true)
+	for index in range(999):
+		fixture["items"]["cached-%d" % index] = {"model": "lf-3", "ship": "", "slot": ""}
+	fixture["revision"] += 1
+	combat.inventory = fixture
+	var menu := client.main_menu
+	if DisplayServer.get_name() != "headless":
+		client.get_viewport().render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	menu.show_home()
+	await settle()
+	check(menu.stat_values["damage"].text == "65", "Overview ignores 999 stored lasers")
+	var overview_base: Dictionary = menu.fitting_stats.ships["starter"]
+	await click(client, menu.navigation["hangar"])
+	var fitting := client.equipment_menu
+	check(fitting.stored.size() == 999 and fitting.stat_values["damage"].text == "65", "Hangar displays large storage without adding it to fitting stats")
+	var hangar_base: Dictionary = fitting.fitting_stats.ships["starter"]
+	var tile := fitting.slots["laser1"]
+	var style := tile.get_theme_stylebox("normal")
+	var empty_style := fitting.slots["laser2"].get_theme_stylebox("normal")
+	for frame in range(10):
+		tile.refresh()
+		await process_frame
+	check(is_same(overview_base, menu.fitting_stats.ships["starter"]) and is_same(hangar_base, fitting.fitting_stats.ships["starter"]), "Repeated menu frames reuse both cached fittings")
+	check(is_same(style, tile.get_theme_stylebox("normal")), "Unchanged tile refresh retains its style resource")
+	fitting.select_item("cached-0")
+	check(is_same(style, tile.get_theme_stylebox("normal")) and is_same(empty_style, fitting.slots["laser2"].get_theme_stylebox("normal")), "Selecting storage preserves styling on unrelated installed and empty tiles")
+	fitting.show_proposal("cached-0", "laser2")
+	check(fitting.preview.text.contains("240 damage") and fitting.stat_values["damage"].text == "65", "Same-revision fitting proposal calculates fresh stats without altering readouts")
+	var saved_boosts := client.player.resource_boosts
+	client.player.resource_boosts = {"shields": {"resource": "seprom", "remaining": 1.0}, "engines": {"resource": "promerium", "remaining": 1.0}}
+	await settle()
+	check(menu.stat_values["shield"].text == "1,400" and fitting.stat_values["shield"].text == "1,400" and fitting.stat_values["speed"].text == "49 m/s", "Both menus immediately display live boosts without inventory changes")
+	await capture(client, "cached-hangar-boosted")
+	client.player.resource_boosts["shields"]["remaining"] = 0
+	client.player.resource_boosts["engines"]["remaining"] = 0
+	await settle()
+	check(menu.stat_values["shield"].text == "1,000" and fitting.stat_values["shield"].text == "1,000" and fitting.stat_values["speed"].text == "41 m/s", "Live boost expiry updates both menus while the inventory revision stays unchanged")
+	check(is_same(hangar_base, fitting.fitting_stats.ships["starter"]), "Live boost changes never rebuild the Hangar base fitting")
+	var saved_hull := client.player.hull
+	var saved_cargo := client.cargo
+	client.player.hull = 12345
+	client.cargo = {"prometium": 12}
+	await settle()
+	check(menu.stat_values["hull"].text == "12,345" and menu.stat_values["cargo"].text == "12 / 400" and fitting.stat_values["cargo"].text == "12 / 400", "Hull and cargo readouts remain live with cached equipment")
+	client.player.hull = saved_hull
+	client.cargo = saved_cargo
+	client.player.resource_boosts = saved_boosts
+	combat.inventory = committed
+	fitting.selected_item = ""
+	menu.show_home()
+	await settle()
+
+
 func run() -> void:
 	var server := make_sector("MenuServer", true, 24739)
 	check(server.session.store.commit({"pilot0": 19000}), "Seed a preparation budget")
@@ -25,6 +81,7 @@ func run() -> void:
 	check(menu.wallet.text == "19,000 CR" and menu.ship_title.text == "LIBERATOR" and menu.stat_values["damage"].text == "65", "Overview presents the synchronized wallet, active hull and fitting")
 	check(not menu.notice.visible, "Overview omits flight instructions and permanent filler")
 	check(menu.ship_art.model_id == "liberator" and menu.ship_art.stage.own_world_3d and menu.ship_art.stage.transparent_bg, "Docked overview renders the active hull separately over the approved menu backdrop")
+	await check_cached_readouts(client)
 	await press(client, KEY_M)
 	check(not client.hud.navigation.overview.visible and menu.home.visible, "Docked menu does not open the flight map")
 	check(not observer.session.ships.has(id), "Docked pilot is absent from another pilot's map")
