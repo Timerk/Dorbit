@@ -166,7 +166,7 @@ class ValidationTest(unittest.TestCase):
             self.assertEqual(checks.count(['alien_assets_test.gd']), 1)
             self.assertEqual(checks.count(['hud_customization_test.gd']), 1)
             self.assertEqual(checks.count(['station_assets_test.gd']), 1)
-            for script in ('skylab_test.gd', 'skylab_persistence_test.gd', 'skylab_ui_test.gd'):
+            for script in ('skylab_test.gd', 'skylab_persistence_test.gd', 'skylab_ui_test.gd', 'extras_test.gd'):
                 self.assertEqual(checks.count([script]), 1)
             self.assertEqual(checks.count(['rocket_test.gd']), 1)
             self.assertEqual(checks.count(['quickslots_test.gd']), 1)

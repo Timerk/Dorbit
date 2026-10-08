@@ -340,7 +340,7 @@ preserves existing reserves. Both require a launched living ship.
 
 Removing Slot CPU 1 returns equipment from its added slots to inventory. Cargo
 capacity removal is blocked until excess cargo is sold. Items and settings persist
-with the pilot. Client and server must both use network schema 11. See
+with the pilot. Client and server must both use network schema 14. See
 [the agreed mechanics and prices](GAME_PLAN.md#extras-equipment) and
 [generated artwork and prompts](assets/ui/extras/README.md).
 
@@ -556,7 +556,7 @@ The regular Liberator has 116,000 hull. New pilots start with LF-1, SG3N-A01 and
 
 LF-3 adds 175 base damage and 15% more for that laser against aliens (201.25 total) per installed copy. Its bonus never multiplies other lasers. FS-01 adds 3,200 shield, 70% absorption and +6.25% regeneration; its regeneration bonuses add together and multiply normal shield recovery after the existing six-second delay. Shield capacity adds, while absorption is weighted by each generator's capacity. Current fitting and installation previews show these special bonuses. Fitting changes do not repair or refill your ship. Inventory and fittings survive rescue, reconnects and restart. Equipment purchases require the persistent dedicated server; the offline development fixture uses the same starter combat and flight values. Reference prices need human progression playtesting with the existing rewards.
 
-Client and server must use matching network-schema-13 builds; the compatibility handshake rejects older builds before gameplay. Save schema 8 adds the combat journal to schema 7's persistent industry, ammunition and combat boosts; Skylab uses credits exclusively. Update the operator provisioning tool with the server so credential rotation preserves pending combat debits, every equipment model and industry jobs.
+Client and server must use matching network-schema-14 builds; the compatibility handshake rejects older builds before gameplay. Save schema 8 adds the combat journal to schema 7's persistent industry, ammunition and combat boosts; Skylab uses credits exclusively. Update the operator provisioning tool with the server so credential rotation preserves pending combat debits, every equipment model and industry jobs.
 
 ### Credit income
 

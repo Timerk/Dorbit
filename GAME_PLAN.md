@@ -449,8 +449,8 @@ second; all debit/refill effects commit together before applying or replicating.
 Fitting never repairs or refills hull, shield or boost energy.
 
 Items and per-item automation settings survive death, reconnect and server restart
-in the current save schema 6 without an extras starter grant or migration. Older binaries cannot read
-new extra model IDs: back up before introducing these items. Network schema 11
+in the current save schema 7 without an extras starter grant or migration. Older binaries cannot read
+new extra model IDs: back up before introducing these items. Network schema 14
 requires matching clients and servers. Original generated images and their exact
 prompts are under `assets/ui/extras`; prices, repair gates and automation behavior
 still need user playtesting.
@@ -655,7 +655,7 @@ Drobit choices requiring playtesting. Premium is an optional operator-set durati
 Save schema 7 migrates versions 1–6 before admission, preserving both earlier
 ammunition/boost and industry layouts. Legacy industry wallets convert once at
 100 credits per unit; active/queued robots retain their lifetime.
-Network schema 13 requires matching client/server builds. See [implementation policies,
+Network schema 14 requires matching client/server builds. See [implementation policies,
 rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot's
 454/870 power budget and exact inventories/capacities remain a separate debug fixture.
 
@@ -726,7 +726,7 @@ Save schema 7 migrates schema 1–6 while preserving progression and grants
 100 R-310 once, with zero other rocket ammo. New pilots receive the same grant.
 The provisioning tool supports the same migration and launcher fittings.
 Back up the ledger before upgrading; rollback needs a pre-migration backup.
-Network schema 13 requires matching client/server builds. Resource rocket
+Network schema 14 requires matching client/server builds. Resource rocket
 boosts use the existing per-ship reserve and combat journal formats; no new save
 or network schema is required. Laser/timed reserve behavior is unchanged.
 
@@ -890,7 +890,7 @@ protection is around the service point, not the entire station. The larger upper
 hangars and outer docking arms do not extend station services or protection.
 Clients and dedicated servers load the same 53 simple collision boxes, with
 open hangar entrances. Autopilot chooses a clear service approach when the tower
-or reactor occupies its usual radial stopping point. Network schema 13 requires
+or reactor occupies its usual radial stopping point. Network schema 14 requires
 matching builds because the physical station layout changed; saves are unchanged.
 Final visual acceptance, scale, approach comfort and group performance remain
 playtesting decisions within Milestone 3.
