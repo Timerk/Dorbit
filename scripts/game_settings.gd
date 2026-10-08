@@ -23,6 +23,11 @@ const ACTIONS := {
 	"cycle_target": "Cycle target", "fire": "Toggle automatic fire", "repair": "Repair",
 	"autopilot": "Toggle autopilot",
 	"rocket": "Fire single rocket", "launcher": "Load / fire Hellstorm",
+	"quickslot_1": "Quickslot 1", "quickslot_2": "Quickslot 2",
+	"quickslot_3": "Quickslot 3", "quickslot_4": "Quickslot 4",
+	"quickslot_5": "Quickslot 5", "quickslot_6": "Quickslot 6",
+	"quickslot_7": "Quickslot 7", "quickslot_8": "Quickslot 8",
+	"quickslot_9": "Quickslot 9", "quickslot_10": "Quickslot 10",
 }
 # Negative codes denote mouse buttons; positive codes denote physical keys.
 const DEFAULT_BINDINGS := {
@@ -32,6 +37,10 @@ const DEFAULT_BINDINGS := {
 	"cycle_target": KEY_TAB, "fire": KEY_SPACE, "repair": KEY_R,
 	"autopilot": KEY_P,
 	"rocket": KEY_F, "launcher": KEY_G,
+	"quickslot_1": KEY_1, "quickslot_2": KEY_2, "quickslot_3": KEY_3,
+	"quickslot_4": KEY_4, "quickslot_5": KEY_5, "quickslot_6": KEY_6,
+	"quickslot_7": KEY_7, "quickslot_8": KEY_8, "quickslot_9": KEY_9,
+	"quickslot_10": KEY_0,
 }
 const SHORTCUTS := {
 	"pause_game": KEY_ESCAPE, "fullscreen": KEY_F11, "performance": KEY_F3,
@@ -39,7 +48,6 @@ const SHORTCUTS := {
 	"resolution_up": KEY_F6, "multiplayer_menu": KEY_F7,
 	"contracts": KEY_C, "station_shop": KEY_B, "ship_equipment": KEY_I,
 	"sector_map": KEY_M,
-	"ammo_x1": KEY_1, "ammo_x2": KEY_2, "ammo_x3": KEY_3, "ammo_x4": KEY_4,
 }
 
 var sensitivity: float = DEFAULT_SENSITIVITY

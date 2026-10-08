@@ -266,6 +266,12 @@ The Audio tab has master/effects volume, mute and a test sound. The Graphics tab
 
 Changes apply immediately except anisotropic strength changes, which require restarting the game. Controls and graphics persist in `user://settings.cfg`, and existing audio preferences remain in `user://audio.cfg`. Esc returns to the previous menu. Fixed shortcuts remain available outside settings: F11 toggles fullscreen, F3 shows performance, F4 toggles antialiasing, and F5/F6 cycle resolutions while paused. F10 quits from a menu. The server keeps running while menus are open; losing focus releases your controls, but incoming damage can continue.
 
+The flight quickslot bar has ten mixed, rebindable slots (`1–0` by default). Its
+`+` button opens item categories and allows assigning, swapping or clearing items
+and changing orientation during flight. Ctrl + Alt separately edits HUD placement.
+Layout and slot assignments persist independently.
+See [quickslot controls and extras integration](docs/quickslots.md).
+
 Graphics also includes 3D render scale (Off/native, 85%, 75%, 50%), anisotropic
 filtering (Off/2x/4x/8x/16x), bloom/glow and ambient occlusion toggles, shadows
 (Off/Low/Medium/High), and combat effects (Off/Low/High). Antialiasing offers
