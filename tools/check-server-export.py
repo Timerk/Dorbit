@@ -52,10 +52,12 @@ def main():
     runtime = args.runtime.resolve() if args.runtime else editor
     with tempfile.TemporaryDirectory(prefix="dorbit-export-check-") as directory:
         clean = Path(directory)
-        shipped = clean / pack.name
+        runtime_directory = clean / "runtime"
+        runtime_directory.mkdir()
+        shipped = runtime_directory / pack.name
         shutil.copyfile(pack, shipped)
         if args.runtime:
-            executable = clean / (pack.stem + (".exe" if os.name == "nt" else ".x86_64"))
+            executable = runtime_directory / (pack.stem + (".exe" if os.name == "nt" else ".x86_64"))
             shutil.copy2(runtime, executable)
             packed_command = [str(executable), "--headless"]
         else:
@@ -120,7 +122,7 @@ def main():
                     if process.poll() is None:
                         process.kill()
                         process.wait()
-        if (clean / ".godot/imported").exists():
+        if (clean / ".godot/imported").exists() or (runtime_directory / ".godot/imported").exists():
             raise RuntimeError("Exported server unexpectedly created an import cache")
         print("Exported server matches source protocol, hull catalog and 30 colliders; clean startup/restart and saves passed.")
 
