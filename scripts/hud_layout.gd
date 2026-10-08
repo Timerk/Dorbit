@@ -12,7 +12,7 @@ const ITEMS := {
 	"controls": ["Control hints", "settings"], "context": ["Notifications", "connection"],
 	"station": ["Station actions", "shop"], "radiation": ["Radiation", "shield"],
 	"reticle": ["Reticle", "damage"], "autopilot": ["Autopilot status", "speed"],
-	"performance": ["Performance", "settings"]
+	"performance": ["Performance", "settings"], "ammo": ["Ammunition", "damage"]
 }
 
 var hud: FlightHud
@@ -81,6 +81,7 @@ func default_rect(id: String) -> Rect2:
 		"objectives": return hud.objectives_rect()
 		"radar": return hud.navigation.radar_rect()
 		"guidance": return hud.navigation.guidance_rect()
+		"ammo": return hud.ammo_bar.default_rect()
 		"speed": return Rect2(hud.ship_rect().end.x + 20, size.y - (236 if size.x < 1200 else 124), 130, 50)
 		"controls": return Rect2(FlightHud.SIDE_MARGIN, size.y - 46, size.x - 2 * FlightHud.SIDE_MARGIN, 32)
 		"context": return Rect2(FlightHud.SIDE_MARGIN, hud.objectives_rect().end.y + 12, minf(440, size.x - 2 * FlightHud.SIDE_MARGIN - 322), 170)

@@ -402,7 +402,7 @@ func _draw() -> void:
 		if layout.shown(id):
 			marker_labels.append(layout.rect_for(id))
 	if ammo_bar.visible:
-		marker_labels.append(ammo_bar.get_rect())
+		marker_labels.append(ammo_bar.get_global_rect())
 	if navigation.autopilot_status.visible:
 		marker_labels.append(navigation.autopilot_status.get_rect().grow(3))
 	if layout.begin_draw(self, "objectives"):
