@@ -119,11 +119,23 @@ or open a menu to cancel. Target loss, rescue and disconnect also cancel it.
 Radiation guidance takes priority until re-entry. A blocked route stops autopilot
 with a message.
 
+Blocked-route searches run across frames with a soft 1.5 ms planning budget and a
+64-work-unit limit per tick. The ship brakes while planning. Only direct blockers
+initially generate detour points; the graph expands to include any candidates
+that could shorten the route, with a full-graph fallback if needed. Visibility
+checks use obstacle bounds and cache both edge directions during each search.
+Clear routes still start immediately. Clearance and arrival distances are unchanged.
+
 `tests/autopilot_test.gd` exercises direct and vertical travel, braking, real
 asteroid detours, moving destinations, station arrival, cancellation and normal
 authoritative ENet movement. Both check runners include it. Run with a renderer
 to exercise the keyboard toggle and status label, and save 960 x 600 and 1440 x 900
 captures under `build/validation`.
+Use `-- --planning-only` for the geometry regressions and timing diagnostics:
+total planning time, frame-slice peak, candidate counts and visibility cache hits.
+These checks compare reduced graphs with full graphs and cover disconnected-route
+fallback and cache reuse. The full fixture also checks pending-plan cancellation
+and moving contacts during planning.
 
 The destination compass shows where to turn, distance and relative height.
 Center its dot to face the destination; a hollow dot means it is behind you.

@@ -44,6 +44,107 @@ func press(sector: Sector, action: String) -> void:
 	sector._unhandled_input(event)
 
 
+func route_length(start: Vector3, points: Array[Vector3]) -> float:
+	var length := 0.0
+	for point in points:
+		length += start.distance_to(point)
+		start = point
+	return length
+
+
+func complete_plan(planner: FlightAutopilot, start: Vector3, finish: Vector3, full_graph: bool = false) -> FlightAutopilot.PlanningJob:
+	var plan_started := Time.get_ticks_usec()
+	var job := planner.begin_plan(start, finish)
+	if full_graph and not job.done:
+		for index in range(planner.obstacles.size()):
+			job.included[index] = true
+			job.points.append_array(planner.obstacle_points(planner.obstacles[index], start, finish))
+		job.restart_search()
+	var slices := 0
+	var peak_usec := 0
+	while not job.done and slices < 10000:
+		var started := Time.get_ticks_usec()
+		planner.advance_plan(job)
+		peak_usec = maxi(peak_usec, Time.get_ticks_usec() - started)
+		slices += 1
+	check(job.done, "Sliced planner completes within the work limit")
+	if not full_graph:
+		print("AUTOPILOT PLAN total_ms=%.3f slices=%d peak_ms=%.3f candidates=%d/%d visibility=%d cache_hits=%d" % [(Time.get_ticks_usec() - plan_started) / 1000.0, slices, peak_usec / 1000.0, job.included.size(), planner.obstacles.size(), job.visibility_checks, job.cache_hits])
+	return job
+
+
+func planning_checks(sector: Sector) -> void:
+	var planner := FlightAutopilot.new()
+	planner.sector = sector
+	planner.collect_obstacles()
+	var rock := sector.get_node("Asteroid0") as Node3D
+	var cases: Array[Array] = [
+		[rock.position + Vector3(0, 0, 80), rock.position - Vector3(0, 0, 80)],
+		[Sector.STATION_POSITION + Vector3(0, 270, 0), Sector.STATION_POSITION + Vector3(0, 0, 50)],
+	]
+	planner.planning = planner.begin_plan(cases[0][0], cases[0][1])
+	planner.collect_obstacles()
+	check(planner.planning == null, "Refreshing collision geometry invalidates pending visibility and planning state")
+	for points in cases:
+		var job := complete_plan(planner, points[0], points[1])
+		var full := complete_plan(planner, points[0], points[1], true)
+		check(not job.result.is_empty() and absf(route_length(points[0], job.result) - route_length(points[0], full.result)) < 0.01, "Reduced candidates retain the full graph's shortest sampled route")
+		check(job.included.size() < planner.obstacles.size(), "Detours exclude irrelevant candidate obstacles")
+		var checks_before := job.visibility_checks
+		var forward := job.edge_clear(planner, 0, 1)
+		var backward := job.edge_clear(planner, 1, 0)
+		check(forward == backward and job.visibility_checks <= checks_before + 1, "Visibility is reused in both edge directions")
+	var clear := planner.begin_plan(Vector3(400, 250, 0), Vector3(400, 250, -140))
+	check(clear.done and clear.result.size() == 1 and clear.points.size() == 2, "Clear routes finish immediately without generating obstacle candidates")
+	# Side obstacles cover every direct blocker's corner without intersecting
+	# the direct route. Their candidates must be added to connect the graph.
+	planner.obstacles = [
+		{"box": AABB(Vector3(-10, -10, -90), Vector3(20, 20, 20))},
+	]
+	for axis in [0, 1]:
+		for side in [-1.0, 1.0]:
+			var center := Vector3(0, 0, -80)
+			center[axis] = side * 11.0
+			var size := Vector3(30, 30, 50)
+			size[axis] = 4.0
+			planner.obstacles.append({"box": AABB(center - size * 0.5, size)})
+	var clustered := complete_plan(planner, Vector3.ZERO, Vector3(0, 0, -160))
+	var full_cluster := complete_plan(planner, Vector3.ZERO, Vector3(0, 0, -160), true)
+	check(not clustered.result.is_empty() and clustered.included.size() > 1 and absf(route_length(Vector3.ZERO, clustered.result) - route_length(Vector3.ZERO, full_cluster.result)) < 0.01, "Detour blockers outside the direct route remain part of shortest-route planning")
+	var pending := planner.begin_plan(Vector3.ZERO, Vector3(0, 0, -160))
+	planner.advance_plan(pending, 1000000, 1)
+	check(not pending.done, "Blocked search can yield after a single work unit")
+	planner.planning = pending
+	planner.cancel()
+	check(planner.planning == null and planner.route.is_empty(), "Cancellation discards pending planning without publishing a stale route")
+	planner.obstacles.clear()
+	for axis in range(3):
+		for side in [-1.0, 1.0]:
+			var center := Vector3(0, 0, -100)
+			center[axis] += side * 30.0
+			var size := Vector3.ONE * 70.0
+			size[axis] = 10.0
+			planner.obstacles.append({"box": AABB(center - size * 0.5, size)})
+	var enclosed := complete_plan(planner, Vector3.ZERO, Vector3(0, 0, -100))
+	check(enclosed.result.is_empty() and enclosed.included.size() == planner.obstacles.size(), "Disconnected local graph expands to every obstacle before reporting no route")
+	# Boundary/zero-length broad-phase checks must preserve exact clearance.
+	planner.collect_obstacles()
+	for obstacle in planner.obstacles:
+		if obstacle.has("radius"):
+			var edge: Vector3 = obstacle["center"] + Vector3.RIGHT * float(obstacle["radius"])
+			check(planner.segment_clear(edge, edge) == not planner.obstacle_blocks(edge, edge, obstacle), "Sphere boundary clearance survives the visibility broad phase")
+			break
+
+
+func settle_planning(sector: Sector) -> void:
+	for frame in range(1000):
+		sector.read_flight_movement(1.0 / 60.0)
+		if sector.autopilot.planning == null:
+			return
+		await physics_frame
+	check(false, "Flight planning must complete within 1000 frames")
+
+
 func run() -> void:
 	if "--hud-only" in OS.get_cmdline_user_args():
 		await rendered_checks(make_sector("AutopilotHud"))
@@ -54,6 +155,10 @@ func run() -> void:
 		await finish()
 		return
 	var sector := make_sector("Autopilot")
+	planning_checks(sector)
+	if "--planning-only" in OS.get_cmdline_user_args():
+		await finish()
+		return
 	var nav := sector.hud.navigation
 	var enemy := sector.aliens[1]
 	enemy.position = Vector3(200, 250, -200)
@@ -87,6 +192,19 @@ func run() -> void:
 	rock.add_child(collider)
 	sector.add_child(rock)
 	await physics_frame
+	sector.autopilot.toggle()
+	var planning_movement := sector.read_flight_movement(1.0 / 60.0)
+	check(sector.autopilot.enabled and sector.autopilot.planning != null and planning_movement == Vector3.ZERO, "Blocked flight brakes while planning continues across frames")
+	var pending_job := sector.autopilot.planning
+	enemy.position.x += 30.0
+	sector.read_flight_movement(1.0 / 60.0)
+	check(sector.autopilot.planning != pending_job and sector.autopilot.goal.x > 420, "Moving contacts replace a pending plan instead of publishing its stale goal")
+	enemy.position.x -= 30.0
+	sector.read_flight_movement(1.0 / 60.0)
+	Input.action_press("strafe_right")
+	sector.read_flight_movement(1.0 / 60.0)
+	Input.action_release("strafe_right")
+	check(not sector.autopilot.enabled and sector.autopilot.planning == null, "Manual input cancels planning immediately")
 	sector.autopilot.toggle()
 	var planned := sector.autopilot.plan(sector.player.position, enemy.position + Vector3(0, 0, 20))
 	var previous := sector.player.position
@@ -169,7 +287,7 @@ func run() -> void:
 		place(sector, Sector.STATION_POSITION + approach)
 		nav.choose_contact("station")
 		sector.autopilot.toggle()
-		sector.read_flight_movement(1.0 / 60.0)
+		await settle_planning(sector)
 		var approach_clear := sector.autopilot.enabled and not sector.autopilot.route.is_empty()
 		previous = sector.player.position
 		for point in sector.autopilot.route:
