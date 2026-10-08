@@ -135,7 +135,7 @@ def main():
                         process.wait()
         if (clean / ".godot/imported").exists() or (runtime_directory / ".godot/imported").exists():
             raise RuntimeError("Exported server unexpectedly created an import cache")
-        print("Exported server matches source protocol, hull catalog and 30 colliders; clean startup/restart and saves passed.")
+        print(f"Exported server matches source protocol, hull catalog and {len(source['colliders'])} colliders; clean startup/restart and saves passed.")
 
 
 if __name__ == "__main__":

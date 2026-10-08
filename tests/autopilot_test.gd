@@ -165,6 +165,17 @@ func run() -> void:
 	sector.autopilot.toggle()
 	await step_flight(sector)
 	check(sector.autopilot.status == "ARRIVED" and sector.repair_blocker().is_empty(), "Outpost approach stops clear of station colliders in service range")
+	for approach in [Vector3(0, 270, 0), Vector3(0, -140, 0)]:
+		place(sector, Sector.STATION_POSITION + approach)
+		nav.choose_contact("station")
+		sector.autopilot.toggle()
+		sector.read_flight_movement(1.0 / 60.0)
+		var approach_clear := sector.autopilot.enabled and not sector.autopilot.route.is_empty()
+		previous = sector.player.position
+		for point in sector.autopilot.route:
+			approach_clear = approach_clear and sector.autopilot.segment_clear(previous, point)
+			previous = point
+		check(approach_clear and sector.autopilot.goal.distance_to(Sector.STATION_POSITION) < Sector.REPAIR_RADIUS, "Vertical station approach plans around the tower/reactor to a clear service point")
 	place(sector, Vector3(0, 1300, 0))
 	sector.autopilot.toggle()
 	sector.read_flight_movement(0.1)
