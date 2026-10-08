@@ -28,6 +28,8 @@ var extras: Dictionary = {}
 func _ready() -> void:
 	name = "AmmoBar"
 	config.load_from()
+	for family: String in ["repair", "repair-auto", "ammo", "generators"]:
+		register_extra(family, func(): return equipment_extra_state(family), func(): use_equipment_extra(family))
 	for index in config.slots.size():
 		var tile := QuickslotTile.new()
 		tile.bar = self
@@ -67,7 +69,7 @@ func build_picker() -> void:
 	var close := StationUi.button(header, "Close", close_picker)
 	close.custom_minimum_size.y = 28
 	close.add_theme_font_size_override("font_size", 16)
-	picker_help = StationUi.text(rows, "Click an item to use. Drag to assign, or click a slot then an item.", 14)
+	picker_help = StationUi.text(rows, "Click automation to toggle. Drag to assign; Shift-click a slot to select it.", 14)
 	tabs = TabContainer.new()
 	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rows.add_child(tabs)
@@ -139,6 +141,42 @@ func unregister_extra(id: String) -> void:
 	extras.erase("extra:" + id)
 	if is_instance_valid(tabs):
 		rebuild_picker()
+
+
+func equipment_extra(family: String) -> Dictionary:
+	var data := sector.session.combat.inventory
+	return Equipment.extra(data, family) if not data.is_empty() else {}
+
+
+func equipment_extra_state(family: String) -> Dictionary:
+	var item := equipment_extra(family)
+	var automated := family != "repair"
+	var fallback: String = {"repair": "rep-1", "repair-auto": "repair-auto", "ammo": "ammo-cpu", "generators": "generator-cpu"}[family]
+	var model: String = item.get("model", fallback)
+	var active: bool = Extras.enabled(item) if automated else sector.player.robot_repairing
+	var available := not item.is_empty() and not sector.session.combat.station_pending
+	var hint: String = Equipment.MODELS[model]["description"]
+	if automated:
+		hint += "\nOpen quickslot editing (+), then click here to toggle automation. Drag to assign."
+	else:
+		hint += "\n" + Extras.repair_blocker(sector.player)
+	if item.is_empty():
+		hint += "\nEquip this extra on the active ship to use it."
+	return {"name": {"repair": "Repair", "repair-auto": "Auto repair", "ammo": "Auto ammo", "generators": "Auto boost"}[family], "icon": StationUi.texture(model), "count": ("ON" if active else "OFF") if automated else ("REPAIR" if active else "START"), "active": active, "available": available, "edit_toggle": automated, "tooltip": hint}
+
+
+func use_equipment_extra(family: String) -> void:
+	var item := equipment_extra(family)
+	if item.is_empty():
+		return
+	if family == "repair":
+		sector.request_repair()
+	elif slot_editing:
+		var data := sector.session.combat.inventory
+		for id: String in data["items"]:
+			if data["items"][id] == item:
+				sector.session.combat.request_station("configure_extra", id, "off" if Extras.enabled(item) else "on", item.get("ammo_type", "x1") if family == "ammo" else "")
+				return
 
 
 func begin_editing() -> void:

@@ -426,7 +426,10 @@ with no recurring credit cost. The ship must be alive, launched, stationary
 Movement, incoming damage, firing intent, docking and death interrupt manual
 repair. The Auto CPU defaults on and resumes when conditions permit; it needs a
 separately fitted robot. Station repair retains its instant paid behavior within
-60 m. A flight HUD prompt shows robot availability and active repair.
+60 m. A flight HUD prompt shows robot availability and active repair. While the
+robot works, a small metallic drone hovers above the hull and projects animated
+repair beams. This follows the replicated repair state on local and remote ships;
+it disappears when repair stops and is not created on dedicated servers.
 
 Cargo expansion affects pickup, cargo displays and save validation. Removing it,
 including indirectly by removing the Slot CPU, is rejected while cargo exceeds
@@ -434,8 +437,14 @@ the resulting capacity. Slot CPU removal returns items in the two disappearing
 slots to storage atomically; no equipment or cargo is deleted. A Slot CPU must
 occupy a base extra slot and cannot support itself from its added slots.
 
-Select a configurable CPU in Hangar to enable/disable automation. Ammunition
-spending and generator resource consumption default off. Ammo settings select
+Open quickslot editing with `+` and left-click an equipped automation CPU in
+either the Extras picker or its assigned bar slot to toggle ON/OFF. Drag assigns
+or swaps automation extras; Shift-click selects an assigned slot for clearing
+or reassignment. Automation clicks outside editing do not change settings.
+Only CPUs fitted on the active ship can toggle in flight; the server saves the
+setting and validates ownership and ship life. The repair robot itself can also
+be assigned as a manual quickslot action. Ammunition spending and generator
+resource consumption default off. Hangar retains the ammo type selector; settings select
 x1, x2 or x3 independently of the weapon's selected ammunition; x4 cannot be
 purchased. Refills cost 100 ordinary 100-round batches and require the entire
 price. No automatic ammunition substitution occurs.
