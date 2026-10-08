@@ -60,12 +60,13 @@ fi
 # Publish only the exported server and existing service/provisioning entry points.
 # Keep the checkout/imports exclusively in disposable build staging.
 package="$staging/package"
-mkdir -p "$package/runtime" "$package/tools" "$package/deploy" "$package/assets/ships" "$package/licenses"
+mkdir -p "$package/runtime" "$package/tools" "$package/deploy" "$package/assets/ships" "$package/assets/skylab" "$package/licenses"
 cp "$staging/build/linux/DorbitServer.x86_64" "$staging/build/linux/DorbitServer.pck" "$package/runtime/"
 cp "$staging/build/linux/THIRD_PARTY_NOTICES.txt" "$package/"
 cp "$staging/tools/server.sh" "$staging/tools/run_server.py" "$staging/tools/pilots.py" "$package/tools/"
 cp "$staging/deploy/dorbit.service" "$package/deploy/"
 cp "$staging/assets/ships/catalog.json" "$package/assets/ships/"
+cp "$staging/assets/skylab/balance-v1.json" "$package/assets/skylab/"
 cp "$staging/assets/ui/fonts/OFL.txt" "$package/licenses/Rajdhani-OFL.txt"
 mkdir -p "$tool_cache"
 cp "$staging/.tools/godot-linux/linux_release.x86_64" "$tool_cache/"
