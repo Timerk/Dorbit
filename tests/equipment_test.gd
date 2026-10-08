@@ -213,7 +213,7 @@ func run() -> void:
 	var server := make_sector("EquipmentServer", true, 24731)
 	var store := server.session.store
 	check(store.pilots["pilot0"]["equipment"]["items"].size() == 3, "Legacy pilots receive starter items")
-	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 4, "Migration commits before server admits pilots")
+	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 5, "Migration commits before server admits pilots")
 	check(not JSON.parse_string(FileAccess.get_file_as_string(store.path + ".bak"))["pilots"]["pilot0"].has("equipment"), "Migration backs up the original ledger")
 	check(store.commit({"pilot0": 40600}), "Seed test wallet through the normal commit path")
 	var client := make_sector("EquipmentClient")
