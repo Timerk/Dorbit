@@ -531,6 +531,43 @@ The Mission Control board now separates hunt selection from acceptance. Hunting 
 
 On 3 October 2026, the revised rendered contract replay passed 26 checks on Windows OpenGL, with captures inspected at 960 x 600 and 1440 x 900. Headless hunting-contract checks passed 43 assertions and equipment checks passed 68. The replay verifies the exact Scout payout in flight and preserves the returned wallet through repeat acceptance, purchase and restart; rescue fees incurred during the live return are accounted for separately.
 
+## CI performance
+
+Validation checks the exact Linux release staged by `git archive` once. Packaging
+still runs the full server suite before publishing a release; it does not reuse a
+success result from the working checkout. Godot setup verifies the pinned archive
+again before extracting the staging executable.
+
+Linux and Windows cache only `.godot/imported` as derived project data, alongside
+the existing pinned tool caches. Import keys include OS, Godot version, all assets
+and their import settings, `project.godot`, and scene import hooks. There are no
+broad fallback keys. Script/class indexes and editor state are regenerated. PR
+validation saves caches in GitHub's isolated PR merge-ref scope; main builds
+cannot restore those caches. Preview build jobs run with `cache-mode: read` and
+restore-only actions, so PR code cannot write caches into the dispatch's main
+scope. A preview with changed import inputs may still require a cold import.
+
+Both check helpers print `TIMING:` lines and append command durations and results
+to the GitHub run summary, including failed checks. This separates the initial
+asset import from each test without dropping coverage. Linux Python checks are
+timed too. Compare a cache-miss run with a later cache hit on the same inputs.
+
+For a focused texture compression comparison, run:
+
+```powershell
+python tools/profile-imports.py .tools/godot/Godot_v4.7.2-stable_win64_console.exe --ship liberator
+```
+
+The profiler imports one hull in disposable projects with Basis Universal and
+uncompressed embedded textures, then measures warm imports and restoring only
+`.godot/imported` into another clean project. It writes durations and imported
+file sizes to `build/validation/import-profile-results.json`; it never changes
+the game's import settings. Use the Linux executable on Linux. The current
+2048-pixel atlases and Basis compression remain in place: faster uncompressed
+imports need a separate assessment of GPU memory and runtime performance before
+changing game assets. CI caches are not included in the server archive, so the
+VPS's first-start asset import remains a separate deployment cost.
+
 ## Code layout
 
 - `scripts/ship.gd`: shared combat state and weapon validation.

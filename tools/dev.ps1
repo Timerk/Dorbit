@@ -11,6 +11,9 @@ $version = '4.7.2-stable'
 $engineDir = Join-Path $toolRoot 'godot'
 $engine = Join-Path $engineDir "Godot_v${version}_win64_console.exe"
 $releaseUrl = "https://github.com/godotengine/godot-builds/releases/download/$version"
+if ($env:GITHUB_STEP_SUMMARY) {
+    "`n### Windows $Task timings`n`n| Command | Duration | Result |`n| --- | ---: | --- |" | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
+}
 
 function Get-VerifiedAsset([string]$Name, [string]$Sha256) {
     $archivePath = Join-Path $toolRoot $Name
@@ -26,13 +29,22 @@ function Get-VerifiedAsset([string]$Name, [string]$Sha256) {
 }
 
 function Invoke-Godot([string[]]$EngineArgs) {
+    $timer = [Diagnostics.Stopwatch]::StartNew()
     $previousPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
         $output = @(& $engine @EngineArgs 2>&1)
         $code = $LASTEXITCODE
     } finally { $ErrorActionPreference = $previousPreference }
+    $timer.Stop()
     $output | ForEach-Object { Write-Host $_ }
+    $failed = $code -ne 0 -or ($output -match 'SCRIPT ERROR:|Parse Error:|ERROR:')
+    $seconds = $timer.Elapsed.TotalSeconds.ToString('F2', [Globalization.CultureInfo]::InvariantCulture)
+    $label = 'Godot ' + ($EngineArgs -join ' ')
+    Write-Host "TIMING: ${label}: ${seconds}s (exit $code)"
+    if ($env:GITHUB_STEP_SUMMARY) {
+        "| ``$label`` | $seconds s | $(if ($failed) { 'FAILED' } else { 'OK' }) |" | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
+    }
     if ($code -ne 0 -or ($output -match 'SCRIPT ERROR:|Parse Error:|ERROR:')) {
         throw "Godot validation failed with exit code $code."
     }
