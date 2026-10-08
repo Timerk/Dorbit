@@ -156,8 +156,11 @@ class ValidationTest(unittest.TestCase):
             checks = [check for check in settings if check[0] == script]
             self.assertEqual(checks[:2], [[script], [script, '--', '--restart']])
         self.assertEqual([check[-1] for check in settings if '--filter-restart' in check], ['2', '3', '4'])
-        self.assertEqual(sum(len(group['checks']) for group in windows), 38)
-        self.assertEqual(sum(len(group['checks']) for group in plan['linux']), 27)
+        self.assertEqual(sum(len(group['checks']) for group in windows), 39)
+        self.assertEqual(sum(len(group['checks']) for group in plan['linux']), 28)
+        for suite in plan.values():
+            checks = [check for group in suite for check in group['checks']]
+            self.assertEqual(checks.count(['hud_customization_test.gd']), 1)
 
     def test_network_fixtures_map_explicit_connection_ports(self):
         plan = json.loads((ROOT / 'tools/check-suites.json').read_text())
