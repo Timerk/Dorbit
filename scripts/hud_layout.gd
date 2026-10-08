@@ -99,11 +99,13 @@ func shown(id: String) -> bool:
 func rect_for(id: String) -> Rect2:
 	var base := default_rect(id)
 	var entry: Dictionary = entries.get(id, {})
-	if not entry.has("position"):
+	if not entry.has("position") and id != "reticle":
 		return base
 	var factor := clampf(float(entry.get("scale", 1.0)), MIN_SCALE, 3.0)
 	factor = minf(factor, minf(size.x / base.size.x, (size.y - 24) / base.size.y))
 	var dimensions := base.size * factor
+	if id == "reticle":
+		return Rect2((size - dimensions) * 0.5, dimensions)
 	# Store a fraction of available travel, preserving edge placement on resize.
 	var position_ratio: Vector2 = entry["position"]
 	var origin := position_ratio * (size - dimensions).max(Vector2.ZERO)
@@ -117,6 +119,9 @@ func store_rect(id: String, rect: Rect2) -> void:
 	var factor := clampf(rect.size.x / base.size.x, MIN_SCALE, 3.0)
 	factor = minf(factor, minf(size.x / base.size.x, (size.y - 24) / base.size.y))
 	var dimensions := base.size * factor
+	if id == "reticle":
+		entries[id] = {"scale": factor, "visible": shown(id)}
+		return
 	var travel := (size - dimensions).max(Vector2.ZERO)
 	var origin := rect.position.clamp(Vector2.ZERO, travel)
 	entries[id] = {"position": origin / travel.max(Vector2.ONE), "scale": factor, "visible": shown(id)}
@@ -212,7 +217,10 @@ func load_layout() -> void:
 		var entry := {"visible": config.get_value(id, "visible", true) == true}
 		var position_ratio: Variant = config.get_value(id, "position") if config.has_section_key(id, "position") else null
 		var factor: Variant = config.get_value(id, "scale", 1.0)
-		if position_ratio is Vector2 and is_finite(position_ratio.x) and is_finite(position_ratio.y) and (factor is float or factor is int) and is_finite(float(factor)):
+		var valid_scale: bool = (factor is float or factor is int) and is_finite(float(factor))
+		if id == "reticle" and valid_scale:
+			entry["scale"] = clampf(float(factor), MIN_SCALE, 3.0)
+		elif position_ratio is Vector2 and is_finite(position_ratio.x) and is_finite(position_ratio.y) and valid_scale:
 			entry["position"] = position_ratio.clamp(Vector2.ZERO, Vector2.ONE)
 			entry["scale"] = clampf(float(factor), MIN_SCALE, 3.0)
 		entries[id] = entry
@@ -260,11 +268,15 @@ func _input(event: InputEvent) -> void:
 					drag_start = event.position
 					drag_rect = rect
 					resizing = Rect2(rect.end - Vector2(24, 24), Vector2(24, 24)).has_point(event.position)
+					if id == "reticle" and not resizing:
+						drag_id = ""
 					break
 	if event is InputEventMouseMotion and not drag_id.is_empty():
 		var delta: Vector2 = event.position - drag_start
 		var rect := drag_rect
 		if resizing:
+			if drag_id == "reticle":
+				delta *= 2.0 # Resizing expands equally on both sides of the center.
 			# Project the pointer onto the aspect-ratio diagonal, supporting both axes.
 			var aspect := default_rect(drag_id).size.normalized()
 			var width := drag_rect.size.x + delta.dot(aspect) * aspect.x

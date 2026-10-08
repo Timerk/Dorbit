@@ -23,6 +23,8 @@ remain visible when relevant. Control keycaps use your current bindings.
 Press **Ctrl + Alt** together during flight to customize the HUD. Drag a panel
 or its title bar to move it, drag the lower-right corner to resize it, and use
 its **×** to hide it. The editor's icon sidebar reopens or selects any instrument.
+The reticle can be resized but always stays centered; it cannot be dragged to
+another position, and older saved reticle positions are ignored.
 Hide the sidebar to edit the whole screen; a Show sidebar button brings it back.
 The grid makes editing clear and supports optional snapping. Panels preserve
 their proportions and stop shrinking at 80% of their default size. **Escape**,

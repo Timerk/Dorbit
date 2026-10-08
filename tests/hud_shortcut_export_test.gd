@@ -44,6 +44,11 @@ func run() -> void:
 	check(not sector.hud.layout.editing, "Control alone cannot open the editor")
 	await modifier(KEY_ALT, true, true)
 	check(sector.hud.layout.editing and sector.hud.layout.sidebar.visible, "Native Ctrl-then-Alt opens the exported offline HUD editor")
+	var layout := sector.hud.layout
+	layout.entries["reticle"] = {"position": Vector2(0.9, 0.1), "scale": 2.0, "visible": true}
+	check(layout.rect_for("reticle").get_center().is_equal_approx(layout.size * 0.5), "The exported reticle ignores saved position and stays centered")
+	check(layout.rect_for("reticle").size.is_equal_approx(layout.default_rect("reticle").size * 2.0), "The exported reticle still supports custom sizing")
+	layout.entries.erase("reticle")
 	await modifier(KEY_ALT, false, true)
 	await modifier(KEY_CTRL, false)
 	await modifier(KEY_ALT, true)
