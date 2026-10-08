@@ -82,8 +82,6 @@ func _ready() -> void:
 	model = ShipCatalog.model_scene(ship_model)
 	add_child(model)
 	SectorVisuals.configure_texture_filtering(model, SectorVisuals.texture_filtering_enabled(self))
-	repair_visual = RepairBotVisual.new()
-	add_child(repair_visual)
 	arm = SpringArm3D.new()
 	arm.position = Vector3(0.0, 2.5, 0.0)
 	arm.rotation.x = -0.12
@@ -97,6 +95,12 @@ func _ready() -> void:
 	camera.far = 6000.0
 	camera.current = true
 	arm.add_child(camera)
+
+
+func _process(_delta: float) -> void:
+	if render_enabled and robot_repairing and not is_instance_valid(repair_visual):
+		repair_visual = RepairBotVisual.new()
+		add_child(repair_visual)
 
 
 func reset_health() -> void:
