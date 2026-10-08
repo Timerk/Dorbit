@@ -16,29 +16,81 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: dorbit-preview
-  cancel-in-progress: false
-
 jobs:
   select:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     outputs:
       sha: ${{ steps.select.outputs.sha }}
       pr: ${{ steps.select.outputs.pr }}
+      reuse_run: ${{ steps.select.outputs.reuse_run }}
+      reuse_attempt: ${{ steps.select.outputs.reuse_attempt }}
+      reuse_prefix: ${{ steps.select.outputs.reuse_prefix }}
+      reuse_linux: ${{ steps.select.outputs.reuse_linux }}
+      reuse_windows: ${{ steps.select.outputs.reuse_windows }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          sparse-checkout: tools/ci-deploy.py
+          sparse-checkout-cone-mode: false
       - id: select
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ inputs.pr }}
         run: python3 tools/ci-deploy.py preview-select
 
+  reuse:
+    needs: select
+    if: needs.select.outputs.reuse_run != ''
+    runs-on: ubuntu-latest
+    outputs:
+      attempt: ${{ steps.copy.outputs.attempt }}
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          sparse-checkout: tools/ci-deploy.py
+          sparse-checkout-cone-mode: false
+      - name: Verify and copy the exact checked pair into this preview run
+        id: copy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIEW_SHA: ${{ needs.select.outputs.sha }}
+          PREVIEW_SOURCE_RUN: ${{ needs.select.outputs.reuse_run }}
+          PREVIEW_SOURCE_ATTEMPT: ${{ needs.select.outputs.reuse_attempt }}
+          PREVIEW_SOURCE_PREFIX: ${{ needs.select.outputs.reuse_prefix }}
+          LINUX_BUILD_ATTEMPT: ${{ needs.select.outputs.reuse_linux }}
+          WINDOWS_BUILD_ATTEMPT: ${{ needs.select.outputs.reuse_windows }}
+        run: |
+          python3 tools/ci-deploy.py preview-download
+          echo "attempt=$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Preview-Linux-${{ needs.select.outputs.sha }}-${{ github.run_attempt }}
+          path: dist/server.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Preview-Windows-${{ needs.select.outputs.sha }}-${{ github.run_attempt }}
+          path: dist/windows.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+
   linux:
     needs: select
+    if: needs.select.outputs.reuse_run == ''
+    env:
+      DORBIT_TEST_WORKERS: 2
     runs-on: ubuntu-latest
     # PR code must not publish caches into this workflow_dispatch's main scope.
     cache-mode: read
@@ -49,6 +101,10 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          sparse-checkout: |
+            tools/deploy-server.sh
+            tools/import-cache.py
+          sparse-checkout-cone-mode: false
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ needs.select.outputs.sha }}
@@ -59,16 +115,22 @@ jobs:
         with:
           path: .tools/godot-linux
           key: godot-linux-4.7.2-v2
-      - name: Restore trusted imported Linux assets
+      - name: Compute import inputs from the selected revision
+        id: import-key
+        run: |
+          test -f source/tools/import-cache.py -a -f source/tools/check-game.py || { echo "Rebase the preview branch onto the CI performance changes." >&2; exit 1; }
+          echo "key=$(python3 tools/import-cache.py key --project source)" >> "$GITHUB_OUTPUT"
+      - name: Restore trusted validated Linux assets
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          path: .godot/imported
-          key: imports-v1-${{ runner.os }}-godot-4.7.2-${{ hashFiles('source/project.godot', 'source/assets/**', 'source/tools/import*.gd') }}
+          path: .ci/import-cache
+          key: imports-v2-${{ runner.os }}-godot-4.7.2-${{ steps.import-key.outputs.key }}
+          restore-keys: imports-v2-${{ runner.os }}-godot-4.7.2-
       - name: Prepare checked PR release using the trusted packaging helper
         id: build
         env:
           PREVIEW_SHA: ${{ needs.select.outputs.sha }}
-          DORBIT_IMPORT_CACHE: ${{ github.workspace }}/.godot/imported
+          DORBIT_VALIDATED_IMPORT_CACHE: ${{ github.workspace }}/.ci/import-cache
           DORBIT_TOOL_CACHE: ${{ github.workspace }}/.tools/godot-linux
         run: |
           # Copy only the packaging helper. The PR supplies its game and check scripts.
@@ -81,10 +143,14 @@ jobs:
           name: Preview-Linux-${{ needs.select.outputs.sha }}-${{ github.run_attempt }}
           path: server.tar.gz
           if-no-files-found: error
+          compression-level: 0
           retention-days: 90
 
   windows:
     needs: select
+    if: needs.select.outputs.reuse_run == ''
+    env:
+      DORBIT_TEST_WORKERS: 2
     runs-on: windows-latest
     cache-mode: read
     timeout-minutes: 20
@@ -102,11 +168,20 @@ jobs:
             .tools/godot
             .tools/templates
           key: godot-windows-4.7.2-v1
-      - name: Restore trusted imported Windows assets
+      - name: Compute import inputs from the selected revision
+        id: import-key
+        shell: pwsh
+        run: |
+          if (!(Test-Path tools/import-cache.py) -or !(Test-Path tools/check-game.py)) { throw "Rebase the preview branch onto the CI performance changes." }
+          "key=$(python tools/import-cache.py key)" >> $env:GITHUB_OUTPUT
+      - name: Restore trusted validated Windows assets
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          path: .godot/imported
-          key: imports-v1-${{ runner.os }}-godot-4.7.2-${{ hashFiles('project.godot', 'assets/**', 'tools/import*.gd') }}
+          path: .ci/import-cache
+          key: imports-v2-${{ runner.os }}-godot-4.7.2-${{ steps.import-key.outputs.key }}
+          restore-keys: imports-v2-${{ runner.os }}-godot-4.7.2-
+      - name: Seed validated imports
+        run: python tools/import-cache.py prepare
       - name: Check and export the selected Windows client
         id: build
         shell: pwsh
@@ -124,12 +199,21 @@ jobs:
           name: Preview-Windows-${{ needs.select.outputs.sha }}-${{ github.run_attempt }}
           path: windows.zip
           if-no-files-found: error
+          compression-level: 0
           retention-days: 90
 
   deploy:
-    needs: [select, linux, windows]
+    needs: [select, reuse, linux, windows]
+    if: >-
+      always() && needs.select.result == 'success' &&
+      ((needs.reuse.result == 'success') ||
+      (needs.linux.result == 'success' && needs.windows.result == 'success'))
+    # Build jobs overlap; only the complete VPS transaction shares the stop lock.
+    concurrency:
+      group: dorbit-preview
+      cancel-in-progress: false
+      queue: max
     runs-on: ubuntu-latest
-    # The VPS allows twenty minutes for cold imports; leave time for transfers.
     timeout-minutes: 30
     environment: dorbit-preview
     permissions:
@@ -141,39 +225,58 @@ jobs:
       PR_NUMBER: ${{ needs.select.outputs.pr }}
       FRESH_SAVES: ${{ inputs.fresh_saves }}
       # Successful build jobs may be retained from an earlier partial rerun.
-      LINUX_BUILD_ATTEMPT: ${{ needs.linux.outputs.attempt }}
-      WINDOWS_BUILD_ATTEMPT: ${{ needs.windows.outputs.attempt }}
+      LINUX_BUILD_ATTEMPT: ${{ needs.linux.outputs.attempt || needs.reuse.outputs.attempt }}
+      WINDOWS_BUILD_ATTEMPT: ${{ needs.windows.outputs.attempt || needs.reuse.outputs.attempt }}
     steps:
       # Fresh runner, trusted workflow commit. Never execute PR code in this job.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          sparse-checkout: tools/ci-deploy.py
+          sparse-checkout-cone-mode: false
+      - name: Check whether this is still the newest preview request
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/ci-deploy.py preview-current
       - name: Download packages without extracting artifact paths
+        if: steps.current.outputs.current == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 tools/ci-deploy.py preview-download
       - uses: tailscale/github-action@6cae46e2d796f265265cfcf628b72a32b4d7cade # v3
+        if: steps.current.outputs.current == 'true'
         with:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:dorbit-preview-ci
       - name: Configure pinned SSH identity
+        if: steps.current.outputs.current == 'true'
         env:
           DEPLOY_KEY: ${{ secrets.DORBIT_DEPLOY_SSH_KEY }}
           KNOWN_HOSTS: ${{ vars.DORBIT_KNOWN_HOSTS }}
         run: python3 tools/ci-deploy.py ssh-config
+      - name: Recheck the newest request immediately before stopping preview
+        id: stage-current
+        if: steps.current.outputs.current == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/ci-deploy.py preview-current
       - name: Stage preview and preserve stopped test saves
+        if: steps.stage-current.outputs.current == 'true'
         run: python3 tools/ci-deploy.py preview-prepare
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: steps.stage-current.outputs.current == 'true'
         with:
           name: preview-recovery-${{ github.run_id }}-${{ github.run_attempt }}
           path: recovery/
           if-no-files-found: error
           retention-days: 90
       - name: Activate and verify preview readiness
+        if: steps.stage-current.outputs.current == 'true'
         run: python3 tools/ci-deploy.py activate
       - name: Report result and matching client
-        if: always()
+        if: always() && steps.current.outputs.current == 'true' && steps.stage-current.outputs.current != 'false'
         run: python3 tools/ci-deploy.py preview-report
       - name: Remove runner SSH credentials
         if: always()
