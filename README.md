@@ -256,7 +256,7 @@ The destination tracker is now at top center.
 
 Each new pilot receives **10,000 x1 shots**. Ammo is shared across owned ships and
 survives rescue, reconnects and server restart. In **Shop > Ammo**, x1/x2/x3 cost
-**10 / 50 / 100 credits per 100 shots**; the x3 price is provisional. The quantity
+**10 / 50 / 100 credits per 100 shots**, as confirmed by the user. The quantity
 field buys batches of 100. x4 is reserved for future quests and special rewards
 and cannot be bought. Station purchase restrictions and duplicate protection apply.
 

@@ -124,11 +124,11 @@ ship changes and server restart preserve remaining ammo. The server commits each
 debit before firing and saves purchases together with credits and transaction
 sequence. Back up the ledger before migration; older servers cannot read schema 4.
 
-x1, x2 and x3 are sold at Outpost 01 in batches of 100 shots. The requested prices
-are 10 credits for x1 and 50 credits for x2. x3 provisionally costs 100 credits per
-batch, pending user price selection and economy playtesting. x4 is visible but
-cannot be bought; its special quests and other acquisition mechanics are reserved
-for follow-up design. No x4 earning quest is introduced in this slice.
+x1, x2 and x3 are sold at Outpost 01 in batches of 100 shots. The user confirmed
+prices of 10 credits for x1, 50 credits for x2 and 100 credits for x3 per batch.
+Economy balance remains subject to playtesting. The user confirmed that x4 is
+visible but cannot be bought, with its special quests and other acquisition
+mechanics reserved for future work. No x4 earning quest is introduced in this slice.
 
 The flight HUD has a compact framed ammo bar at bottom center, in x1, x2, x3, x4
 order, with distinct symbols, remaining counts and selected-type highlighting.
