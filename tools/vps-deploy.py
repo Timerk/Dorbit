@@ -115,7 +115,7 @@ def stopped():
 
 def clean_data(directory=None):
     directory = DATA if directory is None else directory
-    for name in ("pilots.json.lock", "pilots.json.tmp", "pilots.json.bak.tmp"):
+    for name in ("pilots.json.lock", "pilots.json.tmp", "pilots.json.bak.tmp", "pilots.json.combat.tmp"):
         require(not os.path.lexists(directory / name), "Save lock or interrupted write requires operator recovery")
     require((directory / "pilots.json").is_file(), "Missing pilot ledger")
 

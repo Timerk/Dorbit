@@ -789,7 +789,8 @@ func disconnect_session(message: String) -> void:
 	pilot_ids.clear()
 	challenges.clear()
 	if store != null:
-		store.close()
+		var already_failed := store.failed
+		if not store.close() and not already_failed: stop_for_save_failure()
 	combat.finish()
 	multiplayer.multiplayer_peer.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
@@ -818,8 +819,9 @@ func disconnect_session(message: String) -> void:
 
 func _exit_tree() -> void:
 	if store != null:
+		var already_failed := store.failed
 		if active and sector.dedicated_server and not store.failed:
 			combat.flush_boosts()
-		store.close()
+		if not store.close() and not already_failed: get_tree().quit(1)
 	if active or connecting:
 		multiplayer.multiplayer_peer.close()

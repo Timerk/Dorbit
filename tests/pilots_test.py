@@ -1,6 +1,7 @@
 """Operator provisioning must preserve progression and reject corrupt equipment."""
 
 import json
+import hashlib
 from pathlib import Path
 import subprocess
 import sys
@@ -12,6 +13,87 @@ import pilots
 
 
 class ProvisioningTest(unittest.TestCase):
+    @staticmethod
+    def journal_fixture(root):
+        metadata = {"id": "a" * 32, "sequence": 0}
+        record = {"verifier": "b" * 64, "credits": 2345, "equipment": pilots.starter_equipment(),
+                  "ammo": pilots.starter_ammo(), "cargo": {"starter": {"seprom": 3}},
+                  "contracts": {}, "boosts": {"starter": {}}, "premium": False,
+                  "skylab": pilots.starter_skylab(100)}
+        data = {"version": 8, "combat_journal": metadata, "pilots": {"test": record}}
+        path = root / "pilots.json"
+        path.write_text(json.dumps(data))
+        journal = root / "pilots.json.combat"
+        ammo = record["ammo"] | {"x1": 9996, "r-310": 99}
+        boosts = {"starter": {"lasers": {"resource": "seprom", "remaining": 7},
+                              "shields": {"resource": "duranium", "remaining": 12.25}}}
+        body = json.dumps({"sequence": 1, "ammo": {"test": ammo}, "boosts": {"test": boosts}}, separators=(",", ":"))
+        journal.write_text(json.dumps(metadata) + "\n" + json.dumps([body, hashlib.sha256(body.encode()).hexdigest()]) + "\n")
+        return path, journal, ammo, boosts
+
+    def test_journal_rotation_checkpoint_and_new_pilot_preserve_debits(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path, journal, ammo, boosts = self.journal_fixture(root)
+            expected = json.loads(path.read_text())["pilots"]["test"] | {"ammo": ammo, "boosts": boosts}
+            for pilot, args in [("test", ["--rotate", "--premium", "on"]), ("new", [])]:
+                result = subprocess.run([sys.executable, pilots.__file__, str(root), pilot,
+                                         str(root / f"{pilot}.json"), *args], capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr.decode())
+                saved = json.loads(path.read_text())
+                expected.update(verifier=saved["pilots"]["test"]["verifier"], premium=True)
+                self.assertEqual(saved["pilots"]["test"], expected)
+                self.assertEqual(saved["combat_journal"]["sequence"], 1)
+                self.assertEqual(journal.read_text().count("\n"), 1)
+                self.assertEqual(json.loads(journal.read_text()), saved["combat_journal"])
+                backup = json.loads((root / "pilots.json.bak").read_text())
+                self.assertEqual(backup["pilots"]["test"]["ammo"], ammo)
+                self.assertEqual(backup["pilots"]["test"]["boosts"], boosts)
+            self.assertTrue(pilots.valid_skylab(saved["pilots"]["new"]["skylab"], saved["pilots"]["new"]["equipment"]))
+
+    def test_checkpointed_journal_does_not_reverse_purchase(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path, journal, ammo, _ = self.journal_fixture(root)
+            data = json.loads(path.read_text())
+            data["combat_journal"]["sequence"] = 1
+            data["pilots"]["test"]["ammo"] = ammo | {"x1": 10096}
+            path.write_text(json.dumps(data))
+            result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
+                                     str(root / "credential.json"), "--rotate"], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode())
+            self.assertEqual(json.loads(path.read_text())["pilots"]["test"]["ammo"]["x1"], 10096)
+
+    def test_bad_journals_and_interrupted_checkpoint_preserve_files(self):
+        for case in ("missing", "truncated", "checksum", "sequence", "identity", "ammo", "boosts", "metadata", "temporary", "legacy"):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                path, journal, _, _ = self.journal_fixture(root)
+                lines = journal.read_text().splitlines()
+                if case == "missing": journal.unlink()
+                elif case == "truncated": journal.write_text(journal.read_text().rstrip("\n"))
+                elif case in ("checksum", "sequence", "ammo", "boosts"):
+                    entry = json.loads(lines[1])
+                    body = json.loads(entry[0])
+                    if case == "sequence": body["sequence"] = 2
+                    elif case == "ammo": body["ammo"]["test"]["x1"] = -1
+                    elif case == "boosts": body["boosts"]["test"]["starter"]["lasers"]["remaining"] = 1.5
+                    entry[0] = json.dumps(body)
+                    entry[1] = "0" * 64 if case == "checksum" else hashlib.sha256(entry[0].encode()).hexdigest()
+                    journal.write_text(lines[0] + "\n" + json.dumps(entry) + "\n")
+                elif case == "identity": journal.write_text(lines[0].replace("a" * 32, "c" * 32) + "\n" + lines[1] + "\n")
+                elif case in ("metadata", "legacy"):
+                    data = json.loads(path.read_text())
+                    if case == "metadata": data["combat_journal"]["sequence"] = True
+                    else: data["version"] = 7
+                    path.write_text(json.dumps(data))
+                elif case == "temporary": (root / "pilots.json.combat.tmp").write_text("interrupted")
+                before = {item.name: item.read_bytes() for item in root.iterdir()}
+                result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
+                                         str(root / "credential.json"), "--rotate"], capture_output=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual({item.name: item.read_bytes() for item in root.iterdir()}, before)
+
     def test_legacy_industry_currency_rotation_preserves_jobs_and_robots(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

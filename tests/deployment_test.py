@@ -137,6 +137,18 @@ class DeploymentTest(DeploymentFixture, unittest.TestCase):
         self.assertTrue((deploy.DATA / "pilots.json.lock").is_dir())
         self.assertEqual(deploy.active_commit(), OLD)
 
+    def test_interrupted_combat_checkpoint_prevents_activation(self):
+        journal = deploy.DATA / "pilots.json.combat"
+        temporary = deploy.DATA / "pilots.json.combat.tmp"
+        journal.write_text("committed disposable combat journal")
+        temporary.write_text("interrupted checkpoint")
+        state = self.prepare()
+        with self.assertRaisesRegex(RuntimeError, "operator recovery"):
+            deploy.activate(state, state["backup_sha256"])
+        self.assertEqual(journal.read_text(), "committed disposable combat journal")
+        self.assertEqual(temporary.read_text(), "interrupted checkpoint")
+        self.assertEqual(deploy.CURRENT.resolve().name, OLD)
+
     def test_backup_receipt_and_pending_transaction_gate_activation(self):
         state = self.prepare()
         with self.assertRaisesRegex(RuntimeError, "receipt"):
@@ -178,6 +190,7 @@ class DeploymentTest(DeploymentFixture, unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("age") and shutil.which("age-keygen"), "age not installed")
     def test_encrypted_recovery_round_trip(self):
+        (deploy.DATA / "pilots.json.combat").write_text("private disposable combat journal")
         key = Path(self.temp.name) / "recovery.key"
         subprocess.run(["age-keygen", "-o", str(key)], check=True, capture_output=True)
         recipient = subprocess.check_output(["age-keygen", "-y", str(key)], text=True).strip()
@@ -189,6 +202,7 @@ class DeploymentTest(DeploymentFixture, unittest.TestCase):
         plaintext = subprocess.check_output(["age", "-d", "-i", str(key), str(transaction / "backup.tar.age")])
         with tarfile.open(fileobj=io.BytesIO(plaintext)) as backup:
             self.assertEqual(backup.extractfile("data/pilots.json").read(), b"private disposable pilot ledger")
+            self.assertEqual(backup.extractfile("data/pilots.json.combat").read(), b"private disposable combat journal")
             self.assertEqual(backup.extractfile("dorbit.service").read(), b"fixed unit")
             self.assertEqual(backup.extractfile("server.env").read(), b"DORBIT_PORT=24567\n")
             self.assertEqual(json.load(backup.extractfile("transaction.json"))["previous"], OLD)

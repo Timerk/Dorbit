@@ -6,7 +6,7 @@ func run() -> void:
 	var server := make_sector("AmmoServer", true, 24836)
 	var store := server.session.store
 	check(store.pilots["pilot0"]["ammo"] == Ammunition.starter(), "Legacy migration grants 10,000 x1 shots once")
-	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 7, "Ammo migration writes schema 7")
+	check(JSON.parse_string(FileAccess.get_file_as_string(store.path))["version"] == 8, "Ammo migration writes schema 8")
 	check(store.commit({"pilot0": 1000}), "Fund ammo purchases")
 	var client := make_sector("AmmoPilot")
 	client.get_viewport().size = Vector2i(960, 600)
@@ -261,7 +261,7 @@ func check_failed_debit(server: Sector, client: Sector) -> void:
 	remote.ammo_debit = func():
 		var next := remote.ammo.duplicate()
 		next[remote.ammo_type] -= remote.laser_count
-		return probe.commit({}, {}, {}, {"pilot0": next})
+		return probe.commit_combat({"pilot0": next})
 	check(not remote.try_fire(server.alien) and probe.failed, "Failed durable debit cancels the shot")
 	check(remote.ammo == ammo_before and server.alien.hull + server.alien.shield == health_before and remote.shot_cooldown == 0 and FileAccess.get_file_as_string(probe.path) == disk_before, "Debit failure preserves ammunition, damage, cooldown and disk")
 	remote.ammo_debit = Callable()

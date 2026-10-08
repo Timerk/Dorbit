@@ -27,7 +27,7 @@ func connect_rockets(ship: Pilot) -> void:
 func debit_rockets(kind: String, count: int, id: int) -> bool:
 	var next := session.ships[id].ammo.duplicate()
 	next[kind] -= count
-	if session.store.commit({}, {}, {}, {session.pilot_ids[id]: next}):
+	if session.store.commit_combat({session.pilot_ids[id]: next}):
 		return true
 	session.stop_for_save_failure()
 	return false
@@ -187,7 +187,7 @@ func flush_boosts(ids: Array = []) -> bool:
 		if next[ship] != session.ships[id].resource_boosts:
 			next[ship] = session.ships[id].resource_boosts.duplicate(true)
 			saved[pilot_id] = next
-	return saved.is_empty() or session.store.commit({}, {}, {}, {}, saved)
+	return saved.is_empty() or session.store.commit_combat({}, saved)
 
 
 func remove_player(id: int) -> void:
@@ -212,7 +212,7 @@ func debit_ammo(id: int) -> bool:
 		if boost["lasers"]["remaining"] == 0:
 			boost.erase("lasers")
 	# One write commits ammunition, laser reserve and live timed reserves together.
-	if session.store.commit({}, {}, {}, {pilot_id: next_ammo}, {pilot_id: next_boosts}):
+	if session.store.commit_combat({pilot_id: next_ammo}, {pilot_id: next_boosts}):
 		ship.resource_boosts = boost.duplicate(true)
 		return true
 	session.stop_for_save_failure()
@@ -260,6 +260,7 @@ func tick(delta: float) -> void:
 				sector.select_target(null)
 			else:
 				sector.auto_fire = false
+	if sector.dedicated_server: session.store.begin_combat_tick()
 	for id: int in records:
 		pay_pending_contracts(id)
 		var ship := session.ships[id]
@@ -299,6 +300,8 @@ func tick(delta: float) -> void:
 		if firing and is_instance_valid(enemy) and enemy.available():
 			records[id]["stage"] = maxi(records[id]["stage"], 2)
 			ship.try_fire(enemy)
+	if sector.dedicated_server: session.store.end_combat_tick()
+	if sector.dedicated_server and session.store.failed: return
 	for alien: Alien in sector.aliens.values():
 		alien.tick_combat(delta)
 		if alien.alive:

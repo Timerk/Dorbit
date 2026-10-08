@@ -1,5 +1,11 @@
 # Skylab industry
 
+Current server saves use schema 8: the full industry snapshot is paired with a
+combat journal. Upgrade the provisioning tool with the server and back up the
+whole stopped-server data directory. See [combat persistence](combat-persistence.md)
+for the current format, checkpoint and recovery rules; the industry policies below
+remain unchanged.
+
 Skylab replaces the existing menu placeholder with twelve clickable modules and
 a detailed original station illustration following the user-approved
 [station concept](menu-design/skylab-station-concept.png). The supplied
