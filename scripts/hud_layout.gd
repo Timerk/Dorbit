@@ -12,7 +12,7 @@ const ITEMS := {
 	"controls": ["Control hints", "settings"], "context": ["Notifications", "connection"],
 	"station": ["Station actions", "shop"], "radiation": ["Radiation", "shield"],
 	"reticle": ["Reticle", "damage"], "autopilot": ["Autopilot status", "speed"],
-	"performance": ["Performance", "settings"], "ammo": ["Ammunition", "damage"]
+	"performance": ["Performance", "settings"], "ammo": ["Quickslots", "damage"]
 }
 
 var hud: FlightHud
@@ -155,6 +155,7 @@ func set_editing(value: bool, resume: bool = true) -> void:
 	if value and (hud.sector.preflight or hud.sector.paused or not hud.sector.player.alive or (hud.sector.client_only and not hud.sector.session.active)):
 		return
 	editing = value
+	hud.ammo_bar.close_picker()
 	drag_id = ""
 	sidebar.visible = value
 	rail_toggle.hide()

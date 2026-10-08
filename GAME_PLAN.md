@@ -134,14 +134,40 @@ Economy balance remains subject to playtesting. The user confirmed that x4 is
 visible but cannot be bought, with its special quests and other acquisition
 mechanics reserved for future work. No x4 earning quest is introduced in this slice.
 
-The flight HUD has a compact framed ammo bar at bottom center, in x1, x2, x3, x4
-order, with distinct symbols, remaining counts and selected-type highlighting.
-Press 1, 2, 3 or 4, or click a symbol, to select its ammo. These shortcuts are
-reserved from other control bindings and are inactive in menus. The destination
-tracker moves to top center. HUD customization moves, resizes, hides and restores
-the ammunition selector as one horizontal bar. Its four tiles retain their order
-and cannot be moved or resized individually. The whole bar shares the HUD's
-minimum scale and device-local layout persistence.
+The user approved replacing the fixed ammunition selector with one mixed,
+customizable ten-slot quickslot bar. Slots default to keys 1 through 0 and contain
+x1, x2, x3, x4, R-310, ECO-10, single-rocket fire, Hellstorm load/fire, unload and
+one empty slot. Keys belong to slot positions and are rebindable in Controls,
+using the existing conflict-swap behavior. Migrating older device preferences
+preserves previously customized flight bindings, swapping a conflicting new slot
+to the flight action's former default key. Ammo slots select ammo without starting
+fire; Space retains laser auto-fire and F/G retain their rebindable rocket actions.
+
+A collapsible picker provides Lasers, Rockets, Hellstorm and Extras categories.
+Its `+` button opens customization directly during flight without entering HUD
+editing or stopping flight and firing. Drag an item into a slot, drag between
+slots to swap, or select a slot then click an item. Dragging shows the complete
+tile, including its icon, count/status, title, shortcut and background at the
+displayed scale. Picker items can be used directly when no slot is selected;
+click assignment clears that selection afterward. Clear slot removes an assignment;
+Reset slots restores only the default assignments. Closing the picker finishes
+slot customization. Ctrl + Alt opens HUD placement mode separately, which
+moves, scales, hides and restores the whole bar and stops local input as before.
+Horizontal and vertical orientation are available. The instrument retains the
+HUD minimum scale and screen bounds. Quantities, selected ammo, enabled extra toggles, weapon cooldowns,
+launcher loading and loaded capacity remain visible.
+
+Assignments and orientation persist on the device in `user://quickslots.cfg`;
+position, scale and visibility keep the existing `ammo` layout entry for migration.
+Layout reset does not clear assignments. Stable action IDs survive unavailable
+equipment or missing extra implementations and remain disabled until available.
+Only extras with real activation/toggle commands belong in the picker; passive
+equipment requires no quickslot. Extras register their live display state and
+existing authoritative request command through the bar integration API. This
+slice introduces no extra effects, automatic firing, purchasing or server-save
+schema changes. Rocket actions use the existing combat commands; extras can
+integrate once their separate implementation supplies usable actions. Bar comfort and default
+slot choices remain playtesting settings.
 
 The user requested generated metallic laser-energy cartridge pictures for the
 four ammo types. Their ice-blue, cyan, amber and violet colors also tint each
@@ -569,14 +595,15 @@ rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot'
 The user requested independent manual single rockets and equipped Hellstorm
 launchers alongside lasers in Milestone 3. Rocket Turbo and automatic rocket
 firing are deferred at the user's request. No subscription mechanics are added.
-The shared laser ammo bar now also selects four single-rocket types and two
+The shared quickslot picker also selects four single-rocket types and two
 launcher types, with separate counts and controls: F fires one single rocket;
 G starts loading an empty Hellstorm or fires every loaded round, including a
 partial volley. Both actions are rebindable. The bar shows cooldowns, loading
 time and capacity dots and provides an Unload button. It sits above the three
 bottom status cards to fit the additional controls at 960 x 600.
 HUD customization moves, scales, hides and restores every ammo selector and
-rocket action together as one bar. Editing disables selection and firing.
+rocket action together as one bar. HUD placement mode disables selection and firing;
+quickslot customization through `+` leaves flight and weapon shortcuts active.
 The user requested original generated item artwork: six distinct transparent
 rocket icons and HST-1/HST-2 launcher renders are shared by the shop and ammo bar.
 The equipped launcher is also pictured on its fire/load button. Prompts are

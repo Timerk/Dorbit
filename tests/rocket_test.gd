@@ -105,11 +105,10 @@ func run() -> void:
 	roll(weapons, false, 0.7)
 	health_before = enemy.hull + enemy.shield
 	var single_before: int = remote.ammo["r-310"]
-	combat.request_rocket("single")
-	await settle()
+	await press(client, KEY_7)
 	var request_sequence := combat.rocket_request_sequence
 	weapons.tick(2.1)
-	check(remote.ammo["r-310"] == single_before - 1 and enemy.hull + enemy.shield == health_before, "Misses consume ammunition and deal zero damage")
+	check(remote.ammo["r-310"] == single_before - 1 and enemy.hull + enemy.shield == health_before, "Quickslot rocket command launches once; misses consume ammunition and deal zero damage")
 	combat.rocket_request.rpc_id(1, request_sequence, 0, "single", "", 0, enemy.life)
 	await settle()
 	check(remote.ammo["r-310"] == single_before - 1 and weapons.pending.is_empty(), "Repeated request cannot launch again even after cooldown expires")
@@ -153,8 +152,9 @@ func run() -> void:
 		await settle()
 		var bar := client.hud.ammo_bar
 		check(Rect2(Vector2.ZERO, dimensions).encloses(bar.get_global_rect()) and not bar.get_global_rect().intersects(client.hud.ship_rect()) and not bar.get_global_rect().intersects(client.hud.target_rect()), "Ammo bar fits above status cards at %s" % dimensions)
-		check(client.player.rockets.loaded == 5 and bar.launcher_fire.text.count("●") == 5, "Confirmed launcher reservations replicate into capacity dots")
-		check(bar.launcher_fire.icon != null and bar.launcher_fire.icon.resource_path.ends_with("/hst-2.png"), "Equipped Hellstorm artwork appears on its fire/load button")
+		check(client.player.rockets.loaded == 5 and (bar.launcher_fire as QuickslotTile).amount.text.count("●") == 5, "Confirmed launcher reservations replicate into capacity dots")
+		var launcher_art := (bar.launcher_fire as QuickslotTile).art.texture
+		check(launcher_art != null and launcher_art.resource_path.ends_with("/hst-2.png"), "Equipped Hellstorm artwork appears on its fire/load button")
 		await capture(client, "rockets-flight-%d" % dimensions.x)
 	client.select_target(client.alien)
 	roll(weapons, true, 0.7)

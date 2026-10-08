@@ -241,9 +241,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_tree().quit()
 	if paused or not player.alive:
 		return
-	for kind: String in Ammunition.TYPES:
-		if event.is_action_pressed("ammo_" + kind):
-			session.combat.request_ammo(kind)
+	for index in hud.ammo_bar.config.slots.size():
+		if event.is_action_pressed("quickslot_%d" % (index + 1)):
+			hud.ammo_bar.activate(hud.ammo_bar.config.slots[index])
 			get_viewport().set_input_as_handled()
 			return
 	if event.is_action_pressed("rocket") and not event.is_echo():
