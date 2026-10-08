@@ -207,8 +207,10 @@ The user requested device-local HUD customization during flight. Press Ctrl + Al
 together to toggle the editor; Escape or Done finishes. A visible placement grid,
 window outlines, close controls and an icon sidebar identify the mode. Every
 flight instrument can be dragged, resized proportionally from its lower-right
-corner, hidden and reopened from the sidebar. Minimum scale is provisionally 80%
-of the default panel size, with a maximum of 300% and screen bounds enforced.
+corner, hidden and reopened from the sidebar. The reticle can be resized but
+always remains centered in the screen; dragging it cannot move it and earlier
+saved positions are ignored. Minimum scale is provisionally 80% of the default
+panel size, with a maximum of 300% and screen bounds enforced.
 Grid snapping can be disabled. The sidebar can be hidden to place panels across
 the full screen; selecting a panel it covers exposes that panel without changing
 its saved position. Reset restores the approved default layout and visibility.
