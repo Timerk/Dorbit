@@ -511,8 +511,10 @@ recovery, move `pending.json` into its transaction directory as `resolved-pendin
 
 Artifacts are retained for 90 days or your repository's shorter limit. Keep the
 matching Windows client and encrypted recovery download privately if you need a
-longer rollback window. The run/attempt in `active.json` identifies the exact old
-client artifact. Old preview releases and backups are not automatically deleted;
+longer rollback window. The `build_run`/`attempt` in `active.json` identifies the
+exact old Windows client artifact; `attempt` records its build job, which may
+precede a partial deployment rerun. Old preview releases and backups are not
+automatically deleted;
 remove only inspected, unused preview directories when you need disk space.
 
 Local tests cover PR selection, isolated saves, explicit reset, repeated same-commit

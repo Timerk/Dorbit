@@ -1,9 +1,12 @@
 """Portable preview artifact selection and reporting regressions."""
 
+import hashlib
 import importlib.util
+import json
 import os
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -99,6 +102,28 @@ class PreviewArtifactsTest(unittest.TestCase):
         self.assertIn(f"Preview-Windows-{SHA}-2", summary)
         self.assertNotIn(f"Preview-Windows-{SHA}-3", summary)
         self.assertIn("https://github.com/test/dorbit/actions/runs/123#artifacts", summary)
+
+    def test_recovery_reference_records_windows_build_attempt(self):
+        Path("dist").mkdir()
+        Path("dist/server.tar.gz").write_bytes(b"checked server package")
+        with zipfile.ZipFile("dist/windows.zip", "w") as client:
+            client.writestr("REVISION", SHA)
+        backup = b"simulated encrypted recovery copy"
+        state = {"id": "transaction", "backup_sha256": hashlib.sha256(backup).hexdigest()}
+
+        def ssh(command, **kwargs):
+            if command.startswith("prepare-preview "):
+                self.assertEqual(command, f"prepare-preview {SHA} 52 keep {ci.digest('dist/server.tar.gz')} 123 2")
+                return SimpleNamespace(stdout=json.dumps(state).encode())
+            self.assertEqual(command, "backup transaction")
+            kwargs["stdout"].write(backup)
+
+        with patch.dict(os.environ, self.env | {"PR_NUMBER": "52", "FRESH_SAVES": "false"}), \
+             patch.object(ci, "ssh", side_effect=ssh) as calls:
+            ci.preview_prepare()
+        self.assertEqual(calls.call_count, 2)
+        self.assertEqual(json.loads(Path("recovery/transaction.json").read_text()), state)
+        self.assertEqual(Path("recovery/backup.tar.age").read_bytes(), backup)
 
 
 if __name__ == "__main__":
