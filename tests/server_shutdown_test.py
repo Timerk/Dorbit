@@ -30,9 +30,10 @@ class ServerShutdownTest(unittest.TestCase):
         self.data.mkdir()
         self.ledger = self.data / "pilots.json"
         self.lock = self.data / "pilots.json.lock"
-        self.original = json.dumps({"version": 3, "pilots": {
+        self.original = json.dumps({"version": 4, "pilots": {
             "restart_test": {"verifier": hashlib.sha256(b"disposable test token").hexdigest(), "credits": 137,
-                             "equipment": pilots.starter_equipment(), "cargo": {"starter": {"seprom": 5}}}
+                             "equipment": pilots.starter_equipment(), "cargo": {"starter": {"seprom": 5}},
+                             "ammo": pilots.starter_ammo(), "contracts": {}}
         }})
         self.ledger.write_text(self.original)
         self.processes: list[subprocess.Popen] = []
@@ -104,6 +105,7 @@ class ServerShutdownTest(unittest.TestCase):
         legacy = json.loads(self.original)
         legacy["version"] = 2
         del legacy["pilots"]["restart_test"]["cargo"]
+        del legacy["pilots"]["restart_test"]["ammo"]
         original = json.dumps(legacy)
         self.ledger.write_text(original)
         process, log = self.start()
@@ -111,8 +113,8 @@ class ServerShutdownTest(unittest.TestCase):
         process.terminate()
         self.assertEqual(process.wait(timeout=10), 0, log.read_text())
         migrated = json.loads(self.ledger.read_text())
-        self.assertEqual(migrated["version"], 3)
-        expected = legacy["pilots"]["restart_test"] | {"cargo": {"starter": {}}, "contracts": {}}
+        self.assertEqual(migrated["version"], 4)
+        expected = legacy["pilots"]["restart_test"] | {"cargo": {"starter": {}}, "contracts": {}, "ammo": pilots.starter_ammo()}
         self.assertEqual(migrated["pilots"]["restart_test"], expected)
         self.assertEqual(self.ledger.with_name("pilots.json.bak").read_text(), original)
         saved_text = self.ledger.read_text()

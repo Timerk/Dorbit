@@ -34,6 +34,7 @@ var contract_abandon: Button
 var contract_preview: ContractPreview
 var contract_back: Button
 var navigation: FlightNavigation
+var ammo_bar: AmmoBar
 
 
 func _ready() -> void:
@@ -45,6 +46,9 @@ func _ready() -> void:
 	navigation = FlightNavigation.new()
 	navigation.sector = sector
 	add_child(navigation)
+	ammo_bar = AmmoBar.new()
+	ammo_bar.sector = sector
+	add_child(ammo_bar)
 
 
 func fire_feedback() -> String:
@@ -378,6 +382,8 @@ func _draw() -> void:
 		return
 	var player := sector.player
 	marker_labels.assign([objectives_rect(), navigation.radar_rect(), ship_rect(), target_rect(), navigation.guidance_rect()])
+	if ammo_bar.visible:
+		marker_labels.append(ammo_bar.get_rect())
 	if navigation.autopilot_status.visible:
 		marker_labels.append(navigation.autopilot_status.get_rect().grow(3))
 	draw_objectives()

@@ -10,12 +10,16 @@ var cargo_holds: Dictionary[int, Dictionary] = {}
 var station_pending: bool = false
 var station_message: String = ""
 var preview_tools_available: bool = false
+var ammo_sequence: int = -1
 
 
 func begin() -> void:
 	var sector := session.sector
 	sector.active_contracts = {}
 	solo = {"credits": sector.credits, "kills": sector.kills, "stage": sector.objective_stage, "cargo": sector.cargo.duplicate(true)}
+	if not sector.dedicated_server:
+		solo["ammo"] = sector.player.ammo.duplicate()
+		solo["ammo_type"] = sector.player.ammo_type
 	sector.cargo = {}
 	sector.loot.clear()
 	cargo_holds.clear()
@@ -56,6 +60,8 @@ func add_player(id: int, location: Vector3) -> void:
 		records[id]["contracts"] = {}
 		cargo_holds[id] = CargoResources.empty_holds(Equipment.starter())
 		if session.sector.dedicated_server:
+			ship.ammo = session.store.pilots[session.pilot_ids[id]]["ammo"].duplicate()
+			ship.ammo_debit = debit_ammo.bind(id)
 			cargo_holds[id] = session.store.pilots[session.pilot_ids[id]]["cargo"].duplicate(true)
 			records[id]["credits"] = session.store.pilots[session.pilot_ids[id]]["credits"]
 			records[id]["contracts"] = session.store.pilots[session.pilot_ids[id]]["contracts"].duplicate(true)
@@ -68,6 +74,35 @@ func remove_player(id: int) -> void:
 	cargo_holds.erase(id)
 	for alien: Alien in session.sector.aliens.values():
 		alien.contributors.erase(id)
+
+
+func debit_ammo(id: int) -> bool:
+	var ship := session.ships[id]
+	var next := ship.ammo.duplicate()
+	next[ship.ammo_type] -= 1
+	if session.store.commit({}, {}, {}, {session.pilot_ids[id]: next}):
+		return true
+	session.stop_for_save_failure()
+	return false
+
+
+func request_ammo(kind: String) -> void:
+	if not Ammunition.TYPES.has(kind) or session.sector.paused or session.sector.preflight or not session.sector.player.alive:
+		return
+	if not session.active or multiplayer.is_server():
+		session.sector.player.ammo_type = kind
+	else:
+		select_ammo.rpc_id(1, int(session.sector.player.get_meta("life", 0)), kind)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func select_ammo(life: int, kind: String) -> void:
+	if not session.active or not multiplayer.is_server() or not Ammunition.TYPES.has(kind):
+		return
+	var id := multiplayer.get_remote_sender_id()
+	if not records.has(id) or records[id]["life"] != life or not session.ships[id].alive or session.ships[id].get_meta("docked", false):
+		return
+	session.ships[id].ammo_type = kind
 
 
 func record_damage(ship: SpaceShip, attacker: SpaceShip) -> void:
@@ -338,6 +373,25 @@ func pack_player(id: int) -> Dictionary:
 	return data
 
 
+func publish_ammo(id: int, sequence: int) -> void:
+	if id == 1:
+		return # Listen-host pilot already owns its authoritative inventory.
+	var ship := session.ships[id]
+	var rounds := PackedInt32Array([ship.ammo["x1"], ship.ammo["x2"], ship.ammo["x3"], ship.ammo["x4"], Ammunition.TYPES.keys().find(ship.ammo_type)])
+	ammo_snapshot.rpc_id(id, rounds, sequence)
+
+
+@rpc("authority", "call_remote", "unreliable_ordered", 4)
+func ammo_snapshot(rounds: PackedInt32Array, sequence: int) -> void:
+	if not session.active or sequence <= ammo_sequence:
+		return
+	ammo_sequence = sequence
+	var ship := session.sector.player
+	for index in range(Ammunition.TYPES.size()):
+		ship.ammo[Ammunition.TYPES.keys()[index]] = int(rounds[index])
+	ship.ammo_type = Ammunition.TYPES.keys()[rounds[4]]
+
+
 func pack_alien(alien: Alien) -> Dictionary:
 	var data := health(alien)
 	data.merge({"id": alien.alien_id, "kind": alien.kind, "home": alien.home_position, "position": alien.position, "rotation": alien.rotation, "respawn": alien.respawn, "encounter": alien.life, "returning": alien.returning, "engaged": alien.engaged})
@@ -458,11 +512,16 @@ func finish() -> void:
 	preview_tools_available = false
 	station_pending = false
 	station_message = ""
+	ammo_sequence = -1
 	if not solo.is_empty():
 		session.sector.credits = solo["credits"]
 		session.sector.kills = solo["kills"]
 		session.sector.objective_stage = solo["stage"]
 		session.sector.cargo = solo["cargo"]
+		if not session.sector.dedicated_server:
+			session.sector.player.ammo = solo["ammo"]
+			session.sector.player.ammo_type = solo["ammo_type"]
+			session.sector.player.ammo_debit = Callable()
 	solo.clear()
 	records.clear()
 	for alien: Alien in session.sector.aliens.values():
@@ -504,6 +563,7 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 		return
 	var pilot: Dictionary = session.store.pilots[pilot_id]
 	records[id]["credits"] = pilot["credits"]
+	session.ships[id].ammo = pilot["ammo"].duplicate()
 	cargo_holds[id] = pilot["cargo"].duplicate(true)
 	Equipment.apply_stats(session.ships[id], Equipment.stats(pilot["equipment"]))
 	if previous_ship != pilot["equipment"]["active_ship"]:
@@ -514,20 +574,25 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 		session.commands.erase(id)
 		session.ships[id].velocity = Vector3.ZERO
 	publish_inventory(id, result)
-	if action in ["buy", "buy_ship", "sell"] and pilot["equipment"]["revision"] > previous_revision:
+	if action in ["buy", "buy_ship", "buy_ammo", "sell"] and pilot["equipment"]["revision"] > previous_revision:
 		message(id, result, "purchase")
 
 
 func publish_inventory(id: int, result: String = "") -> void:
 	if session.sector.dedicated_server:
 		var pilot: Dictionary = session.store.pilots[session.pilot_ids[id]]
-		station_result.rpc_id(id, pilot["equipment"], result, session.can_grant_test_credits(id), pilot["cargo"], pilot["credits"])
+		station_result.rpc_id(id, pilot["equipment"], result, session.can_grant_test_credits(id), pilot["cargo"], pilot["credits"], pilot["ammo"], session.snapshot_sequence)
 
 
 @rpc("authority", "call_remote", "reliable")
-func station_result(data: Dictionary, result: String, test_credits_allowed: bool = false, holds: Dictionary = {}, credits: int = -1) -> void:
+func station_result(data: Dictionary, result: String, test_credits_allowed: bool = false, holds: Dictionary = {}, credits: int = -1, ammo: Dictionary = {}, sequence: int = -1) -> void:
 	if session.active:
 		inventory = data
+		if not ammo.is_empty():
+			# A delayed purchase reply must not restore ammunition spent afterward.
+			if sequence >= ammo_sequence:
+				session.sector.player.ammo = ammo.duplicate()
+				ammo_sequence = sequence
 		if not holds.is_empty():
 			session.sector.cargo = holds[data["active_ship"]].duplicate()
 			session.sector.cargo_capacity = CargoResources.capacity(data)
