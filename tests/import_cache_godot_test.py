@@ -42,13 +42,16 @@ def main(engine: Path) -> None:
             shutil.copyfile(ROOT / 'assets/ui' / name, project / 'assets/ui' / name)
         shutil.copyfile(ROOT / 'tools/import_ship_materials.gd', project / 'tools/import_ship_materials.gd')
         (project / 'project.godot').write_text('config_version=5\n[application]\nconfig/features=PackedStringArray("4.7", "GL Compatibility")\n[editor]\nimport/use_multiple_threads=false\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n')
-        (project / 'inspect.gd').write_text('extends SceneTree\nfunc _initialize():\n\tvar scene = load("res://assets/ships/liberator.glb").instantiate()\n\tprint("CACHE_SCENE:", JSON.stringify({"scale": scene.scale.x, "hook": scene.has_meta("changed_hook")}))\n\tscene.free()\n\tquit()\n')
+        (project / 'inspect.gd').write_text('extends SceneTree\nfunc _initialize():\n\tvar scene = load("res://assets/ships/liberator.glb").instantiate()\n\troot.add_child(scene)\n\tvar bounds := AABB()\n\tvar initialized := false\n\tfor mesh: MeshInstance3D in scene.find_children("*", "MeshInstance3D", true, false):\n\t\tvar box: AABB = mesh.global_transform * mesh.mesh.get_aabb()\n\t\tbounds = bounds.merge(box) if initialized else box\n\t\tinitialized = true\n\tprint("CACHE_SCENE:", JSON.stringify({"extent": bounds.size.x, "hook": scene.has_meta("changed_hook")}))\n\tscene.free()\n\tquit()\n')
         cache = parent / 'cache'
         cache_tool.prepare(project, cache)
         output, duration = run(engine, project, '--editor', '--import')
         assert 'Ship import:' in output, output
         cache_tool.capture(project, cache)
         results['cold'] = {'seconds': duration, 'hook_ran': True}
+        output, _ = run(engine, project, '--script', 'res://inspect.gd')
+        baseline = json.loads(next(line.split('CACHE_SCENE:', 1)[1] for line in output.splitlines() if line.startswith('CACHE_SCENE:')))
+        assert baseline['extent'] > 0
         for case in ('same_inputs', 'runtime_script', 'svg', 'import_settings', 'import_hook', 'source'):
             restored = parent / case
             shutil.copytree(project, restored, ignore=shutil.ignore_patterns('.godot'))
@@ -79,7 +82,8 @@ def main(engine: Path) -> None:
             assert hook_ran == (case in {'import_settings', 'import_hook', 'source'}), (case, output)
             output, _ = run(engine, restored, '--script', 'res://inspect.gd')
             scene = json.loads(next(line.split('CACHE_SCENE:', 1)[1] for line in output.splitlines() if line.startswith('CACHE_SCENE:')))
-            assert scene['scale'] == (2.0 if case == 'import_settings' else 1.0), (case, scene)
+            ratio = scene['extent'] / baseline['extent']
+            assert abs(ratio - (2.0 if case == 'import_settings' else 1.0)) < 0.0001, (case, scene, baseline)
             assert scene['hook'] == (case == 'import_hook'), (case, scene)
             results[case] = {'seconds': duration, 'reused': reused, 'hook_ran': hook_ran, 'scene': scene}
             print(case, json.dumps(results[case]), flush=True)
