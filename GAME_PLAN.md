@@ -121,10 +121,10 @@ Empty selected ammo blocks fire until the pilot selects another type; there is
 no automatic substitution of ammunition.
 
 New pilots start with 10,000 x1 shots and none of the other types. Existing pilots
-receive the same one-time grant on migration to save schema 4; reconnect, rescue,
+receive the same one-time grant on migration to save schema 5; reconnect, rescue,
 ship changes and server restart preserve remaining ammo. The server commits each
 debit before firing and saves purchases together with credits and transaction
-sequence. Back up the ledger before migration; older servers cannot read schema 4.
+sequence. Back up the ledger before migration; older servers cannot read schema 5.
 
 x1, x2 and x3 are sold at Outpost 01 in batches of 100 shots. The user confirmed
 prices of 10 credits for x1, 50 credits for x2 and 100 credits for x3 per batch.
@@ -336,7 +336,7 @@ The first Milestone 3 equipment slice added fittings for the Liberator starter. 
 - Current and proposed damage, shield capacity, absorption, cruise and boost speeds remain visible. Unavailable purchases and fitting actions explain why. B, I and C switch station screens; Esc returns to flight. Generated item art and a temporary ship preview do not depend on the final ship models.
 - Fitting changes never repair hull, refill shields or boost energy, or reset weapon cooldowns. Added shield capacity starts empty and recovers through the normal shield regeneration rules. Removing capacity discards excess charge.
 - The server commits a purchase's credit deduction, new item and request sequence together. Successful requests cannot run again, even after restart. A new intentional purchase uses the next sequence. Inventory and fittings survive death, reconnects and server restarts.
-- Equipment purchases have an editable quantity with minus/plus buttons that change it by one, defaulting to one when selecting another model. The shop shows the batch total and remaining balance. Each request buys 1–999 items into storage as one saved transaction; insufficient funds reject the entire batch. Ships remain limited to one owned hull per model. Network schema 9 requires matching clients and servers; save schema 4 also preserves resource boosts.
+- Equipment purchases have an editable quantity with minus/plus buttons that change it by one, defaulting to one when selecting another model. The shop shows the batch total and remaining balance. Each request buys 1–999 items into storage as one saved transaction; insufficient funds reject the entire batch. Ships remain limited to one owned hull per model. Network schema 10 requires matching clients and servers; save schema 5 also preserves resource boosts.
 - No equipment selling, trading, rarity, equipment leveling, loot acquisition or assembly are included. Resource cargo and sales are described below.
 
 ### DarkOrbit reference equipment catalog
@@ -477,7 +477,7 @@ The same resource adds rounds or duration without changing its percentage. A dif
 
 The user chose timers that count only while online. They count with that hull active, including station menus and rescue; inactive hulls and disconnected pilots retain their time. The server checkpoints durations every five seconds and flushes them on disconnect, shutdown and successful station actions. Abrupt termination can restore up to five seconds of unused duration. Weapon-round consumption saves before damage, so consumed rounds cannot return after restart.
 
-All actions retain the station checks and persistent sequence protection. Save schema 4 adds validated per-ship boost reserves and migrates schemas 1–3 while preserving progression; provisioning and credential rotation preserve boosts. Rollback needs a pre-migration backup. Network schema 9 requires matching clients and servers. Offline preview exposes both tabs with resource actions disabled. Balance and timer feel need human playtesting; Skylab and rocket weapons remain later work.
+All actions retain the station checks and persistent sequence protection. Save schema 5 adds validated per-ship boost reserves and migrates schemas 1–4 while preserving progression; provisioning and credential rotation preserve boosts. Rollback needs a pre-migration backup. Network schema 10 requires matching clients and servers. Offline preview exposes both tabs with resource actions disabled. Balance and timer feel need human playtesting; Skylab and rocket weapons remain later work.
 
 ## Multiplayer and hosting
 
@@ -697,3 +697,8 @@ The following do not prevent beginning the first prototype:
 Before deploying progression, configure the private network, dated off-machine backups and independent hosting operations.
 
 Local and LAN dedicated-server play have passed manual testing. Cross-network dedicated-server testing remains pending and does not block pilot identity and persistence work. Full Milestone 3 completion still requires purchases, additional content and repeat-session playtesting.
+
+Save schema 5 combines ammunition inventory and per-ship resource boost reserves.
+Schema 4 ammunition saves retain their rounds and receive empty boosts; schema 4
+boost saves retain their reserves and receive the one-time starter ammunition.
+Each fired volley commits both debits together before applying damage.
