@@ -668,14 +668,23 @@ still runs the full server suite before publishing a release; it does not reuse 
 success result from the working checkout. Godot setup verifies the pinned archive
 again before extracting the staging executable.
 
-Linux and Windows cache only `.godot/imported` as derived project data, alongside
-the existing pinned tool caches. Import keys include OS, Godot version, all assets
-and their import settings, `project.godot`, and scene import hooks. There are no
-broad fallback keys. Script/class indexes and editor state are regenerated. PR
+Linux and Windows cache derived resources and a per-asset manifest in
+`.ci/import-cache`, alongside the existing pinned tool caches. OS/engine-specific
+fallbacks are validated against source, import settings, hook dependencies,
+project context and output hashes before seeding `.godot/imported`. Changed
+resources reimport; unchanged resources are reused. Script/class indexes and
+editor state are regenerated. PR
 validation saves caches in GitHub's isolated PR merge-ref scope; main builds
 cannot restore those caches. Preview build jobs run with `cache-mode: read` and
 restore-only actions, so PR code cannot write caches into the dispatch's main
-scope. A preview with changed import inputs may still require a cold import.
+scope. Preview retains its existing exact-input cache path while its workflow is
+being updated separately; changed import inputs may still require a cold import.
+
+Validation uses two test workers with separate settings profiles and UDP port
+offsets. Restart checks remain sequential in one group. Local check helpers
+default to one worker; set `DORBIT_TEST_WORKERS=2` to use two. Documentation-only
+PRs retain successful validation checks while skipping game builds. Superseded
+runs cancel only for the same PR; every main push still builds its paired release.
 
 Both check helpers print `TIMING:` lines and append command durations and results
 to the GitHub run summary, including failed checks. This separates the initial

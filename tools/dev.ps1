@@ -89,51 +89,9 @@ if (-not (Test-Path -LiteralPath $engine)) {
 
 switch ($Task) {
     'check' {
-        $previousAppData = $env:APPDATA
-        try {
-            $env:APPDATA = Join-Path $projectRoot 'build/connection-menu-profile'
-            New-Item -ItemType Directory -Force -Path $env:APPDATA | Out-Null
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--editor', '--import')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/encounter_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/ammo_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/sector_visuals_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/combat_effects_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/targeting_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/network_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/network_combat_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/rpc_compatibility_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/dedicated_server_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/alien_sector_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/map_layout_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/map_layout_playthrough.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/hud_playthrough.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/hud_customization_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/autopilot_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/pilot_persistence_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/hunting_contracts_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/economy_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/equipment_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/shop_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/main_menu_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/offline_main_menu_test.gd', '--', '--offline')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/ship_hangar_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/ships_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/balance_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/darkorbit_equipment_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/preview_credits_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/resources_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/resource_upgrades_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/connection_menu_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/connection_menu_test.gd', '--', '--restart')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/flight_playthrough.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/display_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/display_test.gd', '--', '--restart')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/graphics_test.gd')
-            Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/graphics_test.gd', '--', '--restart')
-            foreach ($filterLevel in 2..4) {
-                Invoke-Godot @('--headless', '--path', $projectRoot, '--script', 'res://tests/graphics_test.gd', '--', '--filter-restart', [string]$filterLevel)
-            }
-        } finally { $env:APPDATA = $previousAppData }
+        Invoke-Godot @('--headless', '--path', $projectRoot, '--editor', '--import')
+        & python (Join-Path $PSScriptRoot 'check-game.py') $engine --suite windows
+        if ($LASTEXITCODE -ne 0) { throw 'Game validation failed.' }
     }
     'build' {
         $templateDir = Join-Path $toolRoot 'templates'

@@ -36,7 +36,7 @@ func run() -> void:
 		var index := int(options.get("index", "0"))
 		sector.session.credential_id = "pilot%d" % index
 		sector.session.credential_token = test_token(index)
-		check(sector.session.join("127.0.0.1", 24683) == OK, "Workload client joins")
+		check(sector.session.join("127.0.0.1", test_port(24683)) == OK, "Workload client joins")
 		return
 	for enemy: Alien in sector.aliens.values():
 		enemy.damaged.connect(record_hit)

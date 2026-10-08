@@ -1,0 +1,127 @@
+"""Cache invalidation, test isolation/coverage, and documentation gating checks."""
+import importlib.util
+import hashlib
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def module(name):
+    spec = importlib.util.spec_from_file_location(name.replace('-', '_'), ROOT / 'tools' / f'{name}.py')
+    result = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(result)
+    return result
+
+
+cache_tool = module('import-cache')
+runner = module('check-game')
+changes = module('ci-changes')
+
+
+class CacheTest(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name) / 'project'
+        self.root.mkdir()
+        self.cache = Path(self.temp.name) / 'cache'
+        (self.root / 'project.godot').write_text('config_version=5\n[application]\nconfig/name="Fixture"\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n')
+        (self.root / 'assets').mkdir()
+        (self.root / 'tools').mkdir()
+        (self.root / 'tools/import.gd').write_text('print("hook")\n')
+        for name in ('a.glb', 'b.svg'):
+            (self.root / 'assets' / name).write_bytes(b'source')
+            hook = '\nimport_script/path="res://tools/import.gd"' if name.endswith('glb') else ''
+            (self.root / 'assets' / (name + '.import')).write_text('[params]\nroot_scale=1.0' + hook)
+        cache_tool.prepare(self.root, self.cache)
+        for source in ('a.glb', 'b.svg'):
+            prefix = source + '-' + hashlib.md5(('res://assets/' + source).encode()).hexdigest()
+            for extension in ('.scn', '.md5'):
+                (self.root / '.godot/imported' / (prefix + extension)).write_bytes(b'derived')
+        cache_tool.capture(self.root, self.cache)
+
+    def restored(self):
+        cache_tool.prepare(self.root, self.cache)
+        return sorted(p.name.split('-')[0] for p in (self.root / '.godot/imported').glob('*.scn'))
+
+    def test_same_inputs_and_runtime_only_changes_reuse(self):
+        project = self.root / 'project.godot'
+        project.write_text(project.read_text().replace('config/name="Fixture"', 'config/name="Fixture"\nrun/flush_stdout_on_print=true'))
+        (self.root / 'assets/README.md').write_text('New documentation')
+        (self.root / 'game.gd').write_text('Changed runtime script')
+        self.assertEqual(self.restored(), ['a.glb', 'b.svg'])
+
+    def test_source_and_settings_invalidate_only_affected_asset(self):
+        for filename in ('b.svg', 'b.svg.import'):
+            with self.subTest(filename=filename):
+                path = self.root / 'assets' / filename
+                original = path.read_bytes()
+                path.write_bytes(original + b' changed')
+                self.assertEqual(self.restored(), ['a.glb'])
+                path.write_bytes(original)
+
+    def test_hook_and_its_dependencies_invalidate_scenes(self):
+        (self.root / 'tools/import.gd').write_text('preload("res://tools/helper.gd")\n')
+        (self.root / 'tools/helper.gd').write_text('changed dependency')
+        self.assertEqual(self.restored(), ['b.svg'])
+
+    def test_renderer_change_invalidates_all(self):
+        (self.root / 'project.godot').write_text('config_version=5\n[rendering]\nrenderer/rendering_method="forward_plus"')
+        self.assertEqual(self.restored(), [])
+
+    def test_corruption_and_unsafe_paths_are_not_restored(self):
+        manifest = json.loads((self.cache / 'manifest.json').read_text())
+        entry = manifest['entries']['assets/a.glb']
+        output = next(iter(entry['outputs']))
+        (self.cache / 'imported' / output).write_bytes(b'corrupted')
+        self.assertEqual(self.restored(), ['b.svg'])
+        entry['outputs'] = {'../escape': 'bad'}
+        (self.cache / 'manifest.json').write_text(json.dumps(manifest))
+        self.assertEqual(self.restored(), ['b.svg'])
+
+    def test_missing_manifest_is_a_cold_cache(self):
+        (self.cache / 'manifest.json').write_text('{invalid')
+        self.assertEqual(self.restored(), [])
+
+    def test_removed_asset_is_not_restored(self):
+        (self.root / 'assets/b.svg').unlink()
+        self.assertEqual(self.restored(), ['a.glb'])
+
+
+class ValidationTest(unittest.TestCase):
+    def test_documentation_allowlist_requires_runtime_changes(self):
+        self.assertTrue(changes.documentation_only(['README.md', 'docs/ci-performance.md', 'art/ship-review/reference.png']))
+        for path in ('assets/ui/new.svg', 'project.godot', 'tools/server.sh', 'tests/network_test.gd',
+                     '.github/workflows/validate.yml', 'art/.gdignore', 'docs/sector-art/runtime.png'):
+            self.assertFalse(changes.documentation_only(['README.md', path]), path)
+        self.assertFalse(changes.documentation_only([]))
+
+    def test_restart_sequences_keep_their_order(self):
+        plan = json.loads((ROOT / 'tools/check-suites.json').read_text())
+        windows = plan['windows']
+        settings = next(group for group in windows if group['name'] == 'settings')['checks']
+        for script in ('connection_menu_test.gd', 'display_test.gd', 'graphics_test.gd'):
+            checks = [check for check in settings if check[0] == script]
+            self.assertEqual(checks[:2], [[script], [script, '--', '--restart']])
+        self.assertEqual([check[-1] for check in settings if '--filter-restart' in check], ['2', '3', '4'])
+        self.assertEqual(sum(len(group['checks']) for group in windows), 38)
+        self.assertEqual(sum(len(group['checks']) for group in plan['linux']), 27)
+
+    def test_process_profiles_ports_and_zero_exit_errors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code = 'import os; print(os.environ["APPDATA"], os.environ["DORBIT_TEST_PORT_OFFSET"]); print("SCRIPT ERROR: fixture")'
+            results = runner.run_group('fixture', [[sys.executable, '-c', code]], root / 'profile', 1500)
+            self.assertTrue(results[0]['failed'])
+            self.assertIn(str(root / 'profile'), results[0]['output'])
+            self.assertIn('1500', results[0]['output'])
+
+
+if __name__ == '__main__':
+    unittest.main()

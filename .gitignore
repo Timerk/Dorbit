@@ -14,3 +14,5 @@ __pycache__/
 /art/ship-review/materials/*/side.png
 /art/ship-review/materials/*/top.png
 /art/ship-review/materials/*/underside.png
+
+.ci/

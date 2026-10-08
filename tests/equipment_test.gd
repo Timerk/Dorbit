@@ -12,7 +12,8 @@ func press(client: Sector, key: Key) -> void:
 	event.keycode = key
 	event.pressed = true
 	client._unhandled_input(event)
-	await settle()
+	await process_frame
+	await process_frame
 
 
 func screenshot(client: Sector, label: String) -> void:
@@ -138,7 +139,7 @@ func check_quick_equip() -> void:
 	client.client_only = true
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
-	client.session.join("127.0.0.1", 24743)
+	client.session.join("127.0.0.1", test_port(24743))
 	await settle(0.5)
 	await replicate(server)
 	client.get_viewport().size = Vector2i(960, 600)
@@ -219,7 +220,7 @@ func run() -> void:
 	var client := make_sector("EquipmentClient")
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
-	client.session.join("127.0.0.1", 24731)
+	client.session.join("127.0.0.1", test_port(24731))
 	await settle(0.5)
 	await replicate(server)
 	var id := client.multiplayer.get_unique_id()
@@ -374,8 +375,8 @@ func run() -> void:
 	client.session.disconnect_session("Restart test")
 	await settle()
 	server.session.disconnect_session("Restart test")
-	check(server.session.host(24731) == OK, "Migrated inventory reloads on restart")
-	client.session.join("127.0.0.1", 24731)
+	check(server.session.host(test_port(24731)) == OK, "Migrated inventory reloads on restart")
+	client.session.join("127.0.0.1", test_port(24731))
 	await settle(0.5)
 	await replicate(server)
 	await request(client, 1, "buy", "laser")

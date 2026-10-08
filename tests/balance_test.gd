@@ -101,7 +101,7 @@ func run() -> void:
 	var client := make_sector("BalanceClient")
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
-	client.session.join("127.0.0.1", 24741)
+	client.session.join("127.0.0.1", test_port(24741))
 	await settle(0.5)
 	var id := client.multiplayer.get_unique_id()
 	var ship := server.session.ships[id]
@@ -134,6 +134,6 @@ func run() -> void:
 	client.session.disconnect_session("Restart expanded fitting")
 	await settle()
 	server.session.disconnect_session("Restart expanded fitting")
-	check(server.session.host(24741) == OK, "Expanded fittings load after restart")
+	check(server.session.host(test_port(24741)) == OK, "Expanded fittings load after restart")
 	check(server.session.store.pilots["pilot0"]["equipment"]["items"]["purchase-3"]["slot"] == "laser4", "Restart preserves the fourth laser slot and existing items")
 	finish()

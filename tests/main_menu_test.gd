@@ -8,14 +8,14 @@ func run() -> void:
 	var observer := make_sector("FlyingPilot")
 	observer.session.credential_id = "pilot1"
 	observer.session.credential_token = test_token(1)
-	observer.session.join("127.0.0.1", 24739)
+	observer.session.join("127.0.0.1", test_port(24739))
 	await settle(0.5)
 	var client := make_sector("DockedPilot")
 	client.client_only = true
 	client.get_viewport().size = Vector2i(960, 600)
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
-	client.session.join("127.0.0.1", 24739)
+	client.session.join("127.0.0.1", test_port(24739))
 	await settle(0.5)
 	await replicate(server)
 	var id := client.multiplayer.get_unique_id()
@@ -249,7 +249,7 @@ func run() -> void:
 	check(client.player.alive and not client.player.visible and ship.collision_layer == 0 and not menu.start_button.disabled and client.credits == rescue_wallet, "Rescue completes in the menu without launching or charging twice")
 	client.session.disconnect_session("Reconnect test")
 	await settle()
-	client.session.join("127.0.0.1", 24739)
+	client.session.join("127.0.0.1", test_port(24739))
 	await settle(0.5)
 	await replicate(server)
 	check(client.preflight and menu.visible and client.credits == rescue_wallet and client.player.laser_damage == 130 and not client.active_contracts.is_empty(), "Reconnect restores progression and requires a new explicit launch")

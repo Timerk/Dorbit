@@ -40,13 +40,19 @@ fi
 # CI supplies an exact-input, OS-specific import cache. Keep all scripts and source
 # assets from git archive; only Godot's derived imported resources are seeded.
 import_cache="${DORBIT_IMPORT_CACHE:-}"
-if [[ -n "$import_cache" && -d "$import_cache" ]]; then
+validated_cache="${DORBIT_VALIDATED_IMPORT_CACHE:-}"
+if [[ -n "$validated_cache" ]]; then
+  python3 "$staging/tools/import-cache.py" prepare --project "$staging" --cache "$validated_cache"
+elif [[ -n "$import_cache" && -d "$import_cache" ]]; then
   mkdir -p "$staging/.godot/imported"
   cp -a "$import_cache/." "$staging/.godot/imported/"
 fi
 bash "$staging/tools/server.sh" setup
 bash "$staging/tools/server.sh" check
 bash "$staging/tools/server.sh" build
+if [[ -n "$validated_cache" ]]; then
+  python3 "$staging/tools/import-cache.py" capture --project "$staging" --cache "$validated_cache"
+fi
 if [[ -n "$import_cache" && -d "$staging/.godot/imported" ]]; then
   mkdir -p "$import_cache"
   cp -a "$staging/.godot/imported/." "$import_cache/"

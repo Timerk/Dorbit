@@ -37,7 +37,7 @@ func make_sector(label: String, dedicated: bool = false, port: int = 24683) -> S
 	set_multiplayer(SceneMultiplayer.new(), viewport.get_path())
 	var sector := instantiate_sector()
 	sector.dedicated_server = dedicated
-	sector.server_port = port
+	sector.server_port = test_port(port)
 	sector.client_only = false
 	viewport.add_child(sector)
 	sector.set_physics_process(false)
@@ -46,6 +46,10 @@ func make_sector(label: String, dedicated: bool = false, port: int = 24683) -> S
 
 func instantiate_sector() -> Sector:
 	return preload("res://scenes/sector.tscn").instantiate()
+
+
+func test_port(port: int) -> int:
+	return port + int(OS.get_environment("DORBIT_TEST_PORT_OFFSET"))
 
 
 func test_token(index: int) -> String:
@@ -61,8 +65,8 @@ func run() -> void:
 	var client := make_sector("Client")
 	var late := make_sector("Late")
 	await settle()
-	check(host.session.host(24678) == OK, "Host opens an ENet server")
-	check(client.session.join("127.0.0.1", 24678) == OK, "Client starts connecting")
+	check(host.session.host(test_port(24678)) == OK, "Host opens an ENet server")
+	check(client.session.join("127.0.0.1", test_port(24678)) == OK, "Client starts connecting")
 	await settle(0.5)
 	check(client.session.active, "Client connects to host")
 	check(host.session.ships.size() == 2 and client.session.ships.size() == 2, "Both peers receive the same roster")
@@ -94,7 +98,7 @@ func run() -> void:
 	for frame in range(30):
 		host.session.tick(1.0 / 60.0)
 	check(host.session.ships[id].velocity.is_zero_approx(), "Missing commands time out and brake the ship")
-	check(late.session.join("127.0.0.1", 24678) == OK, "A late player starts joining")
+	check(late.session.join("127.0.0.1", test_port(24678)) == OK, "A late player starts joining")
 	await settle(0.5)
 	check(host.session.ships.size() == 3 and client.session.ships.size() == 3 and late.session.ships.size() == 3, "Late join replicates all players to all peers")
 	host.set_paused(true)
@@ -107,15 +111,15 @@ func run() -> void:
 	await settle()
 	check(host.session.ships.size() == 2 and late.session.ships.size() == 2, "Leaving removes the remote ship everywhere")
 	check(client.alien.alive and not client.session.active, "Leaving restores the solo encounter")
-	check(client.session.join("127.0.0.1", 24678) == OK, "A disconnected player can reconnect")
+	check(client.session.join("127.0.0.1", test_port(24678)) == OK, "A disconnected player can reconnect")
 	await settle(0.5)
 	check(host.session.ships.size() == 3 and client.session.ships.size() == 3, "Reconnect creates a fresh roster")
 	host.session.disconnect_session("Host leaving")
 	await settle(0.5)
 	check(not client.session.active and not late.session.active, "Host disconnect returns all clients to solo")
 	check(client.session.menu.visible and client.alien.alive, "Host disconnect shows status and restores solo gameplay")
-	check(client.session.join("", 24678) == ERR_INVALID_PARAMETER, "An empty address is rejected")
-	client.session.join("127.0.0.1", 24679)
+	check(client.session.join("", test_port(24678)) == ERR_INVALID_PARAMETER, "An empty address is rejected")
+	client.session.join("127.0.0.1", test_port(24679))
 	client.session.tick(FlightSession.CONNECT_TIMEOUT + 1.0)
 	check(not client.session.connecting and client.session.menu.visible, "Unreachable host times out with a recoverable menu")
 	finish()

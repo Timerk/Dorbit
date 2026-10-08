@@ -7,7 +7,8 @@ func press(client: Sector, key: Key) -> void:
 	event.keycode = key
 	event.pressed = true
 	client._unhandled_input(event)
-	await settle()
+	await process_frame
+	await process_frame
 
 
 func capture(client: Sector, label: String) -> void:
@@ -27,7 +28,8 @@ func click(client: Sector, control: Control) -> void:
 		event.pressed = pressed
 		client.get_viewport().push_input(event)
 		await process_frame
-	await settle()
+	await process_frame
+	await process_frame
 
 
 func type_quantity(client: Sector, value: String) -> void:
@@ -107,8 +109,8 @@ func check_bulk_purchase(server: Sector, client: Sector) -> void:
 	client.session.disconnect_session("Bulk restart check")
 	await settle()
 	server.session.disconnect_session("Bulk restart check")
-	check(server.session.host(24735) == OK, "Server reloads the bulk transaction")
-	client.session.join("127.0.0.1", 24735)
+	check(server.session.host(test_port(24735)) == OK, "Server reloads the bulk transaction")
+	client.session.join("127.0.0.1", test_port(24735))
 	await settle(0.5)
 	await replicate(server)
 	combat.station_request.rpc_id(1, sequence, "buy", "g3n-1010:3", "", "", 0)
@@ -193,7 +195,7 @@ func run() -> void:
 	var client := make_sector("ShopPilot")
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
-	client.session.join("127.0.0.1", 24735)
+	client.session.join("127.0.0.1", test_port(24735))
 	await settle(0.5)
 	await replicate(server)
 	check(client.session.active, "Pilot authenticates")

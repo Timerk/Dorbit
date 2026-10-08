@@ -17,7 +17,7 @@ func run() -> void:
 	var client := make_sector("ResourceClient")
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
-	client.session.join("127.0.0.1", 24732)
+	client.session.join("127.0.0.1", test_port(24732))
 	await settle(0.5)
 	await replicate(server)
 	var id := client.multiplayer.get_unique_id()
@@ -58,7 +58,7 @@ func run() -> void:
 	var late := make_sector("ResourceLate")
 	late.session.credential_id = "pilot1"
 	late.session.credential_token = test_token(1)
-	late.session.join("127.0.0.1", 24732)
+	late.session.join("127.0.0.1", test_port(24732))
 	await settle(0.5)
 	await replicate(server)
 	check(late.loot.drops.has(100) and late.loot.drops[100]["resources"] == {"prometium": 10, "seprom": 2}, "Late join receives current uncollected loot")
@@ -137,8 +137,8 @@ func run() -> void:
 	client.session.disconnect_session("Restart")
 	await settle()
 	server.session.disconnect_session("Restart")
-	check(server.session.host(24732) == OK, "Server restarts with saved cargo")
-	client.session.join("127.0.0.1", 24732)
+	check(server.session.host(test_port(24732)) == OK, "Server restarts with saved cargo")
+	client.session.join("127.0.0.1", test_port(24732))
 	await settle(0.5)
 	await replicate(server)
 	check(client.cargo == {"duranium": 2} and client.credits == balance + 8140 and client.loot.drops.is_empty(), "Restart preserves cargo and sales; uncollected loot is session state")

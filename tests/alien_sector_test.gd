@@ -17,7 +17,7 @@ func run() -> void:
 	for index in range(2):
 		clients[index].session.credential_id = "pilot%d" % index
 		clients[index].session.credential_token = test_token(index)
-		clients[index].session.join("127.0.0.1", 24683)
+		clients[index].session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	var admission_deadline := Time.get_ticks_msec() + 8000
 	while server.session.ships.size() < 2 and Time.get_ticks_msec() < admission_deadline:
@@ -89,7 +89,7 @@ func run() -> void:
 	check(second.target == second.aliens[4] and not second.auto_fire, "Returning target remains locked while stale fire stops on its client")
 	late.session.credential_id = "pilot2"
 	late.session.credential_token = test_token(2)
-	late.session.join("127.0.0.1", 24683)
+	late.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	await replicate(server)
 	for enemy: Alien in server.aliens.values():

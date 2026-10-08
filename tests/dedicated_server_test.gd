@@ -40,7 +40,7 @@ func run() -> void:
 		client.session.credential_id = "pilot%d" % index
 		client.session.credential_token = test_token(index)
 		clients.append(client)
-		check(client.session.join("127.0.0.1", 24683) == OK, "Client %d begins joining" % index)
+		check(client.session.join("127.0.0.1", test_port(24683)) == OK, "Client %d begins joining" % index)
 	# Admission spans several ENet/authentication frames. Wait for the actual roster,
 	# rather than assuming all ten peers finish within 500 ms on a busy CI runner.
 	var deadline := Time.get_ticks_msec() + 8000
@@ -116,7 +116,7 @@ func run() -> void:
 	server.session.tick(13)
 	check(server.alien.alive, "Alien respawns on an empty server")
 	client.client_only = true
-	client.session.join("127.0.0.1", 24683)
+	client.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	await replicate(server)
 	check(client.session.ships.size() == 1 and client.session.received_snapshot, "A player reconnects to the still-running server")

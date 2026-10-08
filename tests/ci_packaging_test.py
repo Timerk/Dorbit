@@ -20,6 +20,8 @@ class PackagingTest(unittest.TestCase):
         self.root = Path(self.temp.name)
         (self.root / "tools").mkdir()
         shutil.copyfile(ROOT / "tools/deploy-server.sh", self.root / "tools/deploy-server.sh")
+        shutil.copyfile(ROOT / "tools/import-cache.py", self.root / "tools/import-cache.py")
+        (self.root / "project.godot").write_text('config_version=5\n')
         # The fake checker proves which files and cache the real helper provides.
         (self.root / "tools/server.sh").write_text('''#!/usr/bin/env bash
 set -eu
@@ -51,7 +53,7 @@ fi
         (self.root / "source.txt").write_text("committed")
         self.git("init", "-q")
         self.git("config", "core.autocrlf", "false")
-        self.git("add", "tools", "source.txt", "assets", "deploy")
+        self.git("add", "tools", "source.txt", "assets", "deploy", "project.godot")
         self.git("-c", "user.name=CI", "-c", "user.email=ci@example.test", "commit", "-qm", "fixture")
         self.sha = self.git("rev-parse", "HEAD").strip()
         (self.root / "source.txt").write_text("dirty checkout must not enter release")
@@ -104,6 +106,21 @@ fi
         self.env["FAIL_BUILD"] = "1"
         self.assertNotEqual(self.package().returncode, 0)
         self.assertFalse((self.root / "build/server-releases" / self.sha).exists())
+        self.assertFalse(self.cache.exists())
+
+    def test_validated_cache_captures_only_after_success(self):
+        self.env["DORBIT_VALIDATED_IMPORT_CACHE"] = self.cache.as_posix()
+        result = self.package()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        manifest = json.loads((self.cache / "manifest.json").read_text())
+        self.assertEqual(manifest["version"], 2)
+        self.assertIn("IMPORT CACHE: reused", result.stdout)
+        self.assertIn("IMPORT CACHE: captured", result.stdout)
+
+    def test_failed_build_does_not_publish_validated_cache(self):
+        self.env["DORBIT_VALIDATED_IMPORT_CACHE"] = self.cache.as_posix()
+        self.env["FAIL_BUILD"] = "1"
+        self.assertNotEqual(self.package().returncode, 0)
         self.assertFalse(self.cache.exists())
 
 

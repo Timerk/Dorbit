@@ -78,7 +78,7 @@ func run() -> void:
 	var client := make_sector("UpgradeClient")
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
-	client.session.join("127.0.0.1", 24743)
+	client.session.join("127.0.0.1", test_port(24743))
 	await settle(0.5)
 	await replicate(server)
 	var id := client.multiplayer.get_unique_id()
@@ -291,8 +291,8 @@ func run() -> void:
 	client.session.disconnect_session("Restart")
 	await settle()
 	server.session.disconnect_session("Restart")
-	check(server.session.host(24743) == OK, "Restart resource-upgrade server")
-	client.session.join("127.0.0.1", 24743)
+	check(server.session.host(test_port(24743)) == OK, "Restart resource-upgrade server")
+	client.session.join("127.0.0.1", test_port(24743))
 	await settle(0.5)
 	await replicate(server)
 	store = server.session.store
@@ -366,8 +366,8 @@ func run() -> void:
 	client.session.disconnect_session("Chained refining restart")
 	await settle()
 	server.session.disconnect_session("Chained refining restart")
-	check(server.session.host(24743) == OK, "Restart chained refining server")
-	client.session.join("127.0.0.1", 24743)
+	check(server.session.host(test_port(24743)) == OK, "Restart chained refining server")
+	client.session.join("127.0.0.1", test_port(24743))
 	await settle(0.5)
 	await replicate(server)
 	store = server.session.store

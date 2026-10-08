@@ -6,8 +6,11 @@ const CONTRACT_PORT := 24689
 func connect_pilot(client: Sector, index: int) -> void:
 	client.session.credential_id = "pilot%d" % index
 	client.session.credential_token = test_token(index)
-	client.session.join("127.0.0.1", CONTRACT_PORT)
-	await settle(0.4)
+	client.session.join("127.0.0.1", test_port(CONTRACT_PORT))
+	var deadline := Time.get_ticks_msec() + 8000
+	while (not client.session.active or not client.session.received_snapshot) and Time.get_ticks_msec() < deadline:
+		await process_frame
+	check(client.session.active and client.session.received_snapshot, "Pilot authenticates and receives initial state within the timeout")
 
 func station(server: Sector, client: Sector) -> void:
 	var ship := server.session.ships[client.multiplayer.get_unique_id()]
@@ -145,7 +148,7 @@ func run() -> void:
 	var remaining := pilot.active_contracts.duplicate(true)
 	server.session.disconnect_session("Restart")
 	await settle(0.3)
-	check(server.session.host(CONTRACT_PORT) == OK, "Server reopens ledger")
+	check(server.session.host(test_port(CONTRACT_PORT)) == OK, "Server reopens ledger")
 	await connect_pilot(pilot, 0)
 	await replicate(server)
 	check(pilot.credits == paid_balance and pilot.active_contracts == remaining, "Restart retains payout, cleared run and other hunts atomically")
@@ -168,7 +171,7 @@ func run() -> void:
 	check(HuntingContracts.ready(pilot.active_contracts["sentinel"]) and pilot.credits == PilotStore.MAX_CREDITS, "Full wallet retains the whole completed reward")
 	server.session.disconnect_session("Pending restart")
 	await settle(0.3)
-	server.session.host(CONTRACT_PORT)
+	server.session.host(test_port(CONTRACT_PORT))
 	await connect_pilot(pilot, 0)
 	await replicate(server)
 	id = pilot.multiplayer.get_unique_id()
@@ -200,7 +203,7 @@ func run() -> void:
 	legacy["progress"] = 3
 	ledger["pilots"]["pilot0"]["credits"] = 100
 	write_ledger(path, ledger)
-	server.session.host(CONTRACT_PORT)
+	server.session.host(test_port(CONTRACT_PORT))
 	await connect_pilot(pilot, 0)
 	combat.tick(0.01)
 	await replicate(server)
@@ -229,7 +232,7 @@ func failed_transaction(operation: String) -> void:
 	var pilot := make_sector("FailingContractPilot")
 	pilot.session.credential_id = "pilot0"
 	pilot.session.credential_token = test_token(0)
-	pilot.session.join("127.0.0.1", CONTRACT_PORT + 2)
+	pilot.session.join("127.0.0.1", test_port(CONTRACT_PORT + 2))
 	await settle(0.5)
 	if server.session.ships.size() != 1:
 		quit(2)
