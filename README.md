@@ -27,6 +27,16 @@ Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated ser
 - [Development workflow](AGENTS.md)
 - [Linux deployment, systemd, updates and rollback](DEPLOYMENT.md)
 - [Blender ship review collection](art/ship-review/README.md)
+- [Detailed alien models, materials and renders](art/alien-review/README.md)
+
+Scout, Sentinel and Heavy use the approved detailed textured models in flight
+and contract previews. The game exports have centered, correctly oriented hulls,
+2K material maps and generated distance LODs; editable Blender sources retain
+the 4K maps. Review the [actual Godot previews](docs/feedback/alien-models-godot.png)
+and [contract board at 960 × 600](docs/feedback/alien-contract-preview.png).
+Collision sizes and combat tuning are unchanged. `tests/alien_assets_test.gd`
+checks model/material integrity, shared previews, server isolation and respawn,
+including loads from the exported Windows pack.
 
 ## Play
 

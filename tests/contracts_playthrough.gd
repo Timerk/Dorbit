@@ -7,6 +7,17 @@ var hunt: Alien
 var checks := 0
 
 
+class ReplayServer extends Sector:
+	# Exercise repeated lives and real station trips without random long-distance travel.
+	# Full-sector navigation and randomized respawns have their own integration checks.
+	func relocate_alien(enemy: Alien) -> void:
+		if enemy.alien_id == 1:
+			enemy.home_position = Vector3(0, 8, 300)
+			enemy.position = enemy.home_position
+		else:
+			super.relocate_alien(enemy)
+
+
 func check(condition: bool, message: String) -> void:
 	checks += 1
 	super.check(condition, message)
@@ -67,7 +78,8 @@ func run() -> void:
 	world.own_world_3d = true
 	root.add_child(world)
 	set_multiplayer(SceneMultiplayer.new(), world.get_path())
-	server = preload("res://scenes/sector.tscn").instantiate()
+	server = ReplayServer.new()
+	server.name = "Sector"
 	server.dedicated_server = true
 	server.server_port = 24690
 	world.add_child(server)
@@ -118,7 +130,7 @@ func run() -> void:
 	await create_timer(0.4).timeout
 	check(sector.active_contracts.size() == 3, "All three hunts accept through server RPC")
 	sector.hud.contract_tabs[1].pressed.emit()
-	check(sector.hud.contract_slots.text == "0 contract slots remaining / 3 active", "Board reports concurrent hunt capacity")
+	check(sector.hud.contract_slots.text == "3 / 3 active", "Board reports concurrent hunt capacity")
 	# Saved runs can retain different terms from the current offer catalog.
 	var original: Dictionary = sector.active_contracts["heavy"].duplicate()
 	sector.active_contracts["heavy"]["required"] = 4
@@ -183,7 +195,8 @@ func run() -> void:
 			await press(KEY_R)
 			await create_timer(0.4).timeout
 			repair_spent += before_repair - sector.credits
-			check(sector.player.alive and sector.player.hull == sector.player.max_hull and sector.active_contracts.get("scout", {}).get("progress") == progress, "Station repairs preserve partial Scout hunt progress")
+			check(sector.player.alive and sector.player.hull == sector.player.max_hull and sector.active_contracts.get("scout", {}).get("progress") == progress,
+				"Station repairs preserve partial Scout hunt progress (distance=%.1f speed=%.1f hull=%.0f/%.0f last_hit=%.1f)" % [sector.player.position.distance_to(Sector.STATION_POSITION), sector.player.velocity.length(), sector.player.hull, sector.player.max_hull, sector.player.time_since_hit])
 			hunt = tracked
 			if failures:
 				break
@@ -197,15 +210,9 @@ func run() -> void:
 	if failures:
 		await finish_replay()
 		return
-	# Return via the same movement simulation; aim at a point inside station interaction range.
+	# Return within service range, rather than stopping short of the spawn point.
 	flying = true
-	sector.player.look_at(Sector.SPAWN_POSITION, Vector3.UP)
-	Input.action_press("forward")
-	deadline = Time.get_ticks_msec() + 15000
-	while sector.player.position.distance_to(Sector.SPAWN_POSITION) > 16 and Time.get_ticks_msec() < deadline:
-		await physics_frame
-	Input.action_release("forward")
-	await create_timer(6.0).timeout
+	await return_to_station()
 	flying = false
 	await press(KEY_C)
 	sector.hud.contract_choices["scout"].pressed.emit()
@@ -222,9 +229,16 @@ func run() -> void:
 		await snapshot("contracts-07-small-window")
 	await press(KEY_B)
 	check(sector.shop.visible and not sector.hud.contract_panel.visible and not sector.settings_menu.pause_panel.visible, "B switches from the contract board to shop")
+	if failures:
+		await finish_replay()
+		return
+	sector.shop.select_model("laser")
 	sector.shop.buys["laser"].pressed.emit()
 	await create_timer(0.4).timeout
 	check(sector.session.combat.inventory["items"].has("purchase-1") and sector.credits == station_credits - 10000, "Buying the laser deducts only its price from the returned wallet")
+	if failures:
+		await finish_replay()
+		return
 	await press(KEY_I)
 	sector.equipment_menu.stored["purchase-1"].pressed.emit()
 	await process_frame

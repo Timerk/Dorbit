@@ -749,10 +749,13 @@ surface maps include coating chips along real polygon edges, seam grime and
 brushed wear. Each craft also has three actual mesh close-ups for detail review.
 
 This is art for the existing three alien types within the current milestone.
-Model dimensions are review units. Runtime size/orientation, LODs and gameplay
-integration follow separately; collision sizes, alien statistics and combat
-retain their existing behavior. The concepts are accepted; final model art and
-representative-hardware performance still need user review.
+Following approval of the detailed models, the user requested game integration.
+Derived runtime GLBs face -Z with +Y up and preserve the previous visual size
+tiers. Flight and contract previews share the same meshes, with generated
+distance LODs and three shared 2K material maps per type. Editable review models
+retain their packed 4K sources. Collision sizes, alien statistics, combat and
+destruction size retain their existing behavior; dedicated servers do not load
+the visual meshes. Representative-hardware performance still needs playtesting.
 
 ## Performance
 
