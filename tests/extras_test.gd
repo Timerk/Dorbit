@@ -137,6 +137,14 @@ func run() -> void:
 	check(client.player.robot_repairing and is_equal_approx(client.player.hull, remote.hull), "Robot status and health replicate")
 	await capture(client, "extras-repair")
 	check(server.session.combat.repair(id, -1) == false, "Stale repair life is rejected")
+	var enemy := server.alien
+	enemy.reset_health()
+	enemy.returning = false
+	enemy.position = remote.position + Vector3(0, 0, -50)
+	check(remote.rockets.fire_single(enemy).is_empty() and remote.time_since_attack == 0.0 and not remote.repair_requested and not remote.robot_repairing, "A fired rocket interrupts repair and starts the combat delay")
+	hull = remote.hull
+	Extras.tick_repair(remote, 1.0, false)
+	check(remote.hull == hull, "Robot cannot resume immediately after firing a rocket")
 	# Automation uses copies; no effect becomes visible until the store commits.
 	var pilot: Dictionary = store.pilots["pilot0"].duplicate(true)
 	var equipment: Dictionary = pilot["equipment"]
@@ -180,7 +188,10 @@ func run() -> void:
 	remote.position = server.session.combat.records[id]["spawn"]
 	remote.time_since_hit = 100.0
 	await station(client, "configure_extra", owned["ammo-cpu"], "on", "x3")
-	check(store.commit({"pilot0": 100000}, {}, {}, {"pilot0": {"x1": 0, "x2": 0, "x3": 0, "x4": 0}}), "Fund an authoritative automatic refill")
+	var refill_ammo := remote.ammo.duplicate()
+	for kind: String in Ammunition.TYPES:
+		refill_ammo[kind] = 0
+	check(store.commit({"pilot0": 100000}, {}, {}, {"pilot0": refill_ammo}), "Fund an authoritative automatic refill")
 	remote.ammo = store.pilots["pilot0"]["ammo"].duplicate()
 	var selected: String = remote.ammo_type
 	remote.extras_clock = 1.0
