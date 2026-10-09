@@ -952,6 +952,135 @@ Names for the additional maps, encounter populations, gate placement, protection
 and transfer rules remain proposals to settle before implementation. Ordinary
 travel gates are separate from the future Galaxy Gates alien-wave challenges.
 
+### Alien invasion campaign and expanded quests
+
+The user approved a larger story around an alien invasion of the shared sector
+network. Pilots investigate the threat, build Outpost 01 defenses, develop
+countermeasures and defend the station. This is future Milestone 4 expansion
+work, following the connected-map foundation; it does not expand the implemented
+Milestone 3 hunting-contract slice or claim that these systems already exist.
+All four maps retain their agreed unrestricted access. Campaign completion and
+research do not become travel requirements, and factions remain deferred.
+
+The campaign loop is investigate the invasion, contribute to construction and
+research, defend the outpost, recover new intelligence, and prepare for the next
+attack. Repeatable hunts remain available alongside story chains and other
+contracts. The invasion emerges through missing freighters, coordinated alien
+patrols, attacks on supplies and evidence of a larger approaching force.
+
+Quest objectives extend beyond kills to resource collection and delivery,
+reconnaissance/scanning, wreck and black-box recovery, installation repair and
+activation, prototype field tests, and defense operations. Collection counts
+fresh qualifying pickups after acceptance, with the required source/map stated.
+Delivery consumes held resources and can use existing cargo or Skylab shipments.
+Mission-item handling, scan interactions and multi-step quest progression still
+need implementation. Moving escorts and more elaborate encounters can follow
+the initial collection, scanning and recovery objectives.
+
+Short briefings, in-flight messages and recovered logs carry the story through
+recurring station contacts. An engineer, scientist and commander are proposed
+roles, with names, dialogue and exact chapter scripts still open. A possible
+investigation follows a lost shipment in Map 2, anomalous signals and receiver
+repairs in Map 3, and a hidden alien relay in Map 4. Optional story choices can
+initially affect personal dialogue and mission outcomes rather than imposing
+conflicting permanent changes on the shared world.
+
+#### Shared station construction
+
+Outpost 01 development is shared across the server. Quest chains and resource
+contributions build defenses and a research-and-defense wing. Each construction
+quest produces visible progress, such as scaffolding, armor panels, antennae,
+module sections or weapon mounts; chapter completion finishes a recognizable
+addition. A mixture of shared resource totals and story operations is the
+starting direction: materials build a stage, and an operation brings it online.
+
+Suggested later stages include defense platforms, shield emitters, sensor arrays
+and an expanded hangar. Turrets support combat, shields protect the outpost and
+sensors give warning or reveal attack directions. Players retain a meaningful
+role in winning assaults. The precise structures, visual increments, material
+costs, activation requirements and defensive effects remain design/playtesting
+settings. Construction art and functional defenses require separate work.
+
+#### Personal research and multiplayer progression
+
+Intelligence quests award personal research points. Pilots spend them on upgrades
+and skills for weapons, shields and ship systems. Research supplements equipment
+purchases with capabilities and specialization. Discoveries can unlock research
+projects: recovering an alien shield core could reveal a countermeasure, research
+points fund it, and a field-test quest completes it.
+
+Proposed branches cover weapons, shields, ship systems and alien intelligence.
+Examples include alien-shield countermeasures, rocket accuracy, shield recovery,
+boost efficiency, salvage/scanning improvements, and enemy information. Temporary
+weapon overcharge and emergency shielding are candidate active abilities. Start
+with a small set of meaningful choices; one equipped active ability is the initial
+proposal. Exact nodes, prerequisites, point costs, numeric effects, equipment
+interactions, ability limits and respec rules remain open before implementation.
+
+Station construction is shared, while chapter progress, research balances and
+purchased research belong to each pilot. Late joiners can complete introductory
+investigations and earn research after the group has built the corresponding
+station addition. Cooperative scans and recoveries should credit eligible pilots
+individually rather than making one player's pickup consume everyone else's
+story opportunity. Eligibility and mission-item sharing need explicit rules.
+The server owns and persists construction, contributions, personal progression,
+research spending and rewards, including reconnect/restart recovery and protection
+against duplicate contributions or payouts.
+
+#### Recurring station-defense assaults
+
+The user approved periodic invasion events with increasingly strong alien waves
+and a concluding boss fight. The first assault is a story milestone after the
+initial defense wing is ready; recurring assaults follow, with stronger variants
+introduced by later chapters. These are shared station-defense encounters,
+separate from travel gates and future Galaxy Gates challenges.
+
+An assault starts with a visible early-warning countdown so pilots can resupply
+and return. Marked attack directions lead into opening Scout waves, Sentinel
+groups, Heavy-supported escalation and an invasion command ship with supporting
+aliens. Some attackers engage pilots and others threaten station installations.
+Destroying the boss ends the assault; the aftermath supplies rewards and alien
+intelligence for further preparation. This sequence is a starting encounter
+proposal, not a finalized wave roster or new enemy catalog.
+
+Station expansions participate in defense through their completed functions.
+A candidate first boss uses readable phases: shielded combat, destruction of
+supporting shield drones, then an exposed command ship. Boss mechanics should
+fit target selection and automatic weapon tracking. Exact phases, attack patterns,
+station damage/targeting, interaction with existing service/protection rules and
+victory/defeat conditions must be settled before implementation.
+
+Event operating rules agreed as the starting direction:
+
+- Scale enemy numbers and boss durability to participating pilots, with a cap;
+  lock each wave's difficulty when that wave starts.
+- Reward useful contributions throughout the event rather than only the final
+  boss hit. Provide personal research rewards alongside shared station progress;
+  exact eligibility, reward types and amounts remain provisional.
+- Defeat is recoverable: it can temporarily disable defenses or create repair
+  objectives, while preserving completed construction and purchased research.
+- Announce attacks predictably and leave room for ordinary quests. Start attacks
+  only with enough pilots online; the station takes no invasion damage while
+  everyone is offline. Timing, minimum participation and behavior if pilots leave
+  during an assault still require explicit rules.
+
+#### First campaign implementation scope
+
+Begin with one short quest chapter that visibly builds the research-and-defense
+wing, introduces collection/delivery, scanning and recovery, and unlocks a small
+personal research tree. Follow with the first milestone assault and then recurring
+defense events. Further station additions, research branches and stronger invasion
+chapters follow playtesting. The exact dependency breakdown remains implementation
+planning work; a general mission scripting framework is not an agreed prerequisite.
+
+Validation must cover personal/shared progress with multiple pilots, late joiners,
+delivery sources and cargo consumption, reconnect/restart recovery, duplicate
+requests/rewards, construction visuals, research/equipment interactions, assault
+scaling and recovery after defeat. Rendered gameplay review and representative
+friend-group performance checks are required before accepting wave density and
+effects budgets. Quest quantities, research balance, event cadence, difficulty,
+rewards, boss design and station defenses remain provisional until playtested.
+
 ## Open decisions
 
 The following do not prevent beginning the first prototype:
