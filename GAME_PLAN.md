@@ -934,12 +934,23 @@ Dorbit currently has no factions. This expansion adds no faction selection or
 separate faction territories. Reconsider factions only if a larger player
 population and the future PvP design give them a useful role.
 
-The research proposal uses a DarkOrbit lower-map-style network: home connects to
-a second map, that map branches to the two remaining maps, and those two maps
-also connect to each other. This topology, map names, encounter populations,
-gate placement, protection and transfer rules remain proposals to settle before
-implementation. Ordinary travel gates are separate from the future Galaxy Gates
-alien-wave challenges.
+The user approved the following connections, each with a gate at both ends for
+travel in either direction:
+
+| Map | Connected maps | Gate count |
+| --- | --- | --- |
+| Home: the existing Outpost 01 map | Map 2 | 1 |
+| Map 2 | Home, Map 3, Map 4 | 3 |
+| Map 3 | Map 2, Map 4 | 2 |
+| Map 4 | Map 2, Map 3 | 2 |
+
+Map 2 has two outward gates to Maps 3 and 4, plus its return gate to Home.
+There are four paired connections and eight gates in total. Home has no direct
+connection to Map 3 or Map 4.
+
+Names for the additional maps, encounter populations, gate placement, protection
+and transfer rules remain proposals to settle before implementation. Ordinary
+travel gates are separate from the future Galaxy Gates alien-wave challenges.
 
 ## Open decisions
 
