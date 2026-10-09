@@ -924,6 +924,23 @@ Gradually add connected sectors, additional enemies and equipment, PvP rules, im
 
 The order within this stage should follow playtesting feedback. A large universe, extensive ship roster, and public release are not prerequisites for a successful private game.
 
+### First connected-map expansion
+
+The user chose one shared four-map network: the existing home map at Outpost 01
+plus three additional maps reached through gates placed in the sectors. All four
+maps are accessible without level or equipment-upgrade requirements.
+
+Dorbit currently has no factions. This expansion adds no faction selection or
+separate faction territories. Reconsider factions only if a larger player
+population and the future PvP design give them a useful role.
+
+The research proposal uses a DarkOrbit lower-map-style network: home connects to
+a second map, that map branches to the two remaining maps, and those two maps
+also connect to each other. This topology, map names, encounter populations,
+gate placement, protection and transfer rules remain proposals to settle before
+implementation. Ordinary travel gates are separate from the future Galaxy Gates
+alien-wave challenges.
+
 ## Open decisions
 
 The following do not prevent beginning the first prototype:
