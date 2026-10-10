@@ -101,7 +101,7 @@ func run() -> void:
 		await request(client, 1, args[0], args[1], args[2])
 		check(conserved_ledger(JSON.stringify({"pilots": store.pilots})) == conserved_ledger(JSON.stringify({"pilots": before})), "Invalid recipe, quantity or boost cannot consume cargo: %s" % str(args))
 	for reason: String in ["distance", "speed", "damage", "life"]:
-		ship.position = Vector3(0, 100, 0) if reason == "distance" else combat.records[id]["spawn"]
+		ship.position = Vector3(0, 200, 0) if reason == "distance" else combat.records[id]["spawn"]
 		ship.velocity = Vector3(9, 0, 0) if reason == "speed" else Vector3.ZERO
 		ship.time_since_hit = 0 if reason == "damage" else 6
 		await request(client, 1, "refine", "prometid:1", "", "", 99 if reason == "life" else 0)
@@ -229,10 +229,10 @@ func run() -> void:
 		next["pilot0"]["equipment"]["items"]["test-laser%d" % index] = {"model": "lf-3" if index == 2 else "laser", "ship": "starter", "slot": "laser%d" % index}
 	check(store.persist(next), "Save four-laser fixture")
 	combat.apply_equipment(id)
-	ship.position = Vector3(0, 100, 0)
+	ship.position = Vector3(0, 200, 0)
 	ship.rotation = Vector3.ZERO
 	var alien := server.alien
-	alien.position = Vector3(0, 100, -100)
+	alien.position = Vector3(0, 200, -100)
 	alien.home_position = alien.position
 	alien.max_hull = 100000
 	alien.reset_health()
@@ -263,17 +263,17 @@ func run() -> void:
 	insufficient["x2"] = 3
 	check(store.commit({}, {}, {}, {"pilot0": insufficient}), "Seed incomplete ammunition volley")
 	ship.ammo = insufficient
-	ship.position = Vector3(0, 100, 0)
+	ship.position = Vector3(0, 200, 0)
 	var blocked_health := alien.hull + alien.shield
 	ship.shot_cooldown = 0
 	check(not ship.try_fire(alien) and ship.ammo["x2"] == 3 and ResourceBoosts.remaining(ship.resource_boosts, "lasers") == 20 and alien.hull + alien.shield == blocked_health, "Insufficient ammunition preserves boost rounds and damage")
 	ship.ammo_type = "x1"
-	ship.position = Vector3(0, 100, 1000)
+	ship.position = Vector3(0, 200, 1000)
 	ship.shot_cooldown = 0
 	check(not ship.try_fire(alien) and ResourceBoosts.remaining(ship.resource_boosts, "lasers") == 20, "Blocked shots consume no rounds")
 	check(not client.player.try_fire(client.alien), "Clients cannot spend authoritative boost reserves or apply damage")
 	ship.shot_cooldown = 1
-	ship.position = Vector3(0, 100, 0)
+	ship.position = Vector3(0, 200, 0)
 	check(not ship.try_fire(alien) and ResourceBoosts.remaining(ship.resource_boosts, "lasers") == 20, "Cooldown consumes no rounds")
 	ship.position = combat.records[id]["spawn"]
 	ship.shot_cooldown = 0
