@@ -927,8 +927,10 @@ The order within this stage should follow playtesting feedback. A large universe
 ### First connected-map expansion
 
 The user chose one shared four-map network: the existing home map at Outpost 01
-plus three additional maps reached through gates placed in the sectors. All four
-maps are accessible without level or equipment-upgrade requirements.
+plus three additional maps reached through gates placed in the sectors. The
+reclamation campaign below revises the original simultaneous-access direction:
+maps can become available over time through campaign progress and content releases.
+Available maps have no individual level or equipment-upgrade requirements.
 
 Dorbit currently has no factions. This expansion adds no faction selection or
 separate faction territories. Reconsider factions only if a larger player
@@ -952,26 +954,66 @@ Names for the additional maps, encounter populations, gate placement, protection
 and transfer rules remain proposals to settle before implementation. Ordinary
 travel gates are separate from the future Galaxy Gates alien-wave challenges.
 
-### Alien invasion campaign and expanded quests
+### Sector reclamation campaign and expanded quests
 
-The user approved a larger story around an alien invasion of the shared sector
-network. Pilots investigate the threat, build Outpost 01 defenses, develop
-countermeasures and defend the station. This is future Milestone 4 expansion
-work, following the connected-map foundation; it does not expand the implemented
+The user approved a reclamation campaign: these sectors once belonged to humanity
+and fell during an alien invasion. Humanity is now returning to reclaim them.
+Pilots establish a foothold, investigate the occupying aliens, restore abandoned
+infrastructure, develop countermeasures and secure routes for reinforcements from
+home. Outpost 01 is the large forward base brought into the area to support further
+operations. This is future Milestone 4 expansion work, following the connected-map
+foundation; it does not expand the implemented
 Milestone 3 hunting-contract slice or claim that these systems already exist.
-All four maps retain their agreed unrestricted access. Campaign completion and
-research do not become travel requirements, and factions remain deferred.
+The four-map connection layout remains the starting network, while shared campaign
+milestones and future content releases can open further sectors over time. This
+replaces the earlier blanket unrestricted-access commitment. Individual pilot
+levels, equipment upgrades and research purchases are not map-access gates;
+factions remain deferred. The unlock order and conditions for the first four maps,
+and the relationship between release availability and campaign milestones, remain
+to be specified before implementation.
 
-The campaign loop is investigate the invasion, contribute to construction and
-research, defend the outpost, recover new intelligence, and prepare for the next
-attack. Repeatable hunts remain available alongside story chains and other
-contracts. The invasion emerges through missing freighters, coordinated alien
-patrols, attacks on supplies and evidence of a larger approaching force.
+The campaign loop is reconnoiter an occupied sector, clear enough resistance to
+establish a foothold, rebuild defenses and supply links, bring in reinforcements,
+hold against alien counterattacks, and prepare to advance deeper into alien-held
+territory. Repeatable hunts remain available alongside story chains and other
+contracts. Securing a sector means meeting operation objectives, not permanently
+removing every alien or disabling ordinary repeatable encounters. New map releases
+can continue the story with command authorizing the next advance after sufficient
+clearance and preparation.
+
+#### Prologue and pilot introduction
+
+The proposed opening places a new pilot or group in the advance force preparing
+the initial sector for Outpost 01's arrival. The station is to establish a forward
+outpost, receive supplies and reinforcements from home, and support the wider
+reclamation effort. Tutorial missions teach controls through those operations:
+
+1. Learn movement, steering, boost and navigation while surveying the approach.
+2. Learn target selection and automatic fire by clearing a small alien patrol.
+3. Recover cargo or a recorder to introduce collection and the history of the
+   lost sector.
+4. Survey the staging area and restore an approach beacon or abandoned defense
+   installation to prepare the station's arrival route.
+5. Complete the local clearance operation; Outpost 01 arrives and becomes the
+   operational base for supply, repairs, equipment and the next chapter.
+
+Subsequent missions establish supply links and prepare for reinforcements from
+home. Exact tutorial objectives, encounters and the station arrival presentation
+remain proposals. The currently implemented game still starts with the station
+present; a pre-arrival tutorial needs a separate implementation and must provide
+appropriate starting services and rescue behavior.
+
+Station arrival and sector reclamation are shared milestones, while tutorial
+completion is personal. Late joiners must be able to learn the controls and story
+without removing the live station or resetting group progress. A replayable
+introductory scenario or adapted onboarding in the established sector are options;
+the tutorial hosting/replay approach and repeat-reward rules remain open.
 
 Quest objectives extend beyond kills to resource collection and delivery,
 reconnaissance/scanning, wreck and black-box recovery, installation repair and
-activation, prototype field tests, and defense operations. Collection counts
-fresh qualifying pickups after acceptance, with the required source/map stated.
+activation, supply-route preparation, prototype field tests, and defense
+operations. Collection counts fresh qualifying pickups after acceptance, with the
+required source/map stated.
 Delivery consumes held resources and can use existing cargo or Skylab shipments.
 Mission-item handling, scan interactions and multi-step quest progression still
 need implementation. Moving escorts and more elaborate encounters can follow
@@ -987,8 +1029,13 @@ conflicting permanent changes on the shared world.
 
 #### Shared station construction
 
-Outpost 01 development is shared across the server. Quest chains and resource
-contributions build defenses and a research-and-defense wing. Each construction
+Outpost 01 development and sector reclamation are shared across the server.
+Beyond the initial foothold, quest chains can rebuild abandoned defenses, restore
+communications and prepare staging areas or supply facilities so reinforcements
+from home can operate in each newly entered map. Restoration and reinforcement
+milestones provide visible evidence of reclaiming territory; exact facilities and
+reinforcement behavior remain to be designed. Quest chains and resource
+contributions build Outpost 01 defenses and a research-and-defense wing. Each construction
 quest produces visible progress, such as scaffolding, armor panels, antennae,
 module sections or weapon mounts; chapter completion finishes a recognizable
 addition. A mixture of shared resource totals and story operations is the
@@ -1029,8 +1076,8 @@ against duplicate contributions or payouts.
 
 #### Recurring station-defense assaults
 
-The user approved periodic invasion events with increasingly strong alien waves
-and a concluding boss fight. The first assault is a story milestone after the
+The user approved periodic alien counterattack events with increasingly strong
+waves and a concluding boss fight. The first assault is a story milestone after the
 initial defense wing is ready; recurring assaults follow, with stronger variants
 introduced by later chapters. These are shared station-defense encounters,
 separate from travel gates and future Galaxy Gates challenges.
@@ -1066,14 +1113,17 @@ Event operating rules agreed as the starting direction:
 
 #### First campaign implementation scope
 
-Begin with one short quest chapter that visibly builds the research-and-defense
-wing, introduces collection/delivery, scanning and recovery, and unlocks a small
-personal research tree. Follow with the first milestone assault and then recurring
-defense events. Further station additions, research branches and stronger invasion
-chapters follow playtesting. The exact dependency breakdown remains implementation
-planning work; a general mission scripting framework is not an agreed prerequisite.
+Begin with the pilot prologue and the clearance operation that establishes
+Outpost 01. Follow with one short quest chapter that visibly builds the
+research-and-defense wing, introduces collection/delivery, scanning and recovery,
+and unlocks a small personal research tree. Then add the first milestone
+counterattack and recurring defense events. Further sector advances, infrastructure
+restoration, station additions and research branches follow playtesting and map
+releases. The exact dependency breakdown remains implementation planning work;
+a general mission scripting framework is not an agreed prerequisite.
 
-Validation must cover personal/shared progress with multiple pilots, late joiners,
+Validation must cover personal/shared progress with multiple pilots, tutorial and
+station-arrival behavior, late joiners, sector unlocks and reinforcement milestones,
 delivery sources and cargo consumption, reconnect/restart recovery, duplicate
 requests/rewards, construction visuals, research/equipment interactions, assault
 scaling and recovery after defeat. Rendered gameplay review and representative
