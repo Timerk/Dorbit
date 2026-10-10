@@ -115,7 +115,7 @@ func run() -> void:
 	await fire_at(second, heavy, heavy_life)
 	check(not combat.remote_firing(second_id), "Old fire intent cannot cross a retreat reset")
 	# Abandoning an active fight for station protection also resets eligibility.
-	q.position = Sector.STATION_POSITION
+	q.position = Sector.STATION_POSITION + Vector3(0, 120, 0)
 	var shield := q.shield
 	heavy.try_fire(q)
 	check(q.shield == shield, "Alien cannot attack a station-protected pilot")

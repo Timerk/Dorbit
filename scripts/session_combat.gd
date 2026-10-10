@@ -293,7 +293,7 @@ func tick(delta: float) -> void:
 			continue
 		if ship.get_meta("docked", false):
 			continue
-		if ship.position.distance_to(Sector.STATION_POSITION) > 75.0:
+		if ship.position.distance_to(Sector.STATION_POSITION) > Sector.PROTECTION_RADIUS:
 			records[id]["stage"] = maxi(records[id]["stage"], 1)
 		var enemy: Alien = sector.target as Alien if id == 1 else remote_target(id)
 		var firing := sector.auto_fire and not sector.paused if id == 1 else remote_firing(id)
@@ -336,7 +336,7 @@ func choose_target(alien: Alien) -> Pilot:
 	var target: Pilot = null
 	var nearest: float = alien.tuning()["detection"]
 	for ship: Pilot in session.ships.values():
-		if ship.get_meta("docked", false) or not ship.alive or ship.position.distance_to(Sector.STATION_POSITION) <= 75.0:
+		if ship.get_meta("docked", false) or not ship.alive or ship.position.distance_to(Sector.STATION_POSITION) <= Sector.PROTECTION_RADIUS:
 			continue
 		var distance := ship.position.distance_to(alien.position)
 		if distance < nearest:

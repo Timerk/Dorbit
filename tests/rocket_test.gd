@@ -70,9 +70,9 @@ func run() -> void:
 	enemy.max_hull = 1_000_000
 	enemy.max_shield = 100_000
 	enemy.reset_health()
-	enemy.position = Vector3(0, 100, -70)
+	enemy.position = Vector3(0, 200, -70)
 	enemy.home_position = enemy.position
-	remote.position = Vector3(0, 100, 0)
+	remote.position = Vector3(0, 200, 0)
 	await physics_frame
 	await replicate(server)
 	client.alien.position = enemy.position # Fixture does not run client interpolation.
@@ -119,7 +119,7 @@ func run() -> void:
 	check(weapons.fire_single(enemy) == "STATION PROTECTION", "Safe zone rejects rockets")
 	remote.position = enemy.position + Vector3(0, 0, 130)
 	check(weapons.fire_single(enemy) == "OUT OF RANGE", "Short rocket range is measured in game metres")
-	remote.position = Vector3(0, 100, 0)
+	remote.position = Vector3(0, 200, 0)
 	remote.ammo["r-310"] = 0
 	check(weapons.fire_single(enemy) == "NO ROCKET AMMUNITION", "Empty selected single ammunition gives clear feedback")
 	remote.ammo = before.duplicate()

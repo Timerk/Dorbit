@@ -29,7 +29,7 @@ func run() -> void:
 	owned["ships"]["spare"] = "pathfinder"
 	check(CargoResources.valid({"starter": {"seprom": 2}, "spare": {}}, owned), "Cargo belongs to individual owned ships")
 	check(not CargoResources.valid({"starter": {"seprom": 801}, "spare": {}}, owned), "Each ship rejects cargo beyond its bounded single-shipment overfill")
-	ship.position = Vector3(0, 100, 0)
+	ship.position = Vector3(0, 200, 0)
 	for slot in [1, 0, 4]:
 		var alien: Alien = server.aliens[slot]
 		alien.take_damage(alien.max_hull + alien.max_shield + 1.0, ship)
