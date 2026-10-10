@@ -94,9 +94,9 @@ func run() -> void:
 	check(pilot.active_contracts == first, "Duplicate acceptance and manual claims do nothing")
 	var packet: Dictionary = {id: combat.pack_player(id)}
 	packet[id].merge({"position": Vector3.ZERO, "rotation": Vector3.ZERO, "velocity": Vector3.ZERO, "energy": 100.0})
-	check(var_to_bytes([packet, {}, 1]).size() < 1300, "One player with all hunts fits the snapshot datagram budget")
+	check(var_to_bytes([packet, {}, 1, 0]).size() < 1300, "One player with all hunts and a map visit fits the snapshot datagram budget")
 	packet[id]["docked"] = true
-	check(var_to_bytes([packet, {}, 1]).size() < 1300 and not packet[id].has("spawn"), "Docked quests fit the packet budget without a server-only spawn origin")
+	check(var_to_bytes([packet, {}, 1, 0]).size() < 1300 and not packet[id].has("spawn"), "Docked quests fit the packet budget without a server-only spawn origin")
 	for client in [partner, spectator]:
 		station(server, client)
 		await action(server, client, "accept", "scout")
