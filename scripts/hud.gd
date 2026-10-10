@@ -327,7 +327,7 @@ func draw_objectives() -> void:
 func draw_controls() -> void:
 	var point := Vector2(SIDE_MARGIN, size.y - 28)
 	var pixels := 14 if size.x < 1200 else 16
-	for entry: Array in [["steer", "Steer"], ["cycle_target", "Target"], ["fire", "Fire"], ["boost", "Boost"], ["repair", "Repair"], ["sector_map", "Map"], ["pause_game", "Menu"]]:
+	for entry: Array in [["steer", "Steer"], ["cycle_target", "Target"], ["fire", "Fire"], ["boost", "Boost"], ["repair", "Repair"] if sector.map_id == 0 else ["jump_gate", "Jump"], ["sector_map", "Map"], ["pause_game", "Menu"]]:
 		var key := GameSettings.binding_text(entry[0])
 		var key_width := font.get_string_size(key, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x + 14
 		draw_style_box(background, Rect2(point - Vector2(0, 18), Vector2(key_width, 26)))
@@ -342,6 +342,9 @@ func draw_context() -> void:
 		return
 	var point := Vector2(SIDE_MARGIN, objectives_rect().end.y + 12)
 	var messages: Array[String] = []
+	for destination: int in SectorMaps.GATES[sector.map_id]:
+		if sector.player.position.distance_to(SectorMaps.gate_position(sector.map_id, destination)) <= SectorMaps.JUMP_RADIUS:
+			messages.append("%s / JUMP TO %s / GATE PROTECTED" % [GameSettings.binding_text("jump_gate"), SectorMaps.MAPS[destination]["name"]])
 	if CargoResources.units(sector.cargo) >= sector.cargo_capacity:
 		messages.append("CARGO FULL / SELL AT OUTPOST 01 [B]")
 	if sector.toast_time > 0:
@@ -373,7 +376,7 @@ func draw_performance() -> void:
 
 func draw_station_actions() -> void:
 	var player := sector.player
-	if not layout.editing and (not player.alive or player.global_position.distance_to(Sector.STATION_POSITION) > Sector.REPAIR_RADIUS):
+	if not layout.editing and (player.map_id != 0 or not player.alive or player.global_position.distance_to(Sector.STATION_POSITION) > Sector.REPAIR_RADIUS):
 		return
 	if not layout.begin_draw(self, "station"):
 		return
@@ -430,7 +433,10 @@ func _draw() -> void:
 		draw_line(center + Vector2(3, 0), center + Vector2(8, 0), Color(INK, 0.5))
 		draw_circle(center, 2.0, AMBER)
 		layout.end_draw(self)
-	marker(Sector.STATION_POSITION, "OUTPOST 01", GREEN, false)
+	if sector.map_id == 0:
+		marker(Sector.STATION_POSITION, "OUTPOST 01", GREEN, false)
+	for destination: int in SectorMaps.GATES[sector.map_id]:
+		marker(SectorMaps.gate_position(sector.map_id, destination), "GATE TO " + SectorMaps.MAPS[destination]["name"], SectorMaps.MAPS[destination]["color"], false, null, false)
 	if is_instance_valid(sector.target):
 		alien_marker(sector.target as Alien)
 	for id: int in sector.loot.drops:
@@ -442,7 +448,7 @@ func _draw() -> void:
 			alien_marker(enemy)
 	if sector.session.active:
 		for ship: Pilot in sector.session.ships.values():
-			if ship != player and ship.alive:
+			if ship != player and ship.alive and ship.map_id == sector.map_id and not ship.get_meta("docked", false):
 				marker(ship.global_position, "FRIEND %s" % sector.session.ships.find_key(ship), CYAN, false, ship)
 	if not player.alive:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.015, 0.025, 0.04, 0.65))
@@ -472,7 +478,7 @@ func draw_speed() -> void:
 func draw_target_panel() -> void:
 	var rect := target_rect()
 	var enemy := sector.target as Alien
-	card_title(rect, "%s %d / %d m" % [enemy.kind.to_upper(), enemy.alien_id + 1, sector.player.global_position.distance_to(enemy.global_position)] if is_instance_valid(enemy) else "NO TARGET", RED if is_instance_valid(enemy) else MUTED)
+	card_title(rect, "%s %d / %d m" % [enemy.kind.to_upper(), enemy.alien_id % 100 + 1, sector.player.global_position.distance_to(enemy.global_position)] if is_instance_valid(enemy) else "NO TARGET", RED if is_instance_valid(enemy) else MUTED)
 	var origin := rect.position + Vector2(18, 64)
 	if not is_instance_valid(sector.target) or not sector.target.alive:
 		paragraph(origin, "%s or %s to lock" % [GameSettings.binding_text("cycle_target"), GameSettings.binding_text("select_target")], 250)
@@ -485,14 +491,15 @@ func draw_target_panel() -> void:
 
 
 func alien_marker(enemy: Alien) -> void:
-	marker(enemy.global_position, "HOSTILE %s %d%s" % [enemy.kind.to_upper(), enemy.alien_id + 1, " / RETURNING" if enemy.returning else ""], AMBER if sector.target == enemy else enemy.tuning()["color"], sector.target == enemy, null, sector.target == enemy)
+	marker(enemy.global_position, "HOSTILE %s %d%s" % [enemy.kind.to_upper(), enemy.alien_id % 100 + 1, " / RETURNING" if enemy.returning else ""], AMBER if sector.target == enemy else enemy.tuning()["color"], sector.target == enemy, null, sector.target == enemy)
 
 
 func draw_boundary_warning() -> void:
 	var player := sector.player
 	if not player.alive or (sector.client_only and not sector.session.active):
 		return
-	var remaining := Sector.MAP_RADIUS - player.position.length()
+	var local := player.position - SectorMaps.origin(sector.map_id)
+	var remaining := Sector.MAP_RADIUS - local.length()
 	if remaining > Sector.BOUNDARY_WARNING_DISTANCE and not layout.editing:
 		return
 	var outside := remaining < 0.0
@@ -515,7 +522,7 @@ func draw_boundary_warning() -> void:
 		layout.end_draw(self)
 		marker_labels.append(layout.rect_for("radiation"))
 	if outside:
-		var safe_point := player.position.normalized() * (Sector.MAP_RADIUS - 50.0)
+		var safe_point := SectorMaps.origin(sector.map_id) + local.normalized() * (Sector.MAP_RADIUS - 50.0)
 		marker(safe_point, "RETURN TO SAFE SPACE", RED, false)
 
 

@@ -25,6 +25,8 @@ var simulation_authority: bool = true
 var render_enabled: bool = true
 var npc_laser_damage: float = 0.0
 var shield_regen_bonus: float = 0.0
+var map_id: int = 0
+var map_visit: int = 0
 
 
 func _ready() -> void:
@@ -65,6 +67,8 @@ func reset_health() -> void:
 func take_damage(amount: float, attacker: SpaceShip) -> void:
 	if not simulation_authority or not alive or amount <= 0.0:
 		return
+	if attacker != null and attacker.map_id != map_id:
+		return
 	time_since_hit = 0.0
 	var absorbed := minf(shield, amount * clampf(shield_absorption, 0.0, 1.0))
 	shield -= absorbed
@@ -89,9 +93,11 @@ func firing_blocker(target: SpaceShip) -> String:
 		return "NO LASER INSTALLED"
 	if not alive or not is_instance_valid(target) or not target.alive:
 		return "NO TARGET"
+	if target.map_id != map_id:
+		return "TARGET IN ANOTHER MAP"
 	if target is Alien and not target.available():
 		return "TARGET RETURNING"
-	if (hostile and target is Pilot and target.position.distance_to(Sector.STATION_POSITION) <= 75.0) or (self is Pilot and target is Alien and position.distance_to(Sector.STATION_POSITION) <= 75.0):
+	if (hostile and target is Pilot and SectorMaps.protected(target)) or (self is Pilot and target is Alien and SectorMaps.protected(self)):
 		return "STATION PROTECTION"
 	var offset := target.global_position - global_position
 	if offset.length() > laser_range:

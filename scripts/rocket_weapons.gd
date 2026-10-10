@@ -56,11 +56,11 @@ func target_blocker(target: SpaceShip, kind: String) -> String:
 	if not ship.alive or ship.get_meta("docked", false) or not is_instance_valid(target) or not target.alive:
 		return "INVALID TARGET"
 	# The current sector is cooperative: only available aliens are attackable.
-	if not target is Alien or target.get_parent() != ship.get_parent() or ship.get_world_3d() != target.get_world_3d():
+	if not target is Alien or target.map_id != ship.map_id or target.get_parent() != ship.get_parent() or ship.get_world_3d() != target.get_world_3d():
 		return "INVALID TARGET"
 	if not target.available():
 		return "TARGET RETURNING"
-	if ship.position.distance_to(Sector.STATION_POSITION) <= 75.0:
+	if SectorMaps.protected(ship):
 		return "STATION PROTECTION"
 	if ship.global_position.distance_to(target.global_position) > float(Ammunition.ROCKETS[kind]["range"]):
 		return "OUT OF RANGE"
@@ -123,7 +123,7 @@ func launch(target: Alien, kind: String, index: int, count: int) -> void:
 	var info: Dictionary = Ammunition.ROCKETS[kind]
 	var id := "%d-%d" % [ship.get_instance_id(), sequence]
 	var origin := ship.global_position - ship.global_basis.z * 3.0 + ship.global_basis.x * (index - (count - 1) * 0.5) * 1.2
-	var event := {"id": id, "origin": origin, "target": target.alien_id, "life": target.life, "kind": kind, "index": index, "count": count}
+	var event := {"map": ship.map_id, "id": id, "origin": origin, "target": target.alien_id, "life": target.life, "kind": kind, "index": index, "count": count}
 	pending.append({"id": id, "target": weakref(target), "life": target.life, "attacker_life": ship.get_meta("life", 0), "position": origin, "age": 0.0, "kind": kind, "hit": rng.randf() < float(info["accuracy"]), "damage": float(info["damage"]) * rng.randf_range(info["minimum"], info["maximum"])})
 	launched.emit(event)
 
@@ -144,7 +144,7 @@ func tick(delta: float) -> void:
 		var projectile := pending[index]
 		var target := projectile["target"].get_ref() as Alien
 		projectile["age"] += delta
-		var valid: bool = is_instance_valid(target) and target.available() and target.life == projectile["life"] and ship.get_meta("life", 0) == projectile["attacker_life"] and target.get_parent() == ship.get_parent() and ship.get_world_3d() == target.get_world_3d() and not ship.get_meta("docked", false)
+		var valid: bool = is_instance_valid(target) and target.map_id == ship.map_id and target.available() and target.life == projectile["life"] and ship.get_meta("life", 0) == projectile["attacker_life"] and target.get_parent() == ship.get_parent() and ship.get_world_3d() == target.get_world_3d() and not ship.get_meta("docked", false)
 		if not valid or projectile["age"] > MAX_FLIGHT_TIME:
 			pending.remove_at(index)
 			resolved.emit(projectile["id"], projectile["position"], false)
@@ -152,7 +152,7 @@ func tick(delta: float) -> void:
 		var step := float(Ammunition.ROCKETS[projectile["kind"]]["speed"]) * delta
 		if projectile["position"].distance_to(target.global_position) <= step:
 			pending.remove_at(index) # Retire before damage callbacks; never hit twice.
-			var hit: bool = projectile["hit"] and ship.position.distance_to(Sector.STATION_POSITION) > 75.0
+			var hit: bool = projectile["hit"] and not SectorMaps.protected(ship)
 			resolved.emit(projectile["id"], target.global_position, hit)
 			if hit:
 				target.take_damage(projectile["damage"], ship)

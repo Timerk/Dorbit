@@ -3,6 +3,7 @@ shader_type sky;
 // The dark visible nebula needs a brighter radiance exposure for metal surfaces.
 // Undo this exposure when drawing the background, retaining the existing sky.
 uniform float reflection_energy : hint_range(1.0, 4.0) = 3.0;
+uniform vec4 map_tint : source_color = vec4(1.0);
 
 // Direction-space noise remains continuous across the panorama seam and poles.
 float hash3(vec3 p) {
@@ -41,7 +42,7 @@ void sky() {
 		vec3 nebula = gas*luminous*(0.5+cloud)*1.35;
 		nebula *= 1.0-dust*0.72;
 		nebula += vec3(0.08,0.22,0.27)*pow(luminous,3.0)*0.65;
-		COLOR = (vec3(0.003,0.005,0.012)+nebula)*reflection_energy;
+		COLOR = (vec3(0.003,0.005,0.012)+nebula)*map_tint.rgb*reflection_energy;
 	} else {
 		COLOR = texture(RADIANCE,d).rgb/reflection_energy+stars(d,420.0,0.974)+stars(d,125.0,0.993)*1.5;
 	}

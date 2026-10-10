@@ -13,6 +13,12 @@ const TYPES := {
 	"seprom": {"name": "Seprom", "price": 640, "color": Color("ab83ff")},
 }
 const LOOT := {
+	"Skirmisher": {"prometium": Vector2i(10, 16), "endurium": Vector2i(6, 10), "terbium": Vector2i(4, 6)},
+	"Raider": {"prometium": Vector2i(18, 24), "endurium": Vector2i(12, 18), "terbium": Vector2i(8, 12), "prometid": Vector2i(4, 8), "duranium": Vector2i(2, 4)},
+	"Marauder": {"prometid": Vector2i(12, 18), "duranium": Vector2i(8, 12), "xenomit": Vector2i(2, 4), "promerium": Vector2i(4, 6)},
+	"Warden": {"prometid": Vector2i(18, 24), "duranium": Vector2i(12, 18), "xenomit": Vector2i(4, 6), "promerium": Vector2i(8, 12), "seprom": Vector2i(2, 4)},
+	"Ravager": {"duranium": Vector2i(18, 24), "xenomit": Vector2i(6, 10), "promerium": Vector2i(12, 18), "seprom": Vector2i(4, 6)},
+	"Overlord": {"duranium": Vector2i(24, 32), "xenomit": Vector2i(10, 14), "promerium": Vector2i(18, 24), "seprom": Vector2i(8, 12)},
 	"Scout": {"prometium": Vector2i(6, 10), "endurium": Vector2i(2, 4), "terbium": Vector2i(1, 2)},
 	"Sentinel": {"prometium": Vector2i(10, 16), "endurium": Vector2i(6, 10), "terbium": Vector2i(4, 6), "prometid": Vector2i(2, 4), "duranium": Vector2i(1, 2)},
 	"Heavy": {"prometium": Vector2i(18, 24), "endurium": Vector2i(12, 18), "terbium": Vector2i(8, 12), "prometid": Vector2i(6, 10), "duranium": Vector2i(4, 6), "xenomit": Vector2i(1, 3), "promerium": Vector2i(2, 4), "seprom": Vector2i(1, 2)},
