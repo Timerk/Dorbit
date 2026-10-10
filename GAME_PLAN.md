@@ -532,7 +532,7 @@ The Update tab follows the user's two-row reference: a four-resource bar above i
 
 The Update quantity field caps typed values and spinner/Max changes at the selected resource's current cargo stock. The cap refreshes when selecting another resource or when server cargo changes. Empty stock shows zero with editing and boost application disabled.
 
-One unit provides ten boosted **individual laser rounds**, or ten minutes for shields/engines. Each installed laser consumes one round when an authoritative volley actually fires; blocked shots and cooldowns consume none. A final partial volley boosts only as many lasers as rounds remain, in laser-slot order. Each laser's own NPC bonus is included before the resource multiplier. Rocket boosts remain deferred and show Coming later without consuming cargo. Manual rocket combat is implemented separately below.
+One unit provides ten boosted **individual laser rounds or rockets**, or ten minutes for shields/engines. Each installed laser consumes one round when an authoritative volley actually fires; blocked shots and cooldowns consume none. A final partial volley boosts only as many lasers as rounds remain, in laser-slot order. Each laser's own NPC bonus is included before the resource multiplier. The user requested enabling rocket resource updates now that manual rocket combat is implemented. Single rockets and each Hellstorm rocket consume one rocket boost round at launch, including misses; loading and rejected shots consume none. A final partial Hellstorm volley boosts the first rockets in launch order. Damage retains the bonus captured at launch, including after reserve expiry or replacement. Ammunition and live per-ship boosts commit together before projectiles launch.
 
 The same resource adds rounds or duration without changing its percentage. A different resource replaces the remaining reserve only after the player checks an explicit discard warning, as chosen by the user. Boosts belong to the ship; switching hulls preserves its reserve. Shield capacity multiplies the installed total without changing absorption or granting charge; expiry clamps excess charge. Engines multiply fitted cruise and boost speeds without changing acceleration. Applying resources never repairs hull or resets cooldowns.
 
@@ -666,8 +666,8 @@ Save schema 7 migrates schema 1–6 while preserving progression and grants
 The provisioning tool supports the same migration and launcher fittings.
 Back up the ledger before upgrading; rollback needs a pre-migration backup.
 Network schema 13 requires matching client/server builds. Resource rocket
-boosts remain disabled until a separate integration; laser/timed reserves are
-unchanged.
+boosts use the existing per-ship reserve and combat journal formats; no new save
+or network schema is required. Laser/timed reserve behavior is unchanged.
 
 ## Multiplayer and hosting
 

@@ -25,9 +25,17 @@ func connect_rockets(ship: Pilot) -> void:
 
 
 func debit_rockets(kind: String, count: int, id: int) -> bool:
-	var next := session.ships[id].ammo.duplicate()
+	var ship := session.ships[id]
+	var pilot_id: String = session.pilot_ids[id]
+	var pilot: Dictionary = session.store.pilots[pilot_id]
+	var next := ship.ammo.duplicate()
 	next[kind] -= count
-	if session.store.commit_combat({session.pilot_ids[id]: next}):
+	var boost := ship.resource_boosts.duplicate(true)
+	ResourceBoosts.consume_rockets(boost, count)
+	var holds: Dictionary = pilot["boosts"].duplicate(true)
+	holds[pilot["equipment"]["active_ship"]] = boost
+	if session.store.commit_combat({pilot_id: next}, {pilot_id: holds}):
+		ship.resource_boosts = boost
 		return true
 	session.stop_for_save_failure()
 	return false

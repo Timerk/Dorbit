@@ -233,11 +233,85 @@ func run() -> void:
 	await settle(0.5)
 	await replicate(server)
 	check(client.player.ammo == before and client.player.rockets.loaded == 0, "Reconnect retains spent ammunition and releases reservations")
+	await boosted_rockets(server, client, server.session.ships[client.multiplayer.get_unique_id()], enemy)
 	finish()
 
 
+func boosted_rockets(server: Sector, client: Sector, remote: Pilot, enemy: Alien) -> void:
+	var weapons := remote.rockets
+	var store := server.session.store
+	var hull: String = store.pilots["pilot0"]["equipment"]["active_ship"]
+	var hold := {"prometid": 1, "promerium": 1, "seprom": 1}
+	var boosts := {}
+	for resource: String in ["prometid", "promerium", "seprom"]:
+		check(ResourceBoosts.apply(hold, boosts, "rockets", resource, 1, true).is_empty() and ResourceBoosts.remaining(boosts, "rockets") == 10, "Each rocket resource provides ten rounds: " + resource)
+	var saved: Dictionary = store.pilots["pilot0"]["boosts"].duplicate(true)
+	var cargo: Dictionary = store.pilots["pilot0"]["cargo"].duplicate(true)
+	cargo[hull] = {"seprom": 1}
+	check(store.commit({}, {}, {"pilot0": cargo}), "Seed cargo for confirmed rocket update")
+	server.session.combat.cargo_holds[client.multiplayer.get_unique_id()] = cargo
+	server.session.combat.publish_inventory(client.multiplayer.get_unique_id())
+	await settle()
+	client.main_menu.select_page("refining")
+	var menu := client.resource_workshop
+	menu.select_tab("update")
+	menu.select_group("rockets")
+	menu.select_resource("seprom")
+	menu.upgrade_amount.value = 1
+	await settle()
+	check(not menu.upgrade_button.disabled, "Seprom rocket update is available at the outpost")
+	await capture(client, "rocket-resource-update")
+	await click(client, menu.upgrade_button)
+	check(ResourceBoosts.remaining(remote.resource_boosts, "rockets") == 10 and not client.cargo.has("seprom"), "Confirmed rocket update spends one cargo unit and persists ten rounds")
+	client.set_paused(false)
+	client.session.launch()
+	await settle()
+	remote.position = Vector3(0, 100, 0)
+	remote.set_meta("docked", false)
+	enemy.position = Vector3(0, 100, -70)
+	enemy.home_position = enemy.position
+	enemy.reset_health()
+	weapons.select("r-310")
+	weapons.single_cooldown = 0
+	roll(weapons, true, 0.7)
+	check(weapons.fire_single(enemy).is_empty(), "Boosted single rocket fires")
+	check(weapons.pending[0]["damage"] >= 1280 and weapons.pending[0]["damage"] <= 1600, "Seprom multiplies the single rocket damage roll by 1.6")
+	check(ResourceBoosts.remaining(remote.resource_boosts, "rockets") == 9 and store.pilots["pilot0"]["boosts"][hull] == remote.resource_boosts, "Ammo and boost reserve are committed together before impact")
+	check(weapons.fire_single(enemy) == "ROCKET COOLDOWN" and ResourceBoosts.remaining(remote.resource_boosts, "rockets") == 9, "Rejected shot preserves rocket reserve")
+	weapons.pending.clear()
+	weapons.single_cooldown = 0
+	roll(weapons, false, 0.7)
+	check(weapons.fire_single(enemy).is_empty() and not weapons.pending[0]["hit"] and ResourceBoosts.remaining(remote.resource_boosts, "rockets") == 8, "Misses consume one boosted round at launch")
+	weapons.pending.clear()
+	remote.resource_boosts["rockets"]["remaining"] = 2
+	var ammo := remote.ammo.duplicate()
+	ammo["eco-10"] = 3
+	check(store.commit({}, {}, {}, {"pilot0": ammo}), "Seed ammunition for the partly boosted volley")
+	remote.ammo = ammo
+	weapons.select("eco-10")
+	weapons.loaded = 3
+	weapons.launcher_cooldown = 0
+	check(weapons.activate(enemy).is_empty(), "Partly boosted Hellstorm volley fires")
+	check(weapons.pending.size() == 3 and weapons.pending[0]["damage"] == 3200 and weapons.pending[1]["damage"] == 3200 and weapons.pending[2]["damage"] == 2000, "Only remaining boosted rounds increase Hellstorm damage")
+	check(not remote.resource_boosts.has("rockets") and not store.pilots["pilot0"]["boosts"][hull].has("rockets"), "Exhausted rocket reserve clears in memory and ledger")
+	weapons.pending.clear()
+	remote.resource_boosts = {"rockets": {"resource": "promerium", "remaining": 7}}
+	saved[hull] = remote.resource_boosts.duplicate(true)
+	check(store.commit({}, {}, {}, {}, {"pilot0": saved}), "Save remaining reserve for reconnect")
+	weapons.single_cooldown = 0
+	weapons.launcher_cooldown = 0
+	await failed_debit(server, remote, enemy)
+	check(ResourceBoosts.remaining(remote.resource_boosts, "rockets") == 7, "Failed rocket debit preserves boost reserve")
+	client.session.disconnect_session("Rocket boost reconnect")
+	await settle()
+	client.session.join("127.0.0.1", test_port(24839))
+	await settle(0.5)
+	await replicate(server)
+	check(ResourceBoosts.remaining(client.player.resource_boosts, "rockets") == 7, "Reconnect restores remaining rocket boost")
+
+
 func failed_debit(server: Sector, remote: Pilot, enemy: Alien) -> void:
-	var directory := server.session.store.path.get_base_dir().path_join("rocket-save-failure")
+	var directory := server.session.store.path.get_base_dir().path_join("rocket-save-failure-%d" % server.session.store.journal_sequence)
 	DirAccess.make_dir_absolute(directory)
 	var file := FileAccess.open(directory.path_join("pilots.json"), FileAccess.WRITE)
 	file.store_string(JSON.stringify({"version": 7, "pilots": {"pilot0": server.session.store.pilots["pilot0"]}}))
@@ -252,7 +326,11 @@ func failed_debit(server: Sector, remote: Pilot, enemy: Alien) -> void:
 	remote.rockets.debit = func(kind: String, count: int):
 		var next := remote.ammo.duplicate()
 		next[kind] -= count
-		return probe.commit_combat({"pilot0": next})
+		var holds: Dictionary = probe.pilots["pilot0"]["boosts"].duplicate(true)
+		var boost := remote.resource_boosts.duplicate(true)
+		ResourceBoosts.consume_rockets(boost, count)
+		holds[probe.pilots["pilot0"]["equipment"]["active_ship"]] = boost
+		return probe.commit_combat({"pilot0": next}, {"pilot0": holds})
 	check(remote.rockets.fire_single(enemy) == "AMMUNITION SAVE FAILED" and probe.failed, "Failed durable single debit cancels the shot")
 	remote.rockets.select("hstrm-01")
 	remote.rockets.activate(null)
