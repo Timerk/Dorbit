@@ -332,8 +332,10 @@ REP-1 and REP-2 sharing the repair type.
 Away from Outpost 01, stop moving and press **R** (the rebindable Repair action)
 to start a fitted robot after five seconds outside combat. Movement, incoming
 damage or firing interrupts it. Station repairs retain their paid instant behavior.
-Select a configurable CPU in Hangar to enable automation. Ammunition spending
-and generator resource use default off; choose x1/x2/x3 for the buyer. It purchases
+Open quickslot editing with **+**, then click a fitted CPU in the Extras picker
+or its assigned bar slot to toggle **ON/OFF**. Unfitted CPUs show **UNFITTED**;
+pending changes show **WAIT**. Ammunition spending and generator resource use
+default off; choose x1/x2/x3 for the buyer in Hangar. It purchases
 10,000 rounds below 1,000 remaining at ordinary ammo prices. The Generator CPU
 consumes one best available resource when a shield/engine boost expires and
 preserves existing reserves. Both require a launched living ship.
@@ -389,7 +391,7 @@ Buy rocket batches under Shop > Ammo and HST-1/HST-2 under Weapons, then fit the
 launcher in Hangar's launcher slot. Uridium reference prices use **100 credits per
 Uridium**. Balance settings are in `scripts/ammunition.gd` and
 `scripts/rocket_weapons.gd`; see [the game plan](GAME_PLAN.md#manual-single-rockets-and-classic-hellstorm).
-Use matching network-schema-13 client/server builds and save schema 8. Back up server data before upgrading; older servers need the previous
+Use matching network-schema-14 client/server builds and save schema 8. Back up server data before upgrading; older servers need the previous
 ledger for rollback. New/migrated pilots receive 100 R-310 once.
 
 Run `tests/rocket_test.gd` with Godot (headless for authoritative checks, rendered
@@ -452,7 +454,7 @@ successful station changes; an abrupt crash can restore up to five seconds.
 Weapon rounds commit before damage. Server writes validate ingredients,
 compatibility, quantities, station restrictions and duplicate protection.
 
-This requires matching network-schema-13 builds. Ledger schemas 1–7 migrate to
+This requires matching network-schema-14 builds. Ledger schemas 1–7 migrate to
 schema 8, preserving progression and adding any missing reserves and rocket ammo; keep a backup for
 rollback. The provisioning tool preserves and validates boosts during rotation.
 `res://tests/resource_upgrades_test.gd` exercises authenticated refining and
@@ -474,7 +476,7 @@ Human economy and balance playtesting remains necessary.
 
 ### Current compatibility
 
-The current **network schema is 13** (`FlightSession.NETWORK_SCHEMA`), including
+The current **network schema is 14** (`FlightSession.NETWORK_SCHEMA`), including
 the larger station's shared collision layout. Clients and servers must use
 matching builds and protocol fingerprints; the connection handshake rejects
 incompatible builds before gameplay. **Save schema 8** is separate from the
@@ -548,7 +550,7 @@ The shop has category tabs, a scrollable item grid, a large item preview and a p
 
 Review the new [lasers](docs/feedback/darkorbit-lasers.png), [shields](docs/feedback/darkorbit-shields.png), [engines](docs/feedback/darkorbit-engines.png), [unavailable LF-4](docs/feedback/darkorbit-unavailable.png) and [mixed fitting](docs/feedback/darkorbit-fitting.png) at 960 x 600. The shop test covers category filters, catalog scrolling, real mouse card selection, B/I/C navigation, authenticated purchases, double-click blocking, ownership updates, insufficient funds, station restrictions and layout with preview tools at 960 x 600 and 1440 x 900. It runs in both standard check commands. To capture fresh shop screenshots, run Godot with `--path . --script res://tests/shop_test.gd` in a rendered window.
 
-[Review the equipment screen at 960 x 600](docs/feedback/rebalance-equipment.png) and [the lower generator and extra slots](docs/feedback/rebalance-extra-slots.png). Open Hangar in the docked main menu to prepare equipment before Start, or press I near the station during flight. Inventory groups weapons, shield generators, speed generators and extras in that order. Choose All equipment or a category in the inventory filter. Shift + left click equips a stored item into the first compatible empty slot on the active ship; full slots leave the item in inventory with an explanation. Shields and speed generators share the generator slots; extras remain reserved. Back and Esc return to the docked overview without launching; Start keeps the prepared fitting.
+[Review the equipment screen at 960 x 600](docs/feedback/rebalance-equipment.png) and [the lower generator and extra slots](docs/feedback/rebalance-extra-slots.png). Open Hangar in the docked main menu to prepare equipment before Start, or press I near the station during flight. Inventory groups weapons, shield generators, speed generators and extras in that order. Choose All equipment or a category in the inventory filter. Shift + left click equips a stored item into the first compatible empty slot on the active ship; full slots leave the item in inventory with an explanation. Shields and speed generators share the generator slots; extras accept the utilities described above. Back and Esc return to the docked overview without launching; Start keeps the prepared fitting.
 
 The equipment test drives Godot's mouse drag routing through authenticated RPCs for install and removal, rejects incompatible and occupied slots, and checks ordinary clicks, docked Shift-click fitting, rapid-click and pending-request blocking, station restrictions and persistence. It also checks Hangar navigation, Back/Esc, filter retention and launch with the prepared fitting. Presentation fixtures check grouping across the expanded equipment catalog, every category filter, selection clearing, scrolling with 31 and 39 stored items, and flight/docked layouts at 960 x 600 and 1440 x 900 with Start accessible. Review the [docked grouped inventory](docs/feedback/inventory-category-groups.png) and [shield filter](docs/feedback/inventory-category-filter.png). Run `res://tests/equipment_test.gd` with a renderer to capture fresh views under `build/validation`.
 
