@@ -120,20 +120,26 @@ static func refine(hold: Dictionary, output: String, amount: int) -> String:
 static func apply(hold: Dictionary, boosts: Dictionary, group: String, resource: String, amount: int, replace: bool) -> String:
 	if not BONUSES.get(resource, {}).has(group):
 		return "That resource does not boost this equipment."
-	if group == "rockets":
-		return "Rocket boosts will be available when rocket weapons are implemented."
 	if amount < 1 or amount > int(hold.get(resource, 0)):
 		return "Not enough resources for that boost amount."
 	var current := remaining(boosts, group)
 	var same: bool = boosts.get(group, {}).get("resource", "") == resource
 	if current > 0 and not same and not replace:
 		return "Confirm replacement of the remaining boost first."
-	var reserve := (current if same else 0.0) + amount * (ROUNDS_PER_UNIT if group == "lasers" else SECONDS_PER_UNIT)
+	var reserve := (current if same else 0.0) + amount * (ROUNDS_PER_UNIT if group in ["lasers", "rockets"] else SECONDS_PER_UNIT)
 	if reserve > MAX_RESERVE:
 		return "Boost reserve limit reached."
 	spend(hold, resource, amount)
-	boosts[group] = {"resource": resource, "remaining": int(reserve) if group == "lasers" else reserve}
+	boosts[group] = {"resource": resource, "remaining": int(reserve) if group in ["lasers", "rockets"] else reserve}
 	return ""
+
+
+static func consume_rockets(boosts: Dictionary, count: int) -> void:
+	if not boosts.has("rockets"):
+		return
+	boosts["rockets"]["remaining"] = maxi(0, int(remaining(boosts, "rockets")) - count)
+	if boosts["rockets"]["remaining"] == 0:
+		boosts.erase("rockets")
 
 
 static func stats(base: Dictionary, boosts: Dictionary) -> Dictionary:

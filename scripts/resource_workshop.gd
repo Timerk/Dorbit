@@ -188,7 +188,7 @@ func build_update(parent: Node) -> void:
 	resources.add_child(equipment_row)
 	for key: String in ["lasers", "rockets", "engines", "shields"]:
 		build_equipment_card(equipment_row, key)
-	StationUi.text(resources, "Drag a resource onto equipment, or select both cards. Confirm the amount on the right.\nOne unit = 10 individual laser rounds or 10 minutes. Timers pause when offline.", 16, StationUi.MUTED)
+	StationUi.text(resources, "Drag a resource onto equipment, or select both cards. Confirm the amount on the right.\nOne unit = 10 laser rounds / rockets or 10 minutes. Timers pause when offline.", 16, StationUi.MUTED)
 	var detail := StationUi.card(columns)
 	detail.custom_minimum_size.x = 340
 	var rows := StationUi.rows(detail, 16)
@@ -223,7 +223,6 @@ func build_equipment_card(parent: Node, key: String) -> void:
 	var image := StationUi.art(picture, {"lasers": "laser", "engines": "engine", "shields": "shield"}.get(key, "laser"), Vector2.ZERO)
 	if key == "rockets":
 		image.texture = load("res://assets/ui/rocket-preview.svg")
-		image.modulate = StationUi.MUTED
 	image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	image.offset_left = 24
 	image.offset_right = -12
@@ -260,7 +259,7 @@ func can_drop_resource(_position: Vector2, data: Variant, target: String) -> boo
 	if not data is Dictionary or data.get("workshop") != self or not data.get("boost_resource") is String:
 		return false
 	var key: String = data["boost_resource"]
-	return page == "update" and target != "rockets" and StationUi.blocker(sector).is_empty() and int(sector.cargo.get(key, 0)) > 0 and ResourceBoosts.BONUSES.get(key, {}).has(target)
+	return page == "update" and StationUi.blocker(sector).is_empty() and int(sector.cargo.get(key, 0)) > 0 and ResourceBoosts.BONUSES.get(key, {}).has(target)
 
 
 func drop_resource(position: Vector2, data: Variant, target: String) -> void:
@@ -414,14 +413,14 @@ func _process(_delta: float) -> void:
 		var left := ResourceBoosts.remaining(boosts, key)
 		var entry: Dictionary = boosts.get(key, {})
 		var remaining_text := "%d rounds" % int(left) if key in ["lasers", "rockets"] else "%d:%02d remaining" % [int(ceil(left)) / 60, int(ceil(left)) % 60]
-		reserve_labels[key].text = remaining_text + "\n+%d%% boost" % roundi(ResourceBoosts.bonus(boosts, key) * 100) if left > 0 else ("Coming later" if key == "rockets" else ("0 rounds" if key == "lasers" else "0:00 remaining"))
+		reserve_labels[key].text = remaining_text + "\n+%d%% boost" % roundi(ResourceBoosts.bonus(boosts, key) * 100) if left > 0 else ("0 rounds" if key in ["lasers", "rockets"] else "0:00 remaining")
 		var active_resource: String = entry.get("resource", "") if left > 0 else ""
 		var icon_path := "res://assets/ui/resources/%s.png" % active_resource
 		if active_resource.is_empty():
 			boost_icons[key].texture = null
 		elif boost_icons[key].texture == null or boost_icons[key].texture.resource_path != icon_path:
 			boost_icons[key].texture = load(icon_path)
-		groups[key].tooltip_text = "%s +%d%% · %s" % [CargoResources.TYPES[active_resource]["name"], roundi(ResourceBoosts.bonus(boosts, key) * 100), remaining_text] if left > 0 else ("Rocket boosts are coming later." if key == "rockets" else "Drop a compatible resource here, then confirm an amount.")
+		groups[key].tooltip_text = "%s +%d%% · %s" % [CargoResources.TYPES[active_resource]["name"], roundi(ResourceBoosts.bonus(boosts, key) * 100), remaining_text] if left > 0 else "Drop a compatible resource here, then confirm an amount."
 	var percent: float = ResourceBoosts.BONUSES[resource].get(group, 0.0)
 	var replacement: bool = ResourceBoosts.remaining(boosts, group) > 0 and boosts[group]["resource"] != resource
 	var signature := "%s:%s:%s" % [group, resource, boosts.get(group, {}).get("resource", "")]
@@ -433,13 +432,11 @@ func _process(_delta: float) -> void:
 	var amount := int(upgrade_amount.value)
 	upgrade_description.text = "%s\n\n%s\n\n%s" % [CargoResources.TYPES[resource]["name"], ("Adds %d boosted rounds. Each installed laser uses one round per shot; the final volley may be partly boosted." % (amount * 10) if group == "lasers" else "Adds %d minutes at the same bonus." % (amount * 10)), ("WARNING: applying this resource discards the current boost's remaining rounds or time." if replacement else "Applying the same resource extends its reserve. The percentage does not stack.")]
 	if group == "rockets":
-		upgrade_description.text = "Rocket boosts are coming later.\n\nEach resource unit will provide 10 boosted rockets at the listed damage bonus."
-	elif percent <= 0:
+		upgrade_description.text = "%s\n\nAdds %d boosted rockets. Single rockets and each Hellstorm rocket use one round when fired, including misses. A final volley may be partly boosted.\n\n%s" % [CargoResources.TYPES[resource]["name"], amount * 10, ("WARNING: applying this resource discards the current boost's remaining rounds." if replacement else "Applying the same resource extends its reserve. The percentage does not stack.")]
+	if percent <= 0:
 		upgrade_title.text = ResourceBoosts.GROUPS[group].to_upper()
 		upgrade_description.text = "%s cannot boost %s.\n\nDrag this resource onto compatible equipment, or choose a different resource." % [CargoResources.TYPES[resource]["name"], ResourceBoosts.GROUPS[group].to_lower()]
 	var reason := blocked
-	if reason.is_empty() and group == "rockets":
-		reason = "Rocket boosts are coming later."
 	if reason.is_empty() and percent <= 0:
 		reason = "That resource cannot boost this equipment."
 	if reason.is_empty() and (amount < 1 or amount > int(sector.cargo.get(resource, 0))):
