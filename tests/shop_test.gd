@@ -230,7 +230,7 @@ func run() -> void:
 		check(shop.grid.size.x <= catalog_scroll.size.x, "Catalog fits horizontally at %s" % dimensions)
 		catalog_scroll.scroll_vertical = 10000
 		await settle()
-		check(catalog_scroll.scroll_vertical > 0 and catalog_scroll.get_global_rect().encloses(shop.cards["g3n-7900"].get_global_rect()), "Catalog scroll reaches the last engine at %s" % dimensions)
+		check(catalog_scroll.scroll_vertical > 0 and catalog_scroll.get_global_rect().grow(0.5).encloses(shop.cards[Equipment.catalog_models().back()].get_global_rect()), "Catalog scroll reaches the last equipment item at %s" % dimensions)
 		catalog_scroll.scroll_vertical = 0
 		check(shop.get_global_rect().encloses(shop.buys[shop.selected_model].get_global_rect()), "Buy control fits at %s" % dimensions)
 		if dimensions.x == 960:

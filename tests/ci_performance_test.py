@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -107,6 +108,16 @@ class CacheTest(unittest.TestCase):
 
 
 class ValidationTest(unittest.TestCase):
+    def test_timeout_preserves_captured_diagnostics(self):
+        with tempfile.TemporaryDirectory() as directory:
+            error = subprocess.TimeoutExpired(['fixture'], 180, output=b'last checkpoint\n', stderr=b'SCRIPT ERROR: fixture\n')
+            with patch.object(runner.subprocess, 'run', side_effect=error):
+                result = runner.run_group('fixture', [['fixture']], Path(directory) / 'profile', 1500)[0]
+            self.assertTrue(result['failed'])
+            self.assertIn('last checkpoint', result['output'])
+            self.assertIn('SCRIPT ERROR: fixture', result['output'])
+            self.assertIn('timed out after 180 seconds', result['output'])
+
     def test_real_git_diff_gates_docs_and_preserves_main_builds(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -166,7 +177,7 @@ class ValidationTest(unittest.TestCase):
             self.assertEqual(checks.count(['alien_assets_test.gd']), 1)
             self.assertEqual(checks.count(['hud_customization_test.gd']), 1)
             self.assertEqual(checks.count(['station_assets_test.gd']), 1)
-            for script in ('skylab_test.gd', 'skylab_persistence_test.gd', 'skylab_ui_test.gd'):
+            for script in ('skylab_test.gd', 'skylab_persistence_test.gd', 'skylab_ui_test.gd', 'extras_test.gd'):
                 self.assertEqual(checks.count([script]), 1)
             self.assertEqual(checks.count(['rocket_test.gd']), 1)
             self.assertEqual(checks.count(['quickslots_test.gd']), 1)

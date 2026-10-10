@@ -381,18 +381,91 @@ The first Milestone 3 equipment slice added fittings for the Liberator starter. 
 
 - Each equipment item is individually owned, either in storage or installed in exactly one slot on one owned ship. Players may buy multiple copies of each model.
 - Ships own their fittings. Installing, removing and transferring items between owned ships is free at the station. Switching ships will not move equipment automatically.
-- The starter follows the regular Liberator: four laser slots, six shared generator slots and two extra slots reserved for future equipment. A generator slot accepts either a shield generator or an engine.
+- The starter follows the regular Liberator: four laser slots, six shared generator slots and two extra slots for ship utilities. A generator slot accepts either a shield generator or an engine.
 - Lasers add damage, shield generators add shield capacity, and engines add speed. Damage, capacity and speed bonuses stack by addition. Shield absorption is the capacity-weighted average of installed shield generators, never the sum of their percentages. Hull and base movement belong to the ship; empty slots never prevent flight.
 - New pilots receive one laser, one shield generator and one engine installed. Existing saves receive the same starter fitting exactly once, retaining credits and unrelated progression fields.
 - Press B near the station for the shop and I for a separate ship equipment screen. Both use the repair checks: alive, within 120 m, speed at most 8 m/s, and at least five seconds since damage. The server checks every action again.
 - The shop has category navigation, a scrollable two-column item catalog, a selected-item preview and a purchase summary. Weapons contain lasers; generators have shield and engine submenus. All equipment shows 18 reference models: five lasers, seven shields and six engines, including unavailable LF-4 and SG3N-B00 previews. Ships lists all twelve modeled base hulls with stats, credits and ownership. Selecting categories or items never purchases anything. Equipment uses the same artwork as inventory; ships use their saved model renders.
 - The shop shows visual item cards, prices and credits, and delivers equipment to inventory and empty hulls to the hangar. The equipment screen shows the active ship's model preview and an owned-ship selector on the left, its actual laser and shared generator slots in the middle, and scrollable storage inventory on the right. Activate an owned hull for free at the station; switching preserves absolute hull, shield charge, boost energy and cooldowns, clamped to the new fitting. Drag items to compatible empty slots to install them, or back to inventory to remove them. Selecting an item and clicking an empty slot, plus a removal button, also supports keyboard use. Occupied slots require removal first.
-- Storage groups items in order: weapons, shield generators, speed generators, then extras. A category filter or All equipment view reduces crowding without changing ownership. Shift + left click on a stored item installs it in the first compatible empty slot on the active ship; shields and speed generators use the same shared generator pool. This works in the docked main menu's Hangar before Start and in the station equipment screen during flight. Back and Esc return docked pilots to the overview without launching; Start preserves the prepared fitting. Full slots leave the item in storage with an explanation. Extras remain reserved until extra equipment is added.
+- Storage groups items in order: weapons, shield generators, speed generators, then extras. A category filter or All equipment view reduces crowding without changing ownership. Shift + left click on a stored item installs it in the first compatible empty slot on the active ship; shields and speed generators use the same shared generator pool. This works in the docked main menu's Hangar before Start and in the station equipment screen during flight. Back and Esc return docked pilots to the overview without launching; Start preserves the prepared fitting. Full slots leave the item in storage with an explanation. Extras accept the utilities described below.
 - Current and proposed damage, shield capacity, absorption, cruise and boost speeds remain visible. Unavailable purchases and fitting actions explain why. B, I and C switch station screens; Esc returns to flight. Generated item art and a temporary ship preview do not depend on the final ship models.
 - Fitting changes never repair hull, refill shields or boost energy, or reset weapon cooldowns. Added shield capacity starts empty and recovers through the normal shield regeneration rules. Removing capacity discards excess charge.
 - The server commits a purchase's credit deduction, new item and request sequence together. Successful requests cannot run again, even after restart. A new intentional purchase uses the next sequence. Inventory and fittings survive death, reconnects and server restarts.
 - Equipment purchases have an editable quantity with minus/plus buttons that change it by one, defaulting to one when selecting another model. The shop shows the batch total and remaining balance. Each request buys 1–999 items into storage as one saved transaction; insufficient funds reject the entire batch. Ships remain limited to one owned hull per model. Network schema 10 requires matching clients and servers; save schema 5 also preserves resource boosts.
 - No equipment selling, trading, rarity, equipment leveling, loot acquisition or assembly are included. Resource cargo and sales are described below.
+
+### Extras equipment
+
+The user approved the researched DarkOrbit-style extras and generated item art,
+including REP-2, Ammunition CPU and Generator Boost CPU. These seven utilities
+use individually owned equipment instances, the existing Extras inventory filter,
+a new shop category and each hull's dedicated extra slots. One item per utility
+type may be fitted on a ship; REP-1 and REP-2 share the repair type. Stored items
+and items on inactive ships have no effect. Two switchable configurations remain
+outside this slice.
+
+| Extra | Credits | Effect |
+| --- | ---: | --- |
+| REP-1 Repair Robot | 10,000 | Full hull repair in 165 seconds |
+| REP-2 Repair Robot | 64,000 | Full hull repair in 120 seconds |
+| NC-RRB Repair Auto CPU | 1,000,000 | Automatically activates a fitted repair robot |
+| GEMINEX-XI Cargo Expander | 1,000,000 | Doubles the fitted ship's cargo capacity |
+| Slot CPU 1 | 600,000 | Adds two extra slots; occupies one base extra slot |
+| Ammunition CPU | 1,500,000 | Buys 10,000 configured rounds below 1,000 remaining |
+| Generator Boost CPU | 1,500,000 | Replenishes expired shield/engine resource boosts |
+
+Prices follow the [official extras catalog](https://board-es.darkorbit.com/threads/faqs-objetos-de-equipamiento-armas-generadores-y-extras.147201/),
+using the existing 100 credits per former Uridium rule. Equipment timings and
+slot expansion follow the [CPU overview](https://board-en.darkorbit.com/threads/cpu-overview.827/).
+These remain playtesting values.
+
+Away from the station, the existing Repair action (R by default) starts/stops a
+fitted robot. It restores maximum hull divided by its full-repair time each second,
+with no recurring credit cost. The ship must be alive, launched, stationary
+(at most 0.5 m/s), and five seconds past both incoming damage and its last shot.
+Movement, incoming damage, firing intent, docking and death interrupt manual
+repair. The Auto CPU defaults on and resumes when conditions permit; it needs a
+separately fitted robot. Station repair retains its instant paid behavior within
+120 m. A flight HUD prompt shows robot availability and active repair. While the
+robot works, a small metallic drone hovers above the hull and projects animated
+repair beams. This follows the replicated repair state on local and remote ships;
+it disappears when repair stops and is not created on dedicated servers.
+
+Cargo expansion affects pickup, cargo displays and save validation. Removing it,
+including indirectly by removing the Slot CPU, is rejected while cargo exceeds
+the resulting capacity. Slot CPU removal returns items in the two disappearing
+slots to storage atomically; no equipment or cargo is deleted. A Slot CPU must
+occupy a base extra slot and cannot support itself from its added slots.
+
+Open quickslot editing with `+` and left-click an equipped automation CPU in
+either the Extras picker or its assigned bar slot to toggle ON/OFF. Drag assigns
+or swaps automation extras; Shift-click selects an assigned slot for clearing
+or reassignment. Automation clicks outside editing explain how to open editing
+without changing settings. Unfitted extras show UNFITTED rather than OFF; clicks
+explain that the extra must be fitted. Pending requests show WAIT.
+Automation setting replies, including rejected requests, appear as flight notifications.
+Only CPUs fitted on the active ship can toggle in flight; the server saves the
+setting and validates ownership and ship life. The repair robot itself can also
+be assigned as a manual quickslot action. Ammunition spending and generator
+resource consumption default off. Hangar retains the ammo type selector; settings select
+x1, x2 or x3 independently of the weapon's selected ammunition; x4 cannot be
+purchased. Refills cost 100 ordinary 100-round batches and require the entire
+price. No automatic ammunition substitution occurs.
+
+The Generator CPU consumes one best compatible held resource for each expired
+boost group on a launched living ship with the corresponding generators fitted:
+Seprom > Promerium > Duranium for shields, Promerium > Duranium for engines.
+Each unit supplies the existing 600-second reserve. It preserves active reserves
+and never overwrites them with stronger resources. Automation checks once per
+second; all debit/refill effects commit together before applying or replicating.
+Fitting never repairs or refills hull, shield or boost energy.
+
+Items and per-item automation settings survive death, reconnect and server restart
+in the current save schema 8 without an extras starter grant or extra-specific migration. Older binaries cannot read
+new extra model IDs: back up before introducing these items. Network schema 14
+requires matching clients and servers. Original generated images and their exact
+prompts are under `assets/ui/extras`; prices, repair gates and automation behavior
+still need user playtesting.
 
 ### DarkOrbit reference equipment catalog
 
@@ -423,7 +496,7 @@ Missing laser damage comes from the official [assembly/upgrading balance FAQ](ht
 
 The starter uses the regular Liberator's 116,000 hull and 4 laser / 6 generator / 2 extra slots, confirmed by the [official ship FAQ](https://board-es.darkorbit.com/threads/faqs-naves-y-disenos.147561/). The user chose the regular ship rather than the supplied Liberator Plus hull. The persisted `pathfinder` model ID stays unchanged so existing equipment, ownership and cargo need no destructive migration; the UI calls it Liberator. The subsequent ship integration expands Liberator cargo to its reference 400 units without losing saved cargo.
 
-Empty Liberator fittings have no laser damage or shield capacity, 33 m/s cruise and 75 m/s boost (330 DarkOrbit units converted at 0.1 m/s per unit). New pilots retain the agreed starter fitting: one LF-1, one SG3N-A01 and one original Ion engine, for 65 damage, 1,000 shield with 40% absorption, 41 m/s cruise and 83 m/s boost. Persisted `laser` and `shield` IDs now display LF-1 and SG3N-A01; the original `engine` ID remains valid with its +8 m/s bonus. Original Ion engines stay owned and transferable but are hidden from the shop and cannot be purchased. Existing purchases and assignments are preserved without a save migration. Four starter lasers deal 260 per shot. Six starter shields provide 6,000 capacity with 40% absorption. New G3N models use the screenshot bonuses in m/s for both cruise and boost. Acceleration remains 40 m/s² and laser interval remains 0.42 seconds. Extra-slot items follow later.
+Empty Liberator fittings have no laser damage or shield capacity, 33 m/s cruise and 75 m/s boost (330 DarkOrbit units converted at 0.1 m/s per unit). New pilots retain the agreed starter fitting: one LF-1, one SG3N-A01 and one original Ion engine, for 65 damage, 1,000 shield with 40% absorption, 41 m/s cruise and 83 m/s boost. Persisted `laser` and `shield` IDs now display LF-1 and SG3N-A01; the original `engine` ID remains valid with its +8 m/s bonus. Original Ion engines stay owned and transferable but are hidden from the shop and cannot be purchased. Existing purchases and assignments are preserved without a save migration. Four starter lasers deal 260 per shot. Six starter shields provide 6,000 capacity with 40% absorption. New G3N models use the screenshot bonuses in m/s for both cruise and boost. Acceleration remains 40 m/s² and laser interval remains 0.42 seconds. Extra-slot utilities are described above.
 
 Installed LF-3 bonuses add 26.25 damage per copy (15% of 175) only when shooting an alien, on top of additive base laser damage; they never multiply other installed lasers. Each installed FS-01 adds 6.25 percentage points to the regeneration bonus (two give +12.5%); the multiplier applies to the normal capacity-based recovery rate, retains Dorbit's existing six-second recovery delay, and caps at maximum shield. Removing or storing either model removes its special bonus. Fitting never grants charge. Current fitting and proposed changes display both bonuses. Equipment remains server-authoritative, with both additional stats replicated to clients. Network schema 6 includes hull model, maximum hull and both equipment bonuses, and requires matching client/server builds; save schema 3 is unchanged. Updated provisioning tools accept every reference model and preserve them during credential rotation.
 
@@ -594,7 +667,7 @@ Drobit choices requiring playtesting. Premium is an optional operator-set durati
 Save schema 7 migrates versions 1–6 before admission, preserving both earlier
 ammunition/boost and industry layouts. Legacy industry wallets convert once at
 100 credits per unit; active/queued robots retain their lifetime.
-Network schema 13 requires matching client/server builds. See [implementation policies,
+Network schema 14 requires matching client/server builds. See [implementation policies,
 rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot's
 454/870 power budget and exact inventories/capacities remain a separate debug fixture.
 
@@ -665,7 +738,7 @@ Save schema 7 migrates schema 1–6 while preserving progression and grants
 100 R-310 once, with zero other rocket ammo. New pilots receive the same grant.
 The provisioning tool supports the same migration and launcher fittings.
 Back up the ledger before upgrading; rollback needs a pre-migration backup.
-Network schema 13 requires matching client/server builds. Resource rocket
+Network schema 14 requires matching client/server builds. Resource rocket
 boosts use the existing per-ship reserve and combat journal formats; no new save
 or network schema is required. Laser/timed reserve behavior is unchanged.
 
@@ -829,7 +902,7 @@ protection is around the service point, not the entire station. The larger upper
 hangars and outer docking arms do not extend station services or protection.
 Clients and dedicated servers load the same 53 simple collision boxes, with
 open hangar entrances. Autopilot chooses a clear service approach when the tower
-or reactor occupies its usual radial stopping point. Network schema 13 requires
+or reactor occupies its usual radial stopping point. Network schema 14 requires
 matching builds because the physical station layout changed; saves are unchanged.
 Final visual acceptance, scale, approach comfort and group performance remain
 playtesting decisions within Milestone 3.

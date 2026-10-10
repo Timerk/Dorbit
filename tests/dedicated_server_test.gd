@@ -95,7 +95,12 @@ func run() -> void:
 	check(remote.position.z < start.z and remote.energy < 100, "Dedicated server simulates client movement and boost")
 	await physics_frame
 	var initial := alien.shield
-	await send_fire(client)
+	# Ten fixture worlds can delay ENet polling. Observe server input receipt
+	# instead of assuming one 60 ms timer guarantees a delivered fire command.
+	deadline = Time.get_ticks_msec() + 4000
+	while not combat.remote_firing(id) and Time.get_ticks_msec() < deadline:
+		await send_fire(client)
+	check(combat.remote_firing(id), "Dedicated server receives client fire within the input convergence timeout")
 	combat.tick(0.01)
 	check(alien.shield < initial and id in alien.contributors, "Dedicated server validates client fire and contribution")
 	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, remote)

@@ -48,12 +48,6 @@ func refresh() -> void:
 	last_display = display
 	if item.is_empty():
 		var kind: String = screen.slots_kind(slot)
-		if kind == "extra":
-			artwork.texture = load("res://assets/ui/menu/disconnect.svg")
-			artwork.modulate = Color("60717e")
-			caption.text = "EXTRA"
-			tooltip_text = "Extra slot reserved for future equipment."
-			return
 		artwork.texture = null
 		artwork.hide()
 		caption.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -71,7 +65,11 @@ func refresh() -> void:
 		artwork.modulate = Color.WHITE
 		artwork.texture = StationUi.texture(model)
 		caption.text = "ION" if model == "engine" else Equipment.MODELS[model]["name"]
+		if Equipment.MODELS[model]["kind"] == "extra":
+			caption.text = {"rep-1": "REP-1", "rep-2": "REP-2", "repair-auto": "NC-RRB", "cargo-expander": "GEMINEX-XI", "slot-cpu-1": "SLOT CPU 1", "ammo-cpu": "AMMO CPU", "generator-cpu": "BOOST CPU"}[model]
 		tooltip_text = "%s\n%s\n%s" % [Equipment.MODELS[model]["name"], StationUi.bonus(model), "In inventory / Shift-click to equip" if slot.is_empty() else slot.capitalize()]
+		if Equipment.MODELS[model]["kind"] == "extra":
+			tooltip_text += "\n" + Equipment.MODELS[model]["description"]
 		add_theme_stylebox_override("normal", StationUi.style(Color("111a20"), StationUi.LINE))
 	# The selected tile keeps a visible outline after focus moves to a destination.
 	if not item_id.is_empty() and item_id == screen.selected_item:

@@ -373,12 +373,19 @@ func draw_performance() -> void:
 
 func draw_station_actions() -> void:
 	var player := sector.player
-	if not layout.editing and (not player.alive or player.global_position.distance_to(Sector.STATION_POSITION) > Sector.REPAIR_RADIUS):
+	var away := player.global_position.distance_to(Sector.STATION_POSITION) > Sector.REPAIR_RADIUS
+	if not layout.editing and (not player.alive or (away and player.repair_seconds <= 0.0)):
 		return
 	if not layout.begin_draw(self, "station"):
 		return
 	var rect := Rect2(target_rect().position - Vector2(0, 88 if sector.session.active else 66), Vector2(290, 78 if sector.session.active else 56))
 	draw_style_box(background, rect)
+	if away and not layout.editing:
+		text_at(rect.position + Vector2(12, 21), "%s  REPAIR ROBOT" % GameSettings.binding_text("repair"), 16, AMBER)
+		text_at(rect.position + Vector2(12, 43), "REPAIRING HULL" if player.robot_repairing else "Stop moving; stay outside combat", 16, GREEN, 266)
+		layout.end_draw(self)
+		marker_labels.append(layout.rect_for("station"))
+		return
 	text_at(rect.position + Vector2(12, 21), "B  SHOP / CARGO     I  EQUIPMENT", 16, AMBER)
 	var label := "%s  REPAIR / %s CR" % [GameSettings.binding_text("repair"), number(sector.repair_cost())]
 	if player.velocity.length() > 8.0:

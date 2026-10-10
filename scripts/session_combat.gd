@@ -8,6 +8,7 @@ var solo: Dictionary = {}
 var inventory: Dictionary = {}
 var cargo_holds: Dictionary[int, Dictionary] = {}
 var station_pending: bool = false
+var station_action: String = ""
 var station_message: String = ""
 var preview_tools_available: bool = false
 var ammo_sequence: int = -1
@@ -179,6 +180,34 @@ func apply_equipment(id: int) -> void:
 	var ship := session.ships[id]
 	ship.resource_boosts = pilot["boosts"][pilot["equipment"]["active_ship"]].duplicate(true)
 	Equipment.apply_stats(ship, ResourceBoosts.stats(Equipment.stats(pilot["equipment"]), ship.resource_boosts))
+	ship.repair_seconds = Equipment.MODELS.get(Equipment.extra(pilot["equipment"], "repair").get("model", ""), {}).get("repair_seconds", 0.0)
+	ship.repair_auto = Extras.enabled(Equipment.extra(pilot["equipment"], "repair-auto"))
+	ship.repair_requested = false
+	ship.robot_repairing = false
+
+
+func tick_extras(id: int, delta: float) -> bool:
+	var ship := session.ships[id]
+	ship.extras_clock += delta
+	if ship.extras_clock < 1.0 or not ship.alive or ship.get_meta("docked", false):
+		return true
+	ship.extras_clock = 0.0
+	var pilot_id: String = session.pilot_ids[id]
+	var pilot: Dictionary = session.store.pilots[pilot_id].duplicate(true)
+	var boosts := ship.resource_boosts.duplicate(true)
+	if not Extras.automatic_update(pilot, boosts):
+		return true
+	if not session.store.commit({pilot_id: pilot["credits"]}, {}, {pilot_id: pilot["cargo"]}, {pilot_id: pilot["ammo"]}, {pilot_id: pilot["boosts"]}):
+		session.stop_for_save_failure()
+		return false
+	records[id]["credits"] = pilot["credits"]
+	ship.ammo = pilot["ammo"].duplicate()
+	ship.resource_boosts = boosts
+	cargo_holds[id] = pilot["cargo"].duplicate(true)
+	Equipment.apply_stats(ship, ResourceBoosts.stats(Equipment.stats(pilot["equipment"]), boosts))
+	cargo_result.rpc_id(id, pilot["cargo"][pilot["equipment"]["active_ship"]], CargoResources.capacity(pilot["equipment"]))
+	message(id, "Extras: automatic supplies applied.")
+	return true
 
 
 func flush_boosts(ids: Array = []) -> bool:
@@ -300,11 +329,16 @@ func tick(delta: float) -> void:
 				session.commands.erase(id)
 			continue
 		if ship.get_meta("docked", false):
+			ship.repair_requested = false
+			ship.robot_repairing = false
 			continue
 		if ship.position.distance_to(Sector.STATION_POSITION) > Sector.PROTECTION_RADIUS:
 			records[id]["stage"] = maxi(records[id]["stage"], 1)
 		var enemy: Alien = sector.target as Alien if id == 1 else remote_target(id)
 		var firing := sector.auto_fire and not sector.paused if id == 1 else remote_firing(id)
+		Extras.tick_repair(ship, delta, firing)
+		if sector.dedicated_server and not tick_extras(id, delta):
+			return
 		if firing and is_instance_valid(enemy) and enemy.available():
 			records[id]["stage"] = maxi(records[id]["stage"], 2)
 			ship.try_fire(enemy)
@@ -500,6 +534,14 @@ func repair(id: int, life: int) -> bool:
 	if ship.get_meta("docked", false):
 		message(id, "Launch before requesting repairs.")
 		return false
+	if ship.position.distance_to(Sector.STATION_POSITION) > Sector.REPAIR_RADIUS and ship.repair_seconds > 0.0:
+		var robot_blocker := Extras.repair_blocker(ship)
+		if not robot_blocker.is_empty():
+			message(id, robot_blocker)
+			return false
+		ship.repair_requested = not ship.repair_requested
+		message(id, "Repair robot started. Movement or combat interrupts repair." if ship.repair_requested else "Repair robot stopped.")
+		return true
 	var blocker := session.sector.repair_blocker(ship)
 	if not blocker.is_empty():
 		message(id, blocker)
@@ -534,9 +576,8 @@ func pack_player(id: int) -> Dictionary:
 	data["absorption"] = ship.shield_absorption
 	data["model"] = ship.ship_model
 	data["max_hull"] = ship.max_hull
-	data["npc_damage"] = ship.npc_laser_damage
-	data["regen_bonus"] = ship.shield_regen_bonus
-	data["radiation"] = ship.radiation_exposure
+	# Compact secondary stats leave room for all hunts and utility state below MTU.
+	data["systems"] = PackedFloat32Array([ship.npc_laser_damage, ship.shield_regen_bonus, ship.radiation_exposure, ship.repair_seconds, 1.0 if ship.robot_repairing else 0.0])
 	data["docked"] = ship.get_meta("docked", false)
 	return data
 
@@ -591,14 +632,17 @@ func apply_health(ship: SpaceShip, data: Dictionary) -> void:
 
 func apply_player(id: int, data: Dictionary) -> bool:
 	var ship := session.ships[id]
+	var systems: PackedFloat32Array = data["systems"]
+	ship.repair_seconds = systems[3]
+	ship.robot_repairing = systems[4] > 0.0
 	var reset: bool = int(ship.get_meta("life", 0)) != data["life"] or ship.alive != data["alive"]
 	ship.set_meta("life", data["life"])
 	if reset:
 		ship.set_meta("feedback_health_received", false)
 	var stats: Vector4 = data["stats"]
-	Equipment.apply_stats(ship, {"model": data["model"], "hull": data["max_hull"], "npc_damage": data["npc_damage"], "regen_bonus": data["regen_bonus"], "damage": stats.x, "shield": stats.y, "absorption": data["absorption"], "speed": stats.z, "boost": stats.w})
+	Equipment.apply_stats(ship, {"model": data["model"], "hull": data["max_hull"], "npc_damage": systems[0], "regen_bonus": systems[1], "damage": stats.x, "shield": stats.y, "absorption": data["absorption"], "speed": stats.z, "boost": stats.w})
 	apply_health(ship, data)
-	ship.radiation_exposure = data.get("radiation", 0.0)
+	ship.radiation_exposure = systems[2]
 	if ship == session.sector.player:
 		update_local(data)
 		if reset:
@@ -691,6 +735,7 @@ func finish() -> void:
 	lab_snapshot.clear()
 	preview_tools_available = false
 	station_pending = false
+	station_action = ""
 	station_message = ""
 	ammo_sequence = -1
 	boost_sequence = -1
@@ -719,6 +764,7 @@ func request_station(action: String, subject: String, ship: String = "", slot: S
 	if station_pending or inventory.is_empty() or not session.active:
 		return
 	station_pending = true
+	station_action = action
 	station_message = "Waiting for server..."
 	station_request.rpc_id(1, int(inventory["revision"]) + 1, action, subject, ship, slot, int(session.sector.player.get_meta("life", 0)))
 
@@ -731,12 +777,18 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 	if not records.has(id) or not session.pilot_ids.has(id):
 		return
 	var blocker := session.sector.repair_blocker(session.ships[id])
+	var pilot_id := session.pilot_ids[id]
+	var fitting: Dictionary = session.store.pilots[pilot_id]["equipment"]
+	var item: Dictionary = fitting["items"].get(subject, {})
+	# Fitted automation settings are available in flight; fitting and purchases
+	# still use station rules. Ownership, life and settings remain authoritative.
+	if action == "configure_extra" and session.ships[id].alive and not item.is_empty() and item.get("ship", "") == fitting["active_ship"] and Equipment.MODELS[item["model"]].get("family", "") in ["repair-auto", "ammo", "generators"]:
+		blocker = ""
 	if records[id]["life"] != life:
 		blocker = "Ship changed. Review your fitting after rescue."
 	if not blocker.is_empty():
 		publish_inventory(id, blocker)
 		return
-	var pilot_id := session.pilot_ids[id]
 	var previous_revision: int = session.store.pilots[pilot_id]["equipment"]["revision"]
 	var previous_ship: String = session.store.pilots[pilot_id]["equipment"]["active_ship"]
 	var result := session.store.transact(pilot_id, sequence, action, subject, ship, slot, session.can_grant_test_credits(id), session.ships[id].resource_boosts)
@@ -748,7 +800,13 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 	session.ships[id].ammo = pilot["ammo"].duplicate()
 	cargo_holds[id] = pilot["cargo"].duplicate(true)
 	if pilot["equipment"]["revision"] > previous_revision:
-		apply_equipment(id)
+		if action == "configure_extra":
+			var remote: Pilot = session.ships[id]
+			remote.repair_auto = Extras.enabled(Equipment.extra(pilot["equipment"], "repair-auto"))
+			if not remote.repair_auto and not remote.repair_requested:
+				remote.robot_repairing = false
+		else:
+			apply_equipment(id)
 	if previous_ship != pilot["equipment"]["active_ship"]:
 		session.ships[id].rockets.unload()
 		# Switching is not a repair. Keep absolute hull/shield charge (clamped by
@@ -788,6 +846,9 @@ func station_result(data: Dictionary, result: String, test_credits_allowed: bool
 		if credits >= 0:
 			session.sector.credits = credits
 		preview_tools_available = test_credits_allowed
+		if station_action == "configure_extra" and not result.is_empty():
+			session.sector.notify(result)
+		station_action = ""
 		station_pending = false
 		station_message = result
 		if not lab.is_empty():
@@ -800,6 +861,7 @@ func request_lab(action: String = "snapshot", payload: Dictionary = {}) -> void:
 	if not session.active or session.sector.dedicated_server or multiplayer.is_server() or inventory.is_empty() or station_pending:
 		return
 	station_pending = true
+	station_action = ""
 	station_message = "Waiting for server..."
 	skylab_request.rpc_id(1, int(inventory["revision"]) + 1, action, payload)
 
