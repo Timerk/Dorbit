@@ -133,8 +133,8 @@ func read_movement() -> Vector3:
 
 
 func thrust_multiplier() -> float:
-	# Scale by fitted cruise speed, not current velocity: launch, release and
-	# boost all use the same handling curve on clients and the server.
+	# Fitted cruise speed gives braking and redirection consistent assistance
+	# on clients and the server, including while boosting.
 	var speed := maxf(cruise_speed, INERTIA_REFERENCE_SPEED)
 	var inertia := MIN_INERTIA_RATIO + (1.0 - MIN_INERTIA_RATIO) * exp(
 		-(speed - INERTIA_REFERENCE_SPEED) / INERTIA_FALLOFF_SPEED)
@@ -161,7 +161,10 @@ func fly_command(delta: float, movement: Vector3, boost: bool) -> void:
 		thrust = counter_thrust
 	elif desired_velocity.length_squared() < velocity.length_squared():
 		thrust = braking
-	velocity = velocity.move_toward(desired_velocity, thrust * thrust_multiplier() * delta)
+	var next_velocity := velocity.move_toward(desired_velocity, thrust * thrust_multiplier() * delta)
+	# Assistance can shed or redirect momentum, but gaining speed retains the
+	# original acceleration, including launch, boost and recovery after a turn.
+	velocity = next_velocity.limit_length(velocity.length() + acceleration * delta)
 	move_and_slide()
 	if render_enabled:
 		model.rotation.z = lerp_angle(model.rotation.z, -movement.x * 0.23, delta * 5.0)

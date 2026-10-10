@@ -73,14 +73,18 @@ Original flight tuning before the ship roster: 36 m/s cruise, 78 m/s boost, 40 m
 
 Following faster-ship playtesting, the user requested exponentially decreasing
 inertia as speed generators increase speed. The starter Liberator's 41 m/s cruise
-handling and boost remain unchanged. Above 41 m/s fitted cruise speed, acceleration,
-assisted braking and counter-thrust scale by `(cruise_speed / 41) / inertia`, where
-`inertia = 0.3 + 0.7 * exp(-(cruise_speed - 41) / 40)`. Cruise response times
-therefore decrease exponentially toward 30% of the starter's times instead of
-growing with speed. Slower hulls retain their existing forces. The curve uses
-fitted speed rather than instantaneous velocity so launch, boost and release
-remain consistent. Mouse steering retains its existing smoothing. The 40 m/s
-falloff scale and 30% floor remain playtesting settings within Milestone 3.
+handling and boost remain unchanged. Above 41 m/s fitted cruise speed, braking
+and momentum redirection receive assistance scaled by `(cruise_speed / 41) / inertia`,
+where `inertia = 0.3 + 0.7 * exp(-(cruise_speed - 41) / 40)`. Braking and removal
+of old-direction momentum therefore approach 30% of the starter's response times
+instead of growing with speed. Following playtesting, the user accepted braking
+and combat handling but requested restoring the original acceleration. Gaining
+speed is capped at the original 40 m/s², including launch, boost, reversal and
+recovery after turns; assistance only sheds or redirects existing momentum.
+Slower hulls retain their existing forces. The curve uses fitted cruise speed
+consistently on clients and servers. Mouse steering retains its existing
+smoothing. The 40 m/s falloff scale and 30% floor remain playtesting settings
+within Milestone 3.
 
 The user approved six independent Graphics controls and additional antialiasing
 levels while retaining the Compatibility renderer: 3D render scale (Off/native, 85%, 75%, 50%), anisotropic
