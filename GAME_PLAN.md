@@ -71,6 +71,17 @@ Settings are available from the connection menu and the Esc flight menu. Players
 
 Original flight tuning before the ship roster: 36 m/s cruise, 78 m/s boost, 40 m/s² acceleration, 60 m/s² braking, 80 m/s² counter-thrust, and a 65 ms mouse-steering response time constant. From cruise, release stops the ship in about 0.6 seconds; mouse steering completes about 95% of a turn command within 0.2 seconds. These values remain tuning decisions.
 
+Following faster-ship playtesting, the user requested exponentially decreasing
+inertia as speed generators increase speed. The starter Liberator's 41 m/s cruise
+handling and boost remain unchanged. Above 41 m/s fitted cruise speed, acceleration,
+assisted braking and counter-thrust scale by `(cruise_speed / 41) / inertia`, where
+`inertia = 0.3 + 0.7 * exp(-(cruise_speed - 41) / 40)`. Cruise response times
+therefore decrease exponentially toward 30% of the starter's times instead of
+growing with speed. Slower hulls retain their existing forces. The curve uses
+fitted speed rather than instantaneous velocity so launch, boost and release
+remain consistent. Mouse steering retains its existing smoothing. The 40 m/s
+falloff scale and 30% floor remain playtesting settings within Milestone 3.
+
 The user approved six independent Graphics controls and additional antialiasing
 levels while retaining the Compatibility renderer: 3D render scale (Off/native, 85%, 75%, 50%), anisotropic
 filtering (Off, 2x, 4x, 8x, 16x), antialiasing (Off, 2x, 4x, 8x MSAA), bloom and
