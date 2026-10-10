@@ -35,6 +35,60 @@ func tap_key(code: Key, physical: bool = true) -> void:
 	await process_frame
 
 
+func flight_response_time(player: Pilot, initial: Vector3, command: Vector3, boost: bool, step: float) -> float:
+	player.position = Vector3(0, 2000, 0)
+	player.rotation = Vector3.ZERO
+	player.velocity = initial
+	player.energy = 100.0
+	var desired := command * (player.boost_speed if boost else player.cruise_speed)
+	for frame in range(int(5.0 / step)):
+		player.fly_command(step, command, boost)
+		if player.velocity.distance_to(desired) < 0.01:
+			return (frame + 1) * step
+	check(false, "Flight response settles within five seconds")
+	return 5.0
+
+
+func check_speed_inertia(player: Pilot) -> void:
+	var original_speed := player.cruise_speed
+	var original_boost := player.boost_speed
+	var original_position := player.position
+	# Verify actual launch, release, reversal, turn and boost behavior, including
+	# speeds beyond the current roster so extra generators cannot worsen the lag.
+	for step: float in [1.0 / 60.0, 1.0 / 120.0]:
+		var previous: Array[float] = []
+		for speed: float in [41.0, 81.0, 161.0, 321.0, 641.0]:
+			player.cruise_speed = speed
+			player.boost_speed = speed + ShipCatalog.BOOST_BONUS
+			var times: Array[float] = [
+				flight_response_time(player, Vector3.ZERO, Vector3.FORWARD, false, step),
+				flight_response_time(player, Vector3.FORWARD * speed, Vector3.ZERO, false, step),
+				flight_response_time(player, Vector3.FORWARD * speed, Vector3.BACK, false, step),
+				flight_response_time(player, Vector3.RIGHT * speed, Vector3.FORWARD, false, step),
+				flight_response_time(player, Vector3.ZERO, Vector3.FORWARD, true, step),
+				flight_response_time(player, Vector3.FORWARD * player.boost_speed, Vector3.ZERO, false, step),
+			]
+			if speed == 41.0:
+				check(absf(times[0] - 41.0 / 40.0) <= step, "Starter acceleration retains its original response")
+				check(absf(times[1] - 41.0 / 60.0) <= step, "Starter braking retains its original response")
+				check(absf(times[4] - 83.0 / 40.0) <= step, "Starter boost retains its original response")
+			else:
+				for index in range(times.size()):
+					check(times[index] <= previous[index] + step, "Faster ships do not worsen response %d at %.0f m/s" % [index, speed])
+			if speed >= 321.0:
+				check(times[0] < 0.34 and times[1] < 0.23 and times[3] < 0.46, "High-speed launch, braking and turning level off with a short drift")
+			previous = times
+		player.cruise_speed = 33.0
+		player.velocity = Vector3.ZERO
+		player.fly_command(0.1, Vector3.UP, false)
+		check(is_equal_approx(player.velocity.y, 4.0), "Slower hulls retain their original thrust")
+	player.cruise_speed = original_speed
+	player.boost_speed = original_boost
+	player.position = original_position
+	player.velocity = Vector3.ZERO
+	player.energy = 100.0
+
+
 func run() -> void:
 	sector = preload("res://scenes/sector.tscn").instantiate()
 	sector.client_only = false
@@ -194,6 +248,7 @@ func run() -> void:
 	Input.action_release("boost")
 	Input.action_release("move_up")
 	check(player.velocity.y > 0.0 and player.energy < 100.0, "Vertical movement and boost consume energy")
+	check_speed_inertia(player)
 	var mouse_button := InputEventMouseButton.new()
 	mouse_button.button_index = MOUSE_BUTTON_RIGHT
 	mouse_button.pressed = true
