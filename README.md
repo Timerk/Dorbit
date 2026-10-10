@@ -92,6 +92,26 @@ Blender is only required to regenerate assets, not to run, build or deploy the g
 
 ### Navigation and radiation
 
+The shared universe now has four maps: **M1 / Outpost 01** (the existing station),
+**M2 / Outer Patrol**, **M3 / Debris Fields** and **M4 / Frontier**. Gates connect
+M1–M2, M2–M3, M2–M4 and M3–M4 in both directions. All maps are open from the start.
+M2 has Skirmishers and Raiders, M3 Marauders and Wardens, and M4 Ravagers and
+Overlords, with increasingly strong encounters and rewards. New aliens use simple
+colored models while combat and loot balance are tested.
+
+Press **M**, then **Connected maps**, to see the network and your current map.
+Click another map to select the next gate on its route. Fly within **50 m** of
+the labeled ring and press **J** to jump (rebindable in Settings). Gates have a
+75 m protected zone and a two-second jump cooldown. Travel keeps ship health,
+boost energy, ammunition, cargo and progression, and clears movement and combat
+intent. Station services, rescue, reconnect and quitting to the station menu
+return to M1. Each map has its own local radar, alien roster, resource boxes and
+radiation boundary.
+
+Review captures: [connections at 960 × 600](docs/feedback/connected-map-network.png),
+[local gate contacts](docs/feedback/connected-map-local.png),
+[home travel gate](docs/feedback/connected-map-gate.png).
+
 The safe sector is a **2.4 km diameter sphere**, with free movement past its edge.
 The upper-right radar follows your ship: forward is up, left/right match your
 steering, and small arrows show contacts above or below. Green marks Outpost 01,
@@ -362,7 +382,7 @@ Buy rocket batches under Shop > Ammo and HST-1/HST-2 under Weapons, then fit the
 launcher in Hangar's launcher slot. Uridium reference prices use **100 credits per
 Uridium**. Balance settings are in `scripts/ammunition.gd` and
 `scripts/rocket_weapons.gd`; see [the game plan](GAME_PLAN.md#manual-single-rockets-and-classic-hellstorm).
-Use matching network-schema-13 client/server builds and save schema 7. Back up server data before upgrading; older servers need the previous
+Use matching network-schema-14 client/server builds and save schema 7. Back up server data before upgrading; older servers need the previous
 ledger for rollback. New/migrated pilots receive 100 R-310 once.
 
 Run `tests/rocket_test.gd` with Godot (headless for authoritative checks, rendered
@@ -425,7 +445,7 @@ successful station changes; an abrupt crash can restore up to five seconds.
 Weapon rounds commit before damage. Server writes validate ingredients,
 compatibility, quantities, station restrictions and duplicate protection.
 
-This requires matching network-schema-13 builds. Ledger schemas 1–6 migrate to
+This requires matching network-schema-14 builds. Ledger schemas 1–6 migrate to
 schema 7, preserving progression and adding any missing reserves and rocket ammo; keep a backup for
 rollback. The provisioning tool preserves and validates boosts during rotation.
 `res://tests/resource_upgrades_test.gd` exercises authenticated refining and
@@ -447,15 +467,15 @@ Human economy and balance playtesting remains necessary.
 
 ### Current compatibility
 
-The current **network schema is 13** (`FlightSession.NETWORK_SCHEMA`), including
-the larger station's shared collision layout. Clients and servers must use
+The current **network schema is 14** (`FlightSession.NETWORK_SCHEMA`), including
+four-map membership, transfers and the shared collision layout. Clients and servers must use
 matching builds and protocol fingerprints; the connection handshake rejects
 incompatible builds before gameplay. **Save schema 7** is separate from the
 network schema. Update the provisioning tool alongside the server and back up
 the ledger before upgrading. See [Saves, backups and recovery](#saves-backups-and-recovery)
 for migration and rollback instructions.
 
-The server supports **ten client pilots**, with no host player. It controls movement, boost, all five aliens, damage, repairs, rewards, destruction and respawning. It keeps running when the last player leaves. **F7** opens the connection menu; **Disconnect** returns to that menu. A server shutdown also returns clients to the menu.
+The server supports **ten client pilots**, with no host player. It controls movement, boost, all twenty aliens across four maps, gates, damage, repairs, rewards, destruction and respawning. It keeps running when the last player leaves. **F7** opens the connection menu; **Disconnect** returns to that menu. A server shutdown also returns clients to the menu.
 
 The client remembers the last successfully connected address and UDP port on this device in `user://connection.cfg`. Failed or cancelled attempts do not replace it. After a disconnect, the fields stay filled in; choose **Connect again** or press Enter on the focused button to retry. You can edit either field or cancel a pending connection. Reconnecting is always manual. Connection messages identify the attempted endpoint and report failure or timeout without guessing the network cause.
 
@@ -529,7 +549,7 @@ The regular Liberator has 116,000 hull. New pilots start with LF-1, SG3N-A01 and
 
 LF-3 adds 175 base damage and 15% more for that laser against aliens (201.25 total) per installed copy. Its bonus never multiplies other lasers. FS-01 adds 3,200 shield, 70% absorption and +6.25% regeneration; its regeneration bonuses add together and multiply normal shield recovery after the existing six-second delay. Shield capacity adds, while absorption is weighted by each generator's capacity. Current fitting and installation previews show these special bonuses. Fitting changes do not repair or refill your ship. Inventory and fittings survive rescue, reconnects and restart. Equipment purchases require the persistent dedicated server; the offline development fixture uses the same starter combat and flight values. Reference prices need human progression playtesting with the existing rewards.
 
-Client and server must use matching network-schema-13 builds; the compatibility handshake rejects older builds before gameplay. Save schema 7 combines persistent industry, ammunition and combat boosts; Skylab uses credits exclusively. Update the operator provisioning tool with the server so credential rotation recognizes every new model and preserves industry jobs.
+Client and server must use matching network-schema-14 builds; the compatibility handshake rejects older builds before gameplay. Save schema 7 combines persistent industry, ammunition and combat boosts; Skylab uses credits exclusively. Update the operator provisioning tool with the server so credential rotation recognizes every new model and preserves industry jobs.
 
 ### Credit income
 
