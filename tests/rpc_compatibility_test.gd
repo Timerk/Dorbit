@@ -78,8 +78,8 @@ func run() -> void:
 		client.session.launch()
 		await settle()
 		var pilot: Pilot = server.session.ships[client.multiplayer.get_unique_id()]
-		pilot.position = Vector3(0, 100, 0)
-		server.alien.position = Vector3(0, 100, -100)
+		pilot.position = Vector3(0, 200, 0)
+		server.alien.position = Vector3(0, 200, -100)
 		server.alien.home_position = server.alien.position
 		await replicate(server)
 		client.player.position = pilot.position

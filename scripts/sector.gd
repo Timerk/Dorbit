@@ -4,7 +4,8 @@ extends Node3D
 
 const STATION_POSITION := Vector3(-38.0, -8.0, 0.0)
 const SPAWN_POSITION := Vector3(0.0, 0.0, 45.0)
-const REPAIR_RADIUS: float = 60.0
+const REPAIR_RADIUS: float = 120.0
+const PROTECTION_RADIUS: float = REPAIR_RADIUS
 const RESPAWN_FEE: int = 10
 const MAP_RADIUS: float = 1200.0
 const BOUNDARY_WARNING_DISTANCE: float = 120.0
@@ -335,7 +336,7 @@ func _physics_process(delta: float) -> void:
 	if player.alive:
 		player.fly_command(delta, read_flight_movement(delta), Input.is_action_pressed("boost") and not autopilot.enabled)
 		tick_radiation(player, delta)
-		if objective_stage == 0 and player.position.distance_to(STATION_POSITION) > 75.0:
+		if objective_stage == 0 and player.position.distance_to(STATION_POSITION) > PROTECTION_RADIUS:
 			objective_stage = 1
 		if auto_fire and is_instance_valid(target):
 			player.try_fire(target)
@@ -346,7 +347,7 @@ func _physics_process(delta: float) -> void:
 	for enemy: Alien in aliens.values():
 		enemy.tick_combat(delta)
 		if enemy.alive:
-			enemy.fly(delta, player if player.alive and player.position.distance_to(STATION_POSITION) > 75.0 and player.position.distance_to(enemy.position) < float(enemy.tuning()["detection"]) else null, STATION_POSITION)
+			enemy.fly(delta, player if player.alive and player.position.distance_to(STATION_POSITION) > PROTECTION_RADIUS and player.position.distance_to(enemy.position) < float(enemy.tuning()["detection"]) else null, STATION_POSITION)
 		else:
 			enemy.respawn = maxf(0.0, enemy.respawn - delta)
 			if enemy.respawn <= 0.0:
@@ -378,7 +379,7 @@ func tick_radiation(ship: Pilot, delta: float) -> void:
 func alien_home_clear(point: Vector3, enemy: Alien) -> bool:
 	if point.length() > MAP_RADIUS - float(enemy.tuning()["leash"]) - 35.0:
 		return false
-	if point.distance_to(STATION_POSITION) < float(enemy.tuning()["detection"]) + 90.0:
+	if point.distance_to(STATION_POSITION) < float(enemy.tuning()["detection"]) + PROTECTION_RADIUS + 15.0:
 		return false
 	for other: Alien in aliens.values():
 		if other != enemy and point.distance_to(other.home_position) < 180.0:
@@ -548,7 +549,7 @@ func repair_blocker(ship: Pilot = null) -> String:
 	if not ship.alive:
 		return "Wait for rescue."
 	if ship.position.distance_to(STATION_POSITION) > REPAIR_RADIUS:
-		return "Move within 60 m of Outpost 01 to repair."
+		return "Move within %d m of Outpost 01 to repair." % REPAIR_RADIUS
 	if ship.velocity.length() > 8.0:
 		return "Release movement controls and slow down to repair."
 	if ship.time_since_hit < 5.0:

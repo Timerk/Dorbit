@@ -85,8 +85,8 @@ func run() -> void:
 	var remote := server.session.ships[id]
 	var combat := server.session.combat
 	var alien := server.alien
-	remote.position = Vector3(0, 100, 0)
-	alien.position = Vector3(0, 100, -100)
+	remote.position = Vector3(0, 200, 0)
+	alien.position = Vector3(0, 200, -100)
 	alien.home_position = alien.position
 	var start := remote.position
 	client.session.command_flight.rpc_id(1, Vector3(0, 0, -1), Vector3.ZERO, true)

@@ -97,9 +97,9 @@ func run() -> void:
 	ship.tick_combat(1.0)
 	check(ship.shield == 20, "Non-authoritative peers cannot regenerate locally")
 	ship.simulation_authority = true
-	ship.position = Vector3(0, 100, 0)
+	ship.position = Vector3(0, 200, 0)
 	ship.rotation = Vector3.ZERO
-	server.alien.position = Vector3(0, 100, -100)
+	server.alien.position = Vector3(0, 200, -100)
 	server.alien.home_position = server.alien.position
 	await physics_frame
 	var health_before := server.alien.shield + server.alien.hull
@@ -108,7 +108,7 @@ func run() -> void:
 	var target_ship := Pilot.new()
 	target_ship.render_enabled = false
 	server.add_child(target_ship)
-	target_ship.position = Vector3(0, 100, -50)
+	target_ship.position = Vector3(0, 200, -50)
 	await physics_frame
 	health_before = target_ship.shield + target_ship.hull
 	ship.shot_cooldown = 0

@@ -33,13 +33,13 @@ func run() -> void:
 	sector.client_only = false
 	root.add_child(sector)
 	sector.set_physics_process(false)
-	sector.player.position = Vector3(0, 100, 0)
+	sector.player.position = Vector3(0, 200, 0)
 	sector.player.rotation = Vector3.ZERO
-	sector.aliens[0].position = Vector3(0, 100, -650)
-	sector.aliens[1].position = Vector3(-65, 100, -140)
-	sector.aliens[2].position = Vector3(65, 100, -140)
-	sector.aliens[3].position = Vector3(0, 100, 90)
-	sector.aliens[4].position = Vector3(900, 100, -100)
+	sector.aliens[0].position = Vector3(0, 200, -650)
+	sector.aliens[1].position = Vector3(-65, 200, -140)
+	sector.aliens[2].position = Vector3(65, 200, -140)
+	sector.aliens[3].position = Vector3(0, 200, 90)
+	sector.aliens[4].position = Vector3(900, 200, -100)
 	await sync_physics()
 	var camera := sector.player.camera
 	await target_at(camera.unproject_position(sector.aliens[2].global_position))
@@ -54,12 +54,12 @@ func run() -> void:
 	check(sector.target == sector.aliens[0], "Cursor selection can acquire an enemy beyond the old 550 m limit")
 	sector.select_target(sector.aliens[2])
 	sector.auto_fire = true
-	sector.aliens[2].position = Vector3(0, 100, -900)
+	sector.aliens[2].position = Vector3(0, 200, -900)
 	sector.validate_target()
 	check(sector.target == sector.aliens[2] and sector.auto_fire, "Leaving selection and weapon range preserves lock and fire intent")
 	check(sector.player.firing_blocker(sector.target) == "OUT OF RANGE", "A retained lock cannot bypass weapon range")
 	await capture("targeting-distant-lock")
-	sector.aliens[2].position = Vector3(0, 100, 90)
+	sector.aliens[2].position = Vector3(0, 200, 90)
 	sector.validate_target()
 	check(sector.target == sector.aliens[2], "Turning away from an enemy preserves its lock")
 	sector.aliens[2].returning = true
@@ -84,7 +84,7 @@ func run() -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var retained := sector.target
 	for enemy: Alien in sector.aliens.values():
-		enemy.position = Vector3(0, 100, 90)
+		enemy.position = Vector3(0, 200, 90)
 	await target_at(cursor)
 	check(sector.target == retained, "Tab with no on-screen candidate preserves the existing lock")
 	sector.select_target(null)

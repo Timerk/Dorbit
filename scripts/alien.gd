@@ -78,7 +78,7 @@ func take_damage(amount: float, attacker: SpaceShip) -> void:
 	if not available() or position.distance_to(home_position) >= float(tuning()["leash"]):
 		return
 	# Protected pilots cannot farm enemies that are forbidden to retaliate.
-	if attacker is Pilot and attacker.position.distance_to(Sector.STATION_POSITION) <= 75.0:
+	if attacker is Pilot and attacker.position.distance_to(Sector.STATION_POSITION) <= Sector.PROTECTION_RADIUS:
 		return
 	if simulation_authority and amount > 0.0:
 		engaged = true
@@ -93,7 +93,7 @@ func fly(delta: float, player: Pilot, station_position: Vector3) -> void:
 	patrol_time += delta
 	check_retreat(player)
 	engaged = is_instance_valid(player) and player.alive
-	engaged = engaged and player.global_position.distance_to(station_position) > 75.0
+	engaged = engaged and player.global_position.distance_to(station_position) > Sector.PROTECTION_RADIUS
 	engaged = engaged and global_position.distance_to(player.global_position) < float(tuning()["detection"])
 	engaged = engaged and not returning
 	var destination := home_position + Vector3(sin(patrol_time * 0.22) * 18.0, sin(patrol_time * 0.35) * 8.0, 0.0)

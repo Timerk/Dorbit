@@ -60,7 +60,7 @@ func target_blocker(target: SpaceShip, kind: String) -> String:
 		return "INVALID TARGET"
 	if not target.available():
 		return "TARGET RETURNING"
-	if ship.position.distance_to(Sector.STATION_POSITION) <= 75.0:
+	if ship.position.distance_to(Sector.STATION_POSITION) <= Sector.PROTECTION_RADIUS:
 		return "STATION PROTECTION"
 	if ship.global_position.distance_to(target.global_position) > float(Ammunition.ROCKETS[kind]["range"]):
 		return "OUT OF RANGE"
@@ -152,7 +152,7 @@ func tick(delta: float) -> void:
 		var step := float(Ammunition.ROCKETS[projectile["kind"]]["speed"]) * delta
 		if projectile["position"].distance_to(target.global_position) <= step:
 			pending.remove_at(index) # Retire before damage callbacks; never hit twice.
-			var hit: bool = projectile["hit"] and ship.position.distance_to(Sector.STATION_POSITION) > 75.0
+			var hit: bool = projectile["hit"] and ship.position.distance_to(Sector.STATION_POSITION) > Sector.PROTECTION_RADIUS
 			resolved.emit(projectile["id"], target.global_position, hit)
 			if hit:
 				target.take_damage(projectile["damage"], ship)

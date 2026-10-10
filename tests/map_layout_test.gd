@@ -33,7 +33,7 @@ func run() -> void:
 		query.transform = Transform3D(Basis.IDENTITY, point)
 		var clear := server.get_world_3d().direct_space_state.intersect_shape(query).is_empty()
 		clear = clear and point.length() + float(enemy.tuning()["leash"]) < Sector.MAP_RADIUS
-		clear = clear and point.distance_to(Sector.STATION_POSITION) > float(enemy.tuning()["detection"]) + 75
+		clear = clear and point.distance_to(Sector.STATION_POSITION) > float(enemy.tuning()["detection"]) + Sector.PROTECTION_RADIUS
 		for other: Alien in server.aliens.values():
 			clear = clear and (other == enemy or point.distance_to(other.home_position) >= 180)
 		check(clear, "Random home leaves actual colliders, station, neighbors and full leash clear")
