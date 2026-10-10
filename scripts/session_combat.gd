@@ -8,6 +8,7 @@ var solo: Dictionary = {}
 var inventory: Dictionary = {}
 var cargo_holds: Dictionary[int, Dictionary] = {}
 var station_pending: bool = false
+var station_action: String = ""
 var station_message: String = ""
 var preview_tools_available: bool = false
 var ammo_sequence: int = -1
@@ -734,6 +735,7 @@ func finish() -> void:
 	lab_snapshot.clear()
 	preview_tools_available = false
 	station_pending = false
+	station_action = ""
 	station_message = ""
 	ammo_sequence = -1
 	boost_sequence = -1
@@ -762,6 +764,7 @@ func request_station(action: String, subject: String, ship: String = "", slot: S
 	if station_pending or inventory.is_empty() or not session.active:
 		return
 	station_pending = true
+	station_action = action
 	station_message = "Waiting for server..."
 	station_request.rpc_id(1, int(inventory["revision"]) + 1, action, subject, ship, slot, int(session.sector.player.get_meta("life", 0)))
 
@@ -843,6 +846,9 @@ func station_result(data: Dictionary, result: String, test_credits_allowed: bool
 		if credits >= 0:
 			session.sector.credits = credits
 		preview_tools_available = test_credits_allowed
+		if station_action == "configure_extra" and not result.is_empty():
+			session.sector.notify(result)
+		station_action = ""
 		station_pending = false
 		station_message = result
 		if not lab.is_empty():
@@ -855,6 +861,7 @@ func request_lab(action: String = "snapshot", payload: Dictionary = {}) -> void:
 	if not session.active or session.sector.dedicated_server or multiplayer.is_server() or inventory.is_empty() or station_pending:
 		return
 	station_pending = true
+	station_action = ""
 	station_message = "Waiting for server..."
 	skylab_request.rpc_id(1, int(inventory["revision"]) + 1, action, payload)
 

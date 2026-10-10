@@ -443,6 +443,7 @@ or swaps automation extras; Shift-click selects an assigned slot for clearing
 or reassignment. Automation clicks outside editing explain how to open editing
 without changing settings. Unfitted extras show UNFITTED rather than OFF; clicks
 explain that the extra must be fitted. Pending requests show WAIT.
+Automation setting replies, including rejected requests, appear as flight notifications.
 Only CPUs fitted on the active ship can toggle in flight; the server saves the
 setting and validates ownership and ship life. The repair robot itself can also
 be assigned as a manual quickslot action. Ammunition spending and generator

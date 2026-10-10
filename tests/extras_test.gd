@@ -4,6 +4,22 @@ extends "res://tests/shop_test.gd"
 var owned: Dictionary = {}
 
 
+func held_click(client: Sector, control: Control) -> void:
+	var point := control.get_global_rect().get_center()
+	var motion := InputEventMouseMotion.new()
+	motion.position = point
+	client.get_viewport().push_input(motion)
+	await process_frame
+	for pressed: bool in [true, false]:
+		var event := InputEventMouseButton.new()
+		event.button_index = MOUSE_BUTTON_LEFT
+		event.button_mask = MOUSE_BUTTON_MASK_LEFT if pressed else 0
+		event.position = point
+		event.pressed = pressed
+		client.get_viewport().push_input(event)
+		await settle(0.12)
+
+
 func extra_state(store: PilotStore) -> Dictionary:
 	var state: Dictionary = store.pilots["pilot0"].duplicate(true)
 	state.erase("skylab") # Station requests independently advance industry time.
@@ -269,18 +285,22 @@ func run() -> void:
 	await click(client, ammo_tile)
 	await settle()
 	check(Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["ammo-cpu"]]) and remote.repair_requested, "Fitted ammo toggle persists in flight without clearing manual repair intent")
-	await click(client, generator_tile)
+	await held_click(client, generator_tile)
 	await settle()
 	check(not Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["generator-cpu"]]), "Fitted generator CPU toggles independently")
-	await click(client, generator_tile)
+	combat.inventory["revision"] -= 1 # Simulate a delayed ownership snapshot.
+	await held_click(client, generator_tile)
+	await settle()
+	check(not Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["generator-cpu"]]) and client.toast.contains("Request already processed"), "Rejected Auto Boost toggle explains stale inventory in flight")
+	await held_click(client, generator_tile)
 	await settle()
 	check(Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["generator-cpu"]]) and generator_tile.amount.text == "ON", "Auto Boost picker enables the fitted CPU and displays ON")
 	bar.config.assign(7, "extra:generators")
 	await settle()
-	await click(client, bar.tiles[7])
+	await held_click(client, bar.tiles[7])
 	await settle()
 	check(not Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["generator-cpu"]]) and bar.tiles[7].amount.text == "OFF" and generator_tile.amount.text == "OFF", "Assigned Auto Boost slot disables the CPU and synchronizes OFF")
-	await click(client, bar.tiles[7])
+	await held_click(client, bar.tiles[7])
 	await settle()
 	check(Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["generator-cpu"]]) and bar.tiles[7].amount.text == "ON" and generator_tile.amount.text == "ON", "Assigned Auto Boost slot enables the CPU and synchronizes ON")
 	remote.resource_boosts.clear()
