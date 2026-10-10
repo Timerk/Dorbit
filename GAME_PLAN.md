@@ -426,7 +426,7 @@ with no recurring credit cost. The ship must be alive, launched, stationary
 Movement, incoming damage, firing intent, docking and death interrupt manual
 repair. The Auto CPU defaults on and resumes when conditions permit; it needs a
 separately fitted robot. Station repair retains its instant paid behavior within
-60 m. A flight HUD prompt shows robot availability and active repair. While the
+120 m. A flight HUD prompt shows robot availability and active repair. While the
 robot works, a small metallic drone hovers above the hull and projects animated
 repair beams. This follows the replicated repair state on local and remote ships;
 it disappears when repair stops and is not created on dedicated servers.
