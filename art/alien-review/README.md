@@ -69,6 +69,12 @@ three shared 2K maps and Godot-generated distance LODs. The runtime maps average
 albedo in linear space and renormalize normal vectors; the 4K sources remain
 intact. Server-only aliens do not load these visual assets.
 
+The shared Godot model factory adds textured emission to the colored armor for
+readability against the sector nebula, including shadowed faces with bloom off.
+It shares the albedo atlas; dark structure, recesses and sensor/exhaust finishes
+remain distinct. This game visibility adjustment leaves the Blender source
+materials intact.
+
 ![Actual Godot contract previews and rear views](../../docs/feedback/alien-models-godot.png)
 
 The existing `art/.gdignore` excludes this source collection from Godot's imports.
@@ -116,6 +122,9 @@ check suites and the Windows exported-pack build run it. Run Godot with
 `--path . --script res://tools/render_alien_preview.gd` for fresh actual game
 preview captures, and `res://tests/flight_playthrough.gd` for the rendered
 hunt-and-repair replay.
+Append `-- --sector` to the preview command to compare all three aliens at
+25 m and 90 m against the game's sky and lighting. This writes
+`build/validation/alien-visibility-sector.png`.
 
 On 8 October 2026, all 172 source and exported-pack alien checks passed, together
 with the full Windows suite and Windows build checks. The actual Godot preview
