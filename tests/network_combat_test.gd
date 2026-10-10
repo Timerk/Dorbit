@@ -108,6 +108,10 @@ func run() -> void:
 	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, host.player)
 	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, host.player)
 	await replicate(host)
+	# Unreliable alien chunks may arrive after the reliable reward notification.
+	var death_deadline := Time.get_ticks_msec() + 2000
+	while (client.alien.alive or late.alien.alive or client.target != null) and Time.get_ticks_msec() < death_deadline:
+		await replicate(host)
 	check(combat.records[1]["credits"] + combat.records[id]["credits"] == 1500, "Reward pool is awarded exactly once and conserved")
 	check(absi(combat.records[1]["credits"] - combat.records[id]["credits"]) <= 1, "Contributors receive equal integer shares")
 	check(combat.records[late_id]["credits"] == 0, "A spectator receives no reward")
