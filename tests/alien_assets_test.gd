@@ -112,7 +112,12 @@ func check_finish(kind: String, mesh: ArrayMesh) -> void:
 			kind + " shares metallic and roughness maps")
 		if material.resource_name.ends_with("coated armor"):
 			painted = material.clearcoat_enabled
-		if material.emission_enabled:
+			check(material.emission_enabled and material.emission == Color.WHITE
+				and material.emission_operator == BaseMaterial3D.EMISSION_OP_MULTIPLY
+				and material.emission_energy_multiplier >= 2.0
+				and material.emission_texture == material.albedo_texture,
+				kind + " textured armor remains visible without direct light or bloom")
+		elif material.resource_name.ends_with("sensor emission") and material.emission_enabled:
 			luminous = true
 			for vertex in vertices:
 				forward_optics = forward_optics or vertex.z < bounds.position.z + .04
