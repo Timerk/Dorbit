@@ -948,9 +948,18 @@ Map 2 has two outward gates to Maps 3 and 4, plus its return gate to Home.
 There are four paired connections and eight gates in total. Home has no direct
 connection to Map 3 or Map 4.
 
-Names for the additional maps, encounter populations, gate placement, protection
-and transfer rules remain proposals to settle before implementation. Ordinary
-travel gates are separate from the future Galaxy Gates alien-wave challenges.
+The user requested additional distinct alien types for these maps, expanding
+beyond the existing Scout, Sentinel and Heavy roster. Each additional map should
+have a recognizable alien mix, with encounter strength increasing from Map 2 to
+Map 3 to Map 4: Map 2 is the least difficult of the three new maps, Map 3 is
+stronger, and Map 4 contains the strongest encounters. This combat progression
+does not add travel unlocks; players can still reach every map without leveling
+or upgrading their equipment.
+
+Names for the additional maps and aliens, the exact alien roster, statistics,
+behaviors, rewards and spawn populations, gate placement, protection and transfer
+rules remain open for design and playtesting. Ordinary travel gates are separate
+from the future Galaxy Gates alien-wave challenges.
 
 ## Open decisions
 
