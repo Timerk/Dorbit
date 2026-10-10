@@ -1,6 +1,10 @@
 class_name Pilot
 extends SpaceShip
 
+const INERTIA_REFERENCE_SPEED: float = 41.0 # Starter Liberator with its Ion engine.
+const INERTIA_FALLOFF_SPEED: float = 40.0
+const MIN_INERTIA_RATIO: float = 0.3
+
 @export var cruise_speed: float = 41.0
 @export var boost_speed: float = 83.0
 @export var acceleration: float = 40.0
@@ -128,6 +132,15 @@ func read_movement() -> Vector3:
 	).limit_length()
 
 
+func thrust_multiplier() -> float:
+	# Fitted cruise speed gives braking and redirection consistent assistance
+	# on clients and the server, including while boosting.
+	var speed := maxf(cruise_speed, INERTIA_REFERENCE_SPEED)
+	var inertia := MIN_INERTIA_RATIO + (1.0 - MIN_INERTIA_RATIO) * exp(
+		-(speed - INERTIA_REFERENCE_SPEED) / INERTIA_FALLOFF_SPEED)
+	return speed / INERTIA_REFERENCE_SPEED / inertia
+
+
 func fly_command(delta: float, movement: Vector3, boost: bool) -> void:
 	# Ease mouse motion over a few frames; remote ships receive the resulting angles.
 	var look_step := pending_look * (1.0 - exp(-delta / steering_response))
@@ -148,7 +161,10 @@ func fly_command(delta: float, movement: Vector3, boost: bool) -> void:
 		thrust = counter_thrust
 	elif desired_velocity.length_squared() < velocity.length_squared():
 		thrust = braking
-	velocity = velocity.move_toward(desired_velocity, thrust * delta)
+	var next_velocity := velocity.move_toward(desired_velocity, thrust * thrust_multiplier() * delta)
+	# Assistance can shed or redirect momentum, but gaining speed retains the
+	# original acceleration, including launch, boost and recovery after a turn.
+	velocity = next_velocity.limit_length(velocity.length() + acceleration * delta)
 	move_and_slide()
 	if render_enabled:
 		model.rotation.z = lerp_angle(model.rotation.z, -movement.x * 0.23, delta * 5.0)

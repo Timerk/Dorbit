@@ -35,6 +35,74 @@ func tap_key(code: Key, physical: bool = true) -> void:
 	await process_frame
 
 
+func flight_response_time(player: Pilot, initial: Vector3, command: Vector3, boost: bool, step: float) -> float:
+	player.position = Vector3(0, 2000, 0)
+	player.rotation = Vector3.ZERO
+	player.velocity = initial
+	player.energy = 100.0
+	var acceleration_preserved := true
+	for frame in range(int(5.0 / step)):
+		var before := player.velocity.length()
+		player.fly_command(step, command, boost)
+		acceleration_preserved = acceleration_preserved and player.velocity.length() <= before + 40.0 * step + 0.001
+		# Direction changes clear the old momentum without requiring the ship
+		# to regain cruise speed; recovery uses the original acceleration.
+		var settled := player.velocity.is_zero_approx() if command.is_zero_approx() else player.velocity.dot(initial.normalized()) <= initial.length() * 0.05
+		if settled:
+			check(acceleration_preserved, "Braking, turns and reversals never increase speed faster than original acceleration")
+			return (frame + 1) * step
+	check(false, "Flight response settles within five seconds")
+	return 5.0
+
+
+func check_speed_inertia(player: Pilot) -> void:
+	var original_speed := player.cruise_speed
+	var original_boost := player.boost_speed
+	var original_position := player.position
+	# Speed gain retains the original acceleration; assistance only reduces
+	# braking and old-direction momentum, even beyond current roster speeds.
+	for step: float in [1.0 / 60.0, 1.0 / 120.0]:
+		var previous: Array[float] = []
+		for speed: float in [41.0, 81.0, 161.0, 321.0, 641.0]:
+			player.cruise_speed = speed
+			player.boost_speed = speed + ShipCatalog.BOOST_BONUS
+			for direction: Vector3 in [Vector3.FORWARD, Vector3.BACK, Vector3.LEFT, Vector3.RIGHT, Vector3.UP, Vector3.DOWN]:
+				for boost: bool in [false, true]:
+					player.position = Vector3(0, 2000, 0)
+					player.rotation = Vector3.ZERO
+					player.velocity = Vector3.ZERO
+					player.energy = 100.0
+					for frame in range(int(round(0.1 / step))):
+						player.fly_command(step, direction, boost)
+					check(is_equal_approx(player.velocity.length(), 4.0), "Launch and boost retain original acceleration on every axis at %.0f m/s" % speed)
+					player.velocity = direction * (speed * 0.5)
+					player.fly_command(step, direction, boost)
+					check(absf(player.velocity.length() - speed * 0.5 - 40.0 * step) < 0.001, "Gaining speed retains original acceleration at %.0f m/s" % speed)
+			var times: Array[float] = [
+				flight_response_time(player, Vector3.FORWARD * speed, Vector3.ZERO, false, step),
+				flight_response_time(player, Vector3.FORWARD * speed, Vector3.BACK, false, step),
+				flight_response_time(player, Vector3.RIGHT * speed, Vector3.FORWARD, false, step),
+				flight_response_time(player, Vector3.FORWARD * player.boost_speed, Vector3.ZERO, false, step),
+			]
+			if speed == 41.0:
+				check(absf(times[0] - 41.0 / 60.0) <= step, "Starter braking retains its original response")
+			else:
+				for index in range(times.size()):
+					check(times[index] <= previous[index] + step, "Faster ships do not worsen response %d at %.0f m/s" % [index, speed])
+			if speed >= 321.0:
+				check(times[0] < 0.23 and times[2] < 0.7, "High-speed braking and redirection retain a short drift")
+			previous = times
+		player.cruise_speed = 33.0
+		player.velocity = Vector3.ZERO
+		player.fly_command(0.1, Vector3.UP, false)
+		check(is_equal_approx(player.velocity.y, 4.0), "Slower hulls retain their original thrust")
+	player.cruise_speed = original_speed
+	player.boost_speed = original_boost
+	player.position = original_position
+	player.velocity = Vector3.ZERO
+	player.energy = 100.0
+
+
 func run() -> void:
 	sector = preload("res://scenes/sector.tscn").instantiate()
 	sector.client_only = false
@@ -216,6 +284,7 @@ func run() -> void:
 	Input.action_release("boost")
 	Input.action_release("move_up")
 	check(player.velocity.y > 0.0 and player.energy < 100.0, "Vertical movement and boost consume energy")
+	check_speed_inertia(player)
 	var mouse_button := InputEventMouseButton.new()
 	mouse_button.button_index = MOUSE_BUTTON_RIGHT
 	mouse_button.pressed = true

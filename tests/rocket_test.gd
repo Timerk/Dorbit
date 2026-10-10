@@ -266,9 +266,9 @@ func boosted_rockets(server: Sector, client: Sector, remote: Pilot, enemy: Alien
 	client.set_paused(false)
 	client.session.launch()
 	await settle()
-	remote.position = Vector3(0, 100, 0)
+	remote.position = Sector.STATION_POSITION + Vector3.UP * (Sector.PROTECTION_RADIUS + 40.0)
 	remote.set_meta("docked", false)
-	enemy.position = Vector3(0, 100, -70)
+	enemy.position = remote.position + Vector3.FORWARD * 70.0
 	enemy.home_position = enemy.position
 	enemy.reset_health()
 	weapons.select("r-310")
