@@ -765,6 +765,13 @@ retain their packed 4K sources. Collision sizes, alien statistics, combat and
 destruction size retain their existing behavior; dedicated servers do not load
 the visual meshes. Representative-hardware performance still needs playtesting.
 
+Following playtesting, the user requested brighter aliens with more contrast
+against the space background, including at close range. Runtime coated armor
+now reuses its color atlas for a modest emission lift, keeping the amber,
+crimson and violet plating visible on shadowed faces without requiring bloom.
+Dark machinery and recessed seams retain their finish for local contrast.
+Brightness remains a visual playtesting setting.
+
 ## Performance
 
 Reference PC supplied by the user:
