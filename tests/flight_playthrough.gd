@@ -86,7 +86,7 @@ func run() -> void:
 	flight_replay_running = true
 	sampling = true
 	# Keep this short combat replay independent of the randomized navigation trip.
-	sector.aliens[1].home_position = Vector3(-85, 8, -150)
+	sector.aliens[1].home_position = Vector3(-85, 8, -240)
 	sector.aliens[1].position = sector.aliens[1].home_position
 	await target_with_tab(sector.aliens[1])
 	var expected_reward: int = (sector.target as Alien).tuning()["reward"]
@@ -191,7 +191,7 @@ func hunt_selected() -> void:
 	var deadline := Time.get_ticks_msec() + 30000
 	while is_instance_valid(enemy) and enemy.alive and sector.player.alive and Time.get_ticks_msec() < deadline:
 		sector.player.look_at(enemy.global_position, Vector3.UP)
-		if sector.player.position.distance_to(enemy.position) > 85.0 or sector.player.position.distance_to(Sector.STATION_POSITION) < 85.0:
+		if sector.player.position.distance_to(enemy.position) > 85.0 or sector.player.position.distance_to(Sector.STATION_POSITION) < Sector.PROTECTION_RADIUS + 10.0:
 			Input.action_press("forward")
 		else:
 			Input.action_release("forward")
