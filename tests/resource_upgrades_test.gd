@@ -97,7 +97,7 @@ func run() -> void:
 	combat.publish_inventory(id)
 	await settle()
 	var before := store.pilots.duplicate(true)
-	for args: Array in [["refine", "prometid:0", ""], ["refine", "prometid:-1", ""], ["refine", "prometid:1.5", ""], ["refine", "prometid:999999", ""], ["refine", "seprom:1", ""], ["refine", "promerium:3", ""], ["boost", "seprom:1", "engines"], ["boost", "prometid:1", "shields"], ["boost", "promerium:1", "rockets"], ["boost", "seprom:11", "lasers"]]:
+	for args: Array in [["refine", "prometid:0", ""], ["refine", "prometid:-1", ""], ["refine", "prometid:1.5", ""], ["refine", "prometid:999999", ""], ["refine", "seprom:1", ""], ["refine", "promerium:3", ""], ["boost", "seprom:1", "engines"], ["boost", "prometid:1", "shields"], ["boost", "duranium:1", "rockets"], ["boost", "seprom:11", "lasers"]]:
 		await request(client, 1, args[0], args[1], args[2])
 		check(conserved_ledger(JSON.stringify({"pilots": store.pilots})) == conserved_ledger(JSON.stringify({"pilots": before})), "Invalid recipe, quantity or boost cannot consume cargo: %s" % str(args))
 	for reason: String in ["distance", "speed", "damage", "life"]:
@@ -135,10 +135,11 @@ func run() -> void:
 		await screenshot(client, "refining-%d" % dimensions.x)
 		await click(client, menu.tabs["update"])
 		await click(client, menu.groups["rockets"])
-		check(menu.upgrade_button.disabled and menu.upgrade_description.text.contains("coming later"), "Rocket preview cannot spend resources")
+		check(not menu.upgrade_button.disabled and menu.upgrade_description.text.contains("boosted rockets"), "Rocket preview enables compatible resources")
 		var held := client.cargo.duplicate(true)
 		await drag_resource(client, "promerium", "rockets")
-		check(client.cargo == held and menu.group == "rockets" and menu.upgrade_button.disabled, "Rocket drops remain Coming later without consuming cargo")
+		check(client.cargo == held and menu.group == "rockets" and not menu.upgrade_button.disabled, "Rocket drops enable confirmation without consuming cargo")
+		await screenshot(client, "rocket-upgrades-%d" % dimensions.x)
 		await click(client, menu.groups["engines"])
 		await drag_resource(client, "seprom", "engines")
 		check(menu.group == "engines" and client.cargo == held and menu.upgrade_button.disabled, "Incompatible Seprom engine drop cannot apply a boost")
