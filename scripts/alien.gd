@@ -33,7 +33,19 @@ func tuning() -> Dictionary:
 
 static func model_scene(alien_kind: String) -> Node3D:
 	var scene: PackedScene = load("res://assets/aliens/%s.glb" % alien_kind.to_lower())
-	return scene.instantiate()
+	var instance := scene.instantiate() as Node3D
+	# Apply to shared materials at load time so existing imported assets also
+	# receive the visibility finish. Keep dark machinery and recesses distinct.
+	for node: MeshInstance3D in instance.find_children("*", "MeshInstance3D", true, false):
+		for surface in node.mesh.get_surface_count():
+			var material := node.mesh.surface_get_material(surface) as BaseMaterial3D
+			if material.resource_name.ends_with("coated armor"):
+				material.emission_enabled = true
+				material.emission = Color.WHITE
+				material.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY
+				material.emission_texture = material.albedo_texture
+				material.emission_energy_multiplier = 2.0
+	return instance
 
 
 func _ready() -> void:
