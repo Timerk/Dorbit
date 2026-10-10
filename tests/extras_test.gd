@@ -135,6 +135,14 @@ func run() -> void:
 	await click(client, bar.tiles[9])
 	await settle()
 	check(remote.repair_auto, "Repeated assigned-slot click toggles ON")
+	check(bar.state_for("extra:generators")["count"] == "UNFITTED", "Stored Auto Boost CPU is clearly marked UNFITTED rather than OFF")
+	var stored_boost_tile: QuickslotTile
+	for tile: QuickslotTile in bar.picker_tiles:
+		if tile.action_id == "extra:generators":
+			stored_boost_tile = tile
+	await click(client, stored_boost_tile)
+	await settle()
+	check(client.toast.contains("Fit this extra") and not Extras.enabled(combat.inventory["items"][owned["generator-cpu"]]), "Clicking an unfitted Auto Boost CPU explains fitting without enabling it")
 	for dimensions: Vector2i in [Vector2i(960, 600), Vector2i(1440, 900)]:
 		client.get_viewport().size = dimensions
 		await settle()
@@ -145,6 +153,7 @@ func run() -> void:
 	await click(client, bar.tiles[9])
 	await settle()
 	check(extra_state(store) == before, "Automation click outside slot editing leaves saved settings unchanged")
+	check(client.toast.contains("Open quickslot editing"), "Automation click outside editing explains how to enable it")
 	check(not bar.state_for("extra:ammo")["available"], "Stored CPUs are unavailable in the flight picker")
 	await station(client, "configure_extra", owned["ammo-cpu"], "on", "x1")
 	check(extra_state(store) == before, "Server rejects configuring a stored CPU away from station")
@@ -263,6 +272,23 @@ func run() -> void:
 	await click(client, generator_tile)
 	await settle()
 	check(not Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["generator-cpu"]]), "Fitted generator CPU toggles independently")
+	await click(client, generator_tile)
+	await settle()
+	check(Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["generator-cpu"]]) and generator_tile.amount.text == "ON", "Auto Boost picker enables the fitted CPU and displays ON")
+	bar.config.assign(7, "extra:generators")
+	await settle()
+	await click(client, bar.tiles[7])
+	await settle()
+	check(not Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["generator-cpu"]]) and bar.tiles[7].amount.text == "OFF" and generator_tile.amount.text == "OFF", "Assigned Auto Boost slot disables the CPU and synchronizes OFF")
+	await click(client, bar.tiles[7])
+	await settle()
+	check(Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["generator-cpu"]]) and bar.tiles[7].amount.text == "ON" and generator_tile.amount.text == "ON", "Assigned Auto Boost slot enables the CPU and synchronizes ON")
+	remote.resource_boosts.clear()
+	remote.extras_clock = 1.0
+	check(server.session.combat.tick_extras(id, 0.0), "Enabled Auto Boost applies remaining compatible resources")
+	await replicate(server)
+	check(remote.resource_boosts.has("shields") and remote.resource_boosts.has("engines") and bar.tiles[7].amount.text == "ON", "Auto Boost remains ON after resources are applied")
+	await capture(client, "extras-auto-boost-enabled")
 	bar.close_picker()
 	before = extra_state(store)
 	remote.alive = false

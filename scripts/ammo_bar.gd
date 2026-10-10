@@ -155,6 +155,10 @@ func equipment_extra_state(family: String) -> Dictionary:
 	var model: String = item.get("model", fallback)
 	var active: bool = Extras.enabled(item) if automated else sector.player.robot_repairing
 	var available := not item.is_empty() and not sector.session.combat.station_pending
+	var blocker := "Fit this extra to your active ship in Hangar first." if item.is_empty() else ("Waiting for the server to finish your previous request." if sector.session.combat.station_pending else "")
+	var count := ("ON" if active else "OFF") if automated else ("REPAIR" if active else "START")
+	if not available:
+		count = "UNFITTED" if item.is_empty() else "WAIT"
 	var hint: String = Equipment.MODELS[model]["description"]
 	if automated:
 		hint += "\nOpen quickslot editing (+), then click here to toggle automation. Drag to assign."
@@ -162,7 +166,7 @@ func equipment_extra_state(family: String) -> Dictionary:
 		hint += "\n" + Extras.repair_blocker(sector.player)
 	if item.is_empty():
 		hint += "\nEquip this extra on the active ship to use it."
-	return {"name": {"repair": "Repair", "repair-auto": "Auto repair", "ammo": "Auto ammo", "generators": "Auto boost"}[family], "icon": StationUi.texture(model), "count": ("ON" if active else "OFF") if automated else ("REPAIR" if active else "START"), "active": active, "available": available, "edit_toggle": automated, "tooltip": hint}
+	return {"name": {"repair": "Repair", "repair-auto": "Auto repair", "ammo": "Auto ammo", "generators": "Auto boost"}[family], "icon": StationUi.texture(model), "count": count, "active": active, "available": available, "edit_toggle": automated, "tooltip": hint, "blocker": blocker}
 
 
 func use_equipment_extra(family: String) -> void:
@@ -171,7 +175,9 @@ func use_equipment_extra(family: String) -> void:
 		return
 	if family == "repair":
 		sector.request_repair()
-	elif slot_editing:
+	elif not slot_editing:
+		sector.notify("Open quickslot editing (+) to toggle automation.")
+	else:
 		var data := sector.session.combat.inventory
 		for id: String in data["items"]:
 			if data["items"][id] == item:
@@ -289,7 +295,12 @@ static func compact_count(amount: int) -> String:
 
 
 func activate(action: String) -> void:
-	if sector.paused or sector.preflight or not sector.player.alive or (sector.client_only and not sector.session.active) or not state_for(action).get("available", true):
+	if sector.paused or sector.preflight or not sector.player.alive or (sector.client_only and not sector.session.active):
+		return
+	var state := state_for(action)
+	if not state.get("available", true):
+		if not str(state.get("blocker", "")).is_empty():
+			sector.notify(state["blocker"])
 		return
 	if action.begins_with("ammo:"):
 		sector.session.combat.request_ammo(action.trim_prefix("ammo:"))
