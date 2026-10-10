@@ -317,7 +317,8 @@ func network_checks() -> void:
 	client.session.credential_id = "pilot0"
 	client.session.credential_token = test_token(0)
 	client.session.join("127.0.0.1", test_port(24693))
-	await settle(0.5)
+	if not await wait_for_pilot(server, client):
+		return
 	await replicate(server)
 	check(client.session.active and server.session.ships.size() == 1, "Authenticated autopilot client connects")
 	if server.session.ships.size() == 1:
@@ -327,6 +328,9 @@ func network_checks() -> void:
 		server.aliens[1].position = Vector3(400, 250, -120)
 		server.aliens[1].home_position = server.aliens[1].position
 		await replicate(server)
+		# Replication updates alien interpolation goals, not their visible positions.
+		# Start planning only after applying the fixture's freshly relocated target.
+		client.session.combat.interpolate(0.1)
 		client.select_target(client.aliens[1])
 		client.autopilot.toggle()
 		var start := ship.position
@@ -334,7 +338,7 @@ func network_checks() -> void:
 			client.session.tick(1.0 / 60.0)
 			await physics_frame
 			server.session.tick(1.0 / 60.0)
-		check(ship.position.z < start.z - 10 and ship.velocity.length() <= ship.cruise_speed + 0.1, "Autopilot moves the authoritative ship using bounded normal flight commands")
+		check(ship.position.z < start.z - 10 and ship.velocity.length() <= ship.cruise_speed + 0.1, "Autopilot moves the authoritative ship using bounded normal flight commands (start=%s, position=%s, velocity=%s, status=%s)" % [start, ship.position, ship.velocity, client.autopilot.status])
 		check(ship.energy == 100 and not server.session.commands[id]["boost"], "Server retains flight and boost rules")
 		client.hud.navigation.choose_contact("station")
 		client.autopilot.toggle()
@@ -356,7 +360,8 @@ func network_checks() -> void:
 		friend.session.credential_id = "pilot1"
 		friend.session.credential_token = test_token(1)
 		friend.session.join("127.0.0.1", test_port(24693))
-		await settle(0.5)
+		if not await wait_for_pilot(server, friend):
+			return
 		var friend_id := friend.multiplayer.get_unique_id()
 		server.session.ships[friend_id].position = Vector3(400, 250, 0)
 		await replicate(server)
@@ -384,6 +389,16 @@ func network_checks() -> void:
 		client.autopilot.toggle()
 		client.session.disconnect_session("Autopilot disconnect check")
 		check(not client.autopilot.enabled, "Disconnect cancels flight assistance")
+
+
+func wait_for_pilot(server: Sector, client: Sector) -> bool:
+	var deadline := Time.get_ticks_msec() + 8000
+	while Time.get_ticks_msec() < deadline:
+		if client.session.active and server.session.ships.has(client.multiplayer.get_unique_id()):
+			return true
+		await settle(0.05)
+	check(false, "Autopilot fixture pilot authenticates on both peers within eight seconds")
+	return false
 
 
 func rendered_checks(sector: Sector) -> void:
