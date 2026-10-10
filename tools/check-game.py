@@ -46,7 +46,10 @@ def run_group(name: str, checks: list[list[str]], profile: Path, offset: int) ->
             output = process.stdout + process.stderr
             failed = process.returncode != 0 or ERROR.search(output) is not None
         except subprocess.TimeoutExpired as error:
-            output = f'Check timed out after 180 seconds: {error}'
+            def captured(value):
+                return value.decode('utf-8', errors='replace') if isinstance(value, bytes) else (value or '')
+            output = captured(error.stdout) + captured(error.stderr)
+            output += f'\nCheck timed out after 180 seconds: {error}'
             failed = True
         results.append({'group': name, 'command': subprocess.list2cmdline(command),
                         'seconds': round(time.perf_counter() - started, 2), 'failed': failed, 'output': output})

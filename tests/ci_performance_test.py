@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -107,6 +108,16 @@ class CacheTest(unittest.TestCase):
 
 
 class ValidationTest(unittest.TestCase):
+    def test_timeout_preserves_captured_diagnostics(self):
+        with tempfile.TemporaryDirectory() as directory:
+            error = subprocess.TimeoutExpired(['fixture'], 180, output=b'last checkpoint\n', stderr=b'SCRIPT ERROR: fixture\n')
+            with patch.object(runner.subprocess, 'run', side_effect=error):
+                result = runner.run_group('fixture', [['fixture']], Path(directory) / 'profile', 1500)[0]
+            self.assertTrue(result['failed'])
+            self.assertIn('last checkpoint', result['output'])
+            self.assertIn('SCRIPT ERROR: fixture', result['output'])
+            self.assertIn('timed out after 180 seconds', result['output'])
+
     def test_real_git_diff_gates_docs_and_preserves_main_builds(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
