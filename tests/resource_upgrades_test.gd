@@ -100,30 +100,54 @@ func run() -> void:
 	for args: Array in [["refine", "prometid:0", ""], ["refine", "prometid:-1", ""], ["refine", "prometid:1.5", ""], ["refine", "prometid:999999", ""], ["refine", "seprom:1", ""], ["refine", "promerium:3", ""], ["boost", "seprom:1", "engines"], ["boost", "prometid:1", "shields"], ["boost", "duranium:1", "rockets"], ["boost", "seprom:11", "lasers"]]:
 		await request(client, 1, args[0], args[1], args[2])
 		check(conserved_ledger(JSON.stringify({"pilots": store.pilots})) == conserved_ledger(JSON.stringify({"pilots": before})), "Invalid recipe, quantity or boost cannot consume cargo: %s" % str(args))
-	for reason: String in ["distance", "speed", "damage", "life"]:
+	for reason: String in ["distance", "speed", "damage"]:
 		ship.position = Vector3(0, 200, 0) if reason == "distance" else combat.records[id]["spawn"]
 		ship.velocity = Vector3(9, 0, 0) if reason == "speed" else Vector3.ZERO
 		ship.time_since_hit = 0 if reason == "damage" else 6
-		await request(client, 1, "refine", "prometid:1", "", "", 99 if reason == "life" else 0)
-		check(conserved_ledger(JSON.stringify({"pilots": store.pilots})) == conserved_ledger(JSON.stringify({"pilots": before})), "Refining validates authoritative " + reason)
-	ship.time_since_hit = 6
+		await request(client, 1, "boost", "seprom:1", "lasers")
+		check(conserved_ledger(JSON.stringify({"pilots": store.pilots})) == conserved_ledger(JSON.stringify({"pilots": before})), "Equipment boosts retain authoritative " + reason + " restrictions")
+	await request(client, 1, "refine", "prometid:1", "", "", 99)
+	check(conserved_ledger(JSON.stringify({"pilots": store.pilots})) == conserved_ledger(JSON.stringify({"pilots": before})), "Refining rejects a stale ship life")
+	ship.alive = false
+	await request(client, 1, "refine", "prometid:1")
+	check(conserved_ledger(JSON.stringify({"pilots": store.pilots})) == conserved_ledger(JSON.stringify({"pilots": before})), "Refining cannot spend cargo while awaiting rescue")
+	ship.alive = true
+	ship.position = Vector3(0, 100, 1000)
+	ship.velocity = Vector3(20, 0, 0)
+	ship.time_since_hit = 0
+	await replicate(server)
 	client.get_viewport().size = Vector2i(960, 600)
 	client.get_viewport().render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	client.main_menu.select_page("refining")
+	await settle()
+	check(menu.visible and not menu.refine_button.disabled and not menu.status.text.contains("repair"), "Refining opens and enables confirmation away from the outpost while moving and recently hit")
+	menu.select_tab("update")
+	await settle()
+	check(menu.upgrade_button.disabled, "Update retains station restrictions while Refining is available in flight")
+	menu.select_tab("refining")
+	client.session.combat.station_pending = true
+	await settle()
+	check(menu.refine_button.disabled and menu.status.text == "Waiting for server...", "Pending refining blocks another confirmation")
+	client.session.combat.station_pending = false
 	await settle()
 	await click(client, menu.resource_cards["prometid"])
 	await click(client, menu.refine_amount.get_parent().get_child(1))
 	check(menu.refine_amount.value == 2 and menu.recipe.text.contains("40 Prometium"), "Max quantity previews the exact batch ingredients before confirmation")
 	client.session.combat.station_message = "" # Capture the current recipe without earlier rejection feedback.
 	await screenshot(client, "refining-ready")
+	await screenshot(client, "refining-in-flight")
 	await click(client, menu.refine_button)
-	check(client.cargo["prometid"] == 22 and not client.cargo.has("prometium") and client.cargo["endurium"] == 20, "Refine selected amount consumes exactly 20 Prometium + 10 Endurium per output")
+	check(client.cargo["prometid"] == 22 and not client.cargo.has("prometium") and client.cargo["endurium"] == 20, "Refining in flight consumes exactly 20 Prometium + 10 Endurium per output from active ship cargo")
 	await request(client, 1, "refine", "prometid:2")
 	check(client.cargo["prometid"] == 22 and store.pilots["pilot0"]["equipment"]["revision"] == 1, "Duplicate refining consumes no additional ingredients")
 	await request(client, 2, "refine", "duranium:2")
 	check(client.cargo["duranium"] == 22 and not client.cargo.has("endurium") and not client.cargo.has("terbium"), "Duranium consumes exactly 10 Endurium + 20 Terbium")
 	await request(client, 3, "refine", "promerium:2")
 	check(client.cargo["promerium"] == 12 and client.cargo["prometid"] == 2 and client.cargo["duranium"] == 2, "Promerium consumes 10 of each intermediate without Xenomit")
+	ship.position = combat.records[id]["spawn"]
+	ship.velocity = Vector3.ZERO
+	ship.time_since_hit = 6
+	await replicate(server)
 	for dimensions: Vector2i in [Vector2i(960, 600), Vector2i(1440, 900)]:
 		client.get_viewport().size = dimensions
 		client.main_menu.select_page("refining")

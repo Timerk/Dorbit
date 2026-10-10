@@ -311,7 +311,7 @@ func select_page(page: String) -> void:
 	var offline := StationUi.offline_preview(sector)
 	if not offline and page in ["shop", "hangar", "cargo", "quests", "refining"] and (not sector.session.received_snapshot or sector.session.combat.inventory.is_empty()):
 		return
-	if not offline and page in ["shop", "hangar", "cargo", "quests", "refining"]:
+	if not offline and page in ["shop", "hangar", "cargo", "quests"]:
 		var blocker := sector.repair_blocker()
 		if not blocker.is_empty():
 			sector.notify(blocker)
