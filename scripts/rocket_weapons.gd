@@ -60,7 +60,7 @@ func target_blocker(target: SpaceShip, kind: String) -> String:
 		return "INVALID TARGET"
 	if not target.available():
 		return "TARGET RETURNING"
-	if ship.position.distance_to(Sector.STATION_POSITION) <= 75.0:
+	if ship.position.distance_to(Sector.STATION_POSITION) <= Sector.PROTECTION_RADIUS:
 		return "STATION PROTECTION"
 	if ship.global_position.distance_to(target.global_position) > float(Ammunition.ROCKETS[kind]["range"]):
 		return "OUT OF RANGE"
@@ -71,6 +71,8 @@ func spend(kind: String, count: int) -> bool:
 	if int(ship.ammo.get(kind, 0)) < count or (debit.is_valid() and not debit.call(kind, count)):
 		return false
 	ship.ammo[kind] -= count
+	if not debit.is_valid():
+		ResourceBoosts.consume_rockets(ship.resource_boosts, count)
 	return true
 
 
@@ -84,10 +86,11 @@ func fire_single(target: SpaceShip) -> String:
 		return "ROCKET COOLDOWN"
 	if available(single_type) < 1:
 		return "NO ROCKET AMMUNITION"
+	var bonus := ResourceBoosts.bonus(ship.resource_boosts, "rockets")
 	if not spend(single_type, 1):
 		return "AMMUNITION SAVE FAILED"
 	single_cooldown = Ammunition.ROCKETS[single_type]["cooldown"]
-	launch(target, single_type, 0, 1)
+	launch(target, single_type, 0, 1, bonus)
 	return ""
 
 
@@ -109,22 +112,24 @@ func activate(target: SpaceShip) -> String:
 	if not blocker.is_empty():
 		return blocker
 	var count := loaded
+	var boosted := int(ResourceBoosts.remaining(ship.resource_boosts, "rockets"))
+	var bonus := ResourceBoosts.bonus(ship.resource_boosts, "rockets")
 	if not spend(launcher_type, count):
 		return "AMMUNITION SAVE FAILED"
 	unload()
 	launcher_cooldown = LAUNCHER_COOLDOWN
 	for index in range(count):
-		launch(target, launcher_type, index, count)
+		launch(target, launcher_type, index, count, bonus if index < boosted else 0.0)
 	return ""
 
 
-func launch(target: Alien, kind: String, index: int, count: int) -> void:
+func launch(target: Alien, kind: String, index: int, count: int, bonus: float = 0.0) -> void:
 	sequence += 1
 	var info: Dictionary = Ammunition.ROCKETS[kind]
 	var id := "%d-%d" % [ship.get_instance_id(), sequence]
 	var origin := ship.global_position - ship.global_basis.z * 3.0 + ship.global_basis.x * (index - (count - 1) * 0.5) * 1.2
 	var event := {"id": id, "origin": origin, "target": target.alien_id, "life": target.life, "kind": kind, "index": index, "count": count}
-	pending.append({"id": id, "target": weakref(target), "life": target.life, "attacker_life": ship.get_meta("life", 0), "position": origin, "age": 0.0, "kind": kind, "hit": rng.randf() < float(info["accuracy"]), "damage": float(info["damage"]) * rng.randf_range(info["minimum"], info["maximum"])})
+	pending.append({"id": id, "target": weakref(target), "life": target.life, "attacker_life": ship.get_meta("life", 0), "position": origin, "age": 0.0, "kind": kind, "hit": rng.randf() < float(info["accuracy"]), "damage": float(info["damage"]) * rng.randf_range(info["minimum"], info["maximum"]) * (1.0 + bonus)})
 	launched.emit(event)
 
 
@@ -152,7 +157,7 @@ func tick(delta: float) -> void:
 		var step := float(Ammunition.ROCKETS[projectile["kind"]]["speed"]) * delta
 		if projectile["position"].distance_to(target.global_position) <= step:
 			pending.remove_at(index) # Retire before damage callbacks; never hit twice.
-			var hit: bool = projectile["hit"] and ship.position.distance_to(Sector.STATION_POSITION) > 75.0
+			var hit: bool = projectile["hit"] and ship.position.distance_to(Sector.STATION_POSITION) > Sector.PROTECTION_RADIUS
 			resolved.emit(projectile["id"], target.global_position, hit)
 			if hit:
 				target.take_damage(projectile["damage"], ship)

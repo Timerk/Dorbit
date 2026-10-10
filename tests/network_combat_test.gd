@@ -39,9 +39,9 @@ func run() -> void:
 			other.home_position = Vector3(700, 600, other.alien_id * 40)
 			other.position = other.home_position
 	check(host.credits == 0 and client.credits == 0, "Shared wallets start independently of solo credits")
-	host.player.position = Vector3(-12, 100, 0)
-	remote.position = Vector3(12, 100, 0)
-	alien.position = Vector3(0, 100, -100)
+	host.player.position = Vector3(-12, 200, 0)
+	remote.position = Vector3(12, 200, 0)
+	alien.position = Vector3(0, 200, -100)
 	alien.home_position = alien.position
 	await physics_frame
 	await replicate(host)
@@ -60,14 +60,14 @@ func run() -> void:
 	check(is_equal_approx(client.alien.shield, alien.shield), "Alien damage is replicated exactly")
 	check(id in alien.contributors, "A valid hit records the contributing player")
 	# Server geometry, rather than client HUD/aim claims, determines whether a shot is legal.
-	remote.position = Vector3(0, 100, 300)
+	remote.position = Vector3(0, 200, 300)
 	remote.shot_cooldown = 0
 	await send_fire(client)
 	await physics_frame
 	var before_blocked := alien.shield
 	combat.tick(0.01)
 	check(alien.shield == before_blocked, "Host rejects out-of-range fire intent")
-	remote.position = Vector3(12, 100, 0)
+	remote.position = Vector3(12, 200, 0)
 	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3(0, PI, 0), false, true, 0, 0, 0)
 	await settle(0.06)
 	host.session.tick(0.01)
@@ -79,7 +79,7 @@ func run() -> void:
 	box.size = Vector3(50, 50, 4)
 	shape.shape = box
 	wall.add_child(shape)
-	wall.position = Vector3(0, 100, -50)
+	wall.position = Vector3(0, 200, -50)
 	host.add_child(wall)
 	await physics_frame
 	await send_fire(client)
@@ -99,7 +99,7 @@ func run() -> void:
 	check(host.player in host.session.ships.values(), "Host retains its own ship")
 	# The client is closer, so the alien attacks it rather than always targeting the host.
 	remote.position = alien.position + Vector3(0, 0, 80)
-	host.player.position = Vector3(-100, 100, 0)
+	host.player.position = Vector3(-100, 200, 0)
 	check(combat.choose_target(alien) == remote, "Alien chooses the nearest eligible player")
 	remote.take_damage(remote.max_shield + remote.max_hull / 12.0, alien)
 	await replicate(host)
@@ -108,6 +108,10 @@ func run() -> void:
 	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, host.player)
 	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, host.player)
 	await replicate(host)
+	# Unreliable alien chunks may arrive after the reliable reward notification.
+	var death_deadline := Time.get_ticks_msec() + 2000
+	while (client.alien.alive or late.alien.alive or client.target != null) and Time.get_ticks_msec() < death_deadline:
+		await replicate(host)
 	check(combat.records[1]["credits"] + combat.records[id]["credits"] == 1500, "Reward pool is awarded exactly once and conserved")
 	check(absi(combat.records[1]["credits"] - combat.records[id]["credits"]) <= 1, "Contributors receive equal integer shares")
 	check(combat.records[late_id]["credits"] == 0, "A spectator receives no reward")
@@ -120,7 +124,7 @@ func run() -> void:
 	client.session.combat.repair_request.rpc_id(1, 0)
 	await settle()
 	check(remote.hull == remote.max_hull - remote.max_hull / 12.0 and combat.records[id]["credits"] == wallet, "Remote repairs fail away from station")
-	remote.position = combat.records[id]["spawn"]
+	remote.position = Sector.STATION_POSITION + Vector3(0, 120, 0)
 	remote.velocity = Vector3(20, 0, 0)
 	remote.time_since_hit = 6
 	client.session.combat.repair_request.rpc_id(1, 0)
@@ -135,7 +139,7 @@ func run() -> void:
 	client.session.combat.repair_request.rpc_id(1, 0)
 	await settle()
 	await replicate(host)
-	check(remote.hull == remote.max_hull and client.player.hull == remote.max_hull, "Accepted remote repair restores and replicates health")
+	check(remote.hull == remote.max_hull and client.player.hull == remote.max_hull, "Accepted remote repair at the 120 m boundary restores and replicates health")
 	check(late.session.ships[id].hull == remote.max_hull and late.session.ships[id].shield == remote.max_shield, "A teammate observer receives the repaired hull and shields")
 	check(client.credits == wallet - 2 and client.objective_stage == 4, "Host deducts the repair price and confirms encounter completion")
 	client.session.combat.repair_request.rpc_id(1, 0)

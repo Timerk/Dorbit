@@ -97,11 +97,11 @@ func run() -> void:
 	combat.publish_inventory(id)
 	await settle()
 	var before := store.pilots.duplicate(true)
-	for args: Array in [["refine", "prometid:0", ""], ["refine", "prometid:-1", ""], ["refine", "prometid:1.5", ""], ["refine", "prometid:999999", ""], ["refine", "seprom:1", ""], ["refine", "promerium:3", ""], ["boost", "seprom:1", "engines"], ["boost", "prometid:1", "shields"], ["boost", "promerium:1", "rockets"], ["boost", "seprom:11", "lasers"]]:
+	for args: Array in [["refine", "prometid:0", ""], ["refine", "prometid:-1", ""], ["refine", "prometid:1.5", ""], ["refine", "prometid:999999", ""], ["refine", "seprom:1", ""], ["refine", "promerium:3", ""], ["boost", "seprom:1", "engines"], ["boost", "prometid:1", "shields"], ["boost", "duranium:1", "rockets"], ["boost", "seprom:11", "lasers"]]:
 		await request(client, 1, args[0], args[1], args[2])
 		check(conserved_ledger(JSON.stringify({"pilots": store.pilots})) == conserved_ledger(JSON.stringify({"pilots": before})), "Invalid recipe, quantity or boost cannot consume cargo: %s" % str(args))
 	for reason: String in ["distance", "speed", "damage", "life"]:
-		ship.position = Vector3(0, 100, 0) if reason == "distance" else combat.records[id]["spawn"]
+		ship.position = Vector3(0, 200, 0) if reason == "distance" else combat.records[id]["spawn"]
 		ship.velocity = Vector3(9, 0, 0) if reason == "speed" else Vector3.ZERO
 		ship.time_since_hit = 0 if reason == "damage" else 6
 		await request(client, 1, "refine", "prometid:1", "", "", 99 if reason == "life" else 0)
@@ -135,10 +135,11 @@ func run() -> void:
 		await screenshot(client, "refining-%d" % dimensions.x)
 		await click(client, menu.tabs["update"])
 		await click(client, menu.groups["rockets"])
-		check(menu.upgrade_button.disabled and menu.upgrade_description.text.contains("coming later"), "Rocket preview cannot spend resources")
+		check(not menu.upgrade_button.disabled and menu.upgrade_description.text.contains("boosted rockets"), "Rocket preview enables compatible resources")
 		var held := client.cargo.duplicate(true)
 		await drag_resource(client, "promerium", "rockets")
-		check(client.cargo == held and menu.group == "rockets" and menu.upgrade_button.disabled, "Rocket drops remain Coming later without consuming cargo")
+		check(client.cargo == held and menu.group == "rockets" and not menu.upgrade_button.disabled, "Rocket drops enable confirmation without consuming cargo")
+		await screenshot(client, "rocket-upgrades-%d" % dimensions.x)
 		await click(client, menu.groups["engines"])
 		await drag_resource(client, "seprom", "engines")
 		check(menu.group == "engines" and client.cargo == held and menu.upgrade_button.disabled, "Incompatible Seprom engine drop cannot apply a boost")
@@ -229,10 +230,10 @@ func run() -> void:
 		next["pilot0"]["equipment"]["items"]["test-laser%d" % index] = {"model": "lf-3" if index == 2 else "laser", "ship": "starter", "slot": "laser%d" % index}
 	check(store.persist(next), "Save four-laser fixture")
 	combat.apply_equipment(id)
-	ship.position = Vector3(0, 100, 0)
+	ship.position = Vector3(0, 200, 0)
 	ship.rotation = Vector3.ZERO
 	var alien := server.alien
-	alien.position = Vector3(0, 100, -100)
+	alien.position = Vector3(0, 200, -100)
 	alien.home_position = alien.position
 	alien.max_hull = 100000
 	alien.reset_health()
@@ -263,17 +264,17 @@ func run() -> void:
 	insufficient["x2"] = 3
 	check(store.commit({}, {}, {}, {"pilot0": insufficient}), "Seed incomplete ammunition volley")
 	ship.ammo = insufficient
-	ship.position = Vector3(0, 100, 0)
+	ship.position = Vector3(0, 200, 0)
 	var blocked_health := alien.hull + alien.shield
 	ship.shot_cooldown = 0
 	check(not ship.try_fire(alien) and ship.ammo["x2"] == 3 and ResourceBoosts.remaining(ship.resource_boosts, "lasers") == 20 and alien.hull + alien.shield == blocked_health, "Insufficient ammunition preserves boost rounds and damage")
 	ship.ammo_type = "x1"
-	ship.position = Vector3(0, 100, 1000)
+	ship.position = Vector3(0, 200, 1000)
 	ship.shot_cooldown = 0
 	check(not ship.try_fire(alien) and ResourceBoosts.remaining(ship.resource_boosts, "lasers") == 20, "Blocked shots consume no rounds")
 	check(not client.player.try_fire(client.alien), "Clients cannot spend authoritative boost reserves or apply damage")
 	ship.shot_cooldown = 1
-	ship.position = Vector3(0, 100, 0)
+	ship.position = Vector3(0, 200, 0)
 	check(not ship.try_fire(alien) and ResourceBoosts.remaining(ship.resource_boosts, "lasers") == 20, "Cooldown consumes no rounds")
 	ship.position = combat.records[id]["spawn"]
 	ship.shot_cooldown = 0

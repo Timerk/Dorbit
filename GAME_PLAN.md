@@ -224,7 +224,7 @@ Milestone 3 now includes multiple simultaneous aliens in the current sector. Thi
 - Scouts are starter encounters; Sentinels require additional lasers or cooperative hunting. The Heavy is intended for upgraded pilots or a small group. Their colored contacts appear on the radar and sector overview. Enemy hull, shields and damage were increased for the starter equipment rebalance. Credit pools now reflect the equipment and ship prices; movement and respawn timers retain their previous tuning.
 - Each kill splits that type's credit pool equally among connected pilots who damaged that alien in its current life. Contributors awaiting rescue remain eligible; disconnected pilots are removed. Integer remainders go in ascending peer-ID order. Persistence commits the shares before clients see them.
 - Killing or resetting one alien must leave other encounters, contributions and active fire intact. Player rescue also leaves encounters independent.
-- Station protection remains a 75 m sphere. Aliens cannot attack protected pilots. Protected pilots cannot damage aliens.
+- Station protection is a 120 m sphere. Aliens cannot attack protected pilots. Protected pilots cannot damage aliens.
 - Exceeding the home leash, or losing all eligible targets after engagement, starts a return. Health and contributions reset and the life number advances. Returning aliens reject damage and cannot attack until they reach home. If direct flight is blocked, a 30-second server timeout places them at home so a rock cannot strand an invulnerable slot. Old fire commands cannot cross a reset or respawn.
 - Joining clients receive every alien's current identity, transform, health, life, engagement/return state and respawn countdown. Snapshot ordering is tracked per entity.
 - Left click selects the visible alien intersected by the camera ray. Tab selects the available on-screen alien closest to the mouse cursor each time, using screen center while right-mouse steering captures the cursor. Selection has no combat-range limit. Repeated Tab over the same enemy retains the lock and fire intent; Tab with no on-screen candidate preserves an existing lock. Locks persist through distance, camera turns and a living alien's return home until manual retargeting or deselection. Target death, player rescue and disconnect clear the lock. Encounter resets stop automatic fire without clearing a living target, so stale fire cannot cross lives. Weapon range, firing arc, protection and line of sight still decide whether lasers fire.
@@ -399,7 +399,7 @@ The first Milestone 3 equipment slice added fittings for the Liberator starter. 
 - The starter follows the regular Liberator: four laser slots, six shared generator slots and two extra slots reserved for future equipment. A generator slot accepts either a shield generator or an engine.
 - Lasers add damage, shield generators add shield capacity, and engines add speed. Damage, capacity and speed bonuses stack by addition. Shield absorption is the capacity-weighted average of installed shield generators, never the sum of their percentages. Hull and base movement belong to the ship; empty slots never prevent flight.
 - New pilots receive one laser, one shield generator and one engine installed. Existing saves receive the same starter fitting exactly once, retaining credits and unrelated progression fields.
-- Press B near the station for the shop and I for a separate ship equipment screen. Both use the repair checks: alive, within 60 m, speed at most 8 m/s, and at least five seconds since damage. The server checks every action again.
+- Press B near the station for the shop and I for a separate ship equipment screen. Both use the repair checks: alive, within 120 m, speed at most 8 m/s, and at least five seconds since damage. The server checks every action again.
 - The shop has category navigation, a scrollable two-column item catalog, a selected-item preview and a purchase summary. Weapons contain lasers; generators have shield and engine submenus. All equipment shows 18 reference models: five lasers, seven shields and six engines, including unavailable LF-4 and SG3N-B00 previews. Ships lists all twelve modeled base hulls with stats, credits and ownership. Selecting categories or items never purchases anything. Equipment uses the same artwork as inventory; ships use their saved model renders.
 - The shop shows visual item cards, prices and credits, and delivers equipment to inventory and empty hulls to the hangar. The equipment screen shows the active ship's model preview and an owned-ship selector on the left, its actual laser and shared generator slots in the middle, and scrollable storage inventory on the right. Activate an owned hull for free at the station; switching preserves absolute hull, shield charge, boost energy and cooldowns, clamped to the new fitting. Drag items to compatible empty slots to install them, or back to inventory to remove them. Selecting an item and clicking an empty slot, plus a removal button, also supports keyboard use. Occupied slots require removal first.
 - Storage groups items in order: weapons, shield generators, speed generators, then extras. A category filter or All equipment view reduces crowding without changing ownership. Shift + left click on a stored item installs it in the first compatible empty slot on the active ship; shields and speed generators use the same shared generator pool. This works in the docked main menu's Hangar before Start and in the station equipment screen during flight. Back and Esc return docked pilots to the overview without launching; Start preserves the prepared fitting. Full slots leave the item in storage with an explanation. Extras remain reserved until extra equipment is added.
@@ -516,7 +516,7 @@ Living ships collect automatically within 12 m. The nearest ship with free capac
 
 The Liberator holds 400 units; every resource uses one unit. Capacity is defined by ship model for future ship types, and cargo belongs to each individual owned ship. The approved header-free flight HUD retains a cargo FULL warning; routine usage moves to the existing station cargo page, alongside resource quantities, prices and total sale value. Collected cargo survives death, reconnects and server restarts. A future death penalty needs a separate decision.
 
-Press B at Outpost 01 and choose Trade raw materials. Eight horizontal ore cards use generated high-resolution transparent mineral renders in the supplied reference colors, with unit prices, held amounts, minus/plus and editable quantity controls, sale totals and Sell buttons. Select a quantity of one resource or sell all active-ship cargo. Sales use the station restrictions: alive, within 60 m, at most 8 m/s and five seconds since damage. The server validates the selected amount and saves cargo removal, credit payment and the transaction sequence together before confirming success. Duplicate and stale requests cannot pay twice. A sale that exceeds the wallet limit leaves all cargo intact. Cargo collection also commits before removing units from space; a save failure stops progression.
+Press B at Outpost 01 and choose Trade raw materials. Eight horizontal ore cards use generated high-resolution transparent mineral renders in the supplied reference colors, with unit prices, held amounts, minus/plus and editable quantity controls, sale totals and Sell buttons. Select a quantity of one resource or sell all active-ship cargo. Sales use the station restrictions: alive, within 120 m, at most 8 m/s and five seconds since damage. The server validates the selected amount and saves cargo removal, credit payment and the transaction sequence together before confirming success. Duplicate and stale requests cannot pay twice. A sale that exceeds the wallet limit leaves all cargo intact. Cargo collection also commits before removing units from space; a save failure stops progression.
 
 Save schema 3 adds validated per-ship cargo. Versions 1 and 2 migrate once to empty holds while retaining credits, equipment, contracts and unrelated progression. The operator provisioning tool preserves cargo when rotating credentials. Older servers cannot read schema 3; rollback requires a pre-migration ledger backup.
 
@@ -547,7 +547,7 @@ The Update tab follows the user's two-row reference: a four-resource bar above i
 
 The Update quantity field caps typed values and spinner/Max changes at the selected resource's current cargo stock. The cap refreshes when selecting another resource or when server cargo changes. Empty stock shows zero with editing and boost application disabled.
 
-One unit provides ten boosted **individual laser rounds**, or ten minutes for shields/engines. Each installed laser consumes one round when an authoritative volley actually fires; blocked shots and cooldowns consume none. A final partial volley boosts only as many lasers as rounds remain, in laser-slot order. Each laser's own NPC bonus is included before the resource multiplier. Rocket boosts remain deferred and show Coming later without consuming cargo. Manual rocket combat is implemented separately below.
+One unit provides ten boosted **individual laser rounds or rockets**, or ten minutes for shields/engines. Each installed laser consumes one round when an authoritative volley actually fires; blocked shots and cooldowns consume none. A final partial volley boosts only as many lasers as rounds remain, in laser-slot order. Each laser's own NPC bonus is included before the resource multiplier. The user requested enabling rocket resource updates now that manual rocket combat is implemented. Single rockets and each Hellstorm rocket consume one rocket boost round at launch, including misses; loading and rejected shots consume none. A final partial Hellstorm volley boosts the first rockets in launch order. Damage retains the bonus captured at launch, including after reserve expiry or replacement. Ammunition and live per-ship boosts commit together before projectiles launch.
 
 The same resource adds rounds or duration without changing its percentage. A different resource replaces the remaining reserve only after the player checks an explicit discard warning, as chosen by the user. Boosts belong to the ship; switching hulls preserves its reserve. Shield capacity multiplies the installed total without changing absorption or granting charge; expiry clamps excess charge. Engines multiply fitted cruise and boost speeds without changing acceleration. Applying resources never repairs hull or resets cooldowns.
 
@@ -681,8 +681,8 @@ Save schema 7 migrates schema 1–6 while preserving progression and grants
 The provisioning tool supports the same migration and launcher fittings.
 Back up the ledger before upgrading; rollback needs a pre-migration backup.
 Network schema 13 requires matching client/server builds. Resource rocket
-boosts remain disabled until a separate integration; laser/timed reserves are
-unchanged.
+boosts use the existing per-ship reserve and combat journal formats; no new save
+or network schema is required. Laser/timed reserve behavior is unchanged.
 
 ## Multiplayer and hosting
 
@@ -838,7 +838,8 @@ The rear and underside follow the same design in the single source model. See
 
 The provisional model is approximately 294 m tall and 170 m across. Its origin
 is the lowest main hangar's service point. The station location, launch/rescue
-spawn, 60 m service radius and 75 m protection radius retain their current values;
+spawn retain their current values. The user requested doubling the service radius
+to 120 m and matching protection to that same 120 m radius;
 protection is around the service point, not the entire station. The larger upper
 hangars and outer docking arms do not extend station services or protection.
 Clients and dedicated servers load the same 53 simple collision boxes, with
@@ -887,7 +888,7 @@ The initial transport works with LAN or VPN addresses, or a publicly reachable h
 
 Initial cooperative rules for playtesting:
 
-- The alien attacks the nearest living player outside the station's protected 75 m radius, within its existing detection and leash ranges.
+- The alien attacks the nearest living player outside the station's protected 120 m radius, within its existing detection and leash ranges.
 - A kill splits the 75-credit pool equally among currently connected players who damaged that alien during its current life, including contributors awaiting rescue. Integer remainders are distributed in ascending peer-ID order; shares differ by at most one credit. Disconnected players lose eligibility. Each eligible player receives one kill toward the encounter objective.
 - Each player has a host-owned session wallet starting at zero. Shared credits are separate from solo credits and reset when that player leaves/rejoins. No persistent identities or saves are introduced here.
 - The host validates repairs against that player's position, speed, time since damage, hull, and balance. Existing repair prices and the up-to-10-credit rescue fee remain provisional.
@@ -923,7 +924,7 @@ Completion criteria:
 
 ### First station hunting contracts
 
-Each pilot can run the Scout, Sentinel and Heavy hunting contracts together, with one active run per offer. Press C at Outpost 01 to accept hunts or abandon individual contracts. These station actions use the repair restrictions: alive, within 60 m, at most 8 m/s, and five seconds since the last hit. Opening the board stops local controls while the shared world continues. The flight HUD shows every active hunt.
+Each pilot can run the Scout, Sentinel and Heavy hunting contracts together, with one active run per offer. Press C at Outpost 01 to accept hunts or abandon individual contracts. These station actions use the repair restrictions: alive, within 120 m, at most 8 m/s, and five seconds since the last hit. Opening the board stops local controls while the shared world continues. The flight HUD shows every active hunt.
 
 The contract board follows the supplied Mission Control reference: hunting and active-contract tabs, a selectable hunt list beside the station uplink image, and a detail pane with briefing, objective progress and credit reward. Selecting a hunt previews it; a separate footer button accepts or abandons the selected run. The footer shows remaining contract slots and explains blocked station actions. The existing three hunts, concurrent acceptance and automatic payouts remain the scope.
 

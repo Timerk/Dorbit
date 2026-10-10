@@ -138,10 +138,32 @@ func run() -> void:
 	check(player.shield > 0.0, "Shields regenerate after the combat delay")
 	player.reset_health()
 
+	# Services include the boundary in every axis and stop immediately beyond it.
+	player.velocity = Vector3.ZERO
+	player.time_since_hit = 10.0
+	for axis in [Vector3.RIGHT, Vector3.UP, Vector3.BACK]:
+		player.position = Sector.STATION_POSITION + axis * 120.0
+		check(sector.repair_blocker().is_empty(), "Station services reach the doubled 120 m boundary in 3D")
+		player.position = Sector.STATION_POSITION + axis * 120.1
+		check(sector.repair_blocker() == "Move within 120 m of Outpost 01 to repair.", "Outside service range reports the current radius")
+		player.position = Sector.STATION_POSITION + axis * 120.0
+		alien.position = player.position + Vector3(0, 0, -50)
+		alien.home_position = alien.position
+		check(player.firing_blocker(alien) == "STATION PROTECTION", "Pilot lasers are blocked at the shared protection boundary")
+		check(alien.firing_blocker(player) == "STATION PROTECTION", "Alien lasers cannot hit a pilot at the protection boundary")
+		check(player.rockets.target_blocker(alien, "r-310") == "STATION PROTECTION", "Rockets share the shared protection boundary")
+		var health := alien.hull + alien.shield
+		alien.take_damage(1.0, player)
+		check(alien.hull + alien.shield == health, "Protected pilots cannot bypass weapon validation with direct damage")
+		player.position = Sector.STATION_POSITION + axis * 120.1
+		check(player.firing_blocker(alien) != "STATION PROTECTION", "Pilot lasers become eligible immediately outside protection")
+		check(alien.firing_blocker(player) != "STATION PROTECTION", "Alien lasers become eligible immediately outside protection")
+		check(player.rockets.target_blocker(alien, "r-310").is_empty(), "Rockets become eligible immediately outside protection")
+
 	# A shot needs range, aim, line of sight, and an available cooldown.
-	player.position = Vector3(0, 100, 0)
+	player.position = Vector3(0, 200, 0)
 	player.rotation = Vector3.ZERO
-	alien.position = Vector3(0, 100, -100)
+	alien.position = Vector3(0, 200, -100)
 	alien.home_position = alien.position
 	await sync_physics()
 	check(player.try_fire(alien), "Valid target can be fired on")
@@ -162,7 +184,7 @@ func run() -> void:
 	box.size = Vector3(20, 20, 4)
 	shape.shape = box
 	wall.add_child(shape)
-	wall.position = Vector3(0, 100, -50)
+	wall.position = Vector3(0, 200, -50)
 	sector.add_child(wall)
 	await sync_physics()
 	check(not player.try_fire(alien), "An obstacle blocks laser damage")
