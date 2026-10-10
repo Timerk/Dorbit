@@ -383,7 +383,8 @@ Review captures show the [full cargo panel](docs/feedback/resources-full-hold.pn
 
 ### Refining and resource upgrades
 
-Open **Refining** in the shared menu near Outpost 01. Its **Refining** tab shows
+Open **Refining** in the shared menu anywhere in the sector. Refining uses the
+active ship's cargo and works while moving or recently hit. Its **Refining** tab shows
 the ore recipe tree; select Prometid, Duranium or Promerium, choose an amount and
 confirm. Prometid uses 20 Prometium + 10 Endurium; Duranium uses 10 Endurium +
 20 Terbium; Promerium uses 10 Prometid + 10 Duranium without Xenomit. Seprom is
@@ -395,7 +396,8 @@ the actual cargo cost and automatic steps; Max includes shared Endurium costs.
 One Promerium from raw ores uses 200 each of Prometium, Endurium and Terbium.
 The complete batch saves together, with no partial spending on shortages or failure.
 
-The **Update** tab has a resource bar above illustrated equipment cards. Drag a
+The **Update** tab retains Outpost 01 service restrictions and has a resource bar
+above illustrated equipment cards. Drag a
 held resource onto lasers, shields or engines, then choose an amount and confirm
 on the right. Selecting both cards also works without dragging. Compatible drop
 targets highlight; a drop never spends cargo by itself. Each equipment card's
@@ -423,7 +425,8 @@ applying a shield boost does not refill charge or alter absorption.
 Durations checkpoint every five seconds and flush on disconnect/shutdown and
 successful station changes; an abrupt crash can restore up to five seconds.
 Weapon rounds commit before damage. Server writes validate ingredients,
-compatibility, quantities, station restrictions and duplicate protection.
+compatibility, quantities and duplicate protection. Refining requires a living
+ship and the current ship life; equipment boosts also require station restrictions.
 
 This requires matching network-schema-13 builds. Ledger schemas 1–7 migrate to
 schema 8, preserving progression and adding any missing reserves and rocket ammo; keep a backup for

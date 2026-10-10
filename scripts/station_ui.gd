@@ -197,20 +197,22 @@ static func accent(model: String) -> Color:
 	return Color("f4c778") if group == "weapons" else (FlightHud.CYAN if group == "shields" else Color("9aafff"))
 
 
-static func can_open(sector: Sector) -> bool:
+static func can_open(sector: Sector, station_required: bool = true) -> bool:
 	if offline_preview(sector):
 		return true
 	if not sector.session.active or sector.session.combat.inventory.is_empty():
 		sector.notify("Equipment is available on a persistent dedicated server.")
 		return false
-	var reason := sector.repair_blocker()
+	var reason := sector.repair_blocker() if station_required else ("" if sector.player.alive else "Wait for rescue.")
 	if not reason.is_empty():
 		sector.notify(reason)
 		return false
 	return true
 
 
-static func blocker(sector: Sector) -> String:
+static func blocker(sector: Sector, station_required: bool = true) -> String:
 	if offline_preview(sector):
 		return OFFLINE_BLOCKER
-	return "Waiting for server..." if sector.session.combat.station_pending else sector.repair_blocker()
+	if sector.session.combat.station_pending:
+		return "Waiting for server..."
+	return sector.repair_blocker() if station_required else ("" if sector.player.alive else "Wait for rescue.")

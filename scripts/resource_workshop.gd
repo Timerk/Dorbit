@@ -1,6 +1,6 @@
 class_name ResourceWorkshop
 extends PanelContainer
-## Refining and equipment boosts share a station console and cargo artwork.
+## Ship refining and station equipment boosts share a console and cargo artwork.
 
 const SIZE := Vector2(1150, 690)
 const BOOST_TEXT := {
@@ -360,7 +360,7 @@ func fit_window() -> void:
 
 
 func open() -> void:
-	if not StationUi.can_open(sector):
+	if not StationUi.can_open(sector, false):
 		return
 	if sector.main_menu.route_page("refining"):
 		return
@@ -384,6 +384,7 @@ func _process(_delta: float) -> void:
 		return
 	update_upgrade_limit()
 	var blocked := StationUi.blocker(sector)
+	var refining_blocked := StationUi.blocker(sector, false)
 	cargo_summary.text = "CARGO %d / %d" % [CargoResources.units(sector.cargo), sector.cargo_capacity]
 	for key: String in counts:
 		counts[key].text = "CARGO %d" % int(sector.cargo.get(key.get_slice(":", 1), 0))
@@ -401,8 +402,8 @@ func _process(_delta: float) -> void:
 	var maximum := ResourceBoosts.maximum(sector.cargo, output)
 	recipe.text = "CONSUMES\n" + "\n".join(ingredients) + ("\n\nAUTO-REFINES\n" + " + ".join(intermediates) if not intermediates.is_empty() else "") + "\nPRODUCES\n%d %s\nMaximum now: %d" % [int(refine_amount.value), CargoResources.TYPES[output]["name"], maximum]
 	refine_button.text = "REFINE %d UNITS" % int(refine_amount.value)
-	refine_button.disabled = not blocked.is_empty() or int(refine_amount.value) > maximum
-	refine_button.tooltip_text = blocked if not blocked.is_empty() else ("Not enough ingredients." if refine_button.disabled else "Consume these ingredients and add the selected output to cargo.")
+	refine_button.disabled = not refining_blocked.is_empty() or int(refine_amount.value) > maximum
+	refine_button.tooltip_text = refining_blocked if not refining_blocked.is_empty() else ("Not enough ingredients." if refine_button.disabled else "Consume these ingredients and add the selected output to cargo.")
 	var boosts := sector.player.resource_boosts
 	highlight_drop_targets()
 	for key: String in groups:
@@ -446,4 +447,5 @@ func _process(_delta: float) -> void:
 	upgrade_button.disabled = not reason.is_empty()
 	upgrade_button.tooltip_text = reason
 	upgrade_button.text = "REPLACE BOOST" if replacement else "APPLY BOOST"
-	status.text = blocked if not blocked.is_empty() else sector.session.combat.station_message
+	var page_blocker := refining_blocked if page == "refining" else blocked
+	status.text = page_blocker if not page_blocker.is_empty() else sector.session.combat.station_message
