@@ -730,7 +730,8 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 	var id := multiplayer.get_remote_sender_id()
 	if not records.has(id) or not session.pilot_ids.has(id):
 		return
-	var blocker := session.sector.repair_blocker(session.ships[id])
+	var active_ship: Pilot = session.ships[id]
+	var blocker := ("" if active_ship.alive else "Wait for rescue.") if action == "refine" else session.sector.repair_blocker(active_ship)
 	if records[id]["life"] != life:
 		blocker = "Ship changed. Review your fitting after rescue."
 	if not blocker.is_empty():
