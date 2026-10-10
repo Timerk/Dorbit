@@ -19,8 +19,12 @@ const WINDOW_RESOLUTIONS: Array[Vector2i] = [
 const ALIEN_KINDS: Array[String] = ["Sentinel", "Scout", "Scout", "Sentinel", "Heavy"]
 var player: Pilot
 var aliens: Dictionary[int, Alien] = {}
+var world_aliens: Dictionary[int, Alien] = {}
+var map_id: int = 0
+var map_rosters: Dictionary[int, Dictionary] = {}
+var map_scenery: Dictionary[int, Array] = {}
 var alien: Alien:
-	get: return aliens[0]
+	get: return aliens.values()[0]
 var target: SpaceShip
 var hud: FlightHud
 var credits: int = 0
@@ -67,6 +71,11 @@ func _ready() -> void:
 	settings.configure_input()
 	SectorVisuals.environment(self, not dedicated_server)
 	SectorVisuals.station(self, STATION_POSITION, not dedicated_server)
+	map_scenery[0] = []
+	for child in get_children():
+		if child is Node3D and not child is Light3D:
+			map_scenery[0].append(child)
+	build_maps()
 	if not dedicated_server:
 		audio = FeedbackAudio.new()
 		add_child(audio)
@@ -77,20 +86,28 @@ func _ready() -> void:
 		toast = "Welcome to Outpost 01. Hold %s to steer." % GameSettings.binding_text("steer")
 		player.destroyed.connect(on_destroyed)
 		player.fired.connect(on_laser.bind(player))
-	for id in range(ALIEN_KINDS.size()):
-		var enemy := Alien.new()
-		enemy.alien_id = id
-		enemy.name = "Alien%d" % id
-		enemy.kind = ALIEN_KINDS[id]
-		enemy.home_position = Vector3.ZERO
-		enemy.position = enemy.home_position
-		enemy.render_enabled = not dedicated_server
-		aliens[id] = enemy
-		add_child(enemy)
-		if dedicated_server or not client_only:
-			relocate_alien(enemy)
-		enemy.destroyed.connect(on_destroyed)
-		enemy.fired.connect(on_laser.bind(enemy))
+	for map: int in SectorMaps.MAPS:
+		map_rosters[map] = {}
+		var kinds: Array = SectorMaps.MAPS[map]["aliens"]
+		for index in kinds.size():
+			var id := map * 100 + index
+			var enemy := Alien.new()
+			enemy.alien_id = id
+			enemy.map_id = map
+			enemy.name = "Alien%d" % id
+			enemy.kind = kinds[index]
+			enemy.home_position = SectorMaps.origin(map)
+			enemy.position = enemy.home_position
+			enemy.render_enabled = not dedicated_server
+			world_aliens[id] = enemy
+			map_rosters[map][id] = enemy
+			add_child(enemy)
+			if dedicated_server or not client_only:
+				relocate_alien(enemy)
+			enemy.destroyed.connect(on_destroyed)
+			enemy.fired.connect(on_laser.bind(enemy))
+	aliens.assign(map_rosters[0])
+	activate_map(0)
 	if not dedicated_server:
 		var layer := CanvasLayer.new()
 		add_child(layer)
@@ -241,6 +258,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_tree().quit()
 	if paused or not player.alive:
 		return
+	if event.is_action_pressed("jump_gate"):
+		session.request_jump()
+		return
 	for index in hud.ammo_bar.config.slots.size():
 		if event.is_action_pressed("quickslot_%d" % (index + 1)):
 			hud.ammo_bar.activate(hud.ammo_bar.config.slots[index])
@@ -343,10 +363,10 @@ func _physics_process(delta: float) -> void:
 		player_respawn -= delta
 		if player_respawn <= 0.0:
 			respawn_player()
-	for enemy: Alien in aliens.values():
+	for enemy: Alien in world_aliens.values():
 		enemy.tick_combat(delta)
 		if enemy.alive:
-			enemy.fly(delta, player if player.alive and player.position.distance_to(STATION_POSITION) > 75.0 and player.position.distance_to(enemy.position) < float(enemy.tuning()["detection"]) else null, STATION_POSITION)
+			enemy.fly(delta, player if player.alive and player.map_id == enemy.map_id and not SectorMaps.protected(player) and player.position.distance_to(enemy.position) < float(enemy.tuning()["detection"]) else null, STATION_POSITION)
 		else:
 			enemy.respawn = maxf(0.0, enemy.respawn - delta)
 			if enemy.respawn <= 0.0:
@@ -365,7 +385,7 @@ func _process(_delta: float) -> void:
 func tick_radiation(ship: Pilot, delta: float) -> void:
 	if not ship.simulation_authority:
 		return
-	if not ship.alive or ship.position.length() <= MAP_RADIUS:
+	if not ship.alive or ship.position.distance_to(SectorMaps.origin(ship.map_id)) <= MAP_RADIUS:
 		ship.radiation_exposure = 0.0
 		return
 	# Integrate the increasing rate so damage does not depend on tick frequency.
@@ -376,20 +396,23 @@ func tick_radiation(ship: Pilot, delta: float) -> void:
 
 
 func alien_home_clear(point: Vector3, enemy: Alien) -> bool:
-	if point.length() > MAP_RADIUS - float(enemy.tuning()["leash"]) - 35.0:
+	if point.distance_to(SectorMaps.origin(enemy.map_id)) > MAP_RADIUS - float(enemy.tuning()["leash"]) - 35.0:
 		return false
-	if point.distance_to(STATION_POSITION) < float(enemy.tuning()["detection"]) + 90.0:
+	if enemy.map_id == 0 and point.distance_to(STATION_POSITION) < float(enemy.tuning()["detection"]) + 90.0:
 		return false
-	for other: Alien in aliens.values():
-		if other != enemy and point.distance_to(other.home_position) < 180.0:
+	for destination: int in SectorMaps.GATES[enemy.map_id]:
+		if point.distance_to(SectorMaps.gate_position(enemy.map_id, destination)) < float(enemy.tuning()["detection"]) + SectorMaps.PROTECTION_RADIUS + 35.0:
+			return false
+	for other: Alien in world_aliens.values():
+		if other != enemy and other.map_id == enemy.map_id and point.distance_to(other.home_position) < 180.0:
 			return false
 	# Use built collider dimensions; this also works before the first physics tick.
-	for child in get_children():
-		if child is StaticBody3D:
-			for collider in child.get_children():
-				if collider is CollisionShape3D and collider.shape is SphereShape3D:
-					if point.distance_to(child.position + collider.position) < collider.shape.radius + 35.0:
-						return false
+	for collider: CollisionShape3D in find_children("*", "CollisionShape3D", true, false):
+		if collider.get_parent() is StaticBody3D:
+			if collider.shape is SphereShape3D and point.distance_to(collider.global_position) < collider.shape.radius + 35.0:
+				return false
+			if collider.shape is BoxShape3D and AABB(collider.global_position - collider.shape.size * 0.5, collider.shape.size).grow(35.0).has_point(point):
+				return false
 	return true
 
 
@@ -397,7 +420,7 @@ func relocate_alien(enemy: Alien) -> void:
 	# Fixed identities/types bound population; each life gets a new server-owned home.
 	var radius := MAP_RADIUS - float(enemy.tuning()["leash"]) - 35.0
 	for attempt in range(256):
-		var point := Vector3(spawn_rng.randf_range(-radius, radius), spawn_rng.randf_range(-radius, radius), spawn_rng.randf_range(-radius, radius))
+		var point := SectorMaps.origin(enemy.map_id) + Vector3(spawn_rng.randf_range(-radius, radius), spawn_rng.randf_range(-radius, radius), spawn_rng.randf_range(-radius, radius))
 		if alien_home_clear(point, enemy):
 			enemy.home_position = point
 			enemy.position = point
@@ -444,7 +467,7 @@ func pick_target(screen_position: Vector2) -> void:
 
 
 func target_available(enemy: Alien) -> bool:
-	return is_instance_valid(enemy) and enemy.available() and enemy.is_visible_in_tree()
+	return is_instance_valid(enemy) and enemy.map_id == map_id and enemy.available() and enemy.is_visible_in_tree()
 
 
 func validate_target() -> void:
@@ -490,7 +513,7 @@ func on_laser(start: Vector3, finish: Vector3, hostile: bool, shooter: SpaceShip
 	var ammo_type: String = shooter.ammo_type if shooter is Pilot else "x1"
 	if session.active:
 		if multiplayer.is_server():
-			session.combat.show_laser.rpc(start, finish, hostile, ammo_type)
+			session.map_event("show_laser", [start, finish, hostile, ammo_type], shooter.map_id if shooter != null else map_id)
 		return
 	SectorVisuals.laser(self, start, finish, hostile, ammo_type)
 
@@ -525,6 +548,8 @@ func on_destroyed(ship: SpaceShip, attacker: SpaceShip) -> void:
 
 func respawn_player() -> void:
 	autopilot.cancel()
+	player.map_id = 0
+	activate_map(0)
 	player.position = SPAWN_POSITION
 	player.rotation = Vector3.ZERO
 	player.energy = 100.0
@@ -547,6 +572,8 @@ func repair_blocker(ship: Pilot = null) -> String:
 		ship = player
 	if not ship.alive:
 		return "Wait for rescue."
+	if ship.map_id != 0:
+		return "Return to Outpost 01 on M1 for station services."
 	if ship.position.distance_to(STATION_POSITION) > REPAIR_RADIUS:
 		return "Move within 60 m of Outpost 01 to repair."
 	if ship.velocity.length() > 8.0:
@@ -584,3 +611,78 @@ func request_repair() -> bool:
 func notify(message: String) -> void:
 	toast = message
 	toast_time = 7.0
+
+
+func build_maps() -> void:
+	for map: int in SectorMaps.MAPS:
+		if map != 0:
+			map_scenery[map] = []
+			var terrain := Node3D.new()
+			terrain.name = "Map%dTerrain" % (map + 1)
+			terrain.position = SectorMaps.origin(map)
+			add_child(terrain)
+			map_scenery[map].append(terrain)
+			var rng := RandomNumberGenerator.new()
+			rng.seed = 7301 + map * 97
+			var surface := SectorVisuals.material(Color(SectorMaps.MAPS[map]["color"]).darkened(0.65)) if not dedicated_server else null
+			for index in range(24):
+				var rock := StaticBody3D.new()
+				rock.position = Vector3(rng.randf_range(-550, 550), rng.randf_range(-160, 160), rng.randf_range(-550, 550))
+				terrain.add_child(rock)
+				var radius := rng.randf_range(6, 20)
+				var collider := CollisionShape3D.new()
+				var shape := SphereShape3D.new()
+				shape.radius = radius
+				collider.shape = shape
+				rock.add_child(collider)
+				if not dedicated_server:
+					var mesh := SphereMesh.new()
+					mesh.radius = radius
+					mesh.height = radius * 2
+					mesh.radial_segments = 10
+					mesh.rings = 5
+					SectorVisuals.mesh(rock, mesh, Vector3.ZERO, surface)
+		if not dedicated_server:
+			var gates := Node3D.new()
+			gates.name = "Map%dGates" % (map + 1)
+			add_child(gates)
+			map_scenery[map].append(gates)
+			for destination: int in SectorMaps.GATES[map]:
+				SectorMaps.gate_model(gates, map, destination)
+
+
+func activate_map(map: int) -> void:
+	var changed := map != map_id
+	map_id = map
+	aliens.assign(map_rosters[map])
+	if dedicated_server:
+		return
+	for key: int in map_scenery:
+		for node: Node3D in map_scenery[key]:
+			node.visible = key == map
+	for enemy: Alien in world_aliens.values():
+		if changed and is_instance_valid(session) and session.active and not multiplayer.is_server():
+			enemy.snapshot_goal.clear()
+		var client := is_instance_valid(session) and session.active and not multiplayer.is_server()
+		enemy.visible = enemy.map_id == map and enemy.alive and (not client and not client_only or not enemy.snapshot_goal.is_empty())
+		enemy.collision_layer = 2 if enemy.alive and (enemy.simulation_authority or enemy.visible) else 0
+	if is_instance_valid(session):
+		var client := session.active and not multiplayer.is_server()
+		if changed and client:
+			session.goals.clear()
+		for ship: Pilot in session.ships.values():
+			ship.visible = ship.map_id == map and ship.alive and not ship.get_meta("docked", false) and (not client or ship == player or session.goals.has(session.ships.find_key(ship)))
+			ship.collision_layer = 2 if ship.alive and not ship.get_meta("docked", false) and (ship.simulation_authority or ship.visible) else 0
+	autopilot.cancel()
+	select_target(null)
+	if is_instance_valid(loot):
+		for id: int in loot.drops:
+			if int(loot.drops[id].get("map", 0)) == map:
+				loot.apply_drop(id, loot.drops[id])
+	if is_instance_valid(hud):
+		hud.navigation.waypoint_key = "station" if map == 0 else "gate%d" % SectorMaps.GATES[map].keys()[0]
+		hud.navigation.reset_view()
+		hud.navigation.close_overview(false)
+	var environment := get_node_or_null("WorldEnvironment") as WorldEnvironment
+	if environment != null:
+		(environment.environment.sky.sky_material as ShaderMaterial).set_shader_parameter("map_tint", Color.WHITE if map == 0 else SectorMaps.MAPS[map]["color"])

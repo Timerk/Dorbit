@@ -22,12 +22,13 @@ func spawn_drop(alien: Alien) -> void:
 	if drops.size() >= MAX_DROPS:
 		change(drops.keys()[0], {})
 	next_id += 1
-	change(next_id, {"position": alien.position, "resources": CargoResources.roll(alien.kind), "ttl": LIFETIME})
+	change(next_id, {"map": alien.map_id, "position": alien.position, "resources": CargoResources.roll(alien.kind), "ttl": LIFETIME})
 
 func change(id: int, data: Dictionary) -> void:
+	var map: int = data.get("map", drops.get(id, {}).get("map", 0))
 	apply_drop(id, data)
 	if sector.session.active and multiplayer.is_server():
-		sector.session.combat.loot_changed.rpc(id, data)
+		sector.session.map_event("loot_changed", [id, data], map)
 
 func apply_drop(id: int, data: Dictionary) -> void:
 	if data.is_empty():
@@ -37,7 +38,7 @@ func apply_drop(id: int, data: Dictionary) -> void:
 			meshes.erase(id)
 		return
 	drops[id] = data.duplicate(true)
-	if sector.dedicated_server:
+	if sector.dedicated_server or int(data.get("map", 0)) != sector.map_id:
 		return
 	if not meshes.has(id):
 		var mesh := MeshInstance3D.new()
@@ -65,7 +66,7 @@ func is_presented(id: int) -> bool:
 func _process(delta: float) -> void:
 	for id: int in meshes:
 		var mesh := meshes[id]
-		mesh.visible = not SectorVisuals.explosion_active(sector, mesh.global_position)
+		mesh.visible = int(drops[id].get("map", 0)) == sector.map_id and not SectorVisuals.explosion_active(sector, mesh.global_position)
 		mesh.rotate_y(delta * 0.7)
 
 func tick(delta: float) -> void:
@@ -81,7 +82,7 @@ func tick(delta: float) -> void:
 		sector.session.combat.collect_loot()
 	elif sector.player.alive:
 		for id: int in drops.keys():
-			if sector.player.position.distance_to(drops[id]["position"]) > PICKUP_RADIUS:
+			if sector.player.map_id != int(drops[id].get("map", 0)) or sector.player.position.distance_to(drops[id]["position"]) > PICKUP_RADIUS:
 				continue
 			var data := drops[id].duplicate(true)
 			var taken := CargoResources.collect(sector.cargo, data["resources"], sector.cargo_capacity)

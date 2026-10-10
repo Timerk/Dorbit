@@ -45,6 +45,7 @@ func run() -> void:
 	await tap_key(KEY_ESCAPE)
 	check(not menu.panel.visible and sector.session.menu.visible, "Escape returns settings to the connection menu")
 	sector.client_only = false
+	sector.activate_map(0) # Restore the offline fixture's contacts after client-only startup.
 	sector.session.menu.hide()
 	sector.set_paused(false)
 	await tap_key(KEY_ESCAPE)

@@ -16,6 +16,7 @@ var boost_sequence: int = -1
 var lab_snapshot: Dictionary = {}
 var rocket_request_sequence: int = 0
 var rocket_sequences: Dictionary[int, int] = {}
+var rocket_maps: Dictionary[String, int] = {}
 
 
 func connect_rockets(ship: Pilot) -> void:
@@ -58,8 +59,8 @@ func rocket_request(sequence: int, life: int, action: String, kind: String, targ
 	var ship := session.ships[id]
 	if records[id]["life"] != life or not ship.alive or ship.get_meta("docked", false):
 		return
-	var enemy: Alien = session.sector.aliens.get(target_id)
-	if is_instance_valid(enemy) and enemy.life != encounter:
+	var enemy: Alien = session.sector.world_aliens.get(target_id)
+	if is_instance_valid(enemy) and (enemy.life != encounter or enemy.map_id != ship.map_id):
 		enemy = null
 	var result := rocket_action(ship, action, kind, enemy)
 	if not result.is_empty():
@@ -81,28 +82,31 @@ func rocket_action(ship: Pilot, action: String, kind: String, target: Alien) -> 
 
 
 func on_rocket_launch(event: Dictionary) -> void:
+	rocket_maps[event["id"]] = int(event.get("map", 0))
 	if session.active and multiplayer.is_server():
-		show_rocket.rpc(event)
+		session.map_event("show_rocket", [event], event.get("map", 0))
 	elif not session.active:
 		show_rocket(event)
 
 
 func on_rocket_resolved(id: String, location: Vector3, hit: bool) -> void:
+	var map: int = rocket_maps.get(id, session.sector.map_id)
+	rocket_maps.erase(id)
 	if session.active and multiplayer.is_server():
-		resolve_rocket.rpc(id, location, hit)
+		session.map_event("resolve_rocket", [id, location, hit], map)
 	elif not session.active:
 		resolve_rocket(id, location, hit)
 
 
 @rpc("authority", "call_local", "reliable")
-func show_rocket(event: Dictionary) -> void:
-	if not session.sector.dedicated_server:
+func show_rocket(event: Dictionary, visit: int = -1) -> void:
+	if not session.sector.dedicated_server and session.receives_map(visit):
 		RocketEffect.spawn(session.sector, event)
 
 
 @rpc("authority", "call_local", "reliable")
-func resolve_rocket(id: String, location: Vector3, hit: bool) -> void:
-	if not session.sector.dedicated_server:
+func resolve_rocket(id: String, location: Vector3, hit: bool, visit: int = -1) -> void:
+	if not session.sector.dedicated_server and session.receives_map(visit):
 		RocketEffect.resolve(session.sector, id, location, hit)
 
 
@@ -125,7 +129,7 @@ func begin() -> void:
 	sector.player_respawn = 0.0
 	if not sector.dedicated_server:
 		sector.player.simulation_authority = multiplayer.is_server()
-	for alien: Alien in sector.aliens.values():
+	for alien: Alien in sector.world_aliens.values():
 		alien.simulation_authority = multiplayer.is_server()
 		if multiplayer.is_server():
 			sector.relocate_alien(alien)
@@ -139,7 +143,8 @@ func begin() -> void:
 		alien.snapshot_goal.clear()
 		alien.reset_health()
 		alien.set_meta("feedback_health_received", false)
-		alien.visible = multiplayer.is_server()
+		alien.visible = multiplayer.is_server() and alien.map_id == sector.map_id
+		alien.collision_layer = 2 if multiplayer.is_server() else 0
 		if not alien.damaged.is_connected(record_damage):
 			alien.damaged.connect(record_damage)
 	sector.notify("Alien contacts scattered across the sector. Press M to choose a destination.")
@@ -194,7 +199,7 @@ func remove_player(id: int) -> void:
 	rocket_sequences.erase(id)
 	records.erase(id)
 	cargo_holds.erase(id)
-	for alien: Alien in session.sector.aliens.values():
+	for alien: Alien in session.sector.world_aliens.values():
 		alien.contributors.erase(id)
 
 
@@ -253,7 +258,7 @@ func record_damage(ship: SpaceShip, attacker: SpaceShip) -> void:
 func tick(delta: float) -> void:
 	var sector := session.sector
 	boost_save_clock += delta
-	for alien: Alien in sector.aliens.values():
+	for alien: Alien in sector.world_aliens.values():
 		alien.check_retreat(choose_target(alien))
 		if sector.target == alien and not alien.available():
 			if not alien.alive:
@@ -279,6 +284,10 @@ func tick(delta: float) -> void:
 		if not ship.alive:
 			records[id]["respawn"] = maxf(0.0, records[id]["respawn"] - delta)
 			if records[id]["respawn"] <= 0.0:
+				var change_map := ship.map_id != 0
+				if change_map:
+					ship.map_id = 0
+					ship.map_visit += 1
 				ship.reset_health()
 				if ship.get_meta("docked", false):
 					ship.hide()
@@ -289,6 +298,8 @@ func tick(delta: float) -> void:
 				records[id]["life"] += 1
 				ship.set_meta("life", records[id]["life"])
 				session.commands.erase(id)
+				if change_map:
+					session.announce_map_change(id)
 			continue
 		if ship.get_meta("docked", false):
 			continue
@@ -299,7 +310,7 @@ func tick(delta: float) -> void:
 		if firing and is_instance_valid(enemy) and enemy.available():
 			records[id]["stage"] = maxi(records[id]["stage"], 2)
 			ship.try_fire(enemy)
-	for alien: Alien in sector.aliens.values():
+	for alien: Alien in sector.world_aliens.values():
 		alien.tick_combat(delta)
 		if alien.alive:
 			alien.fly(delta, choose_target(alien), Sector.STATION_POSITION)
@@ -320,7 +331,8 @@ func tick(delta: float) -> void:
 
 
 func remote_target(id: int) -> Alien:
-	return session.sector.aliens.get(session.commands.get(id, {}).get("target", -1))
+	var enemy: Alien = session.sector.world_aliens.get(session.commands.get(id, {}).get("target", -1))
+	return enemy if enemy != null and enemy.map_id == session.ships[id].map_id else null
 
 
 func remote_firing(id: int) -> bool:
@@ -333,7 +345,7 @@ func choose_target(alien: Alien) -> Pilot:
 	var target: Pilot = null
 	var nearest: float = alien.tuning()["detection"]
 	for ship: Pilot in session.ships.values():
-		if ship.get_meta("docked", false) or not ship.alive or ship.position.distance_to(Sector.STATION_POSITION) <= 75.0:
+		if ship.map_id != alien.map_id or ship.get_meta("docked", false) or not ship.alive or SectorMaps.protected(ship):
 			continue
 		var distance := ship.position.distance_to(alien.position)
 		if distance < nearest:
@@ -345,7 +357,7 @@ func choose_target(alien: Alien) -> Pilot:
 func destroyed(ship: SpaceShip) -> void:
 	if not multiplayer.is_server():
 		return
-	show_explosion.rpc(ship.position, SectorVisuals.destruction_size(ship))
+	session.map_event("show_explosion", [ship.position, SectorVisuals.destruction_size(ship)], ship.map_id)
 	if ship is Alien:
 		var alien := ship as Alien
 		var contributors := alien.contributors
@@ -520,13 +532,14 @@ func pack_player(id: int) -> Dictionary:
 	var ship := session.ships[id]
 	# Replicate combat and movement stats without exposing the owner's full inventory.
 	data["stats"] = Vector4(ship.laser_damage, ship.max_shield, ship.cruise_speed, ship.boost_speed)
-	data["absorption"] = ship.shield_absorption
 	data["model"] = ship.ship_model
-	data["max_hull"] = ship.max_hull
-	data["npc_damage"] = ship.npc_laser_damage
-	data["regen_bonus"] = ship.shield_regen_bonus
+	# Group fitting scalars to leave room for membership and three active hunts
+	# without fragmenting the ENet world datagram.
+	data["fitting"] = Vector4(ship.max_hull, ship.shield_absorption, ship.npc_laser_damage, ship.shield_regen_bonus)
 	data["radiation"] = ship.radiation_exposure
 	data["docked"] = ship.get_meta("docked", false)
+	data["map"] = ship.map_id
+	data["visit"] = ship.map_visit
 	return data
 
 
@@ -538,12 +551,12 @@ func publish_ammo(id: int, sequence: int) -> void:
 	for kind: String in Ammunition.types():
 		rounds.append(ship.ammo[kind])
 	rounds.append(Ammunition.TYPES.keys().find(ship.ammo_type))
-	ammo_snapshot.rpc_id(id, rounds, sequence, ship.rockets.state())
+	ammo_snapshot.rpc_id(id, rounds, sequence, ship.rockets.state(), ship.map_visit)
 
 
 @rpc("authority", "call_remote", "unreliable_ordered", 4)
-func ammo_snapshot(rounds: PackedInt32Array, sequence: int, rocket_data: Dictionary = {}) -> void:
-	if not session.active or sequence <= ammo_sequence:
+func ammo_snapshot(rounds: PackedInt32Array, sequence: int, rocket_data: Dictionary = {}, visit: int = -1) -> void:
+	if not session.active or sequence <= ammo_sequence or not session.receives_map(visit):
 		return
 	ammo_sequence = sequence
 	var ship := session.sector.player
@@ -556,7 +569,7 @@ func ammo_snapshot(rounds: PackedInt32Array, sequence: int, rocket_data: Diction
 
 func pack_alien(alien: Alien) -> Dictionary:
 	var data := health(alien)
-	data.merge({"id": alien.alien_id, "kind": alien.kind, "home": alien.home_position, "position": alien.position, "rotation": alien.rotation, "respawn": alien.respawn, "encounter": alien.life, "returning": alien.returning, "engaged": alien.engaged})
+	data.merge({"map": alien.map_id, "id": alien.alien_id, "kind": alien.kind, "home": alien.home_position, "position": alien.position, "rotation": alien.rotation, "respawn": alien.respawn, "encounter": alien.life, "returning": alien.returning, "engaged": alien.engaged})
 	return data
 
 
@@ -569,8 +582,8 @@ func apply_health(ship: SpaceShip, data: Dictionary) -> void:
 	ship.shield = data["shield"]
 	ship.alive = data["alive"]
 	ship.time_since_hit = data["since_hit"]
-	ship.visible = ship.alive
-	ship.set_collision_layer_value(2, ship.alive)
+	ship.visible = ship.alive and (session.sector.dedicated_server or ship.map_id == session.sector.map_id)
+	ship.set_collision_layer_value(2, ship.visible)
 	if data.get("docked", false):
 		ship.hide()
 		ship.collision_layer = 0
@@ -582,10 +595,16 @@ func apply_player(id: int, data: Dictionary) -> bool:
 	var ship := session.ships[id]
 	var reset: bool = int(ship.get_meta("life", 0)) != data["life"] or ship.alive != data["alive"]
 	ship.set_meta("life", data["life"])
+	var changed_map := ship.map_id != int(data.get("map", 0))
+	ship.map_id = int(data.get("map", 0))
+	ship.map_visit = int(data.get("visit", 0))
+	if ship == session.sector.player and changed_map:
+		session.sector.activate_map(ship.map_id)
 	if reset:
 		ship.set_meta("feedback_health_received", false)
 	var stats: Vector4 = data["stats"]
-	Equipment.apply_stats(ship, {"model": data["model"], "hull": data["max_hull"], "npc_damage": data["npc_damage"], "regen_bonus": data["regen_bonus"], "damage": stats.x, "shield": stats.y, "absorption": data["absorption"], "speed": stats.z, "boost": stats.w})
+	var fitting: Vector4 = data["fitting"]
+	Equipment.apply_stats(ship, {"model": data["model"], "hull": fitting.x, "npc_damage": fitting.z, "regen_bonus": fitting.w, "damage": stats.x, "shield": stats.y, "absorption": fitting.y, "speed": stats.z, "boost": stats.w})
 	apply_health(ship, data)
 	ship.radiation_exposure = data.get("radiation", 0.0)
 	if ship == session.sector.player:
@@ -606,8 +625,8 @@ func update_local(data: Dictionary) -> void:
 
 
 func apply_alien(data: Dictionary) -> void:
-	var alien: Alien = session.sector.aliens.get(data["id"])
-	if alien == null or alien.kind != data["kind"]:
+	var alien: Alien = session.sector.world_aliens.get(data["id"])
+	if alien == null or alien.kind != data["kind"] or alien.map_id != session.sector.map_id:
 		return
 	var reset: bool = alien.life != data["encounter"] or alien.alive != data["alive"]
 	if session.sector.target == alien:
@@ -654,18 +673,19 @@ func receive_message(text: String, sound_cue: String = "") -> void:
 
 
 @rpc("authority", "call_local", "unreliable", 3)
-func show_laser(start: Vector3, finish: Vector3, hostile: bool, ammo_type: String = "x1") -> void:
-	if session.active and not session.sector.dedicated_server:
+func show_laser(start: Vector3, finish: Vector3, hostile: bool, ammo_type: String = "x1", visit: int = -1) -> void:
+	if session.active and not session.sector.dedicated_server and session.receives_map(visit):
 		SectorVisuals.laser(session.sector, start, finish, hostile, ammo_type)
 
 
 @rpc("authority", "call_local", "reliable")
-func show_explosion(location: Vector3, diameter: float) -> void:
-	if session.active and not session.sector.dedicated_server:
+func show_explosion(location: Vector3, diameter: float, visit: int = -1) -> void:
+	if session.active and not session.sector.dedicated_server and session.receives_map(visit):
 		SectorVisuals.explosion(session.sector, location, diameter)
 
 
 func finish() -> void:
+	rocket_maps.clear()
 	rocket_request_sequence = 0
 	rocket_sequences.clear()
 	if is_instance_valid(session.sector.player):
@@ -694,7 +714,7 @@ func finish() -> void:
 			session.sector.player.ammo_debit = Callable()
 	solo.clear()
 	records.clear()
-	for alien: Alien in session.sector.aliens.values():
+	for alien: Alien in session.sector.world_aliens.values():
 		alien.contributors.clear()
 		alien.snapshot_goal.clear()
 		alien.simulation_authority = true
@@ -852,7 +872,7 @@ func collect_loot() -> void:
 		for id: int in records:
 			var ship := session.ships[id]
 			var equipment := session.store.pilots[session.pilot_ids[id]]["equipment"] as Dictionary if session.sector.dedicated_server else Equipment.starter()
-			if not ship.get_meta("docked", false) and ship.alive and ship.position.distance_to(drop["position"]) <= ResourceLoot.PICKUP_RADIUS and CargoResources.units(next[id][equipment["active_ship"]]) < CargoResources.capacity(equipment):
+			if ship.map_id == int(drop.get("map", 0)) and not ship.get_meta("docked", false) and ship.alive and ship.position.distance_to(drop["position"]) <= ResourceLoot.PICKUP_RADIUS and CargoResources.units(next[id][equipment["active_ship"]]) < CargoResources.capacity(equipment):
 				candidates.append(id)
 		candidates.sort_custom(func(a: int, b: int) -> bool:
 			var da := session.ships[a].position.distance_squared_to(drop["position"])
@@ -896,13 +916,14 @@ func cargo_result(hold: Dictionary, capacity: int = 400) -> void:
 		session.sector.cargo_capacity = capacity
 
 @rpc("authority", "call_remote", "reliable")
-func loot_changed(id: int, data: Dictionary) -> void:
-	if session.active:
+func loot_changed(id: int, data: Dictionary, visit: int = -1) -> void:
+	if session.active and session.receives_map(visit):
 		session.sector.loot.apply_drop(id, data)
 
 @rpc("authority", "call_remote", "reliable")
-func loot_state(drops: Dictionary) -> void:
-	if session.active:
+func loot_state(drops: Dictionary, visit: int = -1) -> void:
+	if session.active and session.receives_map(visit):
 		session.sector.loot.clear()
 		for id: int in drops:
-			session.sector.loot.apply_drop(id, drops[id])
+			if int(drops[id].get("map", 0)) == session.sector.map_id:
+				session.sector.loot.apply_drop(id, drops[id])

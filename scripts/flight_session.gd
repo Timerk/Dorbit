@@ -7,7 +7,7 @@ const MAX_PLAYERS: int = 10
 const COMMAND_TIMEOUT: float = 0.5
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when packet contents or shared physics change without an RPC signature change.
-const NETWORK_SCHEMA: int = 13
+const NETWORK_SCHEMA: int = 14
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
@@ -49,6 +49,8 @@ var shutdown_file: String = ""
 var preview_tools_enabled: bool = false
 var preview_pilots: PackedStringArray = []
 var lab_clock: float = 0.0
+var jump_pending := false
+var jump_until: Dictionary[int, int] = {}
 
 
 func _ready() -> void:
@@ -400,6 +402,9 @@ func start_flight() -> void:
 	sector.player.energy = 100.0
 	sector.player.position = Sector.SPAWN_POSITION
 	sector.player.rotation = Vector3.ZERO
+	sector.player.map_id = 0
+	sector.player.map_visit = 0
+	sector.activate_map(0)
 	# Players cannot push each other, but can block weapon line of sight.
 	sector.player.collision_mask = 1
 	sector.set_paused(sector.preflight)
@@ -431,7 +436,7 @@ func ready_for_flight(docked: bool = false) -> void:
 		return
 	for existing: int in ships:
 		if not ships[existing].get_meta("docked", false):
-			spawn.rpc_id(id, existing, ships[existing].position)
+			spawn.rpc_id(id, existing, ships[existing].position, false, ships[existing].map_id)
 	var occupied: Array[int] = []
 	for existing: int in ships:
 		occupied.append(int(ships[existing].get_meta("spawn_slot", 0)))
@@ -446,14 +451,14 @@ func ready_for_flight(docked: bool = false) -> void:
 		spawn.rpc(id, location)
 	ships[id].set_meta("spawn_slot", slot)
 	combat.publish_inventory(id)
-	combat.loot_state.rpc_id(id, sector.loot.drops)
+	combat.loot_state.rpc_id(id, loot_for_map(0), ships[id].map_visit)
 	status = "Server on UDP %d. Players: %d/%d" % [host_port, ships.size(), MAX_PLAYERS]
 	if sector.dedicated_server:
 		print(status)
 
 
 @rpc("authority", "call_local", "reliable")
-func spawn(id: int, location: Vector3, docked: bool = false) -> void:
+func spawn(id: int, location: Vector3, docked: bool = false, map: int = 0) -> void:
 	if ships.has(id):
 		return
 	var ship: Pilot
@@ -469,6 +474,7 @@ func spawn(id: int, location: Vector3, docked: bool = false) -> void:
 		ship.destroyed.connect(sector.on_destroyed)
 		ship.fired.connect(sector.on_laser.bind(ship))
 	ship.position = location
+	ship.map_id = map
 	ships[id] = ship
 	combat.add_player(id, location)
 	ship.set_meta("docked", docked)
@@ -476,6 +482,8 @@ func spawn(id: int, location: Vector3, docked: bool = false) -> void:
 		ship.hide()
 		ship.collision_layer = 0
 	if not sector.dedicated_server:
+		ship.visible = ship.alive and not docked and map == sector.map_id
+		ship.collision_layer = 2 if not docked and (ship.simulation_authority or ship.visible) else 0
 		sector.player.camera.make_current()
 
 
@@ -510,6 +518,14 @@ func offline_main_menu() -> bool:
 
 
 func open_offline_main_menu() -> void:
+	if sector.player.map_id != 0:
+		sector.player.map_id = 0
+		sector.player.map_visit += 1
+		sector.player.position = Sector.SPAWN_POSITION
+		sector.player.velocity = Vector3.ZERO
+		sector.player.radiation_exposure = 0.0
+		sector.player.rockets.unload()
+		sector.activate_map(0)
 	sector.preflight = true
 	sector.select_target(null)
 	sector.set_paused(true)
@@ -526,6 +542,10 @@ func dock_request() -> void:
 		return
 	var ship := ships[id]
 	ship.set_meta("docked", true)
+	if ship.map_id != 0:
+		ship.map_visit += 1
+	ship.map_id = 0
+	ship.rockets.unload()
 	ship.hide()
 	ship.collision_layer = 0
 	ship.position = combat.records[id]["spawn"]
@@ -534,7 +554,7 @@ func dock_request() -> void:
 	combat.records[id]["life"] += 1
 	ship.set_meta("life", combat.records[id]["life"])
 	commands.erase(id)
-	for enemy: Alien in sector.aliens.values():
+	for enemy: Alien in sector.world_aliens.values():
 		enemy.contributors.erase(id)
 	var data := combat.pack_player(id)
 	data.merge({"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy})
@@ -624,6 +644,7 @@ func announce_departure(id: int) -> void:
 func despawn(id: int) -> void:
 	if ships.has(id) and ships[id] != sector.player:
 		ships[id].queue_free()
+	jump_until.erase(id)
 	ships.erase(id)
 	commands.erase(id)
 	goals.erase(id)
@@ -687,7 +708,7 @@ func tick(delta: float) -> void:
 				command_flight.rpc_id(1, movement, sector.player.rotation, boost, sector.auto_fire and enemy != null and not sector.paused, int(sector.player.get_meta("life", 0)), enemy.life if enemy != null else -1, enemy.alien_id if enemy != null else -1)
 		combat.interpolate(delta)
 		for id: int in goals:
-			if not ships.has(id):
+			if not ships.has(id) or ships[id].map_id != sector.map_id:
 				continue
 			var ship := ships[id]
 			var goal: Dictionary = goals[id]
@@ -710,15 +731,16 @@ func send_snapshot() -> void:
 		combat.publish_ammo(id, snapshot_sequence)
 		var state := {id: {"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}}
 		state[id].merge(combat.pack_player(id))
-		if ship.get_meta("docked", false):
-			snapshot.rpc_id(id, state, {}, snapshot_sequence)
-		else:
-			snapshot.rpc(state, {}, snapshot_sequence)
+		for viewer: int in ships:
+			if viewer != 1 and (viewer == id or not ship.get_meta("docked", false) and ships[viewer].map_id == ship.map_id):
+				snapshot.rpc_id(viewer, state, {}, snapshot_sequence, ships[viewer].map_visit)
 		if sector.dedicated_server:
 			var revision: int = store.pilots[pilot_ids[id]]["equipment"]["revision"]
 			combat.boost_state.rpc_id(id, ship.resource_boosts, snapshot_sequence, revision)
-	for enemy: Alien in sector.aliens.values():
-		snapshot.rpc({}, combat.pack_alien(enemy), snapshot_sequence)
+	for enemy: Alien in sector.world_aliens.values():
+		for viewer: int in ships:
+			if viewer != 1 and ships[viewer].map_id == enemy.map_id:
+				snapshot.rpc_id(viewer, {}, combat.pack_alien(enemy), snapshot_sequence, ships[viewer].map_visit)
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered", 1)
@@ -741,8 +763,8 @@ func command_flight(movement: Vector3, angles: Vector3, boost: bool, fire: bool 
 
 
 @rpc("authority", "call_remote", "unreliable", 2)
-func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int) -> void:
-	if not active:
+func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int, visit: int = -1) -> void:
+	if not active or not receives_map(visit):
 		return
 	# Chunks may arrive out of order. Reject stale state per entity, not per whole packet.
 	if not alien_state.is_empty():
@@ -754,6 +776,8 @@ func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int) -> void
 		if not ships.has(id) or sequence <= player_sequences.get(id, -1):
 			continue
 		var data: Dictionary = state[id]
+		if int(data.get("life", 0)) < int(ships[id].get_meta("life", 0)):
+			continue
 		# Reliable dock/launch acknowledgements and snapshots travel on different channels.
 		if ships[id] == sector.player and bool(data.get("docked", false)) != sector.preflight:
 			continue
@@ -803,6 +827,8 @@ func disconnect_session(message: String) -> void:
 	snapshot_sequence = 0
 	player_sequences.clear()
 	alien_sequences.clear()
+	jump_pending = false
+	jump_until.clear()
 	send_clock = 0.0
 	if sector.dedicated_server:
 		status = message
@@ -823,3 +849,155 @@ func _exit_tree() -> void:
 		store.close()
 	if active or connecting:
 		multiplayer.multiplayer_peer.close()
+
+
+func receives_map(visit: int) -> bool:
+	return visit < 0 or is_instance_valid(sector.player) and sector.player.map_visit == visit
+
+
+func map_event(method: String, arguments: Array, map: int) -> void:
+	# Each recipient's visit travels with world events, including reliable loot.
+	# Returning to the same map cannot revive packets from its previous visit.
+	for id: int in ships:
+		if ships[id].map_id != map or ships[id].get_meta("docked", false):
+			continue
+		var args := arguments + [ships[id].map_visit]
+		if id == 1:
+			combat.callv(method, args)
+		else:
+			Callable(combat, "rpc_id").callv([id, method] + args)
+
+
+func request_jump() -> void:
+	if jump_pending or sector.paused or sector.preflight or not sector.player.alive:
+		return
+	var destination := -1
+	var nearest := SectorMaps.JUMP_RADIUS
+	for map: int in SectorMaps.GATES[sector.map_id]:
+		var distance := sector.player.position.distance_to(SectorMaps.gate_position(sector.map_id, map))
+		if distance <= nearest:
+			nearest = distance
+			destination = map
+	if destination < 0:
+		sector.notify("Fly within 50 m of a gate, then press %s to jump." % GameSettings.binding_text("jump_gate"))
+		return
+	if active:
+		if multiplayer.is_server():
+			var reason := jump(1, int(sector.player.get_meta("life", 0)), destination)
+			if not reason.is_empty():
+				sector.notify(reason)
+		else:
+			jump_pending = true
+			jump_request.rpc_id(1, int(sector.player.get_meta("life", 0)), destination)
+	else:
+		if Time.get_ticks_msec() < jump_until.get(1, 0):
+			sector.notify("Gate stabilizing. Wait two seconds between jumps.")
+			return
+		jump_until[1] = Time.get_ticks_msec() + int(SectorMaps.JUMP_COOLDOWN * 1000)
+		var source := sector.player.map_id
+		sector.player.map_id = destination
+		sector.player.map_visit += 1
+		sector.player.set_meta("life", int(sector.player.get_meta("life", 0)) + 1)
+		sector.player.position = SectorMaps.arrival(destination, source)
+		finish_local_jump()
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func jump_request(life: int, destination: int) -> void:
+	if not active or not multiplayer.is_server():
+		return
+	var id := multiplayer.get_remote_sender_id()
+	var reason := jump(id, life, destination)
+	if not reason.is_empty():
+		jump_feedback.rpc_id(id, reason)
+
+
+@rpc("authority", "call_remote", "reliable")
+func jump_feedback(reason: String) -> void:
+	jump_pending = false
+	sector.notify(reason)
+
+
+func jump(id: int, life: int, destination: int) -> String:
+	if not active or not multiplayer.is_server() or not ships.has(id):
+		return "Jump unavailable."
+	var ship := ships[id]
+	if life != combat.records[id]["life"] or not ship.alive or ship.get_meta("docked", false):
+		return "Jump unavailable for this flight."
+	if not SectorMaps.GATES[ship.map_id].has(destination):
+		return "No gate connects these maps."
+	if ship.position.distance_to(SectorMaps.gate_position(ship.map_id, destination)) > SectorMaps.JUMP_RADIUS:
+		return "Fly within 50 m of the gate to jump."
+	if Time.get_ticks_msec() < jump_until.get(id, 0):
+		return "Gate stabilizing. Wait two seconds between jumps."
+	jump_until[id] = Time.get_ticks_msec() + int(SectorMaps.JUMP_COOLDOWN * 1000)
+	var source := ship.map_id
+	ship.map_id = destination
+	ship.map_visit += 1
+	ship.position = SectorMaps.arrival(destination, source, int(ship.get_meta("spawn_slot", 0)))
+	ship.velocity = Vector3.ZERO
+	ship.rotation = Vector3.ZERO
+	ship.radiation_exposure = 0.0
+	ship.look_at(SectorMaps.origin(destination), Vector3.UP)
+	ship.rockets.unload()
+	combat.records[id]["life"] += 1
+	ship.set_meta("life", combat.records[id]["life"])
+	commands.erase(id)
+	for enemy: Alien in sector.world_aliens.values():
+		enemy.contributors.erase(id)
+	announce_map_change(id)
+	return ""
+
+
+func announce_map_change(id: int) -> void:
+	var ship := ships[id]
+	var data := combat.pack_player(id)
+	data.merge({"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy})
+	map_changed.rpc(id, data, snapshot_sequence)
+
+
+@rpc("authority", "call_local", "reliable")
+func map_changed(id: int, data: Dictionary, sequence: int) -> void:
+	if not active or not ships.has(id) or int(data["life"]) < int(ships[id].get_meta("life", 0)):
+		return
+	var ship := ships[id]
+	if not multiplayer.is_server():
+		combat.apply_player(id, data)
+		ship.position = data["position"]
+		ship.rotation = data["rotation"]
+		ship.energy = data["energy"]
+		ship.velocity = data["velocity"]
+	goals.erase(id)
+	player_sequences[id] = maxi(player_sequences.get(id, -1), sequence)
+	if ship == sector.player:
+		sector.activate_map(ship.map_id)
+		if not multiplayer.is_server():
+			sector.loot.clear()
+		combat.ammo_sequence = maxi(combat.ammo_sequence, sequence)
+		jump_pending = false
+		finish_local_jump()
+	if multiplayer.is_server() and id != 1:
+		combat.loot_state.rpc_id(id, loot_for_map(ship.map_id), ship.map_visit)
+
+
+func loot_for_map(map: int) -> Dictionary:
+	var result := {}
+	for id: int in sector.loot.drops:
+		if int(sector.loot.drops[id].get("map", 0)) == map:
+			result[id] = sector.loot.drops[id]
+	return result
+
+
+func finish_local_jump() -> void:
+	sector.player.velocity = Vector3.ZERO
+	sector.player.pending_look = Vector2.ZERO
+	sector.player.radiation_exposure = 0.0
+	sector.player.rockets.unload()
+	sector.player.release_mouse()
+	sector.player.look_at(SectorMaps.origin(sector.player.map_id), Vector3.UP)
+	sector.activate_map(sector.player.map_id)
+	sector.set_paused(false)
+	for effect in get_tree().get_nodes_in_group("transient_feedback"):
+		if sector.is_ancestor_of(effect):
+			effect.queue_free()
+	sector.notify("Arrived at %s. Gates are protected; press %s nearby to return." % [SectorMaps.MAPS[sector.map_id]["name"], GameSettings.binding_text("jump_gate")])

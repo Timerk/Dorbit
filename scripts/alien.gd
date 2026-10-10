@@ -12,6 +12,12 @@ const TYPES := {
 	"Scout": {"hull": 1000.0, "shield": 500.0, "damage": 1500.0, "interval": 0.85, "range": 120.0, "speed": 29.0, "detection": 155.0, "leash": 170.0, "reward": 300, "respawn": 10.0, "scale": Vector3(0.7, 0.7, 0.85), "color": Color("ffc875")},
 	"Sentinel": {"hull": 4000.0, "shield": 2000.0, "damage": 5000.0, "interval": 0.75, "range": 155.0, "speed": 18.0, "detection": 180.0, "leash": 230.0, "reward": 1500, "respawn": 12.0, "scale": Vector3.ONE, "color": Color("ff8176")},
 	"Heavy": {"hull": 10000.0, "shield": 5000.0, "damage": 12000.0, "interval": 0.9, "range": 165.0, "speed": 12.0, "detection": 220.0, "leash": 180.0, "reward": 10000, "respawn": 18.0, "scale": Vector3(1.5, 1.6, 1.25), "color": Color("d2a0ff")},
+	"Skirmisher": {"hull": 2500.0, "shield": 1200.0, "damage": 2500.0, "interval": 0.9, "range": 130.0, "speed": 30.0, "detection": 170.0, "leash": 210.0, "reward": 900, "respawn": 12.0, "scale": Vector3(0.8, 0.8, 1.1), "color": Color("74e6b2")},
+	"Raider": {"hull": 6500.0, "shield": 3200.0, "damage": 6500.0, "interval": 0.85, "range": 150.0, "speed": 23.0, "detection": 190.0, "leash": 230.0, "reward": 3500, "respawn": 15.0, "scale": Vector3(1.2, 0.85, 1.0), "color": Color("37bdb8")},
+	"Marauder": {"hull": 14000.0, "shield": 7000.0, "damage": 14000.0, "interval": 0.85, "range": 160.0, "speed": 24.0, "detection": 205.0, "leash": 250.0, "reward": 14000, "respawn": 17.0, "scale": Vector3(1.3, 1.0, 1.3), "color": Color("ffc36e")},
+	"Warden": {"hull": 24000.0, "shield": 12000.0, "damage": 18000.0, "interval": 0.8, "range": 175.0, "speed": 17.0, "detection": 220.0, "leash": 260.0, "reward": 22000, "respawn": 20.0, "scale": Vector3(1.6, 1.4, 1.1), "color": Color("ee7954")},
+	"Ravager": {"hull": 36000.0, "shield": 18000.0, "damage": 24000.0, "interval": 0.8, "range": 180.0, "speed": 22.0, "detection": 230.0, "leash": 270.0, "reward": 32000, "respawn": 22.0, "scale": Vector3(1.4, 1.2, 1.7), "color": Color("b788fa")},
+	"Overlord": {"hull": 60000.0, "shield": 30000.0, "damage": 32000.0, "interval": 0.75, "range": 190.0, "speed": 14.0, "detection": 250.0, "leash": 280.0, "reward": 50000, "respawn": 26.0, "scale": Vector3(2.0, 1.8, 1.5), "color": Color("ed70c1")},
 }
 
 var alien_id: int = 0
@@ -32,6 +38,14 @@ func tuning() -> Dictionary:
 
 
 static func model_scene(alien_kind: String) -> Node3D:
+	if not VISUAL_DIAMETERS.has(alien_kind):
+		var root := SectorVisuals.ship_model(true)
+		root.scale = TYPES[alien_kind]["scale"]
+		var surface := SectorVisuals.material(TYPES[alien_kind]["color"])
+		for part: MeshInstance3D in root.find_children("*", "MeshInstance3D", true, false):
+			if part.mesh is BoxMesh:
+				part.material_override = surface
+		return root
 	var scene: PackedScene = load("res://assets/aliens/%s.glb" % alien_kind.to_lower())
 	return scene.instantiate()
 
@@ -78,7 +92,9 @@ func take_damage(amount: float, attacker: SpaceShip) -> void:
 	if not available() or position.distance_to(home_position) >= float(tuning()["leash"]):
 		return
 	# Protected pilots cannot farm enemies that are forbidden to retaliate.
-	if attacker is Pilot and attacker.position.distance_to(Sector.STATION_POSITION) <= 75.0:
+	if attacker != null and attacker.map_id != map_id:
+		return
+	if attacker is Pilot and SectorMaps.protected(attacker):
 		return
 	if simulation_authority and amount > 0.0:
 		engaged = true
@@ -93,7 +109,7 @@ func fly(delta: float, player: Pilot, station_position: Vector3) -> void:
 	patrol_time += delta
 	check_retreat(player)
 	engaged = is_instance_valid(player) and player.alive
-	engaged = engaged and player.global_position.distance_to(station_position) > 75.0
+	engaged = engaged and player.map_id == map_id and not SectorMaps.protected(player)
 	engaged = engaged and global_position.distance_to(player.global_position) < float(tuning()["detection"])
 	engaged = engaged and not returning
 	var destination := home_position + Vector3(sin(patrol_time * 0.22) * 18.0, sin(patrol_time * 0.35) * 8.0, 0.0)

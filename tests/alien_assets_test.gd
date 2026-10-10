@@ -27,13 +27,14 @@ func run() -> void:
 			kind + " server creates only the gameplay collider")
 		check(not ResourceLoader.has_cached("res://assets/aliens/%s.glb" % kind.to_lower()),
 			kind + " server does not load a visual asset")
-		check(is_equal_approx(SectorVisuals.destruction_size(server_alien), Alien.VISUAL_DIAMETERS[kind]),
+		var diameter := SectorVisuals.destruction_size(server_alien)
+		check(diameter > 0 and is_equal_approx(diameter, Alien.VISUAL_DIAMETERS.get(kind, diameter)),
 			kind + " server knows the visual destruction size without a mesh")
 		server_alien.free()
 	var preview := ContractPreview.new()
 	root.add_child(preview)
 	var sizes: Array[float] = []
-	for kind: String in Alien.TYPES:
+	for kind: String in Alien.VISUAL_DIAMETERS:
 		var alien := Alien.new()
 		alien.kind = kind
 		alien.home_position = Vector3.ZERO
@@ -73,6 +74,15 @@ func run() -> void:
 		alien.free()
 	check(sizes.size() == 3 and sizes[0] < sizes[1] and sizes[1] < sizes[2],
 		"Scout, Sentinel and Heavy retain increasing visual size")
+	for kind: String in Alien.TYPES:
+		if Alien.VISUAL_DIAMETERS.has(kind):
+			continue
+		var alien := Alien.new()
+		alien.kind = kind
+		root.add_child(alien)
+		check(not alien.model.find_children("*", "MeshInstance3D", true, false).is_empty(), kind + " has a simple procedural model")
+		check(alien.model.scale == Alien.TYPES[kind]["scale"] and alien.get_child(0) is CollisionShape3D, kind + " has its size tier and gameplay collider")
+		alien.free()
 	preview.free()
 	print("Alien asset checks: %d passed, %d failed" % [checks - failures, failures])
 	quit(0 if failures == 0 else 1)
