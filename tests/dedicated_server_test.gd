@@ -38,6 +38,22 @@ func replicate(host: Sector) -> void:
 	check(false, "All ten clients must receive fresh state within the convergence timeout")
 
 
+func deliver_command(server: Sector, client: Sector, movement: Vector3, boost: bool, fire: bool, encounter: int) -> void:
+	# Flight packets are unreliable and production clients continually resend them.
+	# Wait for server receipt instead of assuming a fixed delay survives ten worlds
+	# competing with another CI check. Tick combat while the received intent is fresh.
+	var id := client.multiplayer.get_unique_id()
+	var deadline := Time.get_ticks_msec() + 8000
+	while Time.get_ticks_msec() < deadline:
+		client.session.command_flight.rpc_id(1, movement, Vector3.ZERO, boost, fire, 0, encounter, 0)
+		await process_frame
+		var command: Dictionary = server.session.commands.get(id, {})
+		if command.get("movement") == movement and command.get("boost") == boost and command.get("fire") == fire and command.get("encounter") == encounter and server.session.combat.remote_firing(id) == fire:
+			if Time.get_ticks_msec() - command["time"] < FlightSession.COMMAND_TIMEOUT * 1000:
+				return
+	check(false, "Dedicated server receives fresh flight intent within the convergence timeout")
+
+
 func run() -> void:
 	var server := make_sector("Dedicated", true)
 	# Ten rendered fixture worlds can starve authentication frames under CI load.
@@ -89,13 +105,12 @@ func run() -> void:
 	alien.position = Vector3(0, 100, -100)
 	alien.home_position = alien.position
 	var start := remote.position
-	client.session.command_flight.rpc_id(1, Vector3(0, 0, -1), Vector3.ZERO, true)
-	await settle()
+	await deliver_command(server, client, Vector3(0, 0, -1), true, false, alien.life)
 	server.session.tick(0.1)
 	check(remote.position.z < start.z and remote.energy < 100, "Dedicated server simulates client movement and boost")
 	await physics_frame
 	var initial := alien.shield
-	await send_fire(client)
+	await deliver_command(server, client, Vector3.ZERO, false, true, alien.life)
 	combat.tick(0.01)
 	check(alien.shield < initial and id in alien.contributors, "Dedicated server validates client fire and contribution")
 	alien.take_damage(alien.max_hull + alien.max_shield + 1.0, remote)
