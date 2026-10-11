@@ -421,9 +421,9 @@ These remain playtesting values.
 
 Away from the station, the existing Repair action (R by default) starts/stops a
 fitted robot. It restores maximum hull divided by its full-repair time each second,
-with no recurring credit cost. The ship must be alive, launched, stationary
-(at most 0.5 m/s), and five seconds past both incoming damage and its last shot.
-Movement, incoming damage, firing intent, docking and death interrupt manual
+with no recurring credit cost. The ship must be alive, launched, and five seconds
+past both incoming damage and its last shot. Movement does not block activation
+or ongoing repairs. Incoming damage, firing intent, docking and death interrupt manual
 repair. The Auto CPU defaults on and resumes when conditions permit; it needs a
 separately fitted robot. Station repair retains its instant paid behavior within
 120 m. A flight HUD prompt shows robot availability and active repair. While the
@@ -447,8 +447,8 @@ Automation setting replies, including rejected requests, appear as flight notifi
 Only CPUs fitted on the active ship can toggle in flight; the server saves the
 setting and validates ownership and ship life. The repair robot itself can also
 be assigned as a manual quickslot action. Ammunition spending and generator
-resource consumption default off. Hangar retains the ammo type selector; settings select
-x1, x2 or x3 independently of the weapon's selected ammunition; x4 cannot be
+resource consumption default off. Hangar has no automation controls. The quickslot
+Extras menu selects x1, x2 or x3 independently of the weapon's selected ammunition; x4 cannot be
 purchased. Refills cost 100 ordinary 100-round batches and require the entire
 price. No automatic ammunition substitution occurs.
 

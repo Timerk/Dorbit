@@ -33,8 +33,6 @@ var current_slot_model: String = ""
 var specifications: PanelContainer
 var stat_values: Dictionary[String, Label] = {}
 var stat_notes: Dictionary[String, Label] = {}
-var extra_status: Label
-var extra_ammo: OptionButton
 
 
 func _ready() -> void:
@@ -75,15 +73,6 @@ func _ready() -> void:
 	remove_button = StationUi.button(fitting_rows, "REMOVE", func(): move_item(selected_item, ""))
 	remove_button.mouse_entered.connect(preview_removal)
 	remove_button.focus_entered.connect(preview_removal)
-	extra_status = StationUi.text(fitting_rows, "", 14, StationUi.MUTED)
-	extra_ammo = OptionButton.new()
-	for kind: String in ["x1", "x2", "x3"]:
-		extra_ammo.add_item(kind)
-	extra_ammo.item_selected.connect(func(_index: int): configure_extra())
-	extra_ammo.tooltip_text = "Ammunition CPU purchase type"
-	fitting_rows.add_child(extra_ammo)
-	extra_status.hide()
-	extra_ammo.hide()
 	storage_panel = StationUi.card(body)
 	storage_panel.custom_minimum_size.x = 260
 	storage_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -247,7 +236,6 @@ func refresh_inventory() -> void:
 	update_stats()
 	drop_hint = ""
 	preview.text = ""
-	update_extra_controls()
 
 
 func storage_category(model: String) -> String:
@@ -357,29 +345,6 @@ func select_item(id: String) -> void:
 	if not item.is_empty():
 		detail.text = "%s / %s" % [Equipment.MODELS[item["model"]]["name"], StationUi.bonus(item["model"])]
 	preview.text = ""
-	update_extra_controls()
-
-
-func update_extra_controls() -> void:
-	var item: Dictionary = inventory().get("items", {}).get(selected_item, {})
-	var configurable: bool = not item.is_empty() and Equipment.MODELS[item["model"]].get("family", "") in ["ammo", "generators", "repair-auto"]
-	extra_status.visible = configurable
-	extra_ammo.visible = configurable and item["model"] == "ammo-cpu"
-	if configurable:
-		extra_status.text = "Automation %s / toggle in quickslots (+)." % ("ON" if Extras.enabled(item) else "OFF")
-		extra_ammo.disabled = not StationUi.blocker(sector).is_empty()
-		if item["model"] == "ammo-cpu":
-			extra_ammo.select(["x1", "x2", "x3"].find(item.get("ammo_type", "x1")))
-
-
-func configure_extra() -> void:
-	if not StationUi.blocker(sector).is_empty():
-		return
-	var item: Dictionary = inventory().get("items", {}).get(selected_item, {})
-	if item.is_empty():
-		return
-	var enabled: bool = Extras.enabled(item)
-	sector.session.combat.request_station("configure_extra", selected_item, "on" if enabled else "off", ["x1", "x2", "x3"][extra_ammo.selected] if item["model"] == "ammo-cpu" else "")
 
 
 func choose(tile: EquipmentTile) -> void:
@@ -474,7 +439,6 @@ func _process(_delta: float) -> void:
 	refresh_inventory()
 	update_stats()
 	var blocked := StationUi.blocker(sector)
-	update_extra_controls()
 	activate_button.disabled = not blocked.is_empty() or ship_choice.selected < 0 or owned_ships[ship_choice.selected] == inventory()["active_ship"]
 	activate_button.tooltip_text = blocked if not blocked.is_empty() else "Switch for free. Fittings and cargo stay with each ship; switching does not repair hull or recharge shields."
 	activate_button.text = "ACTIVE" if ship_choice.selected >= 0 and owned_ships[ship_choice.selected] == inventory()["active_ship"] else "ACTIVATE"

@@ -382,7 +382,7 @@ func draw_station_actions() -> void:
 	draw_style_box(background, rect)
 	if away and not layout.editing:
 		text_at(rect.position + Vector2(12, 21), "%s  REPAIR ROBOT" % GameSettings.binding_text("repair"), 16, AMBER)
-		text_at(rect.position + Vector2(12, 43), "REPAIRING HULL" if player.robot_repairing else "Stop moving; stay outside combat", 16, GREEN, 266)
+		text_at(rect.position + Vector2(12, 43), "REPAIRING HULL" if player.robot_repairing else "Stay outside combat", 16, GREEN, 266)
 		layout.end_draw(self)
 		marker_labels.append(layout.rect_for("station"))
 		return

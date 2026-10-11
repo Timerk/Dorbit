@@ -104,12 +104,10 @@ func run() -> void:
 	client.main_menu.select_page("hangar")
 	client.equipment_menu.select_item(owned["ammo-cpu"])
 	await settle()
-	check(client.equipment_menu.extra_status.visible and client.equipment_menu.extra_ammo.visible, "Hangar explains quickslot automation and retains ammo selection")
 	check(not Extras.enabled(combat.inventory["items"][owned["ammo-cpu"]]), "Ammo spending starts disabled")
 	await capture(client, "extras-hangar")
 	client.get_viewport().size = Vector2i(960, 600)
 	await settle()
-	check(client.equipment_menu.get_global_rect().encloses(client.equipment_menu.extra_status.get_global_rect()) and client.equipment_menu.get_global_rect().encloses(client.equipment_menu.extra_ammo.get_global_rect()), "Automation guidance and ammo controls fit the minimum supported window")
 	var scroll := client.equipment_menu.slot_rows.get_parent() as ScrollContainer
 	scroll.scroll_vertical = 10000
 	await settle()
@@ -163,6 +161,8 @@ func run() -> void:
 		client.get_viewport().size = dimensions
 		await settle()
 		check(client.hud.get_global_rect().encloses(bar.picker.get_global_rect()), "Automation picker fits at %s" % dimensions)
+		check(bar.picker.get_global_rect().encloses(bar.extra_ammo.get_global_rect()) and bar.extra_ammo_row.size.y <= 40, "Auto ammo selector stays compact inside the picker at %s" % dimensions)
+		check(auto_tile.get_parent().get_parent().get_global_rect().encloses(auto_tile.get_global_rect()), "Automation tiles stay fully visible and clickable at %s" % dimensions)
 		await capture(client, "extras-quickslots-%d" % dimensions.x)
 	bar.close_picker()
 	before = extra_state(store)
@@ -184,24 +184,31 @@ func run() -> void:
 	var hull := remote.hull
 	Extras.tick_repair(remote, 1.0, false)
 	check(is_equal_approx(remote.hull - hull, remote.max_hull / 165.0), "REP-1 auto-repairs at its full-hull rate")
-	remote.velocity = Vector3.ONE
+	remote.velocity = Vector3(0, 0, -78)
 	hull = remote.hull
 	Extras.tick_repair(remote, 1.0, false)
-	check(remote.hull == hull and not remote.robot_repairing, "Movement interrupts repair")
-	remote.velocity = Vector3.ZERO
+	check(is_equal_approx(remote.hull - hull, remote.max_hull / 165.0) and remote.robot_repairing, "Auto repair continues at full rate while moving at boost speed")
+	hull = remote.hull
 	remote.time_since_hit = 0.0
 	Extras.tick_repair(remote, 1.0, false)
 	check(remote.hull == hull, "Damage blocks repair")
 	remote.time_since_hit = 100.0
 	Extras.tick_repair(remote, 1.0, true)
 	check(remote.hull == hull, "Fire intent blocks repair")
+	remote.time_since_attack = 0.0
+	Extras.tick_repair(remote, 1.0, false)
+	check(remote.hull == hull and not remote.robot_repairing, "Recent outgoing fire blocks automatic repair while moving")
+	remote.time_since_attack = 4.0
+	Extras.tick_repair(remote, 1.0, false)
+	check(remote.hull > hull and remote.robot_repairing, "Auto repair resumes while moving after the five-second combat delay")
+	hull = remote.hull
 	remote.repair_auto = false
 	remote.time_since_attack = 100.0
 	bar.config.assign(8, "extra:repair")
 	await settle()
 	await click(client, bar.tiles[8])
 	await settle()
-	check(remote.repair_requested, "Assigned repair action starts the fitted robot through the server")
+	check(remote.repair_requested and remote.velocity.length() > 0.5, "Assigned repair action starts the fitted robot through the server while moving")
 	await press(client, KEY_R)
 	await settle()
 	check(not remote.repair_requested, "Repair key stops the manually activated robot")
@@ -209,7 +216,7 @@ func run() -> void:
 	await settle()
 	check(remote.repair_requested, "Repair key restarts the fitted robot through the server")
 	Extras.tick_repair(remote, 1.0, false)
-	check(remote.hull > hull, "Manual robot repairs hull")
+	check(remote.hull > hull and remote.repair_requested and remote.velocity.length() > 0.5, "Manual repair continues while moving")
 	await replicate(server)
 	check(client.player.robot_repairing and is_equal_approx(client.player.hull, remote.hull), "Robot status and health replicate")
 	check(client.player.repair_visual != null and client.player.repair_visual.visible and client.player.repair_visual.beams.size() == 2, "Working robot and repair beams appear on the local ship")
@@ -285,6 +292,18 @@ func run() -> void:
 	await click(client, ammo_tile)
 	await settle()
 	check(Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["ammo-cpu"]]) and remote.repair_requested, "Fitted ammo toggle persists in flight without clearing manual repair intent")
+	check(bar.extra_ammo_row.visible and not bar.extra_ammo.disabled, "Quickslot Extras menu contains the fitted buyer's ammo selection")
+	bar.extra_ammo.select(1)
+	bar.extra_ammo.item_selected.emit(1)
+	await settle()
+	check(store.pilots["pilot0"]["equipment"]["items"][owned["ammo-cpu"]]["ammo_type"] == "x2" and Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["ammo-cpu"]]), "Quickslot ammo selection saves x2 without toggling automation")
+	await held_click(client, ammo_tile)
+	await settle()
+	check(not Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["ammo-cpu"]]) and bar.extra_ammo.selected == 1, "Quickslot toggle preserves the selected buyer ammunition")
+	bar.extra_ammo.select(2)
+	bar.extra_ammo.item_selected.emit(2)
+	await settle()
+	check(store.pilots["pilot0"]["equipment"]["items"][owned["ammo-cpu"]]["ammo_type"] == "x3" and not Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["ammo-cpu"]]), "Quickslot ammo selection keeps disabled automation OFF")
 	await held_click(client, generator_tile)
 	await settle()
 	check(not Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["generator-cpu"]]), "Fitted generator CPU toggles independently")
