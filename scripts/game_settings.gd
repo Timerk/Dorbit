@@ -6,6 +6,7 @@ const PATH := "user://settings.cfg"
 const RENDERER_PATH := "user://graphics-renderer.cfg"
 const ANISOTROPY_SETTING := "rendering/textures/default_filters/anisotropic_filtering_level"
 const DEFAULT_SENSITIVITY := 0.003
+const MAX_FRAME_RATE := 1000
 # Only supported menu values are accepted from device-local profiles.
 const GRAPHICS_LEVELS := {
 	"render_scale": [1.0, 0.85, 0.75, 0.5],
@@ -56,6 +57,7 @@ var sensitivity: float = DEFAULT_SENSITIVITY
 var bindings: Dictionary = DEFAULT_BINDINGS.duplicate()
 var fullscreen: bool = false
 var vsync: bool = false
+var frame_rate_limit: int = 0
 var msaa_3d: int = 2
 # Retain the F4 on/off shortcut and migrate profiles from the original boolean.
 var low_quality: bool:
@@ -100,6 +102,9 @@ func load_from(path: String = PATH) -> void:
 	value = config.get_value("graphics", "resolution", resolution)
 	if value is Vector2i and value.x >= 960 and value.y >= 600:
 		resolution = value
+	value = config.get_value("graphics", "frame_rate_limit", frame_rate_limit)
+	if value is int and value >= 0 and value <= MAX_FRAME_RATE:
+		frame_rate_limit = value
 
 
 func save(path: String = PATH) -> void:
@@ -107,7 +112,7 @@ func save(path: String = PATH) -> void:
 	config.set_value("controls", "sensitivity", sensitivity)
 	for action: String in ACTIONS:
 		config.set_value("bindings", action, bindings[action])
-	for setting in GRAPHICS_BOOLEANS + GRAPHICS_LEVELS.keys() + ["resolution"]:
+	for setting in GRAPHICS_BOOLEANS + GRAPHICS_LEVELS.keys() + ["resolution", "frame_rate_limit"]:
 		config.set_value("graphics", setting, get(setting))
 	save_failed = config.save(path) != OK
 	if path == PATH:

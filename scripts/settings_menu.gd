@@ -15,6 +15,8 @@ var effects_label: Label
 var mute: CheckButton
 var fullscreen: CheckButton
 var vsync: CheckButton
+var frame_rate_limit: LineEdit
+var frame_rate_help: Label
 var quality: OptionButton
 var graphics_options: Dictionary[String, OptionButton] = {}
 var filtering_status: Label
@@ -266,6 +268,19 @@ func build_graphics(rows: VBoxContainer) -> void:
 		sector.apply_graphics(false)
 		sector.settings.save())
 	vsync.tooltip_text = "Sync frames to the screen to reduce tearing."
+	var frame_rate_row := HBoxContainer.new()
+	rows.add_child(frame_rate_row)
+	var frame_rate_label := label(frame_rate_row, "Frame rate limit (FPS)")
+	frame_rate_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	frame_rate_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	frame_rate_limit = LineEdit.new()
+	frame_rate_limit.custom_minimum_size = Vector2(220, 36)
+	frame_rate_limit.select_all_on_focus = true
+	frame_rate_limit.tooltip_text = "Type a whole number from 0 to %d. Press Enter or leave the field to apply." % GameSettings.MAX_FRAME_RATE
+	frame_rate_row.add_child(frame_rate_limit)
+	frame_rate_help = label(rows, "0 = unlimited. VSync may limit FPS further.", 14)
+	frame_rate_limit.text_submitted.connect(func(_text: String): apply_frame_rate_limit())
+	frame_rate_limit.focus_exited.connect(apply_frame_rate_limit)
 	graphics_choice(rows, "msaa_3d", "Antialiasing", ["Off", "2x MSAA", "4x MSAA", "8x MSAA"],
 		"Smooths geometry edges. Higher levels increase GPU and memory use.")
 	quality = graphics_options.msaa_3d
@@ -292,6 +307,22 @@ func build_graphics(rows: VBoxContainer) -> void:
 		"Sunlight casts shadows on nearby objects. Medium to high cost.")
 	graphics_choice(rows, "effects_quality", "Combat effects", ["Off", "Low", "High"],
 		"Controls laser, impact and explosion visuals. Lower levels help in busy fights.")
+
+
+func apply_frame_rate_limit() -> void:
+	var text := frame_rate_limit.text.strip_edges()
+	# Check the range before integer conversion so oversized pasted numbers cannot overflow.
+	if not text.is_valid_int() or text.to_float() < 0 or text.to_float() > GameSettings.MAX_FRAME_RATE:
+		frame_rate_help.text = "Enter a whole number from 0 to %d. 0 = unlimited." % GameSettings.MAX_FRAME_RATE
+		frame_rate_help.add_theme_color_override("font_color", FlightHud.RED)
+		return
+	var value := int(text)
+	frame_rate_limit.text = str(value)
+	frame_rate_help.text = "0 = unlimited. VSync may limit FPS further."
+	frame_rate_help.add_theme_color_override("font_color", FlightHud.MUTED)
+	if value != sector.settings.frame_rate_limit:
+		sector.settings.frame_rate_limit = value
+		save_graphics()
 
 
 func graphics_choice(rows: VBoxContainer, setting: String, title: String, choices: Array, help: String) -> void:
@@ -372,6 +403,8 @@ func close() -> void:
 
 
 func dismiss() -> void:
+	if panel.visible:
+		apply_frame_rate_limit()
 	pending_action = ""
 	panel.hide()
 	pause_panel.hide()
@@ -388,6 +421,9 @@ func sync_controls() -> void:
 	mute.set_pressed_no_signal(sector.audio.muted)
 	fullscreen.set_pressed_no_signal(sector.settings.fullscreen)
 	vsync.set_pressed_no_signal(sector.settings.vsync)
+	frame_rate_limit.text = str(sector.settings.frame_rate_limit)
+	frame_rate_help.text = "0 = unlimited. VSync may limit FPS further."
+	frame_rate_help.add_theme_color_override("font_color", FlightHud.MUTED)
 	for setting: String in graphics_options:
 		graphics_options[setting].select(GameSettings.GRAPHICS_LEVELS[setting].find(sector.settings.get(setting)))
 	sync_filtering_status()
