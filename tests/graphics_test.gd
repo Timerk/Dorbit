@@ -26,6 +26,7 @@ func run() -> void:
 		await finish()
 		return
 	if "--restart" in OS.get_cmdline_user_args():
+		check(sector.settings.frame_rate_limit == 72 and Engine.max_fps == 72 and menu.frame_rate_limit.text == "72", "Typed frame rate limit survives restart and applies at startup")
 		check(is_equal_approx(root.scaling_3d_scale, 0.75), "Render scale is applied after restarting")
 		check(root.anisotropic_filtering_level == Viewport.ANISOTROPY_2X and GameSettings.startup_filtering_level() == 1, "2x filtering loads before the renderer starts")
 		check(root.msaa_3d == Viewport.MSAA_2X and menu.quality.selected == 1, "2x MSAA is applied and selected after restarting")
@@ -40,6 +41,38 @@ func run() -> void:
 	check(is_equal_approx(root.scaling_3d_scale, 1.0) and root.anisotropic_filtering_level == Viewport.ANISOTROPY_DISABLED, "Older profiles retain native rendering and disabled filtering")
 	check(not environment.glow_enabled and not environment.ssao_enabled and not sun.shadow_enabled, "New environment effects default to off")
 	check(sector.settings.effects_quality == 2, "Existing combat effects remain enabled by default")
+	menu.open()
+	menu.tabs.current_tab = 2
+	check(sector.settings.frame_rate_limit == 0 and Engine.max_fps == 0 and menu.frame_rate_limit.text == "0", "Older profiles default to unlimited frame rate")
+	for value: int in [30, 144, 0, GameSettings.MAX_FRAME_RATE]:
+		menu.frame_rate_limit.text = str(value)
+		menu.frame_rate_limit.text_submitted.emit(str(value))
+		var saved := GameSettings.new()
+		saved.load_from()
+		check(Engine.max_fps == value and saved.frame_rate_limit == value, "FPS %d applies to the engine and saves on Enter" % value)
+	menu.frame_rate_limit.text = " 60 "
+	menu.frame_rate_limit.focus_exited.emit()
+	check(Engine.max_fps == 60 and menu.frame_rate_limit.text == "60", "Leaving the field applies and normalizes typed FPS")
+	for text: String in ["", "-1", "60.5", "abc", "1001", "999999999999999999999999"]:
+		menu.frame_rate_limit.text = text
+		menu.frame_rate_limit.text_submitted.emit(text)
+		var saved := GameSettings.new()
+		saved.load_from()
+		check(Engine.max_fps == 60 and saved.frame_rate_limit == 60 and menu.frame_rate_help.text.begins_with("Enter"), "Invalid FPS '%s' retains the last valid limit with feedback" % text)
+	menu.sync_controls()
+	check(menu.frame_rate_limit.text == "60", "Reopening settings reflects the saved limit")
+	for enabled in [true, false]:
+		menu.vsync.button_pressed = enabled
+		check(Engine.max_fps == 60, "Changing VSync preserves the frame rate limit")
+	sector.dedicated_server = true
+	sector.settings.frame_rate_limit = 30
+	sector.apply_graphics(false)
+	check(Engine.max_fps == 60, "Dedicated server graphics do not apply a device frame rate cap")
+	sector.dedicated_server = false
+	sector.settings.frame_rate_limit = 60
+	menu.frame_rate_limit.text = "72"
+	menu.dismiss()
+	check(Engine.max_fps == 72, "Closing settings commits pending valid FPS text")
 	menu.open()
 	menu.tabs.current_tab = 2
 	for setting: String in GameSettings.GRAPHICS_LEVELS:
@@ -156,6 +189,17 @@ func run() -> void:
 	invalid.save("user://invalid-graphics.cfg")
 	var loaded := GameSettings.new()
 	loaded.load_from("user://invalid-graphics.cfg")
+	check(loaded.frame_rate_limit == 0, "Profiles without a frame rate key remain unlimited")
+	for value: Variant in [-1, 1001, 60.0, "60", true]:
+		invalid.set_value("graphics", "frame_rate_limit", value)
+		invalid.save("user://invalid-graphics.cfg")
+		loaded.load_from("user://invalid-graphics.cfg")
+		check(loaded.frame_rate_limit == 0, "Malformed saved FPS values retain the unlimited default")
+	for value: int in [0, 1, 144, GameSettings.MAX_FRAME_RATE]:
+		invalid.set_value("graphics", "frame_rate_limit", value)
+		invalid.save("user://invalid-graphics.cfg")
+		loaded.load_from("user://invalid-graphics.cfg")
+		check(loaded.frame_rate_limit == value, "Valid saved FPS %d loads without clamping" % value)
 	check(loaded.render_scale == 1.0 and loaded.anisotropic_filtering == 0 and loaded.shadow_quality == 0 and loaded.effects_quality == 2 and not loaded.bloom and not loaded.ssao, "Malformed graphics preferences retain usable defaults")
 	invalid.set_value("graphics", "render_scale", NAN)
 	invalid.set_value("graphics", "shadow_quality", 1.0)
