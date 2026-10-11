@@ -42,6 +42,37 @@ func run() -> void:
 	menu.sync_controls()
 	check(sector.settings.vsync and menu.vsync.button_pressed, "Menu reflects the enabled VSync preference")
 	check(menu.panel.visible and not sector.session.menu.visible and sector.paused, "Settings can open before connecting")
+	menu.tabs.current_tab = 2
+	menu.frame_rate_limit.grab_focus()
+	await process_frame
+	for code in [KEY_3, KEY_0]:
+		var key := InputEventKey.new()
+		key.keycode = code
+		key.unicode = code
+		key.pressed = true
+		Input.parse_input_event(key)
+		await process_frame
+		key = key.duplicate()
+		key.pressed = false
+		Input.parse_input_event(key)
+		await process_frame
+	check(menu.frame_rate_limit.text == "30" and Engine.max_fps == 0, "FPS field accepts keyboard input without applying partial edits")
+	await tap_key(KEY_ENTER)
+	check(Engine.max_fps == 30 and sector.settings.frame_rate_limit == 30, "Enter applies the typed frame rate limit")
+	menu.vsync.grab_focus()
+	await process_frame
+	if DisplayServer.get_name() != "headless":
+		menu.vsync.button_pressed = false
+		await create_timer(0.5).timeout
+		var start := Time.get_ticks_usec()
+		for frame in range(15):
+			await process_frame
+		var measured_fps := 15000000.0 / float(Time.get_ticks_usec() - start)
+		check(measured_fps <= 35.0, "Rendered game respects the 30 FPS cap, measured %.1f FPS" % measured_fps)
+		menu.vsync.button_pressed = true
+	menu.frame_rate_limit.text = "0"
+	menu.frame_rate_limit.text_submitted.emit("0")
+	menu.tabs.current_tab = 0
 	await tap_key(KEY_ESCAPE)
 	check(not menu.panel.visible and sector.session.menu.visible, "Escape returns settings to the connection menu")
 	sector.client_only = false
@@ -188,6 +219,12 @@ func run() -> void:
 
 func finish() -> void:
 	print("Settings checks: %d passed, %d failed" % [checks - failures, failures])
+	if DisplayServer.get_name() != "headless":
+		# Short restart runs must finish sky/reflection work before freeing the sector.
+		await create_timer(1.0).timeout
 	sector.queue_free()
 	await process_frame
+	if DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
+		await process_frame
 	quit(0 if failures == 0 else 1)
