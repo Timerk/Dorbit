@@ -77,6 +77,9 @@ func run() -> void:
 			data = client.session.combat.inventory
 			owned = ShipCatalog.owned_id(data, model)
 			check(not owned.is_empty() and client.credits == before - ShipCatalog.price(model), model + " purchase charges the authoritative credit price")
+			if owned.is_empty():
+				finish()
+				return
 			check(data["active_ship"] == "starter" and store.pilots["pilot0"]["cargo"][owned].is_empty(), model + " purchase adds an empty hull without activating it")
 			check(Equipment.stats(data, owned)["damage"] == 0 and Equipment.stats(data, owned)["shield"] == 0, model + " arrives with an empty fitting")
 		var available := Equipment.slots(data, owned)
