@@ -1,0 +1,42 @@
+{
+	"adapter": "AMD Radeon RX 6800",
+	"average_fps": 488.854125928823,
+	"draw_calls": 255.0,
+	"frames": 240,
+	"maps": [
+		{
+			"average_ms": 1.689375,
+			"draw_calls": 160.0,
+			"map": 1,
+			"objects": 551.0,
+			"p95_ms": 1.857
+		},
+		{
+			"average_ms": 1.780125,
+			"draw_calls": 164.0,
+			"map": 2,
+			"objects": 545.0,
+			"p95_ms": 2.22
+		},
+		{
+			"average_ms": 1.83318333333333,
+			"draw_calls": 160.0,
+			"map": 3,
+			"objects": 543.0,
+			"p95_ms": 1.978
+		},
+		{
+			"average_ms": 1.73090833333333,
+			"draw_calls": 190.0,
+			"map": 4,
+			"objects": 574.0,
+			"p95_ms": 2.029
+		}
+	],
+	"msaa": "4x",
+	"note": "Single local rendered sector; five patrolling aliens. Map samples use 120 frames after each boundary view. Not a multiplayer capacity benchmark.",
+	"p95_ms": 2.209,
+	"renderer": "GL Compatibility",
+	"resolution": "(1440.0, 900.0)",
+	"vsync": "disabled"
+}

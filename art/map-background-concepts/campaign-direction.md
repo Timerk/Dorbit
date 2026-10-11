@@ -13,4 +13,4 @@ The user's art direction adds visible former inhabitants, battle damage and alie
 
 Human structures use angular metal frames, rectangular modules and warm service lights. The alien machines share curved segmented claws, overlapping black ceramic plates and narrow teal emissive seams. Consistent forms connect the outer maps to the same occupying force. Each sector retains its original palette and an open central flight area.
 
-These pictures can suggest future reconnaissance, recovery and restoration locations. Exact mission use remains campaign design work. The concepts remain single-view references, not imported scenery or seamless skyboxes. The first pass is preserved for comparison.
+These pictures can suggest future reconnaissance, recovery and restoration locations. Exact mission use remains campaign design work. Their visual direction is now implemented as client-only 3D backdrops; see the [runtime review](../../docs/sector-art/campaign-backgrounds.md). The pictures remain single-view references rather than seamless skyboxes. Both concept passes are preserved for comparison.
