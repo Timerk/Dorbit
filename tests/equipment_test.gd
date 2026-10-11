@@ -3,7 +3,15 @@ extends "res://tests/dedicated_server_test.gd"
 
 
 func request(client: Sector, sequence: int, action: String, subject: String, ship: String = "", slot: String = "", life: int = 0) -> void:
+	client.session.combat.station_pending = true
 	client.session.combat.station_request.rpc_id(1, sequence, action, subject, ship, slot, life)
+	# Slow imports or disk commits can take longer than a fixed settling delay.
+	# Rejected transactions also send a station result and clear this flag.
+	var deadline := Time.get_ticks_msec() + 5000
+	while client.session.combat.station_pending and Time.get_ticks_msec() < deadline:
+		await process_frame
+	check(not client.session.combat.station_pending, "Station reply arrives for %s %s" % [action, subject])
+	# Let fitting controls rebuild before the next simulated UI interaction.
 	await settle(0.1)
 
 
