@@ -1,22 +1,24 @@
 # Map background concepts
 
-Four original environment references for Dorbit's existing sectors, generated with the built-in image generation tool on 2026-10-12. Each uses a behind-the-ship camera and separates detailed scenery around the edges from darker space in the central flight direction.
+Four original environment references for Dorbit's existing sectors, generated and revised with the built-in image generation tool on 2026-10-12. The v2 images below follow the reclamation story in [PR #76](https://github.com/Timerk/Dorbit/pull/76) and the user's request for evidence of former inhabitants, war damage and alien resource extraction. Each preserves the first pass's behind-the-ship camera, sector palette and darker central flight area.
 
 | Sector | Direction | Image |
 | --- | --- | --- |
-| M1 / Outpost 01 | Blue inhabited planet, working orbital station and traffic | [Full image](m1-outpost-01.png) |
-| M2 / Outer Patrol | Amber desert planet, asteroid belt, patrol relay and distant gate | [Full image](m2-outer-patrol.png) |
-| M3 / Debris Fields | Red dust, scarred moon and broken industrial carrier | [Full image](m3-debris-fields.png) |
-| M4 / Frontier | Violet nebula, dark ringed planet and unfamiliar alien ruins | [Full image](m4-frontier.png) |
+| M1 / Outpost 01 | Bombarded human cities, shattered orbital defenses and a returning outpost under construction | [Full image](m1-outpost-01-v2.png) |
+| M2 / Outer Patrol | Alien planetary collectors over excavation scars, with ruined human settlements and patrol infrastructure | [Full image](m2-outer-patrol-v2.png) |
+| M3 / Debris Fields | Alien salvage machinery stripping a human carrier, damaged receivers and moon extraction | [Full image](m3-debris-fields-v2.png) |
+| M4 / Frontier | Alien extraction complex grafted onto a ruined human orbital ring | [Full image](m4-frontier-v2.png) |
 
-![Outpost 01](m1-outpost-01.png)
+![Outpost 01 campaign revision](m1-outpost-01-v2.png)
 
-![Outer Patrol](m2-outer-patrol.png)
+![Outer Patrol campaign revision](m2-outer-patrol-v2.png)
 
-![Debris Fields](m3-debris-fields.png)
+![Debris Fields campaign revision](m3-debris-fields-v2.png)
 
-![Frontier](m4-frontier.png)
+![Frontier campaign revision](m4-frontier-v2.png)
 
-See the [DarkOrbit research and official reference links](../../docs/research/darkorbit-map-backgrounds.md) and [complete generation prompts](prompts.md).
+See the [campaign art direction](campaign-direction.md), [DarkOrbit research and official reference links](../../docs/research/darkorbit-map-backgrounds.md), [revision prompts](campaign-prompts.md) and [original prompts](prompts.md).
+
+The first pass remains available for comparison: [M1](m1-outpost-01.png), [M2](m2-outer-patrol.png), [M3](m3-debris-fields.png) and [M4](m4-frontier.png).
 
 These single-view paintings guide a possible redesign. They are not seamless skyboxes or runtime assets. A 3D implementation still needs scenery in other viewing directions, lighting and combat readability checks, and performance measurements. The ships and structures in these images demonstrate composition and scale; they do not replace existing game models. No gameplay or game-plan changes are included. The `.gdignore` file keeps this review directory out of Godot's asset import.
