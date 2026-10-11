@@ -46,7 +46,8 @@ The following controls are agreed as the starting layout. Check comfort and usab
 | Tab | Select the on-screen enemy closest to the mouse cursor |
 | Space | Toggle automatic laser fire |
 | Shift | Boost using rechargeable energy |
-| M | Open/close the sector overview and choose a destination |
+| M | Open/close the local sector and connected-maps overview |
+| J | Jump through a gate within 50 m (rebindable) |
 | P | Toggle autopilot to the selected destination |
 
 Flight should have noticeable weight and inertia while staying responsive and arcade-like. Ships retain momentum through turns, build speed gradually, and use assisted braking on release plus stronger counter-thrust when reversing. Mouse steering eases over a few frames. There is no unlimited coasting or manual braking requirement.
@@ -462,7 +463,7 @@ Fitting never repairs or refills hull, shield or boost energy.
 
 Items and per-item automation settings survive death, reconnect and server restart
 in the current save schema 8 without an extras starter grant or extra-specific migration. Older binaries cannot read
-new extra model IDs: back up before introducing these items. Network schema 14
+new extra model IDs: back up before introducing these items. Network schema 15
 requires matching clients and servers. Original generated images and their exact
 prompts are under `assets/ui/extras`; prices, repair gates and automation behavior
 still need user playtesting.
@@ -667,7 +668,7 @@ Drobit choices requiring playtesting. Premium is an optional operator-set durati
 Save schema 7 migrates versions 1–6 before admission, preserving both earlier
 ammunition/boost and industry layouts. Legacy industry wallets convert once at
 100 credits per unit; active/queued robots retain their lifetime.
-Network schema 14 requires matching client/server builds. See [implementation policies,
+Network schema 15 requires matching client/server builds. See [implementation policies,
 rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot's
 454/870 power budget and exact inventories/capacities remain a separate debug fixture.
 
@@ -738,7 +739,7 @@ Save schema 7 migrates schema 1–6 while preserving progression and grants
 100 R-310 once, with zero other rocket ammo. New pilots receive the same grant.
 The provisioning tool supports the same migration and launcher fittings.
 Back up the ledger before upgrading; rollback needs a pre-migration backup.
-Network schema 14 requires matching client/server builds. Resource rocket
+Network schema 15 requires matching client/server builds. Resource rocket
 boosts use the existing per-ship reserve and combat journal formats; no new save
 or network schema is required. Laser/timed reserve behavior is unchanged.
 
@@ -909,7 +910,7 @@ protection is around the service point, not the entire station. The larger upper
 hangars and outer docking arms do not extend station services or protection.
 Clients and dedicated servers load the same 53 simple collision boxes, with
 open hangar entrances. Autopilot chooses a clear service approach when the tower
-or reactor occupies its usual radial stopping point. Network schema 14 requires
+or reactor occupies its usual radial stopping point. Network schema 15 requires
 matching builds because the physical station layout changed; saves are unchanged.
 Final visual acceptance, scale, approach comfort and group performance remain
 playtesting decisions within Milestone 3.
@@ -1045,10 +1046,47 @@ stronger, and Map 4 contains the strongest encounters. This combat progression
 does not add travel unlocks; players can still reach every map without leveling
 or upgrading their equipment.
 
-Names for the additional maps and aliens, the exact alien roster, statistics,
-behaviors, rewards and spawn populations, gate placement, protection and transfer
-rules remain open for design and playtesting. Ordinary travel gates are separate
-from the future Galaxy Gates alien-wave challenges.
+The first implementation uses the following provisional names and populations:
+
+| Map | Alien population | Hull / shield per type | Damage per shot | Credit pool per kill |
+| --- | --- | --- | --- | --- |
+| M1 / Outpost 01 | Existing two Scouts, two Sentinels and one Heavy | Existing tuning | Existing tuning | Existing tuning |
+| M2 / Outer Patrol | Three Skirmishers, two Raiders | 2,500 / 1,200; 6,500 / 3,200 | 2,500; 6,500 | 900; 3,500 |
+| M3 / Debris Fields | Three Marauders, two Wardens | 14,000 / 7,000; 24,000 / 12,000 | 14,000; 18,000 | 14,000; 22,000 |
+| M4 / Frontier | Three Ravagers, two Overlords | 36,000 / 18,000; 60,000 / 30,000 | 24,000; 32,000 | 32,000; 50,000 |
+
+New types reuse simple colored procedural ship geometry with different sizes.
+Each has its own resource loot table, patrol/detection/leash settings and respawn
+timer. All encounters on a higher new map have more health, shield, damage and
+credits than those on the preceding new map. Travel remains unrestricted;
+higher maps are intended to become combat goals for fitted ships or cooperative
+groups. Exact balance, names, loot and population need playtesting.
+
+Gates appear as labeled rings and navigation contacts. J jumps within 50 m,
+with a two-second cooldown and a protected 75 m zone on both sides. Gate
+protection prevents pilots firing lasers or rockets and aliens attacking them;
+spawn homes stay outside detection distance of these zones. Transfers preserve
+hull, shields, boost energy, ammunition, wallet, contracts, equipment and cargo.
+Arrival stops movement, faces inward and clears targeting, automatic fire,
+autopilot, steering and loaded launcher rounds. Spent rockets from the previous
+flight cannot hit after transfer. Leaving a map removes its damage contributions.
+
+M opens Local sector and Connected maps tabs. The connections view highlights
+the current map and shows all four bidirectional links and encounter tiers.
+Clicking a different map selects its next gate by the shortest route; it sets a
+waypoint without jumping. Local radar, markers, contacts, radiation and autopilot
+use the current map. Station services remain exclusively on M1. Death, reconnect
+and quitting to the station menu return pilots to the home map.
+
+One persistent authoritative session simulates all four populations. Maps have
+separate membership and distant origins in the existing physics world. Rendering,
+snapshots, effects, loot collection, targeting and damage are scoped to map
+membership; owner ammunition and inventory remain private. Each transfer
+increments the flight life and map-visit epoch, so delayed commands, world state
+and effects cannot revive an earlier visit, including returning to the same map.
+Network schema 15 requires matching client/server builds; save schema 8 is unchanged
+because flight locations are temporary. Ordinary travel gates are separate from
+the future Galaxy Gates alien-wave challenges.
 
 ## Open decisions
 

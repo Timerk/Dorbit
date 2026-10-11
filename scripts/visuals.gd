@@ -355,7 +355,7 @@ static func destruction_size(ship: SpaceShip) -> float:
 	if ship is Pilot:
 		return float(ShipCatalog.info(ship.ship_model).get("visual_diameter", 7.0))
 	if ship is Alien:
-		return float(Alien.VISUAL_DIAMETERS[ship.kind])
+		return float(Alien.VISUAL_DIAMETERS.get(ship.kind, 7.0 * ship.tuning()["scale"].length() / sqrt(3.0)))
 	return Vector3(6.6253, 1.895, 6.83).length()
 
 

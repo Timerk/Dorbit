@@ -23,6 +23,42 @@ var view_zoom: float = 1.0
 var view_offset := Vector2.ZERO
 var font: Font = StationUi.FONT
 var info: Label
+var overview_title: Label
+var overview_hint: Label
+var tabs: TabContainer
+var network_plot: NetworkPlot
+
+
+class NetworkPlot extends Control:
+	var navigation: FlightNavigation
+	const POINTS := [Vector2(0.15, 0.5), Vector2(0.42, 0.5), Vector2(0.77, 0.24), Vector2(0.77, 0.76)]
+
+	func map_rect(map: int) -> Rect2:
+		return Rect2(size * POINTS[map] - Vector2(92, 42), Vector2(184, 84))
+
+	func _draw() -> void:
+		var current := navigation.sector.map_id
+		for source: int in SectorMaps.GATES:
+			for destination: int in SectorMaps.GATES[source]:
+				if source < destination:
+					draw_line(size * POINTS[source], size * POINTS[destination], FlightHud.MUTED, 3, true)
+		for map: int in SectorMaps.MAPS:
+			var rect := map_rect(map)
+			var color: Color = SectorMaps.MAPS[map]["color"]
+			draw_style_box(StationUi.style(StationUi.SURFACE, color if map == current else FlightHud.LINE), rect)
+			navigation.label_at(self, rect.position + Vector2(12, 24), SectorMaps.MAPS[map]["name"], 16, color)
+			navigation.label_at(self, rect.position + Vector2(12, 47), "HOME / STATION" if map == 0 else "ALIEN STRENGTH / TIER %d" % map, 12, FlightHud.MUTED)
+			navigation.label_at(self, rect.position + Vector2(12, 69), "YOU ARE HERE" if current == map else "CLICK TO SET GATE WAYPOINT", 11, FlightHud.INK)
+		navigation.label_at(self, Vector2(20, size.y - 18), "All gates are two-way. Every map is open from the start.", 16, FlightHud.MUTED)
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			for map: int in SectorMaps.MAPS:
+				if map_rect(map).has_point(event.position):
+					var hop := SectorMaps.first_hop(navigation.sector.map_id, map)
+					if hop >= 0:
+						navigation.choose_contact("gate%d" % hop)
+					accept_event()
 
 
 class SectorPlot extends Control:
@@ -104,14 +140,18 @@ func _ready() -> void:
 
 
 func contacts() -> Array[Dictionary]:
-	var result: Array[Dictionary] = [{"key": "station", "name": "Outpost 01", "position": Sector.STATION_POSITION, "color": FlightHud.GREEN, "ship": null}]
+	var result: Array[Dictionary] = []
+	if sector.map_id == 0:
+		result.append({"key": "station", "name": "Outpost 01", "position": Sector.STATION_POSITION, "color": FlightHud.GREEN, "ship": null})
+	for map: int in SectorMaps.GATES[sector.map_id]:
+		result.append({"key": "gate%d" % map, "name": "Gate to " + SectorMaps.MAPS[map]["name"], "position": SectorMaps.gate_position(sector.map_id, map), "color": SectorMaps.MAPS[map]["color"], "ship": null})
 	for enemy: Alien in sector.aliens.values():
 		if enemy.alive and enemy.visible:
-			result.append({"key": "alien%d" % enemy.alien_id, "name": "%s %d" % [enemy.kind, enemy.alien_id + 1], "position": enemy.position, "color": enemy.tuning()["color"], "ship": enemy})
+			result.append({"key": "alien%d" % enemy.alien_id, "name": "%s %d" % [enemy.kind, enemy.alien_id % 100 + 1], "position": enemy.position, "color": enemy.tuning()["color"], "ship": enemy})
 	if sector.session.active:
 		for id: int in sector.session.ships:
 			var ship := sector.session.ships[id]
-			if ship != sector.player and ship.alive:
+			if ship != sector.player and ship.alive and ship.map_id == sector.map_id and not ship.get_meta("docked", false):
 				result.append({"key": "friend%d" % id, "name": "Pilot %d" % id, "position": ship.position, "color": FlightHud.CYAN, "ship": ship})
 	return result
 
@@ -121,15 +161,16 @@ func sync_waypoint() -> void:
 		if sector.target is Alien and sector.target.alive:
 			waypoint_key = "alien%d" % sector.target.alien_id
 		elif waypoint_key.begins_with("alien"):
-			waypoint_key = "station"
+			waypoint_key = contacts()[0]["key"]
 		last_target = sector.target
 	if not contacts().any(func(contact: Dictionary): return contact["key"] == waypoint_key):
-		waypoint_key = "station"
+		waypoint_key = contacts()[0]["key"]
 
 
 func destination() -> Dictionary:
-	if sector.player.position.length() > Sector.MAP_RADIUS:
-		return {"key": "safe", "name": "Safe space", "position": sector.player.position.normalized() * (Sector.MAP_RADIUS - 50), "color": FlightHud.RED, "ship": null}
+	var local := sector.player.position - SectorMaps.origin(sector.map_id)
+	if local.length() > Sector.MAP_RADIUS:
+		return {"key": "safe", "name": "Safe space", "position": SectorMaps.origin(sector.map_id) + local.normalized() * (Sector.MAP_RADIUS - 50), "color": FlightHud.RED, "ship": null}
 	for contact in contacts():
 		if contact["key"] == waypoint_key:
 			return contact
@@ -187,15 +228,24 @@ func build_overview() -> void:
 	var rows := StationUi.rows(overview, 16)
 	var header := HBoxContainer.new()
 	rows.add_child(header)
-	var title := StationUi.text(header, "SECTOR OVERVIEW / OUTPOST 01", 22, FlightHud.AMBER)
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	overview_title = StationUi.text(header, "SECTOR OVERVIEW / OUTPOST 01", 22, FlightHud.AMBER)
+	overview_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	reset_button = StationUi.button(header, "Reset view", reset_view)
 	StationUi.button(header, "Back to flight [M / Esc]", close_overview)
 	rows.add_child(HSeparator.new())
-	StationUi.text(rows, "Click a contact to navigate. Drag to rotate / Scroll to zoom", 16, FlightHud.MUTED)
+	overview_hint = StationUi.text(rows, "Click a contact to navigate. Drag to rotate / Scroll to zoom", 16, FlightHud.MUTED)
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	rows.add_child(body)
+	tabs = TabContainer.new()
+	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rows.add_child(tabs)
+	body.name = "Local sector"
+	tabs.add_child(body)
+	network_plot = NetworkPlot.new()
+	network_plot.name = "Connected maps"
+	network_plot.navigation = self
+	network_plot.custom_minimum_size = Vector2(810, 280)
+	tabs.add_child(network_plot)
 	var sidebar := StationUi.card(body)
 	sidebar.custom_minimum_size.x = 230
 	var left := StationUi.rows(sidebar, 12)
@@ -211,12 +261,12 @@ func build_overview() -> void:
 	plot = SectorPlot.new()
 	plot.navigation = self
 	plot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	plot.custom_minimum_size = Vector2(550, 360)
+	plot.custom_minimum_size = Vector2(550, 280)
 	plot.mouse_filter = Control.MOUSE_FILTER_STOP
 	plot.clip_contents = true
 	body.add_child(plot)
 	info = StationUi.text(rows, "", 16, FlightHud.AMBER)
-	StationUi.text(rows, "White: you / Green: outpost / Colored: aliens / Cyan: pilots / Lines: height", 14, FlightHud.MUTED)
+	StationUi.text(rows, "White: you / Colored: gates and aliens / Green: outpost / Cyan: pilots", 14, FlightHud.MUTED)
 	overview.hide()
 
 
@@ -241,6 +291,10 @@ func close_overview(resume: bool = true) -> void:
 
 
 func update_contacts() -> void:
+	overview_title.text = "SECTOR OVERVIEW / " + SectorMaps.MAPS[sector.map_id]["name"]
+	reset_button.visible = tabs.current_tab == 0
+	overview_hint.text = "Click a map to set the next gate on its route. Fly to the gate and press %s to jump." % GameSettings.binding_text("jump_gate") if tabs.current_tab == 1 else "Click a contact to navigate. Drag to rotate / Scroll to zoom"
+	network_plot.queue_redraw()
 	var current := contacts()
 	for key: String in contact_buttons.keys():
 		if not current.any(func(contact: Dictionary): return contact["key"] == key):
@@ -260,6 +314,8 @@ func update_contacts() -> void:
 	var selected := destination()
 	info.text = "Waypoint: %s / %.0f m%s" % [selected["name"], sector.player.position.distance_to(selected["position"]), " / RADIATION: return to safety first" if selected["key"] == "safe" else ""]
 	info.add_theme_color_override("font_color", FlightHud.RED if selected["key"] == "safe" else FlightHud.AMBER)
+	if tabs.current_tab == 1:
+		info.text = SectorMaps.MAPS[sector.map_id]["description"]
 
 
 func _process(_delta: float) -> void:
@@ -336,7 +392,7 @@ func _draw() -> void:
 
 func draw_radar() -> void:
 	var origin := radar_rect().position
-	card(radar_rect(), "LOCAL RADAR / %s m" % FlightHud.number(RANGES[range_index]))
+	card(radar_rect(), "M%d / RADAR / %s m" % [sector.map_id + 1, FlightHud.number(RANGES[range_index])])
 	var center := origin + Vector2(84, 108)
 	draw_circle(center, 62, Color("111a20"))
 	for radius in [31, 62]:
@@ -372,7 +428,7 @@ func draw_radar() -> void:
 	draw_arc(origin + Vector2(168, 78), 4, 0, TAU, 20, FlightHud.AMBER, 1.5, true)
 	label_at(self, origin + Vector2(180, 82), "WAYPOINT", 13, FlightHud.MUTED)
 	draw_circle(origin + Vector2(168, 100), 3, FlightHud.GREEN)
-	label_at(self, origin + Vector2(180, 104), "OUTPOST", 13, FlightHud.MUTED)
+	label_at(self, origin + Vector2(180, 104), "GATE / BASE", 13, FlightHud.MUTED)
 	draw_circle(origin + Vector2(168, 120), 3, FlightHud.RED)
 	label_at(self, origin + Vector2(180, 124), "HOSTILE", 13, FlightHud.MUTED)
 
@@ -393,6 +449,8 @@ func draw_guidance(selected: Dictionary, local: Vector3) -> void:
 	var hint := turn_hint(local)
 	if selected["key"] == "station" and local.length() <= Sector.REPAIR_RADIUS:
 		hint = "AT OUTPOST 01"
+	elif selected["key"].begins_with("gate") and local.length() <= SectorMaps.JUMP_RADIUS:
+		hint = GameSettings.binding_text("jump_gate") + " / JUMP THROUGH GATE"
 	var pixels := 16
 	while pixels > 12 and font.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x > 186:
 		pixels -= 1
@@ -401,7 +459,7 @@ func draw_guidance(selected: Dictionary, local: Vector3) -> void:
 
 
 func plot_point(location: Vector3) -> Vector2:
-	var rotated := Basis(Vector3.RIGHT, view_pitch) * Basis(Vector3.UP, view_yaw) * location
+	var rotated := Basis(Vector3.RIGHT, view_pitch) * Basis(Vector3.UP, view_yaw) * (location - SectorMaps.origin(sector.map_id))
 	var scale := minf(plot.size.x * 0.44, plot.size.y * 0.44) / Sector.MAP_RADIUS * view_zoom
 	return plot.size * 0.5 + view_offset + Vector2(rotated.x, -rotated.y * 0.89) * scale
 
@@ -447,18 +505,19 @@ func draw_sector(canvas: Control) -> void:
 	var ring := PackedVector2Array()
 	for step in range(65):
 		var angle := step * TAU / 64
-		ring.append(plot_point(Vector3(cos(angle), 0, sin(angle)) * Sector.MAP_RADIUS))
+		ring.append(plot_point(SectorMaps.origin(sector.map_id) + Vector3(cos(angle), 0, sin(angle)) * Sector.MAP_RADIUS))
 	canvas.draw_polyline(ring, Color(FlightHud.AMBER, 0.35), 1.5, true)
 	for axis in [Vector3.RIGHT, Vector3.FORWARD]:
 		var meridian := PackedVector2Array()
 		for step in range(65):
 			var angle := step * TAU / 64
-			meridian.append(plot_point((axis * cos(angle) + Vector3.UP * sin(angle)) * Sector.MAP_RADIUS))
+			meridian.append(plot_point(SectorMaps.origin(sector.map_id) + (axis * cos(angle) + Vector3.UP * sin(angle)) * Sector.MAP_RADIUS))
 		canvas.draw_polyline(meridian, Color(FlightHud.MUTED, 0.24), 1, true)
 	for fraction in [-0.5, 0.0, 0.5]:
 		var extent := sqrt(1 - fraction * fraction) * Sector.MAP_RADIUS
-		canvas.draw_line(plot_point(Vector3(-extent, 0, fraction * Sector.MAP_RADIUS)), plot_point(Vector3(extent, 0, fraction * Sector.MAP_RADIUS)), Color(FlightHud.MUTED, 0.15))
-		canvas.draw_line(plot_point(Vector3(fraction * Sector.MAP_RADIUS, 0, -extent)), plot_point(Vector3(fraction * Sector.MAP_RADIUS, 0, extent)), Color(FlightHud.MUTED, 0.15))
+		var center := SectorMaps.origin(sector.map_id)
+		canvas.draw_line(plot_point(center + Vector3(-extent, 0, fraction * Sector.MAP_RADIUS)), plot_point(center + Vector3(extent, 0, fraction * Sector.MAP_RADIUS)), Color(FlightHud.MUTED, 0.15))
+		canvas.draw_line(plot_point(center + Vector3(fraction * Sector.MAP_RADIUS, 0, -extent)), plot_point(center + Vector3(fraction * Sector.MAP_RADIUS, 0, extent)), Color(FlightHud.MUTED, 0.15))
 	var player_point := plot_point(sector.player.position)
 	canvas.draw_circle(player_point, 5, Color.WHITE)
 	label_at(canvas, player_point + Vector2(8, 16), "YOU", 12)
