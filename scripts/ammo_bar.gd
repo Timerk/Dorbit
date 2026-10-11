@@ -23,6 +23,8 @@ var orientation_button: Button
 var clear_button: Button
 var reset_button: Button
 var extras: Dictionary = {}
+var extra_ammo: OptionButton
+var extra_ammo_row: HBoxContainer
 
 
 func _ready() -> void:
@@ -74,6 +76,22 @@ func build_picker() -> void:
 	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rows.add_child(tabs)
 	rebuild_picker()
+	extra_ammo_row = HBoxContainer.new()
+	rows.add_child(extra_ammo_row)
+	var ammo_label := StationUi.text(extra_ammo_row, "Auto ammo purchase", 14)
+	ammo_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	ammo_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	extra_ammo = OptionButton.new()
+	extra_ammo.custom_minimum_size = Vector2(90, 28)
+	for kind: String in ["x1", "x2", "x3"]:
+		extra_ammo.add_item(kind)
+	extra_ammo.tooltip_text = "Ammunition CPU purchase type"
+	extra_ammo.item_selected.connect(func(index: int):
+		var item := equipment_extra("ammo")
+		if slot_editing and not item.is_empty() and not sector.session.combat.station_pending:
+			configure_equipment_extra("ammo", Extras.enabled(item), ["x1", "x2", "x3"][index]))
+	extra_ammo_row.add_child(extra_ammo)
+	extra_ammo_row.hide()
 	var footer := HBoxContainer.new()
 	rows.add_child(footer)
 	clear_button = StationUi.button(footer, "Clear slot", func(): config.assign(selected_slot, ""))
@@ -178,11 +196,18 @@ func use_equipment_extra(family: String) -> void:
 	elif not slot_editing:
 		sector.notify("Open quickslot editing (+) to toggle automation.")
 	else:
-		var data := sector.session.combat.inventory
-		for id: String in data["items"]:
-			if data["items"][id] == item:
-				sector.session.combat.request_station("configure_extra", id, "off" if Extras.enabled(item) else "on", item.get("ammo_type", "x1") if family == "ammo" else "")
-				return
+		configure_equipment_extra(family, not Extras.enabled(item), item.get("ammo_type", "x1") if family == "ammo" else "")
+
+
+func configure_equipment_extra(family: String, enabled: bool, ammo_type: String) -> void:
+	var item := equipment_extra(family)
+	if item.is_empty():
+		return
+	var data := sector.session.combat.inventory
+	for id: String in data["items"]:
+		if data["items"][id] == item:
+			sector.session.combat.request_station("configure_extra", id, "on" if enabled else "off", ammo_type)
+			return
 
 
 func begin_editing() -> void:
@@ -249,9 +274,10 @@ func update_geometry() -> void:
 	var area: Vector2 = get_parent().size
 	var above := rect.position.y - 24
 	var below := area.y - rect.end.y - 24
-	var height := minf(320, maxf(210, maxf(above, below)))
+	var minimum_height := 300.0 if tabs.current_tab == 3 else 210.0
+	var height := minf(320, maxf(minimum_height, maxf(above, below)))
 	picker.size = Vector2(minf(620, area.x - 32), height)
-	picker_help.visible = height >= 280
+	picker_help.visible = height >= (320 if tabs.current_tab == 3 else 280)
 	for tile: QuickslotTile in picker_tiles:
 		tile.custom_minimum_size.y = 64 if height < 280 else 80
 	var origin := Vector2(rect.position.x, rect.position.y - picker.size.y - 8 if above >= below else rect.end.y + 8)
@@ -311,6 +337,11 @@ func activate(action: String) -> void:
 
 
 func refresh_tiles() -> void:
+	if is_instance_valid(extra_ammo):
+		var item := equipment_extra("ammo")
+		extra_ammo_row.visible = tabs.current_tab == 3
+		extra_ammo.disabled = item.is_empty() or sector.session.combat.station_pending
+		extra_ammo.select(["x1", "x2", "x3"].find(item.get("ammo_type", "x1")))
 	buttons.clear()
 	counts.clear()
 	single_fire = null

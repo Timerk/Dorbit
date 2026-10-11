@@ -540,7 +540,7 @@ func repair(id: int, life: int) -> bool:
 			message(id, robot_blocker)
 			return false
 		ship.repair_requested = not ship.repair_requested
-		message(id, "Repair robot started. Movement or combat interrupts repair." if ship.repair_requested else "Repair robot stopped.")
+		message(id, "Repair robot started. Combat interrupts repair." if ship.repair_requested else "Repair robot stopped.")
 		return true
 	var blocker := session.sector.repair_blocker(ship)
 	if not blocker.is_empty():

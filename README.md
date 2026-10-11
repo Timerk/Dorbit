@@ -329,13 +329,13 @@ automatically. GEMINEX-XI doubles cargo capacity. Slot CPU 1 adds two extra slot
 while occupying one base slot. Each ship can fit one utility per type, with
 REP-1 and REP-2 sharing the repair type.
 
-Away from Outpost 01, stop moving and press **R** (the rebindable Repair action)
-to start a fitted robot after five seconds outside combat. Movement, incoming
-damage or firing interrupts it. Station repairs retain their paid instant behavior.
+Away from Outpost 01, press **R** (the rebindable Repair action)
+to start a fitted robot after five seconds outside combat, including while moving.
+Incoming damage or firing interrupts it. Station repairs retain their paid instant behavior.
 Open quickslot editing with **+**, then click a fitted CPU in the Extras picker
 or its assigned bar slot to toggle **ON/OFF**. Unfitted CPUs show **UNFITTED**;
 pending changes show **WAIT**. Ammunition spending and generator resource use
-default off; choose x1/x2/x3 for the buyer in Hangar. It purchases
+default off; choose x1/x2/x3 for the buyer in the quickslot Extras menu. It purchases
 10,000 rounds below 1,000 remaining at ordinary ammo prices. The Generator CPU
 consumes one best available resource when a shield/engine boost expires and
 preserves existing reserves. Both require a launched living ship.
