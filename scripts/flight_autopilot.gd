@@ -173,6 +173,8 @@ func collect_obstacles() -> void:
 	for collider in sector.find_children("*", "CollisionShape3D", true, false):
 		if collider.disabled or not collider.get_parent() is StaticBody3D:
 			continue
+		if collider.global_position.distance_to(SectorMaps.origin(sector.map_id)) > Sector.MAP_RADIUS * 2.0:
+			continue
 		if collider.shape is SphereShape3D:
 			var radius: float = collider.shape.radius + CLEARANCE
 			obstacles.append({"center": collider.global_position, "radius": radius,
