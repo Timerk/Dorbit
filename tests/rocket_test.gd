@@ -266,15 +266,18 @@ func boosted_rockets(server: Sector, client: Sector, remote: Pilot, enemy: Alien
 	client.set_paused(false)
 	client.session.launch()
 	await settle()
-	remote.position = Vector3(0, 100, 0)
+	remote.position = Sector.STATION_POSITION + Vector3(0, Sector.PROTECTION_RADIUS + 80.0, 0)
 	remote.set_meta("docked", false)
-	enemy.position = Vector3(0, 100, -70)
+	enemy.position = remote.position + Vector3(0, 0, -70)
 	enemy.home_position = enemy.position
 	enemy.reset_health()
 	weapons.select("r-310")
 	weapons.single_cooldown = 0
 	roll(weapons, true, 0.7)
-	check(weapons.fire_single(enemy).is_empty(), "Boosted single rocket fires")
+	var fire_result := weapons.fire_single(enemy)
+	check(fire_result.is_empty(), "Boosted single rocket fires: " + fire_result)
+	if not fire_result.is_empty():
+		return
 	check(weapons.pending[0]["damage"] >= 1280 and weapons.pending[0]["damage"] <= 1600, "Seprom multiplies the single rocket damage roll by 1.6")
 	check(ResourceBoosts.remaining(remote.resource_boosts, "rockets") == 9 and store.pilots["pilot0"]["boosts"][hull] == remote.resource_boosts, "Ammo and boost reserve are committed together before impact")
 	check(weapons.fire_single(enemy) == "ROCKET COOLDOWN" and ResourceBoosts.remaining(remote.resource_boosts, "rockets") == 9, "Rejected shot preserves rocket reserve")
