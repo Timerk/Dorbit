@@ -14,8 +14,6 @@ static func repair_blocker(ship: Pilot) -> String:
 		return "No repair robot fitted."
 	if ship.hull >= ship.max_hull:
 		return "Hull is already repaired."
-	if ship.velocity.length() > 0.5:
-		return "Stop moving to use the repair robot."
 	if ship.time_since_hit < 5.0 or ship.time_since_attack < 5.0:
 		return "Repair robot requires five seconds outside combat."
 	return ""
@@ -23,7 +21,7 @@ static func repair_blocker(ship: Pilot) -> String:
 
 static func tick_repair(ship: Pilot, delta: float, firing: bool) -> void:
 	ship.time_since_attack += delta
-	if firing or ship.velocity.length() > 0.5 or ship.time_since_hit < 5.0 or not ship.alive or ship.get_meta("docked", false):
+	if firing or ship.time_since_hit < 5.0 or not ship.alive or ship.get_meta("docked", false):
 		ship.repair_requested = false
 	ship.robot_repairing = (ship.repair_requested or ship.repair_auto) and not firing and repair_blocker(ship).is_empty()
 	if ship.robot_repairing:
