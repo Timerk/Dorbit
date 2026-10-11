@@ -96,7 +96,7 @@ func _ready() -> void:
 	add_child(arm)
 	camera = Camera3D.new()
 	camera.fov = 75.0
-	camera.far = 6000.0
+	camera.far = 8500.0 # Distant campaign landmarks remain visible across the sector.
 	camera.current = true
 	arm.add_child(camera)
 

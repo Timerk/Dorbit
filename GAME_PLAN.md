@@ -1103,6 +1103,14 @@ Network schema 15 requires matching client/server builds; save schema 8 is uncha
 because flight locations are temporary. Ordinary travel gates are separate from
 the future Galaxy Gates alien-wave challenges.
 
+### Reclamation campaign background art
+
+The user approved the campaign map concepts in [art/map-background-concepts](art/map-background-concepts/README.md) for implementation. Their history follows the reclamation story proposed in [PR #76](https://github.com/Timerk/Dorbit/pull/76): these were human sectors lost to an alien invasion, with Outpost 01 now supporting the return.
+
+The first visual implementation gives M1 an inhabited planet with bombardment scars, a shattered orbital defense ring and distant human supply staging. M2 has an occupied desert planet with alien orbital collectors and a damaged human receiver. M3 has alien salvage machinery attached to a human carrier wreck, plus a scarred colony moon and abandoned communications infrastructure. M4 has a larger extraction complex attached to a captured human orbital ring and alien relay structures. Blue, amber, rust-red and violet nebula palettes distinguish the maps.
+
+The backgrounds are decorative client scenery outside the flight boundary. Planet surfaces show ruined settlement grids, scorched sites and terraced excavation areas. Alien collectors share segmented dark armor and teal seams; their extraction streams animate cosmetically. Existing gates, obstacle geometry, station services, enemy populations, progression and map access remain as implemented. The scenery depicts a fixed post-arrival home sector and occupied outer sectors. Campaign-driven restoration, mining interactions and station construction stages require separate implementation.
+
 ## Open decisions
 
 The following do not prevent beginning the first prototype:

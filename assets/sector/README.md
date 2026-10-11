@@ -42,6 +42,23 @@ screen resolution. [planet.gdshader](../../shaders/planet.gdshader) supplies oce
 land, cloud cover, a terminator and an atmospheric limb without extra transparent
 sphere layers. Neither shader uses time or camera position to animate the sky.
 
+The [campaign backdrop builder](../../scripts/sector_backdrop.gd) composes all
+four sectors from original procedural geometry and the existing asteroid,
+derelict and metal-panel assets. Beveled human modules, broken defense rings,
+segmented alien collectors, salvage arms and relay pylons merge by material
+instead of creating a draw call for each component. Distant belts use three
+MultiMeshes per map. Planets have separate terrain, atmosphere, ruined city
+districts, bombardment scars and terraced mines. Each map has its own nebula
+palette. The narrow [mining stream shader](../../shaders/mining_stream.gdshader)
+animates resource flow without particles or simulation nodes.
+
+These landmarks are outside the flight boundary and have no colliders or
+navigation contacts. Only the current map's backdrop is visible; dedicated
+servers create none of it. The outer maps reuse the original textured asteroid
+meshes inside their unchanged spherical physics envelopes. See the
+[approved concepts](../../art/map-background-concepts/README.md) and
+[rendered campaign review](../../docs/sector-art/campaign-backgrounds.md).
+
 Composition references: [DarkOrbit X-8 installations](https://darkorbitwiki.com/maps/x-8-map/)
 and the [classic screenshot collection](https://www.mobygames.com/game/42741/dark-orbit/screenshots/).
 These were inspected for the industrial station, layered scenery and planet/nebula
