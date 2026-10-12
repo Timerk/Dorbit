@@ -2,6 +2,8 @@ class_name RepairBotVisual
 extends Node3D
 ## Presentation follows the replicated working flag on every rendered pilot.
 
+const MODEL_SCALE := 0.3
+
 var ship: Pilot
 var robot := Node3D.new()
 var beams: Array[MeshInstance3D] = []
@@ -74,6 +76,7 @@ func _ready() -> void:
 	name = "RepairBot"
 	ship = get_parent() as Pilot
 	robot.name = "RobotModel"
+	robot.scale = Vector3.ONE * MODEL_SCALE
 	add_child(robot)
 	update_model()
 	hide()
@@ -87,7 +90,7 @@ func _process(delta: float) -> void:
 	phase += delta
 	var factor := clampf(float(ShipCatalog.info(ship.ship_model).get("visual_diameter", 7.0)) / 7.0, 0.5, 1.0)
 	scale = Vector3.ONE * factor
-	robot.position = Vector3(sin(phase * 0.55) * 1.5, 3.2 + sin(phase * 2.5) * 0.12, cos(phase * 0.55) * 1.3)
+	robot.position = Vector3(sin(phase * 0.55) * 1.5, 2.0 + sin(phase * 2.5) * 0.12, cos(phase * 0.55) * 1.3)
 	# Face the trailing flight camera while making a slow inspection sweep.
 	robot.rotation.y = PI + sin(phase * 0.55) * 0.35
 	for index in beams.size():

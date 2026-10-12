@@ -1,5 +1,5 @@
 extends SceneTree
-## Render the actual flight models close up and deployed over a Liberator.
+## Render model details and actual deployed scale over Liberator and Goliath.
 
 
 func _initialize() -> void:
@@ -11,16 +11,17 @@ func render_preview() -> void:
 		push_error("Repair bot review needs a graphics display.")
 		quit(1)
 		return
-	root.size = Vector2i(1440, 1100)
+	root.size = Vector2i(1440, 1650)
 	root.content_scale_size = root.size
 	var background := ColorRect.new()
 	background.color = Color("101823")
 	background.size = root.size
 	root.add_child(background)
 	for column in 2:
-		for row in 2:
+		for row in 3:
+			var ship_model := "liberator" if row == 1 else "goliath"
 			var label := Label.new()
-			label.text = "REP-%d / %s" % [column + 1, "model detail" if row == 0 else "repairing in flight"]
+			label.text = "REP-%d / %s" % [column + 1, "model detail (magnified)" if row == 0 else "repairing " + ship_model.capitalize()]
 			label.position = Vector2(column * 720 + 24, row * 550 + 16)
 			label.add_theme_font_size_override("font_size", 24)
 			root.add_child(label)
@@ -37,6 +38,7 @@ func render_preview() -> void:
 				preview.camera.look_at(Vector3(0, -.15, 0))
 			else:
 				var pilot := Pilot.new()
+				pilot.ship_model = ship_model
 				pilot.simulation_authority = false
 				preview.room.add_child(pilot)
 				pilot.repair_seconds = 165.0 if column == 0 else 120.0
