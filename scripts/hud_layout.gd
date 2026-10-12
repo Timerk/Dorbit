@@ -103,22 +103,20 @@ func rect_for(id: String) -> Rect2:
 	if not entry.has("position") and id != "reticle":
 		return base
 	var factor := clampf(float(entry.get("scale", 1.0)), MIN_SCALE, 3.0)
-	factor = minf(factor, minf(size.x / base.size.x, (size.y - 24) / base.size.y))
+	factor = minf(factor, minf(size.x / base.size.x, size.y / base.size.y))
 	var dimensions := base.size * factor
 	if id == "reticle":
 		return Rect2((size - dimensions) * 0.5, dimensions)
 	# Store a fraction of available travel, preserving edge placement on resize.
 	var position_ratio: Vector2 = entry["position"]
 	var origin := position_ratio * (size - dimensions).max(Vector2.ZERO)
-	if editing:
-		origin.y = maxf(24, origin.y)
 	return Rect2(origin, dimensions)
 
 
 func store_rect(id: String, rect: Rect2) -> void:
 	var base := default_rect(id)
 	var factor := clampf(rect.size.x / base.size.x, MIN_SCALE, 3.0)
-	factor = minf(factor, minf(size.x / base.size.x, (size.y - 24) / base.size.y))
+	factor = minf(factor, minf(size.x / base.size.x, size.y / base.size.y))
 	var dimensions := base.size * factor
 	if id == "reticle":
 		entries[id] = {"scale": factor, "visible": shown(id)}
@@ -126,6 +124,11 @@ func store_rect(id: String, rect: Rect2) -> void:
 	var travel := (size - dimensions).max(Vector2.ZERO)
 	var origin := rect.position.clamp(Vector2.ZERO, travel)
 	entries[id] = {"position": origin / travel.max(Vector2.ONE), "scale": factor, "visible": shown(id)}
+
+
+func header_rect(rect: Rect2) -> Rect2:
+	# Editor chrome overlaps the panel at the top edge instead of reserving space.
+	return Rect2(Vector2(rect.position.x, maxf(0, rect.position.y - 24)), Vector2(rect.size.x, 24))
 
 
 func begin_draw(canvas: Control, id: String) -> bool:
@@ -261,10 +264,11 @@ func _input(event: InputEvent) -> void:
 				if not shown(id):
 					continue
 				var rect := rect_for(id)
-				if Rect2(rect.position - Vector2(0, 24), Vector2(rect.size.x, 24)).has_point(event.position) and event.position.x > rect.end.x - 24:
+				var header := header_rect(rect)
+				if header.has_point(event.position) and event.position.x > header.end.x - 24:
 					close_item(id)
 					break
-				if rect.grow_individual(0, 24, 0, 0).has_point(event.position):
+				if rect.merge(header).has_point(event.position):
 					drag_id = id
 					selected_id = id
 					drag_start = event.position
@@ -289,7 +293,6 @@ func _input(event: InputEvent) -> void:
 			rect.position += delta
 			if snap:
 				rect.position = rect.position.snapped(Vector2.ONE * GRID)
-			rect.position.y = maxf(24, rect.position.y)
 		store_rect(drag_id, rect)
 		queue_redraw()
 	# The sidebar still receives GUI events; everything else is editor input.
@@ -335,8 +338,8 @@ func _draw() -> void:
 			continue
 		var rect := rect_for(id)
 		draw_rect(rect, Color(FlightHud.AMBER, 0.95 if id == selected_id else 0.55), false, 2 if id == selected_id else 1)
-		var header := Rect2(rect.position - Vector2(0, 24), Vector2(rect.size.x, 24))
+		var header := header_rect(rect)
 		draw_rect(header, Color("263039"))
 		draw_string(StationUi.FONT, header.position + Vector2(6, 17), ITEMS[id][0], HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 30, 14, FlightHud.INK)
-		draw_string(StationUi.FONT, Vector2(rect.end.x - 18, rect.position.y - 7), "×", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, FlightHud.AMBER)
+		draw_string(StationUi.FONT, header.position + Vector2(header.size.x - 18, 17), "×", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, FlightHud.AMBER)
 		draw_line(rect.end - Vector2(18, 3), rect.end - Vector2(3, 18), FlightHud.AMBER, 3)
