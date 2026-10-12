@@ -863,6 +863,19 @@ crimson and violet plating visible on shadowed faces without requiring bloom.
 Dark machinery and recessed seams retain their finish for local contrast.
 Brightness remains a visual playtesting setting.
 
+Following cooperative visibility feedback, stronger aliens now have larger
+visual models. Relative to their prior sizes, Sentinel is 1.15x, Heavy 1.5x and
+Raider 1.4x; M3 Marauder/Warden are 2.0x/2.4x and M4 Ravager/Overlord are
+3.2x/3.5x. Scout and Skirmisher keep their sizes. Strength produces a steadily
+increasing visual size across the roster, with the largest silhouettes reserved
+for M3 and M4 group encounters. Contract previews frame the same scaled models;
+shield, impact and destruction presentation follow the larger hulls. Gameplay
+collision and click-selection spheres remain 2.2 m, and combat statistics and
+rewards retain their tuning. No mesh detail or additional geometry is added.
+Size multipliers remain subject to group playtesting.
+Rendered flight captures at 90 m: [M3 Warden](docs/feedback/connected-map-warden-enlarged.png)
+and [M4 Overlord](docs/feedback/connected-map-overlord-enlarged.png).
+
 ## Performance
 
 Reference PC supplied by the user:
