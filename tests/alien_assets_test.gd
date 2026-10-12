@@ -28,7 +28,8 @@ func run() -> void:
 		check(not ResourceLoader.has_cached("res://assets/aliens/%s.glb" % kind.to_lower()),
 			kind + " server does not load a visual asset")
 		var diameter := SectorVisuals.destruction_size(server_alien)
-		check(diameter > 0 and is_equal_approx(diameter, Alien.VISUAL_DIAMETERS.get(kind, diameter)),
+		check(diameter > 0 and (not Alien.VISUAL_DIAMETERS.has(kind)
+			or is_equal_approx(diameter, float(Alien.VISUAL_DIAMETERS[kind]) * float(Alien.VISUAL_SCALE[kind]))),
 			kind + " server knows the visual destruction size without a mesh")
 		server_alien.free()
 	var preview := ContractPreview.new()
@@ -54,8 +55,9 @@ func run() -> void:
 		sizes.append(bounds.size.length())
 		check(bounds.get_center().length() < .001 and absf(bounds.size.length() - diameter) < .001,
 			kind + " is centered at its existing size tier")
-		check(instance.transform.is_equal_approx(Transform3D.IDENTITY) and alien.model.scale == Vector3.ONE,
-			kind + " orientation and size are baked into the asset")
+		check(instance.transform.is_equal_approx(Transform3D.IDENTITY)
+			and alien.model.scale.is_equal_approx(Vector3.ONE * float(Alien.VISUAL_SCALE[kind])),
+			kind + " retains its baked orientation with presentation scaling")
 		var collision := alien.get_child(0) as CollisionShape3D
 		check(collision.shape is SphereShape3D and is_equal_approx(collision.shape.radius, 2.2),
 			kind + " keeps the 2.2 m collision sphere")
@@ -65,6 +67,8 @@ func run() -> void:
 		preview.show_kind(kind)
 		var preview_mesh := preview.model.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D
 		check(preview_mesh.mesh == mesh, kind + " preview shares the actual encounter mesh")
+		check(preview.model.scale == alien.model.scale and preview.camera.size >= diameter * float(Alien.VISUAL_SCALE[kind]) * 0.7,
+			kind + " preview frames the same enlarged model")
 		alien.take_damage(alien.max_hull + alien.max_shield + 1, null)
 		check(not alien.alive and not alien.visible and alien.collision_layer == 0,
 			kind + " destruction still hides the model and disables collision")
@@ -74,14 +78,31 @@ func run() -> void:
 		alien.free()
 	check(sizes.size() == 3 and sizes[0] < sizes[1] and sizes[1] < sizes[2],
 		"Scout, Sentinel and Heavy retain increasing visual size")
-	for kind: String in Alien.TYPES:
-		if Alien.VISUAL_DIAMETERS.has(kind):
-			continue
+	var roster: Array = Alien.TYPES.keys()
+	roster.sort_custom(func(a: String, b: String): return Alien.TYPES[a]["hull"] < Alien.TYPES[b]["hull"])
+	var previous_diameter := 0.0
+	for kind: String in roster:
 		var alien := Alien.new()
 		alien.kind = kind
 		root.add_child(alien)
-		check(not alien.model.find_children("*", "MeshInstance3D", true, false).is_empty(), kind + " has a simple procedural model")
-		check(alien.model.scale == Alien.TYPES[kind]["scale"] and alien.get_child(0) is CollisionShape3D, kind + " has its size tier and gameplay collider")
+		var bounds := AABB()
+		var first := true
+		for part: MeshInstance3D in alien.model.find_children("*", "MeshInstance3D", true, false):
+			for corner in range(8):
+				var point := alien.to_local(part.to_global(part.get_aabb().get_endpoint(corner)))
+				bounds = AABB(point, Vector3.ZERO) if first else bounds.expand(point)
+				first = false
+		var diameter := bounds.size.length()
+		check(not first and diameter > previous_diameter, kind + " is visually larger than every weaker alien")
+		previous_diameter = diameter
+		check(is_equal_approx((alien.get_child(0) as CollisionShape3D).shape.radius, 2.2)
+			and alien.hull == Alien.TYPES[kind]["hull"] and alien.shield == Alien.TYPES[kind]["shield"]
+			and alien.laser_damage == Alien.TYPES[kind]["damage"], kind + " enlargement preserves collider and combat tuning")
+		if kind in ["Marauder", "Warden"]:
+			check(diameter >= 20.0, kind + " M3 silhouette spans at least 20 m")
+		elif kind in ["Ravager", "Overlord"]:
+			check(diameter >= 35.0, kind + " M4 silhouette spans at least 35 m")
+		print("ALIEN_SIZE %s diameter=%.2f m" % [kind, diameter])
 		alien.free()
 	preview.free()
 	print("Alien asset checks: %d passed, %d failed" % [checks - failures, failures])

@@ -94,6 +94,14 @@ func destruction_checks() -> void:
 		check(absf(diameter - bounds.size.length()) < 0.001, kind + " explosion size matches its actual scaled visual bounds")
 		alien.free()
 	check(sizes[0] < sizes[1] and sizes[1] < sizes[2], "Scout, Sentinel and Heavy destruction sizes increase with the modeled ship")
+	var overlord := Alien.new()
+	overlord.kind = "Overlord"
+	root.add_child(overlord)
+	var wing_hit := SectorVisuals.hull_contact(overlord, Vector3(1.0, -0.06, 0.2).normalized())
+	check(wing_hit.x > 20.0, "Large Overlord wing sparks reach the hull beyond the old 20 m ray")
+	check(SectorVisuals.shield_radius(overlord) > 3.6,
+		"Overlord shield presentation grows with the larger hull")
+	overlord.free()
 	sector = preload("res://scenes/sector.tscn").instantiate()
 	sector.client_only = false
 	root.add_child(sector)

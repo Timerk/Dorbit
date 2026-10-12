@@ -43,7 +43,7 @@ func show_kind(kind: String) -> void:
 	if kind == selected_kind:
 		return
 	selected_kind = kind
-	camera.size = {"Scout": 5.5, "Sentinel": 7.0, "Heavy": 10.0}[kind]
+	camera.size = {"Scout": 5.5, "Sentinel": 7.0, "Heavy": 10.0}[kind] * float(Alien.VISUAL_SCALE[kind])
 	if is_instance_valid(model):
 		viewport.remove_child(model)
 		model.queue_free()
