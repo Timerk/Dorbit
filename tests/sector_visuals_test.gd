@@ -73,6 +73,19 @@ func check_campaign_backdrops() -> void:
 	check(render_nodes(authority) == 0, "Four-map server creates no campaign planets, machines or sky")
 	for map: int in SectorMaps.MAPS:
 		flight.activate_map(map)
+		for destination: int in SectorMaps.GATES[map]:
+			var gate := flight.get_node("Map%dGates/GateToM%d" % [map+1,destination+1]) as Node3D
+			check(gate.global_position.is_equal_approx(SectorMaps.gate_position(map,destination)), "Detailed gate retains its authoritative travel position")
+			check(gate.find_children("*","CollisionObject3D",true,false).is_empty(), "Transit armor and portal add no collision bodies")
+			check(gate.global_basis.z.dot((gate.global_position-SectorMaps.origin(map)).normalized()) > 0.99, "Transit gate aperture faces the local sector")
+			var parts := gate.find_children("*","MeshInstance3D",true,false)
+			var surfaces := 0
+			for part: MeshInstance3D in parts:
+				surfaces += part.mesh.get_surface_count()
+				check((part.transform*part.get_aabb()).size.length() < SectorMaps.PROTECTION_RADIUS, "Gate presentation stays within its protected approach")
+			check(surfaces <= 6, "Shared detailed gate uses at most six mesh surfaces including the portal")
+			var portal := gate.get_node("Portal") as MeshInstance3D
+			check((portal.material_override as ShaderMaterial).get_shader_parameter("turbulence") is Texture2D, "Animated portal has its packaged turbulence texture")
 		var backdrop_name := "DistantScenery" if map == 0 else "Map%dBackdrop" % (map+1)
 		var backdrop := flight.get_node(backdrop_name) as Node3D
 		check(backdrop.is_visible_in_tree() and backdrop.position == SectorMaps.origin(map), "Current map backdrop follows its sector origin")
