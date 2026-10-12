@@ -52,14 +52,21 @@ func run() -> void:
 		sector.tick_radiation(sector.player, 1)
 		check(sector.player.hull < hull and navigation.destination()["key"] == "safe", "Every map has radiation beyond its own boundary")
 		sector.player.reset_health()
-	# Inspect a new procedural alien during ordinary flight.
-	sector.player.map_id = 3
-	sector.activate_map(3)
-	var enemy := sector.alien
-	sector.player.position = enemy.position + Vector3(0, 0, 65)
-	sector.player.look_at(enemy.position, Vector3.UP)
-	sector.select_target(enemy)
-	await capture("connected-map-frontier-alien")
+	# Inspect each enlarged M3/M4 type at the same ordinary combat distance.
+	for map in [2, 3]:
+		sector.player.map_id = map
+		sector.activate_map(map)
+		var captured: Array[String] = []
+		for enemy: Alien in sector.aliens.values():
+			if enemy.kind in captured:
+				continue
+			captured.append(enemy.kind)
+			sector.player.position = enemy.position + Vector3(0, 0, 90)
+			sector.player.look_at(enemy.position, Vector3.UP)
+			enemy.look_at(sector.player.position, Vector3.UP)
+			sector.select_target(enemy)
+			await capture("connected-map-%s-enlarged" % enemy.kind.to_lower())
+		check(captured.size() == 2, "Rendered flight inspects both stronger M%d types" % (map + 1))
 	sector.player.take_damage(sector.player.max_hull + sector.player.max_shield + 1, null)
 	sector._physics_process(3.1)
 	check(sector.player.alive and sector.map_id == 0 and sector.player.position == Sector.SPAWN_POSITION, "Offline destruction returns to the home station")
