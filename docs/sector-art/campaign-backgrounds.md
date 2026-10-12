@@ -1,10 +1,12 @@
 # Reclamation campaign backgrounds
 
-The four maps now implement the [approved campaign concepts](../../art/map-background-concepts/README.md) as 3D scenery. M1 shows the aftermath of the invasion and returning human supply staging. The outer sectors show alien resource extraction and salvage among former human infrastructure. Planets, moons, ruined rings, collectors, receivers, wrecks and belts have real spatial depth; the nebula surrounds the pilot in every direction.
+The four maps implement the [approved campaign concepts](../../art/map-background-concepts/README.md) as 3D scenery. This quality pass replaces the first implementation's coarse planetary noise and soft nebula with dedicated surface textures, larger planetary compositions, layered metal structures and denser debris belts. M1 shows the aftermath of the invasion and returning human supply staging. The outer sectors show alien resource extraction and salvage among former human infrastructure. Planets, moons, ruined rings, collectors, receivers, wrecks and belts have real spatial depth; the nebula surrounds the pilot in every direction.
 
 ## In-game views
 
 These captures use the actual sector, Compatibility renderer and behind-the-ship camera at 1440 x 900. The HUD is hidden in the gallery to expose the scenery; corresponding HUD views are linked below.
+
+For comparison, the [previous M1 implementation](https://github.com/Timerk/Dorbit/blob/1d7e50e7358d6370cef735ecb129c7efb29356ad/docs/sector-art/campaign-m1-background.png) used the coarse procedural surface and sparse scenery. The current captures below come from the final textured version.
 
 ![M1 colony damage and orbital defenses](campaign-m1-background.png)
 
@@ -18,20 +20,21 @@ HUD views: [M1](campaign-m1-flight.png), [M2](campaign-m2-flight.png), [M3](camp
 
 ## Implementation and limits
 
-[SectorBackdrop](../../scripts/sector_backdrop.gd) builds each map's distant scenery and switches its nebula palette on arrival. Human and alien model components merge by material. Each distant belt uses three MultiMeshes. The [planet shader](../../shaders/planet.gdshader) draws terrain, ruined settlement grids, bombardment damage, cloud cover, atmosphere and terraced mines. [Mining streams](../../shaders/mining_stream.gdshader) animate in the material without particle simulation or networking.
+[SectorBackdrop](../../scripts/sector_backdrop.gd) builds each map's distant scenery and switches its nebula palette and stellar lighting on arrival. Human and alien model components merge by material. Beveled armor, exposed carrier ribs and decks, layered ring modules, broken defense frames and alien processing throats give the landmarks recognizable silhouettes. Each distant belt uses three MultiMeshes with 480 varied rocks; scattered human hull plates frame the battlefield.
+
+The [sky shader](../../shaders/space.gdshader) samples a dedicated nebula panorama at screen resolution, preserves dark flight space and blends its spherical seam. The [planet shader](../../shaders/planet.gdshader) wraps surface textures with coherent coastlines, geology, settlements, damage and mines, then adds the terminator, surviving lights and collector excavation. A thin [atmosphere shell](../../shaders/atmosphere.gdshader) extends beyond the solid limb. [Mining streams](../../shaders/mining_stream.gdshader) animate in the material without particle simulation or networking. The [texture sources and exact prompts](../../assets/sector/campaign-textures.md) document the generated original artwork.
 
 All decorative geometry stays outside the 1,200 m flight boundary. It has no colliders, services or navigation contacts. Client and server retain identical physics envelopes for all 96 playable asteroids and the 53 station boxes. The outer maps now use the existing textured rock models inside those envelopes. The camera far plane extends to 8,500 m to retain distant landmarks from across the sector.
 
-The scenery depicts a fixed post-arrival M1 and occupied outer sectors. It does not implement mining interactions, campaign missions, changing occupation states or construction stages. Existing station and ship models remain in use. The generated concepts guided the composition and story; the runtime uses procedural geometry and shaders rather than the paintings as flat backgrounds.
+The scenery depicts a fixed post-arrival M1 and occupied outer sectors. It does not implement mining interactions, campaign missions, changing occupation states or construction stages. Existing station and ship models remain in use. The concept paintings remain references; new generated textures contain only sky or surfaces. Orbital objects, rocks, wrecks and planets are real meshes. The colony's cloud pattern is baked into its surface texture and does not animate.
 
 ## Validation
 
-- The Windows suite passed all 51 check invocations. It includes dedicated-server combat, connected-map travel, stale-packet isolation, persistence, collision geometry, targeting, autopilot, HUD, settings and the hunt/repair replay.
-- The expanded sector visual fixture passed 359 headless assertions. It compares all four maps' client/server obstacles, checks background bounds, verifies palette changes and repeated visits, and confirms the dedicated server creates no rendering.
-- The rendered sector fixture completed without script or shader errors. It captured station approaches, ordinary flight, planet-facing views, reverse views and near-boundary views on all four maps.
-- The Windows export passed, including packaged asset/menu checks and matching source/export protocol fingerprints. The four-map render fixture also completed against the exported pack, so dynamic scenery and shader resources were exercised outside the source project.
-- A separate rendered run of the visual assertions passed 935 assertions, including the GPU-backed instanced belt transforms. On shutdown it reported GL texture cleanup errors. The previous, unmodified visual-test fixture also reports GL texture cleanup errors when run with a renderer. The normal sector preview completed without these shutdown errors.
-- Local samples on an AMD Radeon RX 6800 at 1440 x 900, 4x MSAA and VSync off measured approximately 1.69-1.83 ms average frame intervals and 1.86-2.22 ms p95 in the four boundary views. The home flight sample averaged approximately 489 FPS with 2.21 ms p95. These short, single-client samples do not establish laptop performance or a ten-player rendering budget. See the [raw report](campaign-render-report.json).
+- The Windows suite passed all 51 check invocations in 302.5 seconds. It includes dedicated-server combat, connected-map travel, stale-packet isolation, persistence, collision geometry, targeting, autopilot, HUD, settings and the hunt/repair replay. Existing collinear-up-vector and ObjectDB cleanup warnings remain in unrelated fixtures.
+- The final sector visual fixture passed 422 headless assertions. It compares all four maps' client/server obstacles, checks background bounds and surface resources, verifies palette changes and repeated visits, and confirms the dedicated server creates no rendering.
+- The rendered sector fixture completed without script or shader errors. It captured station approaches, ordinary flight, planet-facing views, reverse views and near-boundary views on all four maps, with the default Compatibility renderer, 4x MSAA and bloom off.
+- The Windows resource pack exported successfully. The same four-map fixture ran against the packaged resources using an external review script, exercising dynamically loaded textures, geometry and shaders. A new standalone Windows executable was not built during this refinement pass.
+- The [raw frame report](campaign-render-report.json) records 120 frames per boundary view and 240 frames of home flight on an AMD Radeon(TM) Graphics adapter at 1440 x 900, 4x MSAA and VSync off. These short single-client samples do not establish ten-player rendering performance; the report records the actual timings rather than an FPS guarantee.
 
 ## Reproduce
 

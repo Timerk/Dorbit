@@ -36,20 +36,23 @@ Commit regenerated GLBs, textures and Godot `.import` metadata. Runtime scripts
 load render resources only on clients; server obstacle generation consumes the
 original fixed random sequence for asteroids and the shared station box manifest.
 
-The background uses [space.gdshader](../../shaders/space.gdshader), with static
-nebula calculations cached in the sky radiance cubemap and sharp stars drawn at
-screen resolution. [planet.gdshader](../../shaders/planet.gdshader) supplies ocean,
-land, cloud cover, a terminator and an atmospheric limb without extra transparent
-sphere layers. Neither shader uses time or camera position to animate the sky.
+The background uses [space.gdshader](../../shaders/space.gdshader), with a detailed
+panorama sampled at screen resolution, sharp procedural stars and a separate
+radiance exposure for reflections. [planet.gdshader](../../shaders/planet.gdshader)
+wraps dedicated surface textures onto real spheres and draws a terminator,
+surviving city lights and the collector excavation. A thin additive atmosphere
+shell extends beyond the solid limb. The [texture sources and full prompts](campaign-textures.md)
+document the generated original artwork; it is separate from the Blender assets.
 
 The [campaign backdrop builder](../../scripts/sector_backdrop.gd) composes all
 four sectors from original procedural geometry and the existing asteroid,
 derelict and metal-panel assets. Beveled human modules, broken defense rings,
 segmented alien collectors, salvage arms and relay pylons merge by material
 instead of creating a draw call for each component. Distant belts use three
-MultiMeshes per map. Planets have separate terrain, atmosphere, ruined city
-districts, bombardment scars and terraced mines. Each map has its own nebula
-palette. The narrow [mining stream shader](../../shaders/mining_stream.gdshader)
+MultiMeshes per map, with 480 rocks of varied sizes. Planets have detailed terrain,
+ruined settlements, bombardment scars and mines. Broken carrier decks and ribs,
+layered ring modules and debris fields reinforce the invasion history. Each map
+has its own sky palette and stellar lighting. The narrow [mining stream shader](../../shaders/mining_stream.gdshader)
 animates resource flow without particles or simulation nodes.
 
 These landmarks are outside the flight boundary and have no colliders or
