@@ -3,10 +3,10 @@ extends RefCounted
 ## Client-only scenery for the reclamation campaign. No physics or mission state.
 
 const THEMES := [
-	{"planet": Vector3(-1900, 780, -3400), "radius": 1050.0, "ocean": Color("164a70"), "land": Color("637457"), "atmosphere": Color("4789d4"), "water": 1.0, "clouds": 0.65, "mining": 0.0, "cool": Color("215d93"), "warm": Color("347c91"), "light": Color("74b7ce")},
-	{"planet": Vector3(2000, 720, -3550), "radius": 1100.0, "ocean": Color("554632"), "land": Color("b48a56"), "atmosphere": Color("b68d52"), "water": 0.0, "clouds": 0.08, "mining": 1.0, "cool": Color("80653a"), "warm": Color("c48a3c"), "light": Color("e0b46a")},
-	{"planet": Vector3(-2150, 900, -3750), "radius": 1000.0, "ocean": Color("382c29"), "land": Color("916957"), "atmosphere": Color("b36045"), "water": 0.0, "clouds": 0.04, "mining": 0.8, "cool": Color("68362e"), "warm": Color("bc5940"), "light": Color("d98660")},
-	{"planet": Vector3(2050, 800, -3500), "radius": 1130.0, "ocean": Color("1d263c"), "land": Color("555265"), "atmosphere": Color("557ca7"), "water": 0.2, "clouds": 0.18, "mining": 1.0, "cool": Color("454980"), "warm": Color("9161b2"), "light": Color("558fac")},
+	{"planet": Vector3(-1900, 1050, -3400), "radius": 1300.0, "ocean": Color("164a70"), "land": Color("637457"), "atmosphere": Color("4789d4"), "water": 1.0, "clouds": 0.65, "mining": 0.0, "cool": Color("215d93"), "warm": Color("347c91"), "light": Color("74b7ce")},
+	{"planet": Vector3(2000, 1020, -3550), "radius": 1350.0, "ocean": Color("554632"), "land": Color("b48a56"), "atmosphere": Color("b68d52"), "water": 0.0, "clouds": 0.08, "mining": 1.0, "cool": Color("80653a"), "warm": Color("c48a3c"), "light": Color("e0b46a")},
+	{"planet": Vector3(-2150, 1200, -3750), "radius": 1150.0, "ocean": Color("382c29"), "land": Color("916957"), "atmosphere": Color("b36045"), "water": 0.0, "clouds": 0.04, "mining": 0.8, "cool": Color("68362e"), "warm": Color("bc5940"), "light": Color("d98660")},
+	{"planet": Vector3(2050, 1100, -3500), "radius": 1350.0, "ocean": Color("1d263c"), "land": Color("555265"), "atmosphere": Color("557ca7"), "water": 0.2, "clouds": 0.18, "mining": 1.0, "cool": Color("454980"), "warm": Color("9161b2"), "light": Color("558fac")},
 ]
 
 
@@ -46,11 +46,15 @@ class Geometry:
 		for index in outline.size():
 			var a := outline[index]
 			var b := outline[(index+1)%outline.size()]
-			var front_a := Vector3(a.x,a.y,0.5)
-			var front_b := Vector3(b.x,b.y,0.5)
-			var back_a := Vector3(a.x,a.y,-0.5)
-			var back_b := Vector3(b.x,b.y,-0.5)
-			for vertex: Vector3 in [Vector3(0,0,0.5),front_b,front_a,Vector3(0,0,-0.5),back_a,back_b,front_a,front_b,back_b,front_a,back_b,back_a]:
+			var front_a := Vector3(a.x*0.88,a.y*0.88,0.5)
+			var front_b := Vector3(b.x*0.88,b.y*0.88,0.5)
+			var rim_a := Vector3(a.x,a.y,0.42)
+			var rim_b := Vector3(b.x,b.y,0.42)
+			var back_a := Vector3(a.x*0.88,a.y*0.88,-0.5)
+			var back_b := Vector3(b.x*0.88,b.y*0.88,-0.5)
+			var rear_a := Vector3(a.x,a.y,-0.42)
+			var rear_b := Vector3(b.x,b.y,-0.42)
+			for vertex: Vector3 in [Vector3(0,0,0.5),front_b,front_a,Vector3(0,0,-0.5),back_a,back_b,front_a,front_b,rim_b,front_a,rim_b,rim_a,rim_a,rim_b,rear_b,rim_a,rear_b,rear_a,rear_a,rear_b,back_b,rear_a,back_b,back_a]:
 				builder.set_uv(Vector2(vertex.x+0.5,vertex.y+0.5))
 				builder.add_vertex(vertex)
 		builder.generate_normals()
@@ -97,6 +101,7 @@ static func build(parent: Node3D, map: int) -> Node3D:
 	moon_theme["land"] = Color("555861")
 	planet(root, "DistantMoon", Vector3(-planet_position.x*0.45, 1250, -4600), 280.0, moon_theme, 13.0, 0.0)
 	asteroid_belt(root, map)
+	wreckage_field(root, map)
 	if map == 0:
 		human_ring(root, planet_position, radius*1.22, Vector3(0.18, -0.18, -0.35), false)
 		derelict(root, Vector3(-1450, -240, -1600), Vector3(0.2, -0.45, 0.3), 2.2)
@@ -112,6 +117,7 @@ static func build(parent: Node3D, map: int) -> Node3D:
 		var wreck := Vector3(1550, 160, -2300)
 		derelict(root, wreck, Vector3(0.2, -1.15, 0.3), 10.0)
 		salvage_rig(root, wreck + Vector3(150, 80, 180))
+		carrier(root, wreck, Vector3(0.15, -1.3, 0.22))
 		human_relay(root, Vector3(-1450, -280, -1500), 1.5)
 		human_ring(root, Vector3(-1800, 500, 1800), 330.0, Vector3(0.3, -0.7, 0.4), false)
 	else:
@@ -133,6 +139,12 @@ static func activate(parent: Node3D, map: int) -> void:
 	surface.set_shader_parameter("nebula_warm", theme["warm"])
 	surface.set_shader_parameter("nebula_light", theme["light"])
 	surface.set_shader_parameter("cloud_offset", Vector3(5+map*7, 1+map*3, 9-map*2))
+	surface.set_shader_parameter("panorama_rotation", float(map)*0.73)
+	# Match the metal and rock highlights to the sector's stellar light.
+	var sun := parent.get_node("Sun") as DirectionalLight3D
+	var fill := parent.get_node("Fill") as DirectionalLight3D
+	sun.light_color = Color("ffdfbd") if map == 0 else (theme["light"] as Color).lerp(Color.WHITE,0.45)
+	fill.light_color = Color("6e9edb") if map == 0 else (theme["cool"] as Color).lerp(Color.WHITE,0.35)
 
 
 static func planet(parent: Node3D, label: String, location: Vector3, radius: float, theme: Dictionary, seed_value: float, settlements: float = 1.0) -> void:
@@ -143,25 +155,48 @@ static func planet(parent: Node3D, label: String, location: Vector3, radius: flo
 	shape.rings = 48
 	var surface := ShaderMaterial.new()
 	surface.shader = preload("res://shaders/planet.gdshader")
-	for parameter: String in ["ocean", "land", "atmosphere"]:
-		surface.set_shader_parameter(parameter+"_color", theme[parameter])
-	surface.set_shader_parameter("ocean_amount", theme["water"])
-	surface.set_shader_parameter("cloud_amount", theme["clouds"])
+	surface.set_shader_parameter("surface_map", load("res://assets/sector/colony-surface.png" if theme["water"] == 1.0 else "res://assets/sector/mineral-surface.png"))
+	var tint := Color.WHITE
+	if theme["water"] != 1.0:
+		tint = Color("d6b18a") if seed_value < 4.0 else (Color("bd8874") if seed_value < 6.0 else Color("8992b3"))
+	if label == "DistantMoon":
+		tint = Color("a1a9b5")
+	surface.set_shader_parameter("surface_tint", tint)
+	surface.set_shader_parameter("surface_desaturation", 0.9 if seed_value > 6.0 else 0.0)
+	surface.set_shader_parameter("surface_rotation", seed_value*0.17)
+	surface.set_shader_parameter("atmosphere_color", theme["atmosphere"])
 	surface.set_shader_parameter("mining_amount", theme["mining"])
 	surface.set_shader_parameter("terrain_seed", seed_value)
 	surface.set_shader_parameter("settlement_amount", settlements)
 	var instance := SectorVisuals.mesh(parent, shape, location, surface)
 	instance.name = label
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# A separate thin shell carries the luminous atmosphere beyond the solid limb.
+	if label == "ColonyPlanet":
+		var shell := SphereMesh.new()
+		shell.radius = radius*1.018
+		shell.height = shell.radius*2.0
+		shell.radial_segments = 96
+		shell.rings = 48
+		var haze := ShaderMaterial.new()
+		haze.shader = preload("res://shaders/atmosphere.gdshader")
+		haze.set_shader_parameter("tint", theme["atmosphere"])
+		var atmosphere := SectorVisuals.mesh(parent, shell, location, haze)
+		atmosphere.name = "Atmosphere"
+		atmosphere.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
 static func palette(alien: bool = false) -> Array[Material]:
-	var hull := SectorVisuals.material(Color("273d48") if alien else Color("4c5866"))
-	hull.metallic = 0.35
+	var hull := SectorVisuals.material(Color("142732") if alien else Color("4c5866"))
+	hull.metallic = 0.65
 	hull.albedo_texture = load("res://assets/sector/station-panels.png")
-	hull.roughness = 0.7 if not alien else 0.42
-	var frame := SectorVisuals.material(Color("687f86") if alien else Color("7c807d"))
+	hull.uv1_triplanar = true
+	hull.uv1_scale = Vector3.ONE*0.035
+	hull.roughness = 0.55 if not alien else 0.32
+	var frame := SectorVisuals.material(Color("38545d") if alien else Color("7c807d"))
 	frame.albedo_texture = hull.albedo_texture
+	frame.uv1_triplanar = true
+	frame.uv1_scale = hull.uv1_scale
 	var dark := SectorVisuals.material(Color("10222b") if alien else Color("222b32"))
 	var light := SectorVisuals.material(Color("41cfc5") if alien else Color("ae814c"), true)
 	return [hull, frame, dark, light]
@@ -176,13 +211,18 @@ static func human_ring(parent: Node3D, location: Vector3, radius: float, rotatio
 		var radial := Vector3(cos(angle), sin(angle), 0)
 		var tangent := Vector3(-sin(angle), cos(angle), 0)
 		var center := radial*radius
-		for depth: float in [-28.0, 28.0]:
+		for depth: float in [-42.0, 42.0]:
 			geometry.tube(center-tangent*radius*0.066+Vector3(0,0,depth), center+tangent*radius*0.066+Vector3(0,0,depth), 7.0, 1)
-		geometry.box(center, Vector3(radius*0.125, 28, 48), 0, Vector3(0,0,angle+PI/2))
+		geometry.box(center, Vector3(radius*0.125, 46, 84), 0, Vector3(0,0,angle+PI/2))
+		for rib in range(5):
+			var offset := tangent*(float(rib)-2.0)*radius*0.024
+			geometry.box(center+offset, Vector3(5, 62, 96), 1, Vector3(0,0,angle+PI/2))
+			geometry.box(center+offset+Vector3(0,0,50), Vector3(3, 22, 2), 3, Vector3(0,0,angle+PI/2))
+		geometry.tube(center-tangent*radius*0.062+Vector3(0,0,48), center+tangent*radius*0.062+Vector3(0,0,48), 1.5, 3)
 		geometry.box(center+radial*35, Vector3(32, 50, 36), 2, Vector3(0,0,angle+PI/2))
 		geometry.tube(center-radial*38, center+radial*48, 5.0, 1)
 		if index % 4 == 0:
-			geometry.box(center+radial*75, Vector3(38, 70, 46), 0, Vector3(0,0,angle))
+			geometry.box(center+radial*75, Vector3(62, 105, 72), 0, Vector3(0,0,angle))
 			geometry.tube(center+radial*85, center+radial*155, 8.0, 2)
 	var node := geometry.finish(parent, "CapturedHumanRing" if captured else "ShatteredDefenses", location, rotation, palette())
 	if captured:
@@ -211,6 +251,12 @@ static func human_relay(parent: Node3D, location: Vector3, scale_factor: float) 
 
 static func alien_collar(parent: Node3D, location: Vector3, radius: float, rotation: Vector3, label: String = "AlienCollector") -> Node3D:
 	var geometry := Geometry.new()
+	# An open processing throat joins the articulated claws into one machine.
+	for segment in range(24):
+		var angle := float(segment)*TAU/24.0
+		var point := Vector3(cos(angle),sin(angle),0)*radius*0.34
+		geometry.box(point,Vector3(radius*0.1,radius*0.055,radius*0.22),2,Vector3(0,0,angle+PI/2))
+		geometry.box(point+Vector3(0,0,radius*0.115),Vector3(radius*0.075,radius*0.012,radius*0.01),3,Vector3(0,0,angle+PI/2))
 	for claw in range(3):
 		var start_angle := float(claw)*TAU/3.0
 		for segment in range(10):
@@ -222,6 +268,9 @@ static func alien_collar(parent: Node3D, location: Vector3, radius: float, rotat
 			geometry.box(point, Vector3(radius*0.19,radius*0.14,radius*0.18), 0, Vector3(0.12,0,angle+PI/2))
 			geometry.tube(point+Vector3(0,0,radius*0.085), finish+Vector3(0,0,radius*0.085), radius*0.009, 3)
 			geometry.box(point*1.1, Vector3(radius*0.06,radius*0.07,radius*0.2), 1, Vector3(0,0,angle+PI/2))
+			# Recessed ribs, layered armor and fine seams keep the claws legible in silhouette.
+			geometry.box(point+Vector3(0,0,radius*0.11), Vector3(radius*0.15,radius*0.065,radius*0.025), 2, Vector3(0.12,0,angle+PI/2))
+			geometry.box(point+Vector3(0,0,radius*0.128), Vector3(radius*0.105,radius*0.012,radius*0.008), 3, Vector3(0,0,angle+PI/2))
 		var angle := start_angle
 		geometry.tube(Vector3(cos(angle),sin(angle),0)*radius, Vector3(cos(angle),sin(angle),0)*radius*0.4, radius*0.045, 2)
 		geometry.box(Vector3(cos(angle),sin(angle),0)*radius*1.22, Vector3(radius*0.28,radius*0.38,radius*0.4), 0, Vector3(0.15,0,angle))
@@ -232,10 +281,10 @@ static func planet_collectors(parent: Node3D, center: Vector3, radius: float, co
 	var target := center+Vector3(-0.12,0.08,1.0).normalized()*radius
 	for index in range(count):
 		var location := center+Vector3((float(index)-float(count-1)*0.5)*380-380, -280+index*90, radius+330)
-		var collector := alien_collar(parent, location, 200+index*30, Vector3(0.15,-0.1,index*0.45))
+		var collector := alien_collar(parent, location, 340+index*45, Vector3(0.15,-0.1,index*0.45))
 		collector.set_meta("extraction_target", target)
 		var geometry := Geometry.new()
-		geometry.tube(location, target, 2.8, 3)
+		geometry.tube(location, target, 4.0, 3)
 		for step in range(8):
 			var point := target.lerp(location, (float(step)+0.5)/8.0)
 			geometry.ball(point+Vector3(sin(float(step)*1.7)*6,cos(float(step))*6,0), 4.5, 3)
@@ -316,18 +365,22 @@ static func asteroid_belt(parent: Node3D, map: int) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 4671+map*41
 	var surface := SectorVisuals.asteroid_surface()
+	surface.albedo_texture = load("res://assets/sector/belt-rock.png")
+	surface.albedo_color = Color("778698")
+	surface.normal_scale = 1.3
+	surface.uv1_scale = Vector3.ONE*0.8
 	for variant in range(3):
 		var source := (load("res://assets/sector/asteroid-%d.glb" % variant) as PackedScene).instantiate()
 		var shape := (source.find_children("*","MeshInstance3D",true,false)[0] as MeshInstance3D).mesh
 		var instances := MultiMesh.new()
 		instances.transform_format = MultiMesh.TRANSFORM_3D
 		instances.mesh = shape
-		instances.instance_count = 48
+		instances.instance_count = 160
 		for index in range(instances.instance_count):
 			var angle := rng.randf_range(0,TAU)
 			var distance := rng.randf_range(1950,2600)
-			var location := Vector3(cos(angle)*distance,rng.randf_range(-550,-300),sin(angle)*distance)
-			var radius := rng.randf_range(10,36)
+			var location := Vector3(cos(angle)*distance,rng.randf_range(-640,-220)+sin(angle*2.0)*140.0,sin(angle)*distance)
+			var radius := rng.randf_range(8,45) if index % 16 != 0 else rng.randf_range(65,110)
 			var basis := Basis.from_euler(Vector3(rng.randf(),rng.randf(),rng.randf())).scaled(Vector3.ONE*radius)
 			instances.set_instance_transform(index,Transform3D(basis,location))
 		var belt := MultiMeshInstance3D.new()
@@ -336,3 +389,69 @@ static func asteroid_belt(parent: Node3D, map: int) -> void:
 		belt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		parent.add_child(belt)
 		source.free()
+
+
+static func wreckage_field(parent: Node3D, map: int) -> void:
+	# Clustered salvage frames flank the forward view; no scenery crosses the flight sphere.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 8130+map*53
+	for side: float in [-1.0, 1.0]:
+		var geometry := Geometry.new()
+		for piece in range(55):
+			var point := Vector3(rng.randf_range(-260,260),rng.randf_range(-240,180),rng.randf_range(-350,350))
+			var size := rng.randf_range(12,70)
+			var rotation := Vector3(rng.randf()*PI,rng.randf()*PI,rng.randf()*PI)
+			geometry.box(point,Vector3(size,size*0.14,size*0.45),0,rotation)
+			if piece % 4 == 0:
+				geometry.tube(point,point+Vector3(size*0.4,size*1.5,size*0.3),2.5,1)
+				geometry.box(point+Vector3(0,size*0.2,0),Vector3(size*0.5,2,2),3,rotation)
+		geometry.finish(parent,"BattlefieldDebris",Vector3(side*1800,-300,-2100),Vector3.ZERO,palette())
+	# A large snapped patrol-defense frame supplies a foreground scale reference.
+	var frame := Geometry.new()
+	for level in range(9):
+		var y := float(level)*55-220
+		for side: float in [-1,1]:
+			frame.tube(Vector3(side*70,y,-40),Vector3(side*70,y+55,-40),5,1)
+			frame.tube(Vector3(-70,y,-40),Vector3(70,y+55,-40),3,1)
+			frame.box(Vector3(side*100,y,0),Vector3(70,48,100),0,Vector3(0.1,0,side*0.1))
+			frame.box(Vector3(side*100,y,52),Vector3(54,32,4),2)
+			for rib in range(3):
+				frame.box(Vector3(side*100,y-12+rib*12,56),Vector3(54,2,4),1)
+			if level % 3 == 0:
+				frame.box(Vector3(side*102,y,52),Vector3(4,24,2),3)
+	frame.tube(Vector3(-350,45,0),Vector3(340,45,0),14,0)
+	frame.box(Vector3(175,-150,0),Vector3(210,105,110),0,Vector3(0.04,0,-0.12))
+	frame.box(Vector3(175,-147,58),Vector3(155,60,4),2,Vector3(0,0,-0.12))
+	for index in range(13):
+		var x := float(index)*52-310
+		frame.tube(Vector3(x,15,-30),Vector3(x+50,65,-30),3,1)
+		frame.tube(Vector3(x,15,30),Vector3(x+50,65,30),3,1)
+	frame.finish(parent,"LostDefensePlatform",Vector3(-1600,30,-1900),Vector3(0.1,0.15,-0.25),palette())
+
+
+static func carrier(parent: Node3D, location: Vector3, rotation: Vector3) -> void:
+	var geometry := Geometry.new()
+	# Exposed transverse ribs, interrupted armored decks and torn longitudinal spars.
+	for bay in range(22):
+		var z := float(bay)*52-570
+		for rib in range(12):
+			var angle := float(rib)*TAU/12.0
+			var next := angle+TAU/12.0
+			var a := Vector3(cos(angle)*125,sin(angle)*100,z)
+			var b := Vector3(cos(next)*125,sin(next)*100,z)
+			if (bay+rib*3)%11 == 0:
+				continue
+			geometry.tube(a,b,4,1)
+			geometry.tube(a,a+Vector3(0,0,48),3,2)
+			if (bay*3+rib)%7 < 4:
+				geometry.box(a,Vector3(54,8,46),0,Vector3(0,0,angle-PI/2))
+			if rib in [0,5] and bay%3 == 0:
+				geometry.box(a+Vector3(0,0,18),Vector3(2,2,16),3)
+		geometry.box(Vector3(0,-65,z),Vector3(180,6,44),2)
+	for side: float in [-1,1]:
+		geometry.box(Vector3(side*175,-10,370),Vector3(120,90,260),0,Vector3(0,side*0.2,0))
+		geometry.tube(Vector3(side*160,-20,420),Vector3(side*160,-20,590),45,2)
+		geometry.tube(Vector3(side*160,-20,540),Vector3(side*160,-20,570),51,1)
+	geometry.box(Vector3(0,120,230),Vector3(150,50,200),0)
+	geometry.box(Vector3(0,120,333),Vector3(100,14,2),2)
+	geometry.finish(parent,"BrokenCarrier",location,rotation,palette()).scale = Vector3.ONE*1.5

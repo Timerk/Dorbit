@@ -79,7 +79,13 @@ func check_campaign_backdrops() -> void:
 		check(backdrop.find_children("*", "CollisionObject3D", true, false).is_empty(), "Background landmarks add no collision or targeting bodies")
 		var planet := backdrop.get_node("ColonyPlanet") as MeshInstance3D
 		check(planet.position.length()-(planet.mesh as SphereMesh).radius > Sector.MAP_RADIUS, "Colony planet is outside the entire flight volume")
+		var planet_material := planet.material_override as ShaderMaterial
+		var surface_map := planet_material.get_shader_parameter("surface_map") as Texture2D
+		check(surface_map != null and surface_map.get_width() >= 1700 and surface_map.get_width() == surface_map.get_height()*2, "Planet has its complete spherical surface texture")
+		check(backdrop.get_node_or_null("Atmosphere") != null, "Planet has a separate atmosphere beyond the solid limb")
 		var sky := (flight.get_node("WorldEnvironment") as WorldEnvironment).environment.sky.sky_material as ShaderMaterial
+		var panorama := sky.get_shader_parameter("nebula_panorama") as Texture2D
+		check(panorama != null and panorama.get_width() == panorama.get_height()*2, "Sky has its panoramic texture after map activation")
 		check(sky.get_shader_parameter("nebula_warm") == SectorBackdrop.THEMES[map]["warm"], "Map transfer updates its nebula palette")
 		for key: int in flight.map_scenery:
 			for node: Node3D in flight.map_scenery[key]:

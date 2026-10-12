@@ -124,6 +124,7 @@ static func environment(parent: Node3D, render: bool = true) -> void:
 		settings.sky.radiance_size = Sky.RADIANCE_SIZE_512
 		var sky_material := ShaderMaterial.new()
 		sky_material.shader = preload("res://shaders/space.gdshader")
+		sky_material.set_shader_parameter("nebula_panorama", preload("res://assets/sector/nebula-panorama.png"))
 		settings.sky.sky_material = sky_material
 		settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 		settings.ambient_light_color = Color("8ca6c4")
@@ -142,6 +143,7 @@ static func environment(parent: Node3D, render: bool = true) -> void:
 		sun.light_energy = 1.55
 		parent.add_child(sun)
 		var fill := DirectionalLight3D.new()
+		fill.name = "Fill"
 		fill.rotation_degrees = Vector3(25, 145, 0)
 		fill.light_color = Color("6e9edb")
 		fill.light_energy = 0.45
