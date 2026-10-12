@@ -9,7 +9,8 @@ parallax and occlusion; these are surface materials, not painted game views.
 | Runtime asset | Use |
 | --- | --- |
 | `nebula-panorama.png` | 1774 x 887 spherical sky, recolored and rotated per map |
-| `colony-surface.png` | 1774 x 887 habitable M1 planet with old settlement networks and bombardment scars |
+| `colony-surface.png` | Original habitable surface, preserved as the source of the M1 revision |
+| `colony-surface-war.png` | Current 1774 x 887 M1 surface with clearer devastated cities and impact basins; [edit prompt and runtime details](colony-surface-war.md) |
 | `mineral-surface.png` | 1774 x 887 rocky worlds, with different rotations and amber, copper or slate tints |
 | `belt-rock.png` | Detailed stone albedo for decorative asteroid belts |
 

@@ -1,41 +1,41 @@
 {
 	"adapter": "AMD Radeon(TM) Graphics",
-	"average_fps": 114.455926599414,
-	"draw_calls": 267.0,
+	"average_fps": 118.377576130345,
+	"draw_calls": 277.0,
 	"frames": 240,
 	"maps": [
 		{
-			"average_ms": 7.2007,
+			"average_ms": 7.21704166666667,
 			"draw_calls": 169.0,
 			"map": 1,
 			"objects": 560.0,
-			"p95_ms": 9.518
+			"p95_ms": 10.15
 		},
 		{
-			"average_ms": 8.25660833333334,
+			"average_ms": 6.4252,
 			"draw_calls": 168.0,
 			"map": 2,
 			"objects": 550.0,
-			"p95_ms": 11.062
+			"p95_ms": 7.067
 		},
 		{
-			"average_ms": 6.54819166666667,
+			"average_ms": 6.36058333333334,
 			"draw_calls": 168.0,
 			"map": 3,
 			"objects": 551.0,
-			"p95_ms": 7.687
+			"p95_ms": 7.008
 		},
 		{
-			"average_ms": 7.04355833333333,
+			"average_ms": 6.64301666666666,
 			"draw_calls": 195.0,
 			"map": 4,
 			"objects": 579.0,
-			"p95_ms": 8.478
+			"p95_ms": 7.574
 		}
 	],
 	"msaa": "4x",
 	"note": "Single local rendered sector; five patrolling aliens. Map samples use 120 frames after each boundary view. Not a multiplayer capacity benchmark.",
-	"p95_ms": 10.088,
+	"p95_ms": 10.135,
 	"renderer": "GL Compatibility",
 	"resolution": "(1440.0, 900.0)",
 	"vsync": "disabled"

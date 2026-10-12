@@ -82,6 +82,8 @@ func check_campaign_backdrops() -> void:
 		var planet_material := planet.material_override as ShaderMaterial
 		var surface_map := planet_material.get_shader_parameter("surface_map") as Texture2D
 		check(surface_map != null and surface_map.get_width() >= 1700 and surface_map.get_width() == surface_map.get_height()*2, "Planet has its complete spherical surface texture")
+		check(surface_map.resource_path.ends_with("colony-surface-war.png" if map == 0 else "mineral-surface.png"), "Only the home colony uses the revised war-damage surface")
+		check(planet_material.get_shader_parameter("war_damage") == (1.0 if map == 0 else 0.0), "Burned settlement light suppression applies only on M1")
 		check(backdrop.get_node_or_null("Atmosphere") != null, "Planet has a separate atmosphere beyond the solid limb")
 		var sky := (flight.get_node("WorldEnvironment") as WorldEnvironment).environment.sky.sky_material as ShaderMaterial
 		var panorama := sky.get_shader_parameter("nebula_panorama") as Texture2D

@@ -18,6 +18,13 @@ For comparison, the [previous M1 implementation](https://github.com/Timerk/Dorbi
 
 HUD views: [M1](campaign-m1-flight.png), [M2](campaign-m2-flight.png), [M3](campaign-m3-flight.png) and [M4](campaign-m4-flight.png).
 
+M1's follow-up revision makes the previous war visible on the planet itself:
+large impact basins interrupt ruined city districts and severed roads. The
+damaged continent faces the light in the normal flight view. Oceans, healthy
+terrain and cloud cover preserve the colony's habitable character.
+
+![M1 planet-facing view of the old bombardment sites](campaign-m1-planet.png)
+
 ## Implementation and limits
 
 [SectorBackdrop](../../scripts/sector_backdrop.gd) builds each map's distant scenery and switches its nebula palette and stellar lighting on arrival. Human and alien model components merge by material. Beveled armor, exposed carrier ribs and decks, layered ring modules, broken defense frames and alien processing throats give the landmarks recognizable silhouettes. Each distant belt uses three MultiMeshes with 480 varied rocks; scattered human hull plates frame the battlefield.
@@ -30,8 +37,9 @@ The scenery depicts a fixed post-arrival M1 and occupied outer sectors. It does 
 
 ## Validation
 
-- The Windows suite passed all 51 check invocations in 302.5 seconds. It includes dedicated-server combat, connected-map travel, stale-packet isolation, persistence, collision geometry, targeting, autopilot, HUD, settings and the hunt/repair replay. Existing collinear-up-vector and ObjectDB cleanup warnings remain in unrelated fixtures.
-- The final sector visual fixture passed 422 headless assertions. It compares all four maps' client/server obstacles, checks background bounds and surface resources, verifies palette changes and repeated visits, and confirms the dedicated server creates no rendering.
+- The Windows suite passed all 52 check invocations. It includes dedicated-server combat, connected-map travel, stale-packet isolation, persistence, collision geometry, targeting, autopilot, HUD, settings and the hunt/repair replay. Existing ObjectDB cleanup warnings remain in some fixtures.
+- The final sector visual fixture passed 430 headless assertions. It compares all four maps' client/server obstacles, checks background bounds and surface resources, verifies palette changes and repeated visits, and confirms the dedicated server creates no rendering. It also checks that the revised war texture and burned-city light suppression apply only to M1.
+- The user-reported collinear-target/up-vector warning was reproduced in alien steering. Near vertical headings, aliens now carry their current roll through the pole and choose an independent up axis when needed. The new steering fixture passes 32 assertions covering straight up/down, near-vertical flight, pole crossings, ordinary world-up leveling and coincident destinations. Its pre-fix run produced the warning and a roll-flip failure; its corrected run has neither.
 - The rendered sector fixture completed without script or shader errors. It captured station approaches, ordinary flight, planet-facing views, reverse views and near-boundary views on all four maps, with the default Compatibility renderer, 4x MSAA and bloom off.
 - The Windows resource pack exported successfully. The same four-map fixture ran against the packaged resources using an external review script, exercising dynamically loaded textures, geometry and shaders. A new standalone Windows executable was not built during this refinement pass.
 - The [raw frame report](campaign-render-report.json) records 120 frames per boundary view and 240 frames of home flight on an AMD Radeon(TM) Graphics adapter at 1440 x 900, 4x MSAA and VSync off. These short single-client samples do not establish ten-player rendering performance; the report records the actual timings rather than an FPS guarantee.

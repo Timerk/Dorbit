@@ -155,7 +155,8 @@ static func planet(parent: Node3D, label: String, location: Vector3, radius: flo
 	shape.rings = 48
 	var surface := ShaderMaterial.new()
 	surface.shader = preload("res://shaders/planet.gdshader")
-	surface.set_shader_parameter("surface_map", load("res://assets/sector/colony-surface.png" if theme["water"] == 1.0 else "res://assets/sector/mineral-surface.png"))
+	surface.set_shader_parameter("surface_map", load("res://assets/sector/colony-surface-war.png" if theme["water"] == 1.0 else "res://assets/sector/mineral-surface.png"))
+	surface.set_shader_parameter("war_damage", 1.0 if theme["water"] == 1.0 else 0.0)
 	var tint := Color.WHITE
 	if theme["water"] != 1.0:
 		tint = Color("d6b18a") if seed_value < 4.0 else (Color("bd8874") if seed_value < 6.0 else Color("8992b3"))
@@ -163,7 +164,8 @@ static func planet(parent: Node3D, label: String, location: Vector3, radius: flo
 		tint = Color("a1a9b5")
 	surface.set_shader_parameter("surface_tint", tint)
 	surface.set_shader_parameter("surface_desaturation", 0.9 if seed_value > 6.0 else 0.0)
-	surface.set_shader_parameter("surface_rotation", seed_value*0.17)
+	# Put the colony's bombarded continent on the visible, sunlit hemisphere.
+	surface.set_shader_parameter("surface_rotation", 0.16 if theme["water"] == 1.0 else seed_value*0.17)
 	surface.set_shader_parameter("atmosphere_color", theme["atmosphere"])
 	surface.set_shader_parameter("mining_amount", theme["mining"])
 	surface.set_shader_parameter("terrain_seed", seed_value)
