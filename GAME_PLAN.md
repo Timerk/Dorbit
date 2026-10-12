@@ -264,7 +264,9 @@ always remains centered in the screen; dragging it cannot move it and earlier
 saved positions are ignored. Minimum scale is provisionally 80% of the default
 panel size, with a maximum of 300% and screen bounds enforced.
 Grid snapping can be disabled. The sidebar can be hidden to place panels across
-the full screen; selecting a panel it covers exposes that panel without changing
+the full screen, including flush with every screen edge. Editor title bars overlap
+panels near the top edge so their controls stay accessible without reserving a gap.
+Selecting a panel the sidebar covers exposes that panel without changing
 its saved position. Reset restores the approved default layout and visibility.
 Position, scale and visibility persist locally in `user://hud-layout.cfg` and
 adapt to window resizing. Local movement, steering, autopilot and fire stop while
