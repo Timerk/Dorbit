@@ -448,8 +448,11 @@ separately fitted robot. Station repair retains its instant paid behavior within
 robot works, its picture-guided metallic model hovers above the hull: REP-1 has
 a spherical plated body and two welding arms; REP-2 has a taller armored body,
 four tool arms and twin amber power canisters. Both retain cyan optics, copper
-fittings and amber welding beams attached to their modeled tool tips. The fitted
-tier follows the already replicated repair duration on local and remote ships;
+fittings and amber welding beams attached to their modeled tool tips. Both models
+deploy at 30% of their authored size, with a lower hover position,
+following the user's size review. The existing extra scale reduction for the
+smaller Phoenix remains. The fitted tier follows the already replicated repair
+duration on local and remote ships;
 it disappears when repair stops and is not created on dedicated servers.
 
 Cargo expansion affects pickup, cargo displays and save validation. Removing it,

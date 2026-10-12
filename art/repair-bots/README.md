@@ -27,8 +27,11 @@ godot --headless --path . --editor --import
 godot --path . --script res://tools/render_repair_bot_preview.gd
 ```
 
-The sheet is saved to `build/validation/repair-bots-godot.png`. The lower row
-uses the actual Pilot and RepairBotVisual over a Liberator, including tool-tip
-beams. `tests/extras_test.gd` exercises authoritative activation/interruption,
+The sheet is saved to `build/validation/repair-bots-godot.png`. The top row is
+magnified model detail; the lower rows use the actual Pilot and RepairBotVisual
+over Liberator and Goliath hulls, including tool-tip beams. Both bots deploy at
+30% of their authored size, 70% smaller in each dimension than the first review,
+and hover closer to the hull. Phoenix retains its additional half-size scaling.
+`tests/extras_test.gd` exercises authoritative activation/interruption,
 both fitted tiers on local and remote clients, and dedicated-server exclusion.
 Final art, hover clearance and size remain subject to player review.
