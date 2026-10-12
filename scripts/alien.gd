@@ -2,11 +2,23 @@ class_name Alien
 extends SpaceShip
 
 const RETURN_TIMEOUT: float = 30.0
-# Preserve the previous modeled size tiers independently of gameplay colliders.
+# Baked asset diameters, before presentation scaling; independent of colliders.
 const VISUAL_DIAMETERS := {
 	"Scout": 7.547966,
 	"Sentinel": 9.702295,
 	"Heavy": 13.515700,
+}
+# Stronger encounters should remain easy to track among cooperating pilots.
+const VISUAL_SCALE := {
+	"Scout": 1.0,
+	"Sentinel": 1.15,
+	"Heavy": 1.5,
+	"Skirmisher": 1.0,
+	"Raider": 1.4,
+	"Marauder": 2.0,
+	"Warden": 2.4,
+	"Ravager": 3.2,
+	"Overlord": 3.5,
 }
 const TYPES := {
 	"Scout": {"hull": 1000.0, "shield": 500.0, "damage": 1500.0, "interval": 0.85, "range": 120.0, "speed": 29.0, "detection": 155.0, "leash": 170.0, "reward": 300, "respawn": 10.0, "scale": Vector3(0.7, 0.7, 0.85), "color": Color("ffc875")},
@@ -40,7 +52,7 @@ func tuning() -> Dictionary:
 static func model_scene(alien_kind: String) -> Node3D:
 	if not VISUAL_DIAMETERS.has(alien_kind):
 		var root := SectorVisuals.ship_model(true)
-		root.scale = TYPES[alien_kind]["scale"]
+		root.scale = TYPES[alien_kind]["scale"] * float(VISUAL_SCALE[alien_kind])
 		var surface := SectorVisuals.material(TYPES[alien_kind]["color"])
 		for part: MeshInstance3D in root.find_children("*", "MeshInstance3D", true, false):
 			if part.mesh is BoxMesh:
@@ -48,6 +60,7 @@ static func model_scene(alien_kind: String) -> Node3D:
 		return root
 	var scene: PackedScene = load("res://assets/aliens/%s.glb" % alien_kind.to_lower())
 	var instance := scene.instantiate() as Node3D
+	instance.scale *= float(VISUAL_SCALE[alien_kind])
 	# Apply to shared materials at load time so existing imported assets also
 	# receive the visibility finish. Keep dark machinery and recesses distinct.
 	for node: MeshInstance3D in instance.find_children("*", "MeshInstance3D", true, false):

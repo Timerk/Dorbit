@@ -355,7 +355,7 @@ static func destruction_size(ship: SpaceShip) -> float:
 	if ship is Pilot:
 		return float(ShipCatalog.info(ship.ship_model).get("visual_diameter", 7.0))
 	if ship is Alien:
-		return float(Alien.VISUAL_DIAMETERS.get(ship.kind, 7.0 * ship.tuning()["scale"].length() / sqrt(3.0)))
+		return float(Alien.VISUAL_DIAMETERS.get(ship.kind, 7.0 * ship.tuning()["scale"].length() / sqrt(3.0))) * float(Alien.VISUAL_SCALE[ship.kind])
 	return Vector3(6.6253, 1.895, 6.83).length()
 
 
@@ -461,7 +461,9 @@ static func sparks(parent: Node3D, location: Vector3, normal: Vector3, count: in
 
 
 static func shield_radius(ship: Node3D) -> float:
-	return 4.8 if ship is Alien and ship.kind == "Heavy" else 3.6
+	if ship is Alien:
+		return (4.8 if ship.kind == "Heavy" else 3.6) * float(Alien.VISUAL_SCALE[ship.kind])
+	return 3.6
 
 
 static func hull_contact(ship: Node3D, direction: Vector3) -> Vector3:
@@ -469,7 +471,7 @@ static func hull_contact(ship: Node3D, direction: Vector3) -> Vector3:
 	# This ray never touches the physics world or participates in damage validation.
 	var distance := 0.0
 	if ship is SpaceShip and is_instance_valid(ship.model):
-		var start := ship.global_position + direction * 20.0
+		var start := ship.global_position + direction * maxf(20.0, destruction_size(ship))
 		for child in ship.model.find_children("*", "MeshInstance3D", true, false):
 			var visual := child as MeshInstance3D
 			var hit: Variant = visual.get_aabb().intersects_segment(visual.to_local(start), visual.to_local(ship.global_position))
