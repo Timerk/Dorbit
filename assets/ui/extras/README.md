@@ -15,5 +15,7 @@ catalog. `prompts.json` records every exact final generation prompt.
 | `ammo-cpu.png` | Ammunition CPU |
 | `generator-cpu.png` | Generator Boost CPU |
 
-These are inventory illustrations, not flight meshes. No DarkOrbit image assets
-are used. Mechanics and tuning live in `GAME_PLAN.md`.
+The REP-1 and REP-2 illustrations also guide their distinct flight meshes under
+`assets/extras`. Editable models, the generator and renderer review instructions
+are documented in `art/repair-bots/README.md`. No DarkOrbit image assets are used.
+Mechanics and tuning live in `GAME_PLAN.md`.
