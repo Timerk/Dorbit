@@ -31,6 +31,13 @@ func station(client: Sector, action: String, subject: String, ship: String = "",
 	await settle()
 
 
+func check_tool_beams(visual: RepairBotVisual) -> void:
+	for index in visual.beams.size():
+		var beam := visual.beams[index]
+		check(beam.to_global(Vector3(0, -1, 0)).distance_to(visual.tool_tips[index].global_position) < 0.001, "Repair beam begins at its modeled nozzle")
+		check(beam.to_global(Vector3(0, 1, 0)).distance_to(visual.contacts[index].global_position) < 0.001, "Repair beam ends at its hull contact")
+
+
 func run() -> void:
 	var server := make_sector("ExtrasServer", true, 24849)
 	var store := server.session.store
@@ -221,6 +228,10 @@ func run() -> void:
 	check(client.player.robot_repairing and is_equal_approx(client.player.hull, remote.hull), "Robot status and health replicate")
 	check(client.player.repair_visual != null and client.player.repair_visual.visible and client.player.repair_visual.beams.size() == 2, "Working robot and repair beams appear on the local ship")
 	check(observer.session.ships.has(id) and observer.session.ships[id].repair_visual.visible, "Working repair bot is visible on a remote pilot")
+	check(client.player.repair_visual.model_id == "rep-1" and observer.session.ships[id].repair_visual.model_id == "rep-1", "REP-1 model follows the equipped tier on local and remote pilots")
+	check(client.player.repair_visual.tool_tips.size() == 2 and client.player.repair_visual.tool_tips.all(func(tip): return is_instance_valid(tip)), "REP-1 beams have two real modeled tool attachment points")
+	check_tool_beams(client.player.repair_visual)
+	check_tool_beams(observer.session.ships[id].repair_visual)
 	check(remote.repair_visual == null, "Dedicated server does not create repair visuals")
 	await capture(client, "extras-repair")
 	check(server.session.combat.repair(id, -1) == false, "Stale repair life is rejected")
@@ -265,6 +276,18 @@ func run() -> void:
 	check(store.persist(store.pilots.merged({"pilot0": pilot}, true)), "Save disposable configured fitting")
 	server.session.combat.apply_equipment(id)
 	check(remote.repair_seconds == 120.0, "REP-2 replaces REP-1 with its faster repair rate")
+	remote.position = Vector3(0, 200, 0)
+	remote.hull = remote.max_hull * 0.5
+	remote.time_since_hit = 100.0
+	remote.time_since_attack = 100.0
+	remote.repair_requested = true
+	Extras.tick_repair(remote, 0.1, false)
+	await replicate(server)
+	check(client.player.repair_visual.model_id == "rep-2" and observer.session.ships[id].repair_visual.model_id == "rep-2", "Replacing REP-1 switches existing visuals to REP-2 on local and remote pilots")
+	check(client.player.repair_visual.beams.size() == 4 and client.player.repair_visual.tool_tips.size() == 4 and client.player.repair_visual.tool_tips.all(func(tip): return is_instance_valid(tip)), "REP-2 deploys four beams attached to its four modeled tools")
+	check_tool_beams(client.player.repair_visual)
+	check_tool_beams(observer.session.ships[id].repair_visual)
+	await capture(client, "extras-repair-rep-2")
 	remote.extras_clock = 1.0
 	remote.resource_boosts.clear()
 	check(server.session.combat.tick_extras(id, 0.0), "Server commits automatic resource costs")
