@@ -1,5 +1,9 @@
 # Alien modeling references
 
+Proposed references for the six existing M2, M3 and M4 types are available in
+the [outer-sector concept gallery](outer-sectors/README.md). Those sheets await
+user art review; the approved M1 concepts below remain unchanged.
+
 Generated with the built-in image generation tool on 8 October 2026 for the
 existing Scout, Sentinel and Heavy alien spacecraft. The exact prompt set is
 saved in [prompts.json](prompts.json). No input reference images were used.
