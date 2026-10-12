@@ -1093,6 +1093,17 @@ waypoint without jumping. Local radar, markers, contacts, radiation and autopilo
 use the current map. Station services remain exclusively on M1. Death, reconnect
 and quitting to the station menu return pilots to the home map.
 
+The user approved an industrial transit gate with segmented titanium and cobalt
+armor, graphite service recesses, wrapped outer conduits, three illuminated power
+modules and an animated cyan vortex. All eight gates use the same client-only
+model with readable front and rear approaches. Their travel and protection rules
+remain the rules above. The Connected maps tab uses pictures captured from each
+actual campaign background, thin routed bidirectional links, a current-sector
+marker and hover route previews. Mouse selection and arrow keys with Enter set
+the same next-gate waypoint. The four-map topology and unrestricted access remain
+unchanged. Authoring files and visual review are in
+[art/gate-review](art/gate-review/README.md).
+
 One persistent authoritative session simulates all four populations. Maps have
 separate membership and distant origins in the existing physics world. Rendering,
 snapshots, effects, loot collection, targeting and damage are scoped to map
