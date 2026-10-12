@@ -39,6 +39,8 @@ The ten-slot quickslot bar moves, resizes and hides as one instrument. It suppor
 horizontal and vertical orientation; use its `+` picker to customize assignments
 separately from HUD placement mode. See [Quickslots](#quickslots).
 Hide the sidebar to edit the whole screen; a Show sidebar button brings it back.
+Panels can sit flush with every screen edge. Near the top, the editor title bar
+overlaps the panel so its drag and close controls remain accessible.
 The grid makes editing clear and supports optional snapping. Panels preserve
 their proportions and stop shrinking at 80% of their default size. **Escape**,
 **Done**, or Ctrl + Alt finishes and saves positions, sizes and hidden panels on

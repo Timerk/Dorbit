@@ -182,9 +182,52 @@ func run() -> void:
 	await process_frame
 	await click(layout.buttons["ammo"].get_global_rect().get_center())
 	check(ammo.visible and layout.shown("ammo"), "The sidebar ammunition icon restores the entire bar")
+	var saved_ammo: Dictionary = layout.entries["ammo"].duplicate(true)
+	var was_vertical := ammo.config.vertical
+	ammo.config.vertical = true
+	layout.store_rect("ammo", Rect2(Vector2.ZERO, ammo.default_rect().size * 3))
+	check(is_equal_approx(layout.rect_for("ammo").size.y, layout.size.y), "A vertical bar can use the entire screen height without reserving title space")
+	ammo.config.vertical = was_vertical
+	layout.entries["ammo"] = saved_ammo
 	# Keep the restored ship away from the radar under test.
 	layout.store_rect("ship", Rect2(240, 600, 290, 174))
 	var radar := layout.default_rect("radar")
+	layout.sidebar.hide()
+	layout.rail_toggle.hide()
+	layout.selected_id = "radar"
+	layout.store_rect("radar", Rect2(Vector2(800, 100), radar.size))
+	for corner in [Vector2(5000, -5000), Vector2(-5000, -5000), Vector2(-5000, 5000), Vector2(5000, 5000)]:
+		var before := layout.rect_for("radar")
+		await drag(layout.header_rect(before).position + Vector2(80, 12), corner)
+		var edge := layout.rect_for("radar")
+		var expected := Vector2(layout.size.x - edge.size.x if corner.x > 0 else 0, layout.size.y - edge.size.y if corner.y > 0 else 0)
+		check(edge.position.is_equal_approx(expected), "Dragging reaches screen corner %s with snapping enabled" % corner)
+		check(Rect2(Vector2.ZERO, layout.size).encloses(layout.header_rect(edge)), "Editor title and close control remain on screen at %s" % corner)
+	layout.snap = false
+	var edge := layout.rect_for("radar")
+	await drag(layout.header_rect(edge).position + Vector2(80, 12), Vector2(880, -5000))
+	check(is_zero_approx(layout.rect_for("radar").position.y), "Free placement reaches the top edge")
+	await capture("hud-editor-top-edge-1440")
+	var top_edge := layout.rect_for("radar")
+	layout.set_editing(false)
+	check(layout.rect_for("radar").is_equal_approx(top_edge), "Finishing editing leaves the radar flush with the top edge")
+	layout.entries.clear()
+	layout.load_layout()
+	check(layout.rect_for("radar").is_equal_approx(top_edge), "Top-edge placement survives saving and reloading")
+	await capture("hud-flight-top-edge-1440")
+	layout.set_editing(true)
+	layout.sidebar.hide()
+	layout.rail_toggle.hide()
+	check(layout.rect_for("radar").is_equal_approx(top_edge), "Reopening the editor preserves top-edge placement")
+	await click(layout.header_rect(top_edge).end - Vector2(12, 12))
+	check(not layout.shown("radar"), "The close control works at the top edge")
+	layout.reopen("radar")
+	await drag(layout.header_rect(top_edge).position + Vector2(80, 12), layout.header_rect(top_edge).position + Vector2(80, 19))
+	check(is_equal_approx(layout.rect_for("radar").position.y, 7), "The top-edge title can drag to a precise position inside the former gap")
+	layout.set_editing(false)
+	layout.set_editing(true)
+	check(is_equal_approx(layout.rect_for("radar").position.y, 7), "Switching editor modes preserves placement inside the former gap")
+	layout.snap = true
 	layout.store_rect("radar", Rect2(Vector2(800, 100), radar.size * 1.4))
 	layout.close_item("target")
 	await tap_key(KEY_ESCAPE)
@@ -212,16 +255,20 @@ func run() -> void:
 	fresh.load_layout()
 	check(fresh.entries == saved, "A fresh layout instance restores the same saved preferences")
 	fresh.free()
+	var radar_size := layout.rect_for("radar").size
+	layout.store_rect("radar", Rect2(Vector2(layout.size.x - radar_size.x, 0), radar_size))
 	for pixels in [Vector2i(960, 600), Vector2i(1920, 1080)]:
 		root.size = pixels
 		root.content_scale_size = pixels
 		DisplayServer.window_set_size(pixels)
 		await sync_physics()
+		check(is_zero_approx(layout.rect_for("radar").position.y) and is_equal_approx(layout.rect_for("radar").end.x, layout.size.x), "Radar stays flush with the top-right corner at %d" % pixels.x)
 		check(layout.rect_for("reticle").get_center().is_equal_approx(layout.size * 0.5), "Reticle stays centered when resizing the viewport")
 		for id: String in HudLayout.ITEMS:
 			check(Rect2(Vector2.ZERO, layout.size).encloses(layout.rect_for(id)), "Saved %s remains reachable at %d" % [id, pixels.x])
 		await chord()
 		await chord(false)
+		check(is_zero_approx(layout.rect_for("radar").position.y), "Opening the editor at %d preserves the top edge" % pixels.x)
 		await capture("hud-editor-%d" % pixels.x)
 		await chord()
 		await chord(false)
