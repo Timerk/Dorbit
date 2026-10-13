@@ -9,7 +9,8 @@
     },
     {
       "file": "catalogue-roster-reference.jpg",
-      "role": "existing catalogue and Blender roster; silhouette and base colors"
+      "role": "existing catalogue and Blender roster; silhouette and base colors",
+      "status": "Removed from the current tree because it contains Bigpoint imagery; historical provenance only."
     }
   ],
   "prompts": "prompts.json",
@@ -45,10 +46,6 @@
     "bigboy.png": {
       "sha256": "b29491a741fe01507331b993f5c7ee22313896322326a03a023e373501f5f7ff",
       "bytes": 2251642
-    },
-    "catalogue-roster-reference.jpg": {
-      "sha256": "ab0cafbfa46aaa72c86287b990dcd8d2a899e1ce50ff1e468d5e194e2b5fff37",
-      "bytes": 571773
     },
     "defcom.png": {
       "sha256": "6e7851ec709982c272bac860ae56b665b8fb39a0845354a72142122a24e099be",
