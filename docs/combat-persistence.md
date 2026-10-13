@@ -42,6 +42,13 @@ growth. A checkpoint:
 3. Flushes, verifies and replaces the primary snapshot with its current sequence.
 4. Replaces the journal with a header at that sequence.
 
+Each replacement reads its temporary file back through the write handle before
+renaming it. The snapshot check compares full contents only when the primary's
+size or modification second differs from the last load or save. Reopening a
+just-replaced file cost several milliseconds on Windows. An external edit that
+keeps the same size within that second is therefore not detected; the journal is
+still compared in full.
+
 A process death before step 3 leaves the old primary plus its complete journal.
 A death after step 3 but before step 4 leaves already-checkpointed records, which
 replay skips; they cannot reverse an ammo purchase or ship change. Interrupted
@@ -121,3 +128,9 @@ speedup promises. The journal cases fit the 16.7 ms tick budget for the persiste
 portion of this workload. AI, movement, network processing and checkpoint writes
 are additional costs. Linux/VPS timing and long-session multiplayer behavior are
 still separate validation tasks.
+
+On 13 October 2026, the same machine measured full-snapshot commits at 9.43 ms
+(35 KB ledger) and 14.61 ms (127 KB ledger) mean. Removing the two reopen costs
+above reduced them to 2.55–2.61 ms and 4.51–4.57 ms across two runs, with p95 of
+3.06 and 5.43 ms. Back-to-back reward and loot saves therefore fit the tick budget
+locally. Rare outliers still reached 11–20 ms on the larger ledger.
