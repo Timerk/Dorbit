@@ -3,9 +3,11 @@ import bpy
 import json
 import math
 import struct
+import sys
 from pathlib import Path
 
 HERE=Path(__file__).resolve().parent
+models_only = '--models-only' in sys.argv
 names=['Aegis','Goliath','Bigboy','Defcom','Leonov','Liberator','Nostromo',
        'Phoenix','Piranha','Spearhead','Vengeance','Yamato']
 expected={name.lower()+'.blend' for name in names}
@@ -34,10 +36,12 @@ for name in names:
     assert len(cameras)==6,name
     references=[i for i in bpy.data.images if i.source=='FILE']
     assert references and all(i.packed_file for i in references),name
-    assert any(Path(bpy.path.abspath(i.filepath)).resolve()==
-               (HERE/'concepts'/(name.lower()+'.png')).resolve()
-               for i in references),'Missing concept: '+name
-    for view in ['','-rear','-top','-side','-front','-underside']:
+    expected_images = {name.lower()+'.png', 'liberator-style-reference.png'}
+    assert {Path(i.filepath.replace('\\', '/')).name for i in references} == expected_images, name
+    for image in references:
+        filename = Path(image.filepath.replace('\\', '/')).name
+        assert bytes(image.packed_file.data) == (HERE/'concepts'/filename).read_bytes(), name
+    for view in ([] if models_only else ['','-rear','-top','-side','-front','-underside']):
         preview=HERE/'previews'/(name.lower()+view+'.png')
         assert preview.exists(),name+view
         assert preview.stat().st_mtime>=path.stat().st_mtime,'Stale render: '+str(preview)
@@ -54,7 +58,8 @@ for name in names:
     'Nonempty mesh geometry with materials',
     'Finite base and evaluated vertex coordinates',
     'No zero-area base polygons',
-    'Six cameras and six 1600 x 1440 renders per ship, newer than the saved model',
+    ('Six cameras per ship; render checks skipped with --models-only' if models_only else
+     'Six cameras and six 1600 x 1440 renders per ship, newer than the saved model'),
     'Generated concept turnaround packed into each model',
-    'All file-based reference images packed into the blend'
+    'Only generated Dorbit concept and finish images packed into the blend'
 ], 'models':report},indent=2)+'\n')

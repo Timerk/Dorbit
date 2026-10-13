@@ -1556,7 +1556,7 @@ def setup(name, draft=False):
     root=bpy.data.objects.new(name,None)
     scene.collection.objects.link(root)
     root['forward_axis']='-Y, Z up'
-    root['reference_status']='Dorbit concept refinement; generated turnaround and catalogue images packed. See concepts/README.md.'
+    root['reference_status']='Dorbit concept refinement; generated turnaround and Dorbit finish image packed. See concepts/README.md.'
     root['inferred_geometry']='Underside, hidden joints, exact panel depths and small fasteners.'
     for obj in PARTS:
         obj.parent=root
@@ -1622,12 +1622,10 @@ def setup(name, draft=False):
         data=bpy.data.lights.new(label,'AREA'); data.energy=power; data.size=size; data.color=color
         obj=bpy.data.objects.new(label,data); GROUP.objects.link(obj); obj.location=loc; point_at(obj,center)
     scene.camera=cameras['perspective']
-    # Pack source images into the .blend. Hidden image empties are available
-    # from the Outliner for inspection without needing D: on another machine.
+    # Pack only generated Dorbit images. Never embed external catalogue images.
     group('References | hidden, enable for comparison')
-    reference_paths=list((HERE/'references').glob(name.lower()+'*'))
-    reference_paths += [HERE/'concepts'/(name.lower()+'.png'),
-                        HERE/'concepts/liberator-style-reference.png']
+    reference_paths = [HERE/'concepts'/(name.lower()+'.png'),
+                       HERE/'concepts/liberator-style-reference.png']
     for path in sorted(set(reference_paths)):
         if not path.exists():
             continue

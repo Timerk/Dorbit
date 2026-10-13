@@ -208,5 +208,6 @@
     "Exact thicknesses and panel depths",
     "Internal joints",
     "Small fasteners and cooling details"
-  ]
+  ],
+  "storage_status": "External Bigpoint image files removed from the current tree, including packed model copies and comparison sheets. Entries record historical provenance only. Keep reference images in private storage outside this repository."
 }

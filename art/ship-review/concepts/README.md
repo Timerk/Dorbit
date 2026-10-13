@@ -6,10 +6,9 @@ These twelve generated concept turnarounds use the user's Liberator main-menu
 image as the finish reference and the existing ship catalogue as the silhouette
 reference. They were created with the built-in image generation tool on
 7 October 2026. The exact prompts are saved in [prompts.json](prompts.json).
-[Provenance](provenance.json) records the input roles and image hashes; the
-original [catalogue roster](catalogue-roster-reference.jpg) is preserved separately
-from the newly rendered model overview.
-The supplied screenshot is preserved as
+[Provenance](provenance.json) records the historical input roles and image hashes.
+The catalogue roster containing Bigpoint imagery has been removed. The generated
+Dorbit finish image remains at
 [liberator-style-reference.png](liberator-style-reference.png).
 
 Each sheet requests perspective, top, side, front, rear, underside and rear

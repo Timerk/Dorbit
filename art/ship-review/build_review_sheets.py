@@ -1,4 +1,4 @@
-"""Compose review sheets from actual Blender renders and recorded references."""
+"""Compose review sheets using only Dorbit model renders and generated concepts."""
 from pathlib import Path
 import sys
 
@@ -47,36 +47,6 @@ for name in NAMES:
         with Image.open(path) as render:
             bounds=render.getchannel('A').getbbox()
             assert bounds and bounds[0]>0 and bounds[1]>0 and bounds[2]<render.width and bounds[3]<render.height, 'Clipped ship: '+str(path)
-    im=Image.new('RGB',(1800,1080),BG)
-    d=ImageDraw.Draw(im)
-    label(im,(42,26),name+' / reference comparison',36)
-    label(im,(44,78),'Dorbit concept finish | editable Blender model',21,MUTED)
-    d.rounded_rectangle((30,135,630,1000),radius=16,fill=CARD)
-    d.rounded_rectangle((650,135,1770,1000),radius=16,fill=CARD)
-    label(im,(54,155),'SUPPLIED BASE IMAGE',20,MUTED)
-    put(im,HERE/'references'/(slug+'-base.png'),(75,190,510,415),trim=True)
-    source=Image.open(HERE/'references'/(slug+'-base.png'))
-    label(im,(54,610),f'{source.width} x {source.height} source, enlarged for comparison',19,MUTED)
-    if name=='Aegis':
-        label(im,(54,670),'ADDITIONAL GEOMETRY VIEW',20,MUTED)
-        put(im,HERE/'references/aegis-engineering-browser-crop.png',(54,710,552,260))
-    elif name=='Goliath':
-        label(im,(54,670),'SUPPLEMENTARY ANGLE',20,MUTED)
-        put(im,HERE/'references/goliath-secondary.webp',(126,720,380,240))
-    elif name=='Liberator':
-        label(im,(54,670),'SUPPLEMENTARY HANGAR VIEW',20,MUTED)
-        put(im,HERE/'references/liberator-secondary.webp',(170,706,300,278))
-    else:
-        label(im,(54,700),'REFERENCE LIMITS',20,MUTED)
-        for j,line in enumerate(['Base catalogue render guides shape and paint.',
-                                 'Small details and unseen surfaces are inferred.',
-                                 'Source image is packed into the Blender file.']):
-            label(im,(54,752+j*42),line,19,MUTED)
-    label(im,(678,155),'NEW MODEL / RENDERED IN BLENDER',20,MUTED)
-    put(im,HERE/'previews'/(slug+'.png'),(675,210,1070,735),trim=True)
-    label(im,(44,1025),'Angles are approximate. Unseen surfaces and small mechanical details are reconstructed.',21,MUTED)
-    im.save(HERE/'previews'/(slug+'-comparison.jpg'),quality=94)
-
     im=Image.new('RGB',(1800,1270),BG)
     d=ImageDraw.Draw(im)
     label(im,(40,24),name+' / six consistent model views',36)
@@ -104,20 +74,3 @@ if len(sys.argv)==1:
         label(concepts,(x+12,y+8),name,26)
         put(concepts,HERE/'concepts'/(name.lower()+'.png'),(x+8,y+48,772,446))
     concepts.save(HERE/'concepts/overview.jpg',quality=94)
-
-    im=Image.new('RGB',(2000,2110),BG)
-    d=ImageDraw.Draw(im)
-    label(im,(36,22),'Twelve base ships / revised Blender model review',36)
-    label(im,(38,79),'Dorbit concept refinement | Updated geometry and PBR finishes on all twelve hulls',22,MUTED)
-    for i,name in enumerate(NAMES):
-        x=20+(i%4)*495
-        y=140+(i//4)*640
-        d.rounded_rectangle((x,y,x+475,y+610),radius=14,fill=CARD)
-        label(im,(x+18,y+18),name,28)
-        label(im,(x+18,y+67),'SOURCE',17,MUTED)
-        put(im,HERE/'references'/(name.lower()+'-base.png'),(x+22,y+100,431,195),trim=True)
-        label(im,(x+18,y+318),'MODEL',17,MUTED)
-        put(im,HERE/'previews'/(name.lower()+'.png'),(x+12,y+348,451,242),trim=True)
-    label(im,(38,2070),'Sources enlarged for review. Fine details and hidden surfaces are reconstructed. Ships are not shown to a common scale.',21,MUTED)
-    im.save(HERE/'previews/additional-ships-overview.jpg',quality=94)
-    print('OVERVIEW all twelve ships')
