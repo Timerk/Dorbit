@@ -1,6 +1,6 @@
 # Dedicated server performance workload
 
-This benchmark measures one Linux dedicated server with ten automated headless clients hunting the five-alien sector. The original single-alien measurements remain below as a historical baseline. It does not measure rendered client FPS or validate the 60 FPS at 1440p target. Cross-network dedicated-server testing remains pending and is independent of this workload.
+The current benchmark measures one Linux dedicated server with ten automated headless clients, all four maps and twenty alien slots, laser fire, single rockets and launcher volleys. See the [13 October results](#current-content-results-13-october-2026). September results below describe older content. The original single-alien measurements remain below as a historical baseline. It does not measure rendered client FPS or validate the 60 FPS at 1440p target. Cross-network dedicated-server testing remains pending and is independent of this workload.
 
 ## Reproduce
 
@@ -8,7 +8,8 @@ Use a Linux x86-64 checkout with Python 3, curl and the pinned Godot editor. Fro
 
 ```sh
 rtk proxy bash tools/server.sh setup
-rtk proxy python3 tools/benchmark_server.py --output build/performance-01
+rtk proxy python3 tools/benchmark_server.py --layout clustered --map 3 --seconds 120 --output build/capacity-frontier-01
+rtk proxy python3 tools/benchmark_server.py --layout spread --seconds 240 --output build/capacity-spread-01
 rtk proxy bash tools/server.sh check
 ```
 
@@ -24,19 +25,22 @@ The runner imports the project, starts one server process, then ten independent 
 
 ## What runs
 
-`tests/server_workload.gd` extends the existing ENet test fixture in `tests/network_test.gd`, also used by `tests/dedicated_server_test.gd`. Each process creates one sector with the same multiplayer root path and its own physics world. The dedicated sector contains no local pilot or render meshes. A physics-frame callback calls its existing `Sector._physics_process` at the project's nominal 60 Hz; the benchmark does not accelerate ticks or alter gameplay state.
+`tests/server_workload.gd` extends the existing ENet test fixture in `tests/network_test.gd`, also used by `tests/dedicated_server_test.gd`. Each process creates one sector with the same multiplayer root path and its own physics world. The dedicated sector contains no local pilot or render meshes. A physics-frame callback calls its existing `Sector._physics_process` at the project's nominal 60 Hz; the benchmark does not accelerate ticks.
 
-Each client receives normal roster, health, reward, snapshot and effect RPCs. At a nominal 20 Hz it sends normal flight and fire intent, using the replicated position and current life/encounter identifiers. Pairs of pilots pursue phase-offset orbits approximately 100 m from each of the five alien slots, with vertical movement, and fire while their assigned alien is available. Boost is off. The server retains ordinary collision checks, weapon cooldowns, damage, death, rewards and each type's normal respawn delay. No teleports, forced damage or shortened cooldowns create the encounter.
+Each client receives normal roster, health, reward, snapshot and effect RPCs. At a nominal 20 Hz it sends normal flight and fire intent, using the replicated position and current life/encounter identifiers. In clustered mode, two pilots pursue each alien slot on the selected zero-based --map, which defaults to M1. In spread mode, pilots start across M1 through M4 in groups of 3, 3, 2 and 2 and advance to the next living alien slot after their current target dies. M3 and M4 pilots pair on a shared target for the stronger encounters. Pilots pursue phase-offset orbits approximately 100 m from their target, with vertical movement. The driver closes within 110 m before firing lasers. Clustered mode enables lasers only in the second half of its 2.1-second single-rocket request cycle; spread mode uses continuous laser fire. This lets rockets launch before the fitted lasers kill weaker targets. They request a single rocket every 2.1 seconds and load/fire a five-round launcher at ordinary cooldowns. All twenty aliens retain their normal tuning, collision checks, damage, rewards and respawn delays. Boost is off during combat and on during return travel after a rescue.
+
+Before authentication, the fixture persists ten legal Goliaths with fifteen LF-3 lasers, fifteen SG3N-B02 shields, an HST-2 launcher and 100,000 rounds of each ammunition type. Clients select x3 lasers and retain the default R-310/ECO-10 rockets. Once clients launch through the normal RPC, the fixture places each pilot near its first assigned encounter before warmup. There are no fixture teleports, forced damage, health resets or shortened cooldowns during measurement. Ordinary rescues return pilots to M1; drivers fly to gates and request normal jumps to return to their assigned map. This is an equipped-fleet workload, not starter-ship balance validation. Current Skylab records and snapshot serialization are present; no industry jobs are started.
 
 The drivers replace human input and the normal client prediction loop. They still instantiate client scenes and receive effect RPCs, but `--headless` uses dummy rendering. Client CPU and memory are excluded from server process measurements, although all eleven processes compete for the same machine. This is a server load test, not a normal rendered-client performance test.
 
-The workload fails unless ten pilots remain throughout measurement, each travels over 100 m and damages an alien, every alien slot receives hits and dies, aliens fire, and at least two encounters overlap. Distance sums authoritative position changes, including any ordinary rescue teleport. It records hits per peer, alien shots/deaths and the fraction of ticks with a living alien. Peer IDs and exact timings vary between runs; the workload is repeatable, not a deterministic replay.
+The workload fails unless ten pilots remain throughout measurement, each records over 100 m of position changes and damages an alien, every assigned slot receives hits and dies, aliens fire, and at least two encounters overlap. Clustered mode checks all five slots on its map; spread mode checks all twenty. Every pilot must launch rockets, with launcher rounds and successful impacts in the window, and the combat journal must remain healthy. Distance sums authoritative position changes, including rescue and gate teleports. Results retain per-map combat ticks, per-pilot hits and rockets, per-slot deaths and journal sequence. Peer IDs and timings vary between runs; this is not a deterministic replay.
 
 ## Measurement definitions
 
-- CPU is Linux `/proc/PID/stat` user plus system CPU time divided by monotonic elapsed time. 100% means one logical CPU fully occupied. The runner samples approximately once per second, separately from the clients.
+- ENet outbound bytes and packets come from the server ENet host counters, reset after warmup and read at the end of measurement. They include ENet protocol traffic, fragmentation and retransmissions. They exclude IP/UDP and link-layer overhead. Aggregate rates divide by the Godot measurement window; they are not per-second peak bandwidth.
+- CPU is Linux `/proc/PID/stat` user plus system CPU time divided by monotonic elapsed time. 100% means one logical CPU fully occupied. Current results also retain percentages using monotonic-raw time. The runner samples approximately once per second, separately from the clients.
 - RSS is `/proc/PID/status` resident memory in MiB. HWM is the process lifetime resident high-water mark, including startup and warmup. RSS includes engine and benchmark instrumentation allocations. It is not Godot's allocator-only memory counter.
-- Session tick time wraps the server's existing physics callback with `Time.get_ticks_usec`. It includes flight, combat and periodic snapshot construction/sending. It excludes outer engine work and most multiplayer polling. The separate living-alien distribution selects ticks where the alien was alive before the callback, including the killing tick.
+- Session tick time wraps the server's existing physics callback with `Time.get_ticks_usec`. It includes flight, combat and periodic snapshot construction/sending. It excludes outer engine work and most multiplayer polling. The separate living-alien distribution selects ticks where at least one world alien was alive before the callback, including the killing tick.
 - Tick interval uses the same Godot clock between callback starts. Catch-up ticks and scheduling jitter can affect it. `ticks_per_second` uses Godot elapsed time; `ticks_per_system_second` uses system Unix time over the same measurement window. The external sampler records both Linux monotonic and monotonic-raw clocks as another clock comparison. None of these rates are rendered FPS.
 - Engine physics time is Godot's `Performance.TIME_PHYSICS_PROCESS`, read each tick. This monitor refreshes periodically, so repeated values are not independent per-tick timings. Its percentiles describe the sampled monitor values.
 
@@ -119,3 +123,42 @@ Departure and combat captures showed the current sector's alien markers, selecte
 Godot 4.7.2 passed 265 checks across the new alien-sector suite and existing network, shared-combat, dedicated-server, pilot-persistence, offline encounter and connection-menu suites. The 54 new checks include independent live fire, separate contributions, equal rewards including rescue eligibility, stale/unknown target rejection, ordinary and blocked returns, death and empty-sector respawns, late joins, reordered snapshots, Tab cycling and ray selection. The Linux runner and rendered workload both enforce activity checks. The full Windows check command also passed the starter hunt-and-repair replay. The new 54-check suite passed on Linux. Source import, Windows release export, Python syntax and git diff checks passed.
 
 The optional legacy two-process listen-host replay timed out before the two processes joined on this host. Its Scout steering and reward expectations were updated, but that end-to-end replay and the manual two-client Windows-to-Linux replay remain unverified. The required Windows check command, new real-ENet suites and separate-process dedicated workloads passed.
+
+## Current-content results, 13 October 2026
+
+The finalized workload passed two separate Linux runs with ten authenticated pilots, all four maps and twenty world alien slots. The clustered run put two pilots on each M4 encounter; the spread run exercised and killed all twenty slots across M1 through M4. Every pilot moved, damaged an alien and launched rockets in both measurement windows. These are activity checks, not a latency or tick-budget pass criterion.
+
+[Raw results](current-server-performance-results.json) retain process samples, source hashes, environment details and log hashes/counts. Both completed runs match the committed workload sources. The source base was `f004c486987bf234a067662266eb7ec9870bd2c4` with the benchmark changes recorded in dirty status. The host is an AMD Ryzen 7 9800X3D with 16 logical CPUs visible to Ubuntu 24.04.4 on WSL2 kernel 6.6.87.2 and 15.18 GiB Linux memory. Godot is the pinned official 4.7.2 Linux editor. The executable and isolated pilot saves are on Linux storage; the source checkout is on Windows C:. All eleven processes share the host, with ordinary desktop/development activity and no CPU pinning. This differs from the September laptop, so changes in timings are not a controlled before/after comparison.
+
+| Measurement | Ten pilots clustered on M4 | Ten pilots spread over four maps |
+| --- | --- | --- |
+| Activity checks | Passed | Passed |
+| Godot / system window, seconds | 120.014 / 120.236 | 240.006 / 239.374 |
+| CPU mean / p95, % of one logical CPU, raw clock | 7.36 / 12.82 | 5.42 / 11.44 |
+| RSS mean / maximum, MiB | 179.80 / 179.80 | 180.10 / 180.10 |
+| Session mean / p95 / p99 / maximum, ms | 0.709 / 1.526 / 1.964 / 7.109 | 0.696 / 1.397 / 1.838 / 51.131 |
+| Maximum callback interval, ms | 17.836 | 96.138 |
+| Ticks per system second | 59.89 | 60.16 |
+| Aggregate ENet outbound, Mbit/s / packets/s | 12.52 / 3236 | 6.47 / 2022 |
+| Alien slots hit / killed | 5 / 5 | 20 / 20 |
+| Alien deaths / shots | 10 / 127 | 38 / 90 |
+| Rocket rounds / launcher rounds / successful impacts | 119 / 105 / 109 | 349 / 335 / 221 |
+| Ticks with overlapping engaged aliens | 24.04% | 5.44% |
+| Godot warnings in server log | 25 | 53 |
+
+CPU percentages above use monotonic-raw time. External monotonic windows were approximately 3% shorter than their raw-clock windows. Both clocks and the original monotonic CPU percentages remain in the JSON. The nominal physics rate does not establish rendered FPS or a validated physical 60 Hz cadence. At least one of the twenty aliens was alive on every tick, so the living-alien distribution equals the whole-window distribution. Per-map combat ticks and overlap fractions show that this is bursty hunting with ordinary travel and respawns, rather than continuous combat for the entire window. Some pilots were rescued to M1 and flew back through normal gates, reducing clustered fan-out during those periods.
+
+The completed spread run had a 51.131 ms session callback and a 96.138 ms callback interval. An earlier spread attempt with timed target rotation had a 148.713 ms callback. That attempt failed coverage and remains explicitly labeled diagnostic in the raw JSON; it is not capacity evidence. A finalized-driver M1 attempt also failed the overlap check despite every pilot hitting and launching rockets and every home slot dying. Its diagnostic counters recorded 13.79 Mbit/s and about 3,495 outbound packets/s, consistent with the review's fan-out estimate. M4 supplies stronger encounters for the validated clustered test. Early 30-second smoke attempts and the first cold import failed before representative coverage; they are excluded from the validated tables. No gameplay tuning or server optimization was changed to obtain coverage.
+
+All final client, server and import logs were free of Godot errors. The server emitted the existing alien `looking_at` colinear-vector warnings, with counts above; this logging overhead is included. Logs and intermediate files remain under `build/capacity-frontier-01` and `build/capacity-spread-03`. Python syntax, raw JSON, final source hashes, invalid-duration rejection, existing-output rejection and diff checks passed.
+
+Average CPU and memory on this host leave local compute headroom for ten pilots at current content. Outbound traffic is material, and the observed stalls exceed the 16.7 ms tick budget. These runs therefore do not establish smooth ten-player internet service or VPS capacity. Before the friend-group session, check the actual deployment's sustained upload headroom and profile the callback stalls on that host. A longer soak, injected latency/loss, active Skylab jobs and rendered Windows-client performance remain unmeasured.
+
+To reproduce the validated scenarios after setup, using fresh output directories:
+
+```sh
+rtk proxy python3 tools/benchmark_server.py --layout clustered --map 3 --seconds 120 --warmup 15 --output build/capacity-frontier-01
+rtk proxy python3 tools/benchmark_server.py --layout spread --seconds 240 --warmup 15 --output build/capacity-spread-03
+```
+
+For a Windows-owned worktree in WSL, also pass `--git git.exe` and select a Linux-storage executable with `--engine`. Cold asset imports may take several minutes; the runner retains `import.log` and allows up to ten minutes for import before launching the workload.
