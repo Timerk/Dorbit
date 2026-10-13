@@ -44,6 +44,8 @@ def main():
     parser.add_argument("--engine", type=Path, default=ENGINE, help="Godot Linux executable")
     parser.add_argument("--seconds", type=int, default=120)
     parser.add_argument("--warmup", type=int, default=15)
+    parser.add_argument("--layout", choices=("clustered", "spread"), default="clustered")
+    parser.add_argument("--map", type=int, choices=range(4), default=0, help="Map for clustered pilots, zero-based")
     parser.add_argument("--git", default="git", help="Use git.exe for a Windows-owned worktree in WSL")
     parser.add_argument("--output", type=Path, required=True, help="New directory for logs and JSON")
     args = parser.parse_args()
@@ -54,13 +56,16 @@ def main():
     git_status = subprocess.check_output([args.git, "status", "--short"], cwd=ROOT, text=True)
     source_hashes = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in (
         "tests/server_workload.gd", "tests/network_test.gd", "tools/benchmark_server.py",
-        "scripts/alien.gd", "scripts/session_combat.gd", "scripts/flight_session.gd", "scripts/sector.gd", "scripts/ship.gd")}
+        "scripts/alien.gd", "scripts/session_combat.gd", "scripts/flight_session.gd", "scripts/sector.gd", "scripts/ship.gd",
+        "scripts/sector_maps.gd", "scripts/rocket_weapons.gd", "scripts/pilot_store.gd",
+        "scripts/combat_journal.gd", "scripts/skylab.gd", "scripts/equipment.gd", "assets/ships/catalog.json")}
     started_utc = datetime.now(timezone.utc).isoformat()
     output.mkdir(parents=True, exist_ok=False)
     command = [str(args.engine), "--headless", "--max-fps", "60", "--path", str(ROOT)]
-    imported = subprocess.run(command + ["--editor", "--import"], capture_output=True, text=True, timeout=120)
-    (output / "import.log").write_text(imported.stdout + imported.stderr)
-    if imported.returncode or "ERROR:" in imported.stdout + imported.stderr:
+    with (output / "import.log").open("w") as import_log:
+        imported = subprocess.run(command + ["--editor", "--import"], stdout=import_log,
+                                  stderr=subprocess.STDOUT, timeout=600)
+    if imported.returncode or "ERROR:" in (output / "import.log").read_text():
         raise RuntimeError(f"Import failed; see {output / 'import.log'}")
     processes = []
     logs = []
@@ -71,7 +76,8 @@ def main():
         logs.append(log)
         child = subprocess.Popen(command + ["--script", "res://tests/server_workload.gd", "--",
             f"--role={role}", f"--index={index}", f"--seconds={args.seconds}",
-            f"--warmup={args.warmup}", f"--output={output}"], stdout=log, stderr=subprocess.STDOUT)
+            f"--warmup={args.warmup}", f"--layout={args.layout}", f"--map={args.map}",
+            f"--output={output}"], stdout=log, stderr=subprocess.STDOUT)
         processes.append(child)
         return child
 
@@ -90,7 +96,7 @@ def main():
             time.sleep(0.1)
         for index in range(10):
             launch("client", index)
-        deadline = time.monotonic() + 30 + args.warmup + args.seconds + 30
+        deadline = time.monotonic() + 60 + args.warmup + args.seconds + 30
         while not (output / "server.json").exists():
             healthy()
             if time.monotonic() > deadline:
@@ -103,6 +109,8 @@ def main():
         server_result = json.loads((output / "server.json").read_text())
         cpu = [100 * (b["cpu_seconds"] - a["cpu_seconds"]) /
                (b["monotonic_seconds"] - a["monotonic_seconds"]) for a, b in zip(samples, samples[1:])]
+        cpu_raw = [100 * (b["cpu_seconds"] - a["cpu_seconds"]) /
+                   (b["monotonic_raw_seconds"] - a["monotonic_raw_seconds"]) for a, b in zip(samples, samples[1:])]
         environment = {
             "platform": platform.platform(), "cpu": platform.processor(),
             "lscpu": subprocess.check_output(["lscpu"], text=True),
@@ -113,11 +121,13 @@ def main():
             "source_sha256": source_hashes, "started_utc": started_utc,
             "command": command, "clients": 10, "transport": "ENet UDP IPv4 loopback port 24683",
             "seconds": args.seconds, "warmup": args.warmup,
+            "layout": args.layout, "clustered_map": args.map,
         }
         result = {"environment": environment, "server": server_result, "process": {
             "sample_window_seconds": samples[-1]["monotonic_seconds"] - samples[0]["monotonic_seconds"],
             "sample_window_raw_seconds": samples[-1]["monotonic_raw_seconds"] - samples[0]["monotonic_raw_seconds"],
             "cpu_percent_one_core": distribution(cpu),
+            "cpu_percent_one_core_raw_clock": distribution(cpu_raw),
             "rss_mib": distribution([sample["rss_mib"] for sample in samples]),
             "lifetime_hwm_mib": samples[-1]["hwm_mib"], "samples": samples,
         }}
