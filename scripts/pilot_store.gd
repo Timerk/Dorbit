@@ -8,6 +8,8 @@ var path: String
 var error: String = ""
 var pilots: Dictionary = {}
 var saved_text: String
+var saved_modified_time: int = 0
+var saved_bytes: int = -1
 var locked: bool = false
 var failed: bool = false
 var next_lab_due: int = 0
@@ -59,6 +61,7 @@ func open(directory: String) -> bool:
 		return fail("Cannot read pilots.json. Provision or recover it before starting.")
 	saved_text = file.get_as_text()
 	file.close()
+	remember_snapshot()
 	var json := JSON.new()
 	var data: Variant = json.data if json.parse(saved_text) == OK else null
 	if not data is Dictionary or not Skylab.integer(data.get("version"), 1, 8) or not data.get("pilots") is Dictionary or data["pilots"].is_empty():
@@ -492,6 +495,7 @@ func persist(next: Dictionary) -> bool:
 	if not replace_file(path + ".bak", backup) or not replace_file(path, text): return false
 	pilots = next
 	saved_text = text
+	remember_snapshot()
 	journal_metadata = metadata
 	checkpoint_sequence = journal_sequence
 	var compacted := CombatJournal.header(metadata)
@@ -507,10 +511,14 @@ func unchanged_files() -> bool:
 	for temporary in [path + ".tmp", path + ".bak.tmp", path + ".combat.tmp"]:
 		if FileAccess.file_exists(temporary) or DirAccess.dir_exists_absolute(temporary):
 			return fail("Interrupted save found: " + temporary + ". Preserve and recover it before saving.")
-	var current := FileAccess.open(path, FileAccess.READ_WRITE)
-	if current == null or current.get_as_text() != saved_text:
-		return fail("pilots.json changed or became unreadable while running. Save preserved; stop and recover.")
-	current.close()
+	# Reopening a just-replaced snapshot took 2.5–3.5 ms in the Windows benchmark.
+	# Compare contents only when its size or modification second has changed.
+	if FileAccess.get_modified_time(path) != saved_modified_time or FileAccess.get_size(path) != saved_bytes:
+		var current := FileAccess.open(path, FileAccess.READ_WRITE)
+		if current == null or current.get_as_text() != saved_text:
+			return fail("pilots.json changed or became unreadable while running. Save preserved; stop and recover.")
+		current.close()
+		remember_snapshot()
 	if journal_file == null:
 		journal_file = FileAccess.open(path + ".combat", FileAccess.READ_WRITE)
 		journal_modified_time = FileAccess.get_modified_time(path + ".combat")
@@ -521,6 +529,11 @@ func unchanged_files() -> bool:
 	if journal_file.get_buffer(journal_file.get_length()).get_string_from_utf8() != journal_text:
 		return fail("Combat journal changed or became unreadable while running. Stop and recover both files.")
 	return true
+
+
+func remember_snapshot() -> void:
+	saved_modified_time = FileAccess.get_modified_time(path)
+	saved_bytes = FileAccess.get_size(path)
 
 
 func close_journal() -> void:
@@ -534,14 +547,19 @@ func replace_file(destination: String, text: String) -> bool:
 	# A leftover temporary file is evidence of an interrupted save, for operator recovery.
 	if FileAccess.file_exists(temporary) or DirAccess.dir_exists_absolute(temporary):
 		return fail("Save temporary path already exists: " + temporary)
-	var file := FileAccess.open(temporary, FileAccess.WRITE)
+	var file := FileAccess.open(temporary, FileAccess.WRITE_READ)
 	if file == null:
 		return fail("Cannot write save temporary file: " + temporary)
-	file.store_string(text)
+	var bytes := text.to_utf8_buffer()
+	file.store_buffer(bytes)
 	file.flush()
 	var result := file.get_error()
+	# Read back through the same handle. Reopening a just-written file took
+	# 3–5 ms per replacement in the Windows benchmark, most of a checkpoint.
+	file.seek(0)
+	var verified := file.get_length() == bytes.size() and file.get_buffer(bytes.size()) == bytes
 	file.close()
-	if result != OK or FileAccess.get_file_as_string(temporary) != text:
+	if result != OK or not verified:
 		return fail("Save write failed. Original and temporary files preserved.")
 	if DirAccess.rename_absolute(temporary, destination) != OK:
 		return fail("Save replacement failed. Original and temporary files preserved.")
