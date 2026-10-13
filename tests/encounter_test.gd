@@ -192,6 +192,46 @@ func run() -> void:
 	await sync_physics()
 	check(player.try_fire(alien), "Removing an obstacle restores line of sight")
 
+	# Weapons outrange detection: hits from beyond it stick and draw the alien in.
+	# The offline sector passes no pilot beyond detection, as fly() receives here.
+	var scout: Alien = sector.aliens[1]
+	var scout_home := scout.home_position
+	player.tick_combat(1.0)
+	alien.position = Vector3(0, 200, 400) # Clear the line of fire.
+	scout.position = Vector3(0, 200, -165)
+	scout.home_position = scout.position
+	await sync_physics()
+	var scout_life := scout.life
+	check(player.try_fire(scout), "Lasers reach a Scout at 165 m, beyond its detection range")
+	var scout_health := scout.hull + scout.shield
+	for step in range(120):
+		scout.fly(1.0 / 60.0, null, Sector.STATION_POSITION)
+	check(scout.life == scout_life and scout.hull + scout.shield == scout_health and scout_health < scout.max_hull + scout.max_shield, "Laser damage from beyond detection range sticks")
+	check(scout.engaged and scout.position.distance_to(player.position) < 165.0, "The Scout engages its out-of-detection attacker")
+	scout.position = scout_home
+	scout.home_position = scout_home
+	scout.reset_encounter()
+	alien.position = Vector3(0, 200, -230)
+	alien.home_position = alien.position
+	alien.reset_encounter()
+	var alien_life := alien.life
+	player.ammo["plt-2021"] = 1
+	player.rockets.select("plt-2021")
+	for seed_candidate in range(1000):
+		player.rockets.rng.seed = seed_candidate
+		if player.rockets.rng.randf() < float(Ammunition.ROCKETS["plt-2021"]["accuracy"]):
+			player.rockets.rng.seed = seed_candidate
+			break
+	check(player.rockets.fire_single(alien).is_empty(), "A 240 m rocket fires at an alien 230 m away")
+	for step in range(180):
+		player.rockets.tick(1.0 / 60.0)
+		alien.fly(1.0 / 60.0, null, Sector.STATION_POSITION)
+	check(player.rockets.pending.is_empty() and alien.life == alien_life and alien.hull + alien.shield < alien.max_hull + alien.max_shield, "Rocket damage from beyond detection range sticks")
+	alien.position = Vector3(0, 200, -100)
+	alien.home_position = alien.position
+	alien.reset_encounter()
+	player.reset_health()
+
 	# Death is one transition: repeated hits never award repeated rewards.
 	sector.select_target(alien)
 	sector.auto_fire = true
