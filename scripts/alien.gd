@@ -42,6 +42,8 @@ var return_time: float = 0.0
 var life: int = 0
 var respawn: float = 0.0
 var contributors: Array[int] = []
+# Weapons outrange detection; whoever damaged this life stays a target while eligible.
+var last_attacker: Pilot = null
 var snapshot_goal: Dictionary = {}
 
 
@@ -100,13 +102,25 @@ func reset_encounter() -> void:
 	life += 1
 	contributors.clear()
 	engaged = false
+	last_attacker = null
 	reset_health()
+
+
+# Falls back to the last attacker when no pilot is inside detection range.
+func pursue_target(player: Pilot) -> Pilot:
+	if is_instance_valid(player):
+		return player
+	if is_instance_valid(last_attacker) and last_attacker.alive and last_attacker.map_id == map_id and not last_attacker.get_meta("docked", false) and not SectorMaps.protected(last_attacker):
+		return last_attacker
+	last_attacker = null
+	return null
 
 
 # Check before pilot fire as well as movement, so a lethal shot cannot win a leash reset race.
 func check_retreat(player: Pilot) -> void:
 	if not available():
 		return
+	player = pursue_target(player)
 	if position.distance_to(home_position) >= float(tuning()["leash"]) or (engaged and not is_instance_valid(player)):
 		returning = true
 		return_time = 0.0
@@ -123,6 +137,8 @@ func take_damage(amount: float, attacker: SpaceShip) -> void:
 		return
 	if simulation_authority and amount > 0.0:
 		engaged = true
+		if attacker is Pilot:
+			last_attacker = attacker as Pilot
 	super.take_damage(amount, attacker)
 
 
@@ -133,9 +149,10 @@ func _init() -> void:
 func fly(delta: float, player: Pilot, station_position: Vector3) -> void:
 	patrol_time += delta
 	check_retreat(player)
+	player = pursue_target(player)
 	engaged = is_instance_valid(player) and player.alive
 	engaged = engaged and player.map_id == map_id and not SectorMaps.protected(player)
-	engaged = engaged and global_position.distance_to(player.global_position) < float(tuning()["detection"])
+	engaged = engaged and (player == last_attacker or global_position.distance_to(player.global_position) < float(tuning()["detection"]))
 	engaged = engaged and not returning
 	var destination := home_position + Vector3(sin(patrol_time * 0.22) * 18.0, sin(patrol_time * 0.35) * 8.0, 0.0)
 	if returning:
