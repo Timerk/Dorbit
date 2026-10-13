@@ -7,9 +7,9 @@
     "Nonempty mesh geometry with materials",
     "Finite base and evaluated vertex coordinates",
     "No zero-area base polygons",
-    "Six cameras and six 1600 x 1440 renders per ship, newer than the saved model",
+    "Six cameras per ship; render checks skipped with --models-only",
     "Generated concept turnaround packed into each model",
-    "All file-based reference images packed into the blend"
+    "Only generated Dorbit concept and finish images packed into the blend"
   ],
   "models": [
     {
@@ -17,108 +17,108 @@
       "mesh_components": 489,
       "base_faces": 32596,
       "evaluated_faces": 58128,
-      "packed_references": 5,
+      "packed_references": 2,
       "cameras": 6,
-      "bytes": 4882649
+      "bytes": 4593608
     },
     {
       "name": "Goliath",
       "mesh_components": 351,
       "base_faces": 14144,
       "evaluated_faces": 37516,
-      "packed_references": 4,
+      "packed_references": 2,
       "cameras": 6,
-      "bytes": 4800305
+      "bytes": 4762208
     },
     {
       "name": "Bigboy",
       "mesh_components": 466,
       "base_faces": 23838,
       "evaluated_faces": 47548,
-      "packed_references": 3,
+      "packed_references": 2,
       "cameras": 6,
-      "bytes": 5060363
+      "bytes": 5043940
     },
     {
       "name": "Defcom",
       "mesh_components": 411,
       "base_faces": 24802,
       "evaluated_faces": 47534,
-      "packed_references": 3,
+      "packed_references": 2,
       "cameras": 6,
-      "bytes": 4968265
+      "bytes": 4966250
     },
     {
       "name": "Leonov",
       "mesh_components": 397,
       "base_faces": 16448,
       "evaluated_faces": 35308,
-      "packed_references": 3,
+      "packed_references": 2,
       "cameras": 6,
-      "bytes": 4852048
+      "bytes": 4833441
     },
     {
       "name": "Liberator",
       "mesh_components": 319,
       "base_faces": 39174,
       "evaluated_faces": 55022,
-      "packed_references": 4,
+      "packed_references": 2,
       "cameras": 6,
-      "bytes": 4901586
+      "bytes": 4873421
     },
     {
       "name": "Nostromo",
       "mesh_components": 331,
       "base_faces": 12804,
       "evaluated_faces": 28916,
-      "packed_references": 3,
+      "packed_references": 2,
       "cameras": 6,
-      "bytes": 4747991
+      "bytes": 4718862
     },
     {
       "name": "Phoenix",
       "mesh_components": 295,
       "base_faces": 16828,
       "evaluated_faces": 30876,
-      "packed_references": 3,
+      "packed_references": 2,
       "cameras": 6,
-      "bytes": 4650735
+      "bytes": 4649886
     },
     {
       "name": "Piranha",
       "mesh_components": 354,
       "base_faces": 12762,
       "evaluated_faces": 28504,
-      "packed_references": 3,
+      "packed_references": 2,
       "cameras": 6,
-      "bytes": 4619441
+      "bytes": 4594247
     },
     {
       "name": "Spearhead",
       "mesh_components": 321,
       "base_faces": 10508,
       "evaluated_faces": 25750,
-      "packed_references": 3,
+      "packed_references": 2,
       "cameras": 6,
-      "bytes": 4491606
+      "bytes": 4457425
     },
     {
       "name": "Vengeance",
       "mesh_components": 323,
       "base_faces": 26632,
       "evaluated_faces": 42854,
-      "packed_references": 3,
+      "packed_references": 2,
       "cameras": 6,
-      "bytes": 4958303
+      "bytes": 4925380
     },
     {
       "name": "Yamato",
       "mesh_components": 325,
       "base_faces": 27264,
       "evaluated_faces": 43104,
-      "packed_references": 3,
+      "packed_references": 2,
       "cameras": 6,
-      "bytes": 4738221
+      "bytes": 4732747
     }
   ]
 }
