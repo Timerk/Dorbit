@@ -83,8 +83,9 @@ func run() -> void:
 	# Start near the ordinary ammunition-CPU threshold so automation is exercised
 	# in the measured window, independent of how many warmup kills occurred.
 	var initial_ammo := {}
+	var ammo_type := "x3" if options.get("scenario", "single-map") == "spread" else "x1"
 	for id: int in sector.session.ships:
-		sector.session.ships[id].ammo["x1"] = 990
+		sector.session.ships[id].ammo[ammo_type] = 990
 		initial_ammo[sector.session.pilot_ids[id]] = sector.session.ships[id].ammo.duplicate()
 	check(benchmark_store.commit_combat(initial_ammo), "Set measurement starting ammunition")
 	check(benchmark_store.persist(benchmark_store.pilots), "Checkpoint fixture setup before measurement")
@@ -247,6 +248,8 @@ func drive_client(delta: float) -> void:
 	if launcher_clock >= 6.2:
 		launcher_clock = 0.0
 		send_rocket("launcher", enemy)
+	if options.get("scenario", "single-map") == "spread" and sector.player.ammo_type != "x3":
+		sector.session.combat.select_ammo.rpc_id(1, int(sector.player.get_meta("life", 0)), "x3")
 
 
 func send_rocket(action: String, enemy: Alien) -> void:
@@ -270,17 +273,20 @@ func prepare_inventory() -> void:
 				elif int(slot.trim_prefix("laser")) <= 4: model = "laser"
 			elif slot.begins_with("generator"): model = "sg3n-b02" if int(slot.trim_prefix("generator")) <= 10 else "g3n-7900"
 			elif slot == "launcher1": model = "hst-2"
-			elif slot == "extra1": model = "ammo-cpu"
-			elif slot == "extra2": model = "generator-cpu"
-			elif slot == "extra3": model = "rep-2"
+			elif slot == "extra1": model = "slot-cpu-1"
+			elif slot == "extra2": model = "ammo-cpu"
+			elif slot == "extra3": model = "generator-cpu"
 			if not model.is_empty():
 				equipment["items"][slot] = {"model": model, "ship": "starter", "slot": slot}
 				if model in ["ammo-cpu", "generator-cpu"]: equipment["items"][slot]["enabled"] = true
-				if model == "ammo-cpu": equipment["items"][slot]["ammo_type"] = "x1"
+				if model == "ammo-cpu": equipment["items"][slot]["ammo_type"] = "x3" if options.get("scenario", "single-map") == "spread" else "x1"
+		equipment["items"]["repair"] = {"model": "rep-2", "ship": "starter", "slot": "extra4"}
+		equipment["items"]["repair-auto"] = {"model": "repair-auto", "ship": "starter", "slot": "extra5", "enabled": true}
 		check(Equipment.valid(equipment), "Benchmark fitting uses valid catalog equipment")
 		pilot["equipment"] = equipment
 		pilot["credits"] = 10_000_000
 		pilot["ammo"]["x1"] = 1800
+		pilot["ammo"]["x3"] = 1800
 		pilot["ammo"]["r-310"] = 1000
 		pilot["ammo"]["eco-10"] = 1000
 		check(Ammunition.valid(pilot["ammo"]), "Benchmark ammunition uses valid catalog IDs")
