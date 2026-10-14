@@ -46,6 +46,14 @@ var page_scrim: TextureRect
 var hints: HBoxContainer
 var hint_action: Label
 var placeholder_heading: Label
+var brand_slash: Label
+var page_name: Label
+var header_accent: ColorRect
+var wallet_chip: Panel
+var sidebar_rule: ColorRect
+var stat_dividers: Array[ColorRect] = []
+var home_shade: TextureRect
+var title_shade: TextureRect
 var fitting_stats := Equipment.StatsCache.new()
 
 
@@ -65,25 +73,62 @@ func _ready() -> void:
 	canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(canvas)
 	header = Panel.new()
-	header.add_theme_stylebox_override("panel", surface(Color("0c1217")))
+	header.add_theme_stylebox_override("panel", edge(Color("0c1217"), "bottom"))
 	canvas.add_child(header)
 	brand = label(header, "DORBIT", 52, INK, true)
-	label(header, "\\", 34, AMBER).position = Vector2(218, 17)
+	brand.add_theme_font_override("font", StationUi.tracked(true, 4))
+	brand_slash = label(header, "\\", 34, AMBER)
+	# The header names the open page beside the brand.
+	page_name = label(header, "", 22, INK, true)
+	page_name.add_theme_font_override("font", StationUi.tracked(true, 3))
+	header_accent = ColorRect.new()
+	header_accent.color = AMBER
+	header_accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	header.add_child(header_accent)
+	wallet_chip = Panel.new()
+	var chip := StationUi.chamfer(Color("111a20"), LINE, 0, 10)
+	chip.border_width_left = 3
+	wallet_chip.add_theme_stylebox_override("panel", chip)
+	wallet_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	header.add_child(wallet_chip)
 	wallet_icon = icon(header, "wallet", AMBER)
 	wallet = label(header, "", 26, AMBER, true)
+	wallet.add_theme_font_override("font", StationUi.tracked(true, 1))
 	wallet.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	sidebar = Panel.new()
-	sidebar.add_theme_stylebox_override("panel", surface(Color("0b1115")))
+	sidebar.add_theme_stylebox_override("panel", edge(Color("0a1014"), "right"))
 	canvas.add_child(sidebar)
+	var kicker := label(sidebar, "STATION", 12, Color("60717e"), true)
+	kicker.add_theme_font_override("font", StationUi.tracked(true, 4))
+	kicker.position = Vector2(34, 8)
 	build_navigation()
+	sidebar_rule = ColorRect.new()
+	sidebar_rule.color = LINE
+	sidebar_rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sidebar.add_child(sidebar_rule)
 	resume_button = rail_button("Resume flight", "quit", func(): sector.set_paused(false))
 	resume_button.add_theme_font_size_override("font_size", 14)
 	resume_button.add_theme_constant_override("icon_max_width", 16)
+	resume_button.add_theme_constant_override("h_separation", 12)
+	# Resuming is the main action in flight, so it reads as an amber outline.
+	for state: String in ["normal", "hover", "pressed", "hover_pressed", "focus"]:
+		var lit := state != "normal"
+		var outline := StationUi.chamfer(Color(AMBER, 0.16 if lit else 0.07), AMBER if lit else Color(AMBER, 0.6), 0, 8)
+		outline.content_margin_left = 16
+		resume_button.add_theme_stylebox_override(state, outline)
+	resume_button.add_theme_color_override("font_color", AMBER)
+	resume_button.add_theme_color_override("icon_normal_color", AMBER)
 	exit_buttons.append(rail_button("Disconnect", "disconnect", func(): sector.session.disconnect_session("Disconnected. You can connect again when ready.")))
 	exit_buttons.append(rail_button("Quit to desktop", "quit", func(): get_tree().quit()))
 	for button in exit_buttons:
 		button.add_theme_font_size_override("font_size", 14)
 		button.add_theme_constant_override("icon_max_width", 16)
+		button.add_theme_constant_override("h_separation", 12)
+		button.add_theme_color_override("font_color", MUTED)
+		for state: String in ["normal", "hover", "disabled", "focus"]:
+			var compact := button.get_theme_stylebox(state).duplicate() as StyleBox
+			compact.content_margin_left = 16
+			button.add_theme_stylebox_override(state, compact)
 	build_home()
 	placeholder = PanelContainer.new()
 	placeholder.theme = StationUi.page_theme()
@@ -111,6 +156,32 @@ func surface(background_color: Color, border: Color = LINE) -> StyleBoxFlat:
 	return value
 
 
+func edge(background_color: Color, side: String) -> StyleBoxFlat:
+	# Shell panels meet the hangar view with a single hairline.
+	var value := StationUi.style(background_color, LINE)
+	value.set_corner_radius_all(0)
+	value.set_border_width_all(0)
+	value.set("border_width_" + side, 1)
+	return value
+
+
+func shade(parent: Node, from: Vector2, to: Vector2, strength: float) -> TextureRect:
+	# Gradients keep overlaid text readable against the bright hangar art.
+	var value := TextureRect.new()
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color(0.027, 0.043, 0.055, 0))
+	gradient.set_color(1, Color(0.027, 0.043, 0.055, strength))
+	var texture := GradientTexture2D.new()
+	texture.gradient = gradient
+	texture.fill_from = from
+	texture.fill_to = to
+	value.texture = texture
+	value.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	value.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(value)
+	return value
+
+
 func label(parent: Node, text: String, font_size: int, color: Color = INK, bold: bool = false) -> Label:
 	var value := Label.new()
 	value.text = text
@@ -134,38 +205,61 @@ func icon(parent: Node, name: String, color: Color = INK) -> TextureRect:
 	return value
 
 
+func rail_style(state: String) -> StyleBox:
+	var key := "rail:" + state
+	if StationUi.cached.has(key):
+		return StationUi.cached[key]
+	var value: StyleBox
+	if state == "pressed":
+		# The open page glows from an amber edge, fading toward the hangar view.
+		var glow := Gradient.new()
+		glow.offsets = PackedFloat32Array([0.0, 0.016, 0.02, 1.0])
+		glow.colors = PackedColorArray([AMBER, AMBER, Color(AMBER, 0.24), Color(AMBER, 0.02)])
+		var texture := GradientTexture2D.new()
+		texture.gradient = glow
+		texture.width = 256
+		texture.height = 4
+		var fill := StyleBoxTexture.new()
+		fill.texture = texture
+		value = fill
+	else:
+		var flat := StyleBoxFlat.new()
+		flat.bg_color = Color(1, 1, 1, 0.04) if state == "hover" else Color.TRANSPARENT
+		flat.border_color = {"hover": Color(AMBER, 0.45), "focus": Color(AMBER, 0.8)}.get(state, Color("172229"))
+		flat.border_width_left = 3 if state in ["hover", "focus"] else 0
+		flat.border_width_bottom = 0 if state == "focus" else 1
+		value = flat
+	value.content_margin_left = 34
+	StationUi.cached[key] = value
+	return value
+
+
 func rail_button(text: String, icon_name: String, action: Callable) -> Button:
 	var button := Button.new()
-	button.text = text
+	button.text = text.to_upper()
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.icon = load("res://assets/ui/menu/%s.svg" % icon_name)
 	button.expand_icon = true
-	button.add_theme_constant_override("icon_max_width", 28)
-	button.add_theme_constant_override("h_separation", 24)
-	button.add_theme_font_size_override("font_size", 19)
-	button.add_theme_color_override("font_color", INK)
-	button.add_theme_color_override("font_hover_color", INK)
-	button.add_theme_color_override("font_pressed_color", INK)
+	button.add_theme_constant_override("icon_max_width", 26)
+	button.add_theme_constant_override("h_separation", 22)
+	button.add_theme_font_override("font", StationUi.tracked(true, 1))
+	button.add_theme_font_size_override("font_size", 18)
+	button.add_theme_color_override("font_color", Color("b4c1cc"))
+	for state: String in ["font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color"]:
+		button.add_theme_color_override(state, Color.WHITE)
+	button.add_theme_color_override("font_disabled_color", Color("4f5f6b"))
+	button.add_theme_color_override("icon_normal_color", MUTED)
+	button.add_theme_color_override("icon_hover_color", INK)
+	button.add_theme_color_override("icon_focus_color", INK)
 	button.add_theme_color_override("icon_pressed_color", AMBER)
+	button.add_theme_color_override("icon_hover_pressed_color", AMBER)
+	button.add_theme_color_override("icon_disabled_color", Color("3d4b55"))
 	for state: String in ["normal", "disabled"]:
-		var style := surface(Color(0, 0, 0, 0), Color("213039"))
-		style.set_border_width_all(0)
-		style.border_width_bottom = 1
-		style.content_margin_left = 34
-		button.add_theme_stylebox_override(state, style)
-	var hover_style := surface(Color("171f24"), LINE)
-	hover_style.content_margin_left = 34
-	hover_style.set_border_width_all(0)
-	hover_style.border_width_bottom = 1
-	button.add_theme_stylebox_override("hover", hover_style)
+		button.add_theme_stylebox_override(state, rail_style("normal"))
+	button.add_theme_stylebox_override("hover", rail_style("hover"))
+	button.add_theme_stylebox_override("focus", rail_style("focus"))
 	for state: String in ["pressed", "hover_pressed"]:
-		var style := surface(Color("242522"), AMBER)
-		style.set_border_width_all(0)
-		style.border_width_left = 4
-		style.border_width_right = 4
-		style.content_margin_left = 34
-		button.add_theme_stylebox_override(state, style)
-	button.add_theme_stylebox_override("focus", surface(Color(0, 0, 0, 0), AMBER))
+		button.add_theme_stylebox_override(state, rail_style("pressed"))
 	button.pressed.connect(action)
 	sidebar.add_child(button)
 	return button
@@ -183,8 +277,9 @@ func build_navigation() -> void:
 			button.add_theme_color_override("icon_hover_color", Color("60717e"))
 			button.add_theme_stylebox_override("hover", button.get_theme_stylebox("normal"))
 			button.tooltip_text = "Coming soon"
-			var soon := label(button, "COMING SOON", 11, Color("60717e"))
-			soon.position = Vector2(86, 48)
+			var soon := label(button, "COMING SOON", 11, Color("60717e"), true)
+			soon.add_theme_font_override("font", StationUi.tracked(true, 3))
+			soon.position = Vector2(82, 48)
 		navigation[page] = button
 
 
@@ -230,6 +325,8 @@ func build_home() -> void:
 	label(keycap, "ESC", 14, INK, true)
 	hint_action = label(hints, "BACK", 15, MUTED, true)
 	hint_action.add_theme_font_override("font", StationUi.tracked(true, 2))
+	home_shade = shade(home, Vector2(0, 0.45), Vector2(0, 1), 0.9)
+	title_shade = shade(home, Vector2(0.5, 0), Vector2(0, 0), 0.75)
 	ship_shadow = TextureRect.new()
 	var gradient := Gradient.new()
 	gradient.set_color(0, Color(0, 0, 0, 0.65))
@@ -247,19 +344,36 @@ func build_home() -> void:
 	ship_art.hull_only = true
 	home.add_child(ship_art)
 	ship_art.hide()
-	ship_title = label(home, "SYNCING PILOT", 36, INK, true)
+	ship_title = label(home, "SYNCING PILOT", 48, INK, true)
+	ship_title.add_theme_font_override("font", StationUi.tracked(true, 4))
 	ship_title.add_theme_constant_override("outline_size", 4)
 	ship_title.add_theme_color_override("font_outline_color", Color("091016"))
-	ship_status = label(home, "", 13, Color("94dacf"))
-	ship_ready = label(home, "READY IN HANGAR", 13, Color("a7e277"))
+	ship_status = label(home, "", 14, AMBER, true)
+	ship_status.add_theme_font_override("font", StationUi.tracked(true, 4))
+	ship_ready = label(home, "READY IN HANGAR", 13, Color("a7e277"), true)
+	ship_ready.add_theme_font_override("font", StationUi.tracked(true, 2))
+	var ready_chip := StyleBoxFlat.new()
+	ready_chip.bg_color = Color(Color("a7e277"), 0.1)
+	ready_chip.border_color = Color("a7e277")
+	ready_chip.border_width_left = 3
+	ready_chip.content_margin_left = 10
+	ready_chip.content_margin_right = 10
+	ready_chip.content_margin_top = 2
+	ready_chip.content_margin_bottom = 2
+	ship_ready.add_theme_stylebox_override("normal", ready_chip)
 	ship_accent = ColorRect.new()
 	ship_accent.color = AMBER
 	ship_accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	home.add_child(ship_accent)
 	specifications = Panel.new()
-	specifications.add_theme_stylebox_override("panel", surface(Color(0.035, 0.055, 0.065, 0.96)))
+	var card := StationUi.chamfer(Color(0.035, 0.055, 0.065, 0.94), LINE, 0, 16)
+	card.shadow_color = Color(0, 0, 0, 0.35)
+	card.shadow_size = 16
+	specifications.add_theme_stylebox_override("panel", card)
 	home.add_child(specifications)
-	label(specifications, "SHIP SPECIFICATIONS", 16, MUTED).position = Vector2(18, 12)
+	var specs_heading := label(specifications, "SHIP SPECIFICATIONS", 14, MUTED, true)
+	specs_heading.add_theme_font_override("font", StationUi.tracked(true, 3))
+	specs_heading.position = Vector2(18, 13)
 	var seam := ColorRect.new()
 	seam.color = LINE
 	seam.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -269,34 +383,54 @@ func build_home() -> void:
 	seam.offset_right = -18
 	seam.offset_top = 42
 	seam.offset_bottom = 43
+	var seam_accent := ColorRect.new()
+	seam_accent.color = AMBER
+	seam_accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	seam_accent.position = Vector2(18, 41)
+	seam_accent.size = Vector2(56, 3)
+	specifications.add_child(seam_accent)
 	for entry: Array in [["hull", "Hull"], ["shield", "Shield"], ["damage", "Damage"], ["speed", "Cruise"], ["cargo", "Cargo"]]:
+		if not stat_cells.is_empty():
+			var divider := ColorRect.new()
+			divider.color = Color(LINE, 0.7)
+			divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			specifications.add_child(divider)
+			stat_dividers.append(divider)
 		var cell := Control.new()
 		cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		specifications.add_child(cell)
 		stat_cells.append(cell)
-		var artwork := icon(cell, entry[0])
-		artwork.position = Vector2(10, 18)
+		var artwork := icon(cell, entry[0], MUTED)
+		artwork.position = Vector2(12, 18)
 		artwork.size = Vector2(28, 28)
-		var value := label(cell, "—", 22, INK, true)
-		value.position = Vector2(48, 11)
+		var value := label(cell, "—", 24, INK, true)
+		value.position = Vector2(50, 9)
 		stat_values[entry[0]] = value
-		label(cell, entry[1], 16, MUTED).position = Vector2(48, 37)
+		var caption := label(cell, entry[1].to_upper(), 13, MUTED, true)
+		caption.add_theme_font_override("font", StationUi.tracked(true, 2))
+		caption.position = Vector2(50, 39)
 	start_button = Button.new()
 	start_button.text = "START  →"
-	start_button.add_theme_font_override("font", BOLD)
+	start_button.add_theme_font_override("font", StationUi.tracked(true, 6))
 	start_button.add_theme_font_size_override("font_size", 52)
 	start_button.add_theme_color_override("font_focus_color", Color("090e11"))
-	for state: String in ["normal", "hover", "pressed", "disabled"]:
-		var fill: Color = {"normal": AMBER, "hover": Color("ffa32b"), "pressed": Color("e97600"), "disabled": Color("735033")}[state]
-		var style := surface(fill, fill.lightened(0.1))
+	for state: String in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
+		var fill: Color = {"normal": AMBER, "hover": Color("ffa32b"), "pressed": Color("e97600"), "hover_pressed": Color("e97600"), "disabled": Color("5a3f25")}[state]
+		var style := StationUi.chamfer(fill, fill.lightened(0.15), 18, 18)
 		style.content_margin_bottom = 26
-		style.set_corner_radius_all(3)
+		if state != "disabled":
+			style.shadow_color = Color(AMBER, 0.45 if state == "hover" else 0.22)
+			style.shadow_size = 24 if state == "hover" else 14
 		start_button.add_theme_stylebox_override(state, style)
 		start_button.add_theme_color_override("font_" + ("color" if state == "normal" else state + "_color"), Color("090e11"))
-	start_button.add_theme_stylebox_override("focus", surface(Color(0, 0, 0, 0), Color("ffe1a3")))
+	start_button.add_theme_color_override("font_disabled_color", Color("1d150d"))
+	var focus := StationUi.chamfer(Color.TRANSPARENT, Color("ffe1a3"), 18, 18)
+	focus.set_border_width_all(2)
+	start_button.add_theme_stylebox_override("focus", focus)
 	start_button.pressed.connect(sector.session.launch)
 	home.add_child(start_button)
 	start_caption = label(start_button, "LAUNCH FROM OUTPOST 01", 14, Color("14120b"), true)
+	start_caption.add_theme_font_override("font", StationUi.tracked(true, 3))
 	start_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	notice = label(home, "", 16, Color("ffcf89"))
 	notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -410,15 +544,23 @@ func layout() -> void:
 	canvas.size = size / factor
 	header.size = Vector2(canvas.size.x, HEADER_HEIGHT)
 	brand.position = Vector2(40, 6)
+	brand_slash.position = Vector2(brand.position.x + brand.get_minimum_size().x + 18, 17)
+	page_name.position = Vector2(brand_slash.position.x + 34, 24)
+	header_accent.position = Vector2(40, HEADER_HEIGHT - 3)
+	header_accent.size = Vector2(brand.get_minimum_size().x, 3)
 	var wallet_width := wallet.get_minimum_size().x
-	wallet.position = Vector2(canvas.size.x - wallet_width - 28, 21)
+	wallet.position = Vector2(canvas.size.x - wallet_width - 40, 19)
 	wallet.size = Vector2(wallet_width, 40)
 	wallet_icon.position = Vector2(wallet.position.x - 30, 29)
 	wallet_icon.size = Vector2(18, 18)
+	wallet_chip.position = Vector2(wallet_icon.position.x - 18, 16)
+	wallet_chip.size = Vector2(canvas.size.x - 20 - wallet_chip.position.x, HEADER_HEIGHT - 32)
 	sidebar.position = Vector2(0, HEADER_HEIGHT)
 	sidebar.size = Vector2(SIDEBAR_WIDTH, canvas.size.y - HEADER_HEIGHT)
 	resume_button.visible = not sector.preflight
 	resume_button.position = Vector2(18, sidebar.size.y - 124)
+	sidebar_rule.position = Vector2(18, sidebar.size.y - (134 if resume_button.visible else 102))
+	sidebar_rule.size = Vector2(SIDEBAR_WIDTH - 36, 1)
 	resume_button.size = Vector2(SIDEBAR_WIDTH - 36, 32)
 	var row_height := (sidebar.size.y - (145 if sector.preflight else 177)) / navigation.size()
 	var index := 0
@@ -447,11 +589,13 @@ func layout() -> void:
 	ship_art.size = Vector2(home.size.x * 0.73, footer_y - 165)
 	ship_shadow.position = Vector2(home.size.x * 0.24, footer_y - 115)
 	ship_shadow.size = Vector2(home.size.x * 0.61, 100)
-	ship_title.position = Vector2(58, home.size.y * 0.27)
-	ship_status.position = ship_title.position + Vector2(2, 45)
-	ship_ready.position = ship_status.position + Vector2(0, 18)
-	ship_accent.position = ship_title.position - Vector2(18, -5)
-	ship_accent.size = Vector2(3, 84)
+	home_shade.size = home.size
+	title_shade.size = Vector2(home.size.x * 0.5, home.size.y)
+	ship_title.position = Vector2(60, home.size.y * 0.25)
+	ship_status.position = ship_title.position + Vector2(3, -18)
+	ship_ready.position = ship_title.position + Vector2(3, 62)
+	ship_accent.position = ship_title.position - Vector2(20, 14)
+	ship_accent.size = Vector2(3, 104)
 	var footer_width := home.size.x - 44
 	var specs_width := footer_width * 0.68 - 12 if sector.preflight else footer_width
 	specifications.position = Vector2(22, footer_y)
@@ -460,6 +604,9 @@ func layout() -> void:
 		var cell_width := (specs_width - 28) / stat_cells.size()
 		stat_cells[i].position = Vector2(14 + i * cell_width, 51)
 		stat_cells[i].size = Vector2(cell_width, 68)
+		if i > 0:
+			stat_dividers[i - 1].position = stat_cells[i].position + Vector2(-1, 14)
+			stat_dividers[i - 1].size = Vector2(1, 40)
 	start_button.position = Vector2(34 + specs_width, footer_y)
 	start_button.size = Vector2(maxf(1, footer_width - specs_width - 12), 124)
 	start_button.visible = sector.preflight
@@ -502,6 +649,8 @@ func _process(_delta: float) -> void:
 		if page in ["shop", "hangar", "cargo", "quests", "refining"]:
 			navigation[page].disabled = not ready or (not offline and not sector.player.alive)
 	StationUi.set_text(wallet, StationShop.credits_text(sector.credits) + " CR")
+	var current := navigation.get(selected_page) as Button
+	StationUi.set_text(page_name, current.text if current else "")
 	StationUi.set_text(ship_status, ("OFFLINE PREVIEW" if offline else "ACTIVE SHIP") if ready and sector.player.alive else ("RESCUE IN %d s" % ceili(sector.player_respawn) if ready else "WAITING FOR SERVER"))
 	ship_ready.visible = ready and sector.player.alive
 	StationUi.set_text(notice, sector.toast if sector.toast_time > 0 else sector.session.combat.station_message)
