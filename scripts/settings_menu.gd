@@ -43,24 +43,33 @@ func _ready() -> void:
 	theme = menu_theme()
 	pause_panel = make_panel(Vector2(540, 400))
 	var pause_rows := content(pause_panel)
-	label(pause_rows, "FLIGHT MENU", 28).autowrap_mode = TextServer.AUTOWRAP_OFF
-	resume_button = button(pause_rows, "Resume flight", func(): sector.set_paused(false))
-	ship_menus_button = button(pause_rows, "Ship menus", func(): sector.main_menu.show_home())
-	button(pause_rows, "Settings", func(): open())
-	button(pause_rows, "Multiplayer session", sector.session.open_menu)
-	main_menu_button = button(pause_rows, "Quit to main menu", sector.session.quit_to_menu)
-	button(pause_rows, "Quit to desktop", func(): get_tree().quit())
+	pause_rows.get_parent().add_theme_constant_override("margin_left", 32)
+	pause_rows.get_parent().add_theme_constant_override("margin_right", 32)
+	pause_rows.get_parent().add_theme_constant_override("margin_top", 24)
+	pause_rows.get_parent().add_theme_constant_override("margin_bottom", 26)
+	pause_rows.add_theme_constant_override("separation", 2)
+	StationUi.header(pause_rows, "FLIGHT MENU", "PAUSED")
+	resume_button = entry(pause_rows, "Resume flight", func(): sector.set_paused(false))
+	ship_menus_button = entry(pause_rows, "Ship menus", func(): sector.main_menu.show_home())
+	entry(pause_rows, "Settings", func(): open())
+	entry(pause_rows, "Multiplayer session", sector.session.open_menu)
+	main_menu_button = entry(pause_rows, "Quit to main menu", sector.session.quit_to_menu, true)
+	entry(pause_rows, "Quit to desktop", func(): get_tree().quit(), true)
 	pause_panel.tooltip_text = "In multiplayer, the world keeps running while menus are open."
 	pause_panel.hide()
 	panel = make_panel(Vector2(1050, 640))
 	var rows := content(panel)
-	label(rows, "SETTINGS", 28)
+	for side in ["left", "right", "top", "bottom"]:
+		rows.get_parent().add_theme_constant_override("margin_" + side, 16)
+	StationUi.header(rows, "SETTINGS", "SYSTEM")
 	tabs = TabContainer.new()
 	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rows.add_child(tabs)
 	build_controls(page("Controls"))
 	build_audio(page("Audio"))
 	build_graphics(page("Graphics"))
+	for index in tabs.get_tab_count():
+		tabs.set_tab_title(index, tabs.get_tab_title(index).to_upper())
 	var footer := HBoxContainer.new()
 	rows.add_child(footer)
 	save_status = label(footer, "", 14)
@@ -78,7 +87,7 @@ func _ready() -> void:
 
 
 static func menu_theme() -> Theme:
-	return StationUi.menu_theme()
+	return StationUi.page_theme()
 
 
 func layout() -> void:
@@ -92,7 +101,7 @@ func layout() -> void:
 
 func make_panel(dimensions: Vector2) -> PanelContainer:
 	var result := PanelContainer.new()
-	result.add_theme_stylebox_override("panel", StationUi.style(StationUi.SURFACE, StationUi.LINE))
+	result.add_theme_stylebox_override("panel", StationUi.window_style())
 	add_child(result)
 	result.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	result.offset_left = -dimensions.x / 2
@@ -141,6 +150,14 @@ func button(parent: Node, text: String, action: Callable) -> Button:
 	result.custom_minimum_size.y = 36
 	result.pressed.connect(action)
 	parent.add_child(result)
+	return result
+
+
+func entry(parent: Node, text: String, action: Callable, secondary: bool = false) -> Button:
+	# Pause entries read as a game menu list: left aligned with an accent on focus.
+	var result := button(parent, text.to_upper(), action)
+	result.custom_minimum_size.y = 42
+	StationUi.list_entry(result, secondary)
 	return result
 
 
@@ -201,6 +218,8 @@ func build_controls(rows: VBoxContainer) -> void:
 		caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		var binding := button(row, "", func(): begin_binding(action))
 		binding.custom_minimum_size.x = 150
+		binding.add_theme_font_override("font", StationUi.BOLD)
+		binding.add_theme_stylebox_override("normal", keycap())
 		binding.tooltip_text = "Choose a key or mouse button. An occupied binding swaps actions; Esc cancels."
 		binding_buttons[action] = binding
 	binding_help = label(rows, "", 14)
@@ -361,14 +380,12 @@ func sync_filtering_status() -> void:
 
 
 func section(parent: Node, title: String) -> VBoxContainer:
-	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", StationUi.style(StationUi.SURFACE, StationUi.LINE))
-	parent.add_child(card)
+	var card := StationUi.card(parent)
 	var rows := content(card)
 	rows.add_theme_constant_override("separation", 8)
 	for side in ["left", "right", "top", "bottom"]:
-		rows.get_parent().add_theme_constant_override("margin_" + side, 12)
-	label(rows, title, 11)
+		rows.get_parent().add_theme_constant_override("margin_" + side, 14)
+	StationUi.heading(rows, title, 15, StationUi.AMBER)
 	return rows
 
 
@@ -415,7 +432,7 @@ func sync_controls() -> void:
 	sensitivity_label.text = "Mouse sensitivity  /  %.2fx" % sensitivity.value
 	for action: String in binding_buttons:
 		binding_buttons[action].text = GameSettings.binding_text(action)
-		binding_buttons[action].remove_theme_stylebox_override("normal")
+		binding_buttons[action].add_theme_stylebox_override("normal", keycap())
 	master.set_value_no_signal(sector.audio.master * 100.0)
 	effects.set_value_no_signal(sector.audio.effects * 100.0)
 	mute.set_pressed_no_signal(sector.audio.muted)
@@ -444,6 +461,15 @@ func sync_resolution() -> void:
 	for pixels in resolutions:
 		resolution.add_item("%d x %d" % [pixels.x, pixels.y])
 	resolution.select(resolutions.find(current))
+
+
+static func keycap() -> StyleBoxFlat:
+	if not StationUi.cached.has("keycap"):
+		var value := StationUi.chamfer(StationUi.DEEP, StationUi.LINE, 0, 0)
+		value.border_width_bottom = 3
+		value.border_color = Color("3d4d57")
+		StationUi.cached["keycap"] = value
+	return StationUi.cached["keycap"]
 
 
 func begin_binding(action: String) -> void:

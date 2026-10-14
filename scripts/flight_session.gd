@@ -84,10 +84,18 @@ func build_menu() -> void:
 	menu = PanelContainer.new()
 	layer.add_child(menu)
 	StationUi.frame(menu, Vector2(500, 430))
-	var rows := StationUi.rows(menu, 24)
-	rows.add_theme_constant_override("separation", 14)
-	StationUi.text(rows, "CONNECTION", 30)
-	StationUi.text(rows, "Server address", 18, StationUi.MUTED)
+	var page := StationUi.rows(menu, 16)
+	page.add_theme_constant_override("separation", 10)
+	StationUi.header(page, "CONNECTION", "SYSTEM")
+	var body := HBoxContainer.new()
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(body)
+	var form := StationUi.card(body)
+	form.custom_minimum_size.x = 520
+	form.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var rows := StationUi.rows(form, 22)
+	rows.add_theme_constant_override("separation", 12)
+	StationUi.heading(rows, "SERVER ADDRESS", 16, StationUi.MUTED)
 	address = LineEdit.new()
 	address.placeholder_text = "Server address"
 	address.text = preferences.address
@@ -123,6 +131,7 @@ func layout_menu() -> void:
 	if is_instance_valid(sector.main_menu) and sector.main_menu.visible:
 		sector.main_menu.fit_panel(menu, Vector2(500, 430))
 		return
+	StationUi.set_panel_style(menu, StationUi.window_style())
 	var dimensions := Vector2(500, 430).max(menu.get_combined_minimum_size())
 	var viewport_size := sector.get_viewport().get_visible_rect().size
 	var area := viewport_size - Vector2(32, 32)

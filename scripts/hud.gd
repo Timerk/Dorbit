@@ -70,7 +70,8 @@ func build_contract_panel() -> void:
 	StationUi.frame(contract_panel, Vector2(1150, 690))
 	add_child(contract_panel)
 	var rows := StationUi.rows(contract_panel, 16)
-	StationUi.text(rows, "QUESTS", 28)
+	rows.add_theme_constant_override("separation", 10)
+	StationUi.header(rows, "QUESTS", "OPERATIONS")
 	# Development listen-host fixtures can open contracts without a persistent inventory.
 	contract_back = StationUi.button(rows, "Back [C / Esc]", toggle_contracts)
 	var body := HBoxContainer.new()
@@ -86,6 +87,7 @@ func build_contract_panel() -> void:
 		var tab := StationUi.button(tabs, "Active" if active_only else "Hunting", func(): filter_contracts(active_only))
 		tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tab.toggle_mode = true
+		StationUi.tab(tab)
 		contract_tabs.append(tab)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -106,20 +108,17 @@ func build_contract_panel() -> void:
 	var detail := StationUi.card(body)
 	detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var right := StationUi.rows(detail, 18)
-	contract_title = StationUi.text(right, "", 30)
+	contract_title = StationUi.heading(right, "", 32)
 	contract_preview = ContractPreview.new()
 	right.add_child(contract_preview)
 	contract_objective = StationUi.text(right, "", 22)
 	contract_progress = ProgressBar.new()
 	contract_progress.custom_minimum_size.y = 8
 	contract_progress.show_percentage = false
-	contract_progress.add_theme_stylebox_override("background", StationUi.style(Color("253139"), StationUi.LINE))
-	contract_progress.add_theme_stylebox_override("fill", StationUi.style(StationUi.AMBER, StationUi.AMBER))
-	contract_progress.get_theme_stylebox("background").set_content_margin_all(0)
-	contract_progress.get_theme_stylebox("fill").set_content_margin_all(0)
 	right.add_child(contract_progress)
 	right.add_child(HSeparator.new())
 	contract_reward = StationUi.text(right, "", 26, StationUi.AMBER)
+	contract_reward.add_theme_font_override("font", StationUi.BOLD)
 	contract_slots = StationUi.text(left, "", 16, StationUi.MUTED)
 	contract_slots.tooltip_text = "Rewards pay automatically. Death keeps progress; abandoning has no penalty."
 	contract_accept = StationUi.button(right, "ACCEPT", func(): act_on_contract("accept"))

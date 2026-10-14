@@ -39,7 +39,8 @@ func _ready() -> void:
 	StationUi.frame(self, Vector2(1150, 690))
 	get_viewport().size_changed.connect(fit_window)
 	var rows := StationUi.rows(self, 16)
-	StationUi.text(rows, "HANGAR", 28)
+	rows.add_theme_constant_override("separation", 10)
+	StationUi.header(rows, "HANGAR", "SHIP")
 	var body := HBoxContainer.new()
 	body.add_theme_constant_override("separation", 14)
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -49,7 +50,7 @@ func _ready() -> void:
 	ship_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ship_card.size_flags_stretch_ratio = 1.3
 	var ship_rows := StationUi.rows(ship_card, 14)
-	ship_title = StationUi.text(ship_rows, "LIBERATOR", 28)
+	ship_title = StationUi.heading(ship_rows, "LIBERATOR", 30)
 	ship_choice = OptionButton.new()
 	ship_rows.add_child(ship_choice)
 	ship_art = StationUi.art(ship_rows, "ship", Vector2(0, 180))
@@ -60,7 +61,7 @@ func _ready() -> void:
 	fitting.custom_minimum_size.x = 360
 	fitting.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var fitting_rows := StationUi.rows(fitting, 12)
-	StationUi.text(fitting_rows, "EQUIPMENT", 22)
+	StationUi.heading(fitting_rows, "EQUIPMENT", 20)
 	var fitting_scroll := ScrollContainer.new()
 	fitting_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	fitting_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -78,7 +79,7 @@ func _ready() -> void:
 	storage_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	storage_panel.set_drag_forwarding(Callable(), storage_can_drop, storage_drop)
 	var storage_rows := StationUi.rows(storage_panel, 12)
-	storage_count = StationUi.text(storage_rows, "INVENTORY", 22)
+	storage_count = StationUi.heading(storage_rows, "INVENTORY", 20)
 	storage_filter = OptionButton.new()
 	storage_filter.add_item("All equipment")
 	for title: String in STORAGE_CATEGORIES.values():
@@ -104,7 +105,7 @@ func _ready() -> void:
 	status = StationUi.text(rows, "", 16, StationUi.AMBER)
 	specifications = StationUi.card(rows)
 	var stats_rows := StationUi.rows(specifications, 12)
-	StationUi.text(stats_rows, "SHIP SPECIFICATIONS", 16, StationUi.MUTED)
+	StationUi.heading(stats_rows, "SHIP SPECIFICATIONS", 15, StationUi.MUTED)
 	stats_rows.add_child(HSeparator.new())
 	var stats_bar := HBoxContainer.new()
 	stats_bar.add_theme_constant_override("separation", 12)
@@ -115,12 +116,16 @@ func _ready() -> void:
 		stats_bar.add_child(cell)
 		var icon := StationUi.art(cell, "ship", Vector2(28, 28))
 		icon.texture = load("res://assets/ui/menu/%s.svg" % entry[0])
+		# Center the icon on the value and caption, not on optional third-line notes.
+		icon.custom_minimum_size = Vector2(28, 50)
 		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		icon.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		var values := VBoxContainer.new()
 		values.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		values.add_theme_constant_override("separation", 0)
 		cell.add_child(values)
 		stat_values[entry[0]] = StationUi.text(values, "", 24)
+		stat_values[entry[0]].add_theme_font_override("font", StationUi.BOLD)
 		stat_values[entry[0]].autowrap_mode = TextServer.AUTOWRAP_OFF
 		var caption := StationUi.text(values, entry[1], 16, StationUi.MUTED)
 		caption.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -156,7 +161,7 @@ func rebuild_slots(model_id: String) -> void:
 		child.queue_free()
 	slots.clear()
 	for kind: String in ["laser", "launcher", "generator", "extra"]:
-		StationUi.text(slot_rows, "%s / %d SLOTS" % [kind.to_upper() + "S", available.values().count(kind)], 13, Color("f4c778") if kind == "laser" else FlightHud.CYAN)
+		StationUi.heading(slot_rows, "%s / %d SLOTS" % [kind.to_upper() + "S", available.values().count(kind)], 13, Color("f4c778") if kind == "laser" else FlightHud.CYAN)
 		var group := GridContainer.new()
 		group.columns = 4
 		group.add_theme_constant_override("h_separation", 6)
