@@ -13,9 +13,9 @@ var last_display: Array = []
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(72, 64 if compact else 86)
-	add_theme_stylebox_override("normal", StationUi.style(Color("111a20"), StationUi.LINE))
-	add_theme_stylebox_override("hover", StationUi.style(Color("242522"), StationUi.AMBER))
-	add_theme_stylebox_override("focus", StationUi.style(Color(0, 0, 0, 0), StationUi.AMBER))
+	add_theme_stylebox_override("normal", tile_style("filled"))
+	add_theme_stylebox_override("hover", tile_style("hover"))
+	add_theme_stylebox_override("focus", tile_style("focus"))
 	var rows := VBoxContainer.new()
 	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rows.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -56,7 +56,7 @@ func refresh() -> void:
 		caption.text = "+"
 		caption.add_theme_font_size_override("font_size", 26)
 		tooltip_text = "Empty %s slot. Drag compatible equipment here." % kind
-		add_theme_stylebox_override("normal", StationUi.style(Color("0b1115"), StationUi.LINE))
+		add_theme_stylebox_override("normal", tile_style("empty"))
 	else:
 		var model: String = item["model"]
 		artwork.show()
@@ -70,10 +70,22 @@ func refresh() -> void:
 		tooltip_text = "%s\n%s\n%s" % [Equipment.MODELS[model]["name"], StationUi.bonus(model), "In inventory / Shift-click to equip" if slot.is_empty() else slot.capitalize()]
 		if Equipment.MODELS[model]["kind"] == "extra":
 			tooltip_text += "\n" + Equipment.MODELS[model]["description"]
-		add_theme_stylebox_override("normal", StationUi.style(Color("111a20"), StationUi.LINE))
+		add_theme_stylebox_override("normal", tile_style("filled"))
 	# The selected tile keeps a visible outline after focus moves to a destination.
 	if not item_id.is_empty() and item_id == screen.selected_item:
-		add_theme_stylebox_override("normal", StationUi.style(Color("30251a"), StationUi.AMBER))
+		add_theme_stylebox_override("normal", tile_style("selected"))
+
+
+static func tile_style(state: String) -> StyleBoxFlat:
+	var key := "tile:" + state
+	if not StationUi.cached.has(key):
+		var fill: Color = {"empty": Color(StationUi.DEEP, 0.75), "filled": Color("111a20"), "hover": Color("1f1e1a"), "focus": Color.TRANSPARENT, "selected": Color("2e2216")}[state]
+		var edge: Color = {"empty": Color(StationUi.LINE, 0.7), "filled": StationUi.LINE.lightened(0.12)}.get(state, StationUi.AMBER)
+		var value := StationUi.chamfer(fill, edge, 0, 8)
+		if state in ["hover", "selected"]:
+			value.border_width_bottom = 2
+		StationUi.cached[key] = value
+	return StationUi.cached[key]
 
 
 func _gui_input(event: InputEvent) -> void:

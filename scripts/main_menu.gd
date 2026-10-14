@@ -42,6 +42,10 @@ var start_caption: Label
 var exit_buttons: Array[Button] = []
 var resume_button: Button
 var opening_page := false
+var page_scrim: TextureRect
+var hints: HBoxContainer
+var hint_action: Label
+var placeholder_heading: Label
 var fitting_stats := Equipment.StatsCache.new()
 
 
@@ -82,15 +86,17 @@ func _ready() -> void:
 		button.add_theme_constant_override("icon_max_width", 16)
 	build_home()
 	placeholder = PanelContainer.new()
+	placeholder.theme = StationUi.page_theme()
 	placeholder.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	add_child(placeholder)
-	var future := StationUi.rows(placeholder, 32)
+	var future := StationUi.rows(placeholder, 16)
+	placeholder_heading = StationUi.header(future, "GALAXY GATES", "OPERATIONS")
 	var upper := Control.new()
 	upper.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	future.add_child(upper)
 	placeholder_icon = StationUi.art(future, "ship", Vector2(96, 96))
 	placeholder_icon.modulate = Color("60717e")
-	placeholder_title = StationUi.text(future, "COMING SOON", 24, MUTED)
+	placeholder_title = StationUi.heading(future, "COMING SOON", 24, MUTED)
 	placeholder_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var lower := Control.new()
 	lower.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -193,6 +199,37 @@ func build_home() -> void:
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas.add_child(background)
 	canvas.move_child(background, 0)
+	# Pages dim the hangar so dense station data stays readable.
+	page_scrim = TextureRect.new()
+	var dim := Gradient.new()
+	dim.set_color(0, Color(0.027, 0.043, 0.055, 0.93))
+	dim.set_color(1, Color(0.027, 0.043, 0.055, 0.8))
+	var dim_texture := GradientTexture2D.new()
+	dim_texture.gradient = dim
+	dim_texture.fill_to = Vector2(1, 0)
+	page_scrim.texture = dim_texture
+	page_scrim.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	page_scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	canvas.add_child(page_scrim)
+	canvas.move_child(page_scrim, 1)
+	hints = HBoxContainer.new()
+	hints.alignment = BoxContainer.ALIGNMENT_END
+	hints.add_theme_constant_override("separation", 10)
+	hints.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	canvas.add_child(hints)
+	var keycap := PanelContainer.new()
+	var cap := StationUi.chamfer(Color("111a20"), Color("4a5a64"), 0, 0)
+	cap.border_width_bottom = 2
+	cap.content_margin_left = 8
+	cap.content_margin_right = 8
+	cap.content_margin_top = 1
+	cap.content_margin_bottom = 1
+	keycap.add_theme_stylebox_override("panel", cap)
+	keycap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hints.add_child(keycap)
+	label(keycap, "ESC", 14, INK, true)
+	hint_action = label(hints, "BACK", 15, MUTED, true)
+	hint_action.add_theme_font_override("font", StationUi.tracked(true, 2))
 	ship_shadow = TextureRect.new()
 	var gradient := Gradient.new()
 	gradient.set_color(0, Color(0, 0, 0, 0.65))
@@ -335,6 +372,7 @@ func select_page(page: String) -> void:
 		"settings": sector.settings_menu.open()
 		"connection": sector.session.open_menu()
 		"gates":
+			placeholder_heading.text = "GALAXY GATES"
 			placeholder_icon.texture = load("res://assets/ui/menu/%s.svg" % page)
 			placeholder.show()
 	opening_page = false
@@ -347,14 +385,23 @@ func content_rect() -> Rect2:
 	return Rect2(Vector2(SIDEBAR_WIDTH, HEADER_HEIGHT) * factor, size - Vector2(SIDEBAR_WIDTH, HEADER_HEIGHT) * factor)
 
 
-func fit_panel(panel: Control, preferred: Vector2) -> void:
-	var dimensions := preferred.max(panel.get_combined_minimum_size())
-	var area := content_rect().grow(-16)
-	var factor := minf(1.0, minf(area.size.x / dimensions.x, area.size.y / dimensions.y))
+func page_area() -> Rect2:
+	# Pages fill the content area above the shared hint bar.
+	var factor := minf(size.x / DESIGN_SIZE.x, size.y / DESIGN_SIZE.y)
+	var area := content_rect()
+	return Rect2(area.position + Vector2(28, 18) * factor, area.size - Vector2(56, 70) * factor)
+
+
+func fit_panel(panel: Control, _preferred: Vector2) -> void:
+	StationUi.set_panel_style(panel, StationUi.shell_style())
+	var factor := minf(size.x / DESIGN_SIZE.x, size.y / DESIGN_SIZE.y)
+	var area := page_area()
+	var minimum := panel.get_combined_minimum_size()
+	var scale_factor := minf(factor, minf(area.size.x / minimum.x, area.size.y / minimum.y))
 	panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	panel.size = dimensions
-	panel.scale = Vector2.ONE * factor
-	panel.position = area.position + (area.size - dimensions * factor) / 2
+	panel.size = (area.size / scale_factor).max(minimum)
+	panel.scale = Vector2.ONE * scale_factor
+	panel.position = area.position
 
 
 func layout() -> void:
@@ -388,6 +435,13 @@ func layout() -> void:
 	home.size = canvas.size - home.position - Vector2(0.1, 0.1)
 	background.position = home.position
 	background.size = home.size
+	page_scrim.position = home.position
+	page_scrim.size = home.size
+	page_scrim.visible = selected_page != "overview"
+	hints.visible = page_scrim.visible and selected_page != "skylab"
+	hints.position = Vector2(SIDEBAR_WIDTH + 28, canvas.size.y - 44)
+	hints.size = Vector2(canvas.size.x - SIDEBAR_WIDTH - 56, 28)
+	StationUi.set_text(hint_action, "BACK" if sector.preflight else "RESUME FLIGHT")
 	var footer_y := home.size.y - 170
 	ship_art.position = Vector2(home.size.x * 0.17, 140)
 	ship_art.size = Vector2(home.size.x * 0.73, footer_y - 165)

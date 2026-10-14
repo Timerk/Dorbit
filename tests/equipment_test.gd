@@ -159,7 +159,7 @@ func check_quick_equip() -> void:
 	await click_item(client, client.main_menu.navigation["hangar"], false)
 	var fitting := client.equipment_menu
 	check(client.preflight and client.paused and fitting.visible and not client.main_menu.home.visible, "Main menu Hangar opens inventory while the pilot stays docked")
-	check(Rect2(Vector2.ZERO, Vector2(960, 600)).encloses(fitting.get_global_rect()) and fitting.get_global_rect().position.y >= MainMenu.HEADER_HEIGHT, "Docked inventory fits below the header at the minimum window size")
+	check(Rect2(Vector2.ZERO, Vector2(960, 600)).encloses(fitting.get_global_rect()) and fitting.get_global_rect().position.y >= client.main_menu.content_rect().position.y, "Docked inventory fits below the header at the minimum window size")
 	await check_inventory_layout(client)
 	await click_item(client, fitting.stored["purchase-1"], false)
 	check(fitting.selected_item == "purchase-1" and combat.inventory["revision"] == 9, "Plain mouse click still selects without equipping")
