@@ -386,6 +386,15 @@ Menus retain a left navigation rail and a top-right wallet with credits, without
 an outpost/docked label. Start belongs only to preflight Overview; flight browsing
 uses Resume flight. Ship specifications appear only on Overview and Hangar.
 
+The user requested a published-game finish for every page except Overview on
+2026-10-14, keeping the palette. Pages sit directly on the dimmed hangar backdrop,
+filling the content area. Each page has a section label, a large title and an amber accent rule. Pages use
+chamfered cards, underlined tabs, switch toggles, keycap bindings and slim
+scrollbars. A bottom-right Esc hint shows Back or Resume flight. The flight
+pause menu uses the same header with a left-aligned list of entries. The
+Ctrl + Alt HUD editor sidebar and the quickslot item picker share this finish;
+quickslot tiles on the flight bar keep the HUD style.
+
 The [approved flight HUD](docs/hud-design/README.md) omits the full-width header,
 uses a shared small top margin for contracts/radar, and aligns ship, destination
 and target status along the bottom. Preserve contextual gameplay feedback.
