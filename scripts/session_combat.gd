@@ -2,6 +2,9 @@ class_name SessionCombat
 extends Node
 ## Host-owned encounter state. Clients send intent and receive snapshots, never damage or money.
 
+## Pilot progress sent only to its owner; other viewers never receive these keys.
+const PRIVATE_FIELDS: Array[String] = ["credits", "kills", "stage", "respawn", "contracts"]
+
 var session: FlightSession
 var records: Dictionary[int, Dictionary] = {}
 var solo: Dictionary = {}
@@ -577,11 +580,16 @@ func health(ship: SpaceShip) -> Dictionary:
 	return {"hull": ship.hull, "shield": ship.shield, "alive": ship.alive, "since_hit": ship.time_since_hit}
 
 
-func pack_player(id: int) -> Dictionary:
+## Public ship state for every viewer on the map. `owner_view` adds the pilot's
+## private progress for the owning peer only.
+func pack_player(id: int, owner_view: bool = false) -> Dictionary:
 	var data := health(session.ships[id])
-	data.merge(records[id])
 	# The rescue/dock origin stays on the authority; clients receive current position.
-	data.erase("spawn")
+	# The flight life is public so viewers can reset interpolation and reject stale state.
+	data["life"] = records[id]["life"]
+	if owner_view:
+		for field: String in PRIVATE_FIELDS:
+			data[field] = records[id][field]
 	var ship := session.ships[id]
 	# Replicate combat and movement stats without exposing the owner's full inventory.
 	data["stats"] = Vector4(ship.laser_damage, ship.max_shield, ship.cruise_speed, ship.boost_speed)
@@ -651,9 +659,9 @@ func apply_player(id: int, data: Dictionary) -> bool:
 	ship.robot_repairing = systems[2] > 0.0
 	var reset: bool = int(ship.get_meta("life", 0)) != data["life"] or ship.alive != data["alive"]
 	ship.set_meta("life", data["life"])
-	var changed_map := ship.map_id != int(data.get("map", 0))
-	ship.map_id = int(data.get("map", 0))
-	ship.map_visit = int(data.get("visit", 0))
+	var changed_map := ship.map_id != int(data["map"])
+	ship.map_id = int(data["map"])
+	ship.map_visit = int(data["visit"])
 	if ship == session.sector.player and changed_map:
 		session.sector.activate_map(ship.map_id)
 	if reset:
@@ -664,7 +672,11 @@ func apply_player(id: int, data: Dictionary) -> bool:
 	apply_health(ship, data)
 	ship.radiation_exposure = systems[0]
 	if ship == session.sector.player:
-		update_local(data)
+		# Only owner packets carry private progress; a public packet must not reset it.
+		if data.has("credits"):
+			update_local(data)
+		else:
+			push_error("Owner state for peer %d arrived without private progress." % id)
 		if reset:
 			session.sector.select_target(null)
 			session.sector.autopilot.cancel()
@@ -673,7 +685,7 @@ func apply_player(id: int, data: Dictionary) -> bool:
 
 
 func update_local(data: Dictionary) -> void:
-	session.sector.active_contracts = data.get("contracts", {}).duplicate(true)
+	session.sector.active_contracts = data["contracts"].duplicate(true)
 	session.sector.credits = data["credits"]
 	session.sector.kills = data["kills"]
 	session.sector.objective_stage = maxi(session.sector.objective_stage, data["stage"])

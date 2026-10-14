@@ -7,7 +7,7 @@ const MAX_PLAYERS: int = 10
 const COMMAND_TIMEOUT: float = 0.5
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when packet contents or shared physics change without an RPC signature change.
-const NETWORK_SCHEMA: int = 15
+const NETWORK_SCHEMA: int = 16
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
@@ -556,9 +556,8 @@ func dock_request() -> void:
 	commands.erase(id)
 	for enemy: Alien in sector.world_aliens.values():
 		enemy.contributors.erase(id)
-	var data := combat.pack_player(id)
-	data.merge({"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy})
-	flight_docked.rpc(id, data, snapshot_sequence)
+	for peer_id in multiplayer.get_peers():
+		flight_docked.rpc_id(peer_id, id, player_state(id, peer_id == id), snapshot_sequence)
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -720,6 +719,15 @@ func tick(delta: float) -> void:
 			ship.rotation.y = lerp_angle(ship.rotation.y, angles.y, minf(1.0, delta * 15.0))
 
 
+## Player snapshot including transform. `owner_view` adds private progress and is
+## sent only to the owning peer.
+func player_state(id: int, owner_view: bool) -> Dictionary:
+	var ship := ships[id]
+	var data := {"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}
+	data.merge(combat.pack_player(id, owner_view))
+	return data
+
+
 func send_snapshot() -> void:
 	if multiplayer.get_peers().is_empty():
 		return
@@ -729,11 +737,15 @@ func send_snapshot() -> void:
 		var ship := ships[id]
 		# Private ammunition travels separately to keep three-hunt flight packets below MTU.
 		combat.publish_ammo(id, snapshot_sequence)
-		var state := {id: {"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}}
-		state[id].merge(combat.pack_player(id))
+		# Other viewers get public ship state; credits, kills and contracts go only to the owner.
+		var public := {id: player_state(id, false)}
 		for viewer: int in ships:
-			if viewer != 1 and (viewer == id or not ship.get_meta("docked", false) and ships[viewer].map_id == ship.map_id):
-				snapshot.rpc_id(viewer, state, {}, snapshot_sequence, ships[viewer].map_visit)
+			if viewer == 1:
+				continue
+			if viewer == id:
+				snapshot.rpc_id(viewer, {id: player_state(id, true)}, {}, snapshot_sequence, ships[viewer].map_visit)
+			elif not ship.get_meta("docked", false) and ships[viewer].map_id == ship.map_id:
+				snapshot.rpc_id(viewer, public, {}, snapshot_sequence, ships[viewer].map_visit)
 		if sector.dedicated_server:
 			var revision: int = store.pilots[pilot_ids[id]]["equipment"]["revision"]
 			combat.boost_state.rpc_id(id, ship.resource_boosts, snapshot_sequence, revision)
@@ -776,10 +788,10 @@ func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int, visit: 
 		if not ships.has(id) or sequence <= player_sequences.get(id, -1):
 			continue
 		var data: Dictionary = state[id]
-		if int(data.get("life", 0)) < int(ships[id].get_meta("life", 0)):
+		if int(data["life"]) < int(ships[id].get_meta("life", 0)):
 			continue
 		# Reliable dock/launch acknowledgements and snapshots travel on different channels.
-		if ships[id] == sector.player and bool(data.get("docked", false)) != sector.preflight:
+		if ships[id] == sector.player and bool(data["docked"]) != sector.preflight:
 			continue
 		player_sequences[id] = sequence
 		goals[id] = data
@@ -952,10 +964,9 @@ func jump(id: int, life: int, destination: int) -> String:
 
 
 func announce_map_change(id: int) -> void:
-	var ship := ships[id]
-	var data := combat.pack_player(id)
-	data.merge({"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy})
-	map_changed.rpc(id, data, snapshot_sequence)
+	for peer_id in multiplayer.get_peers():
+		map_changed.rpc_id(peer_id, id, player_state(id, peer_id == id), snapshot_sequence)
+	map_changed(id, player_state(id, id == multiplayer.get_unique_id()), snapshot_sequence)
 
 
 @rpc("authority", "call_local", "reliable")
