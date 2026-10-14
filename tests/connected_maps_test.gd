@@ -44,6 +44,16 @@ func travel(server: Sector, client: Sector, destination: int) -> void:
 
 func run() -> void:
 	var server := make_sector("MapServer", true)
+	var orientation_probe := Alien.new()
+	orientation_probe.render_enabled = false
+	orientation_probe.map_id = 3
+	server.add_child(orientation_probe)
+	orientation_probe.home_position = Vector3(45000, 100, 100)
+	orientation_probe.position = orientation_probe.home_position - Vector3(0.4, 0, 0)
+	orientation_probe.patrol_time = -0.1
+	orientation_probe.fly(0.1, null, Sector.STATION_POSITION)
+	check((-orientation_probe.global_basis.z).dot(Vector3.RIGHT) > 0.1, "Frontier alien turns toward a nearby point despite approximate global point equality")
+	orientation_probe.queue_free()
 	var first := make_sector("FirstMapPilot")
 	var second := make_sector("SecondMapPilot")
 	var late := make_sector("LateMapPilot")
