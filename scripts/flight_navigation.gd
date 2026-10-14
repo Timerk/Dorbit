@@ -304,12 +304,17 @@ func update_contacts() -> void:
 		var key: String = contact["key"]
 		if not contact_buttons.has(key):
 			var button := StationUi.button(contact_list, "", func(): choose_contact(key))
-			button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			StationUi.list_entry(button, false, 16)
+			# Long contact names trim instead of widening the fixed sidebar.
+			button.remove_theme_font_override("font")
+			button.clip_text = true
+			button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			button.toggle_mode = true
 			button.add_theme_color_override("font_color", contact["color"])
 			contact_buttons[key] = button
 		var distance := sector.player.position.distance_to(contact["position"])
 		contact_buttons[key].text = "%s / %.0f m" % [contact["name"], distance]
+		contact_buttons[key].tooltip_text = contact_buttons[key].text
 		contact_buttons[key].set_pressed_no_signal(key == waypoint_key)
 	var selected := destination()
 	info.text = "Waypoint: %s / %.0f m%s" % [selected["name"], sector.player.position.distance_to(selected["position"]), " / RADIATION: return to safety first" if selected["key"] == "safe" else ""]
