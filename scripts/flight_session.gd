@@ -684,7 +684,7 @@ func tick(delta: float) -> void:
 				var command: Dictionary = commands.get(id, {})
 				var fresh: bool = not command.is_empty() and Time.get_ticks_msec() - command["time"] < COMMAND_TIMEOUT * 1000
 				if fresh:
-					ship.rotation = command["rotation"]
+					ship.turn_toward(command["rotation"], delta)
 				ship.fly_command(delta, command["movement"] if fresh else Vector3.ZERO, command["boost"] if fresh else false)
 			sector.tick_radiation(ship, delta)
 		combat.tick(delta)

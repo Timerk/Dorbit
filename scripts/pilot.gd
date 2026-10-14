@@ -4,6 +4,11 @@ extends SpaceShip
 const INERTIA_REFERENCE_SPEED: float = 41.0 # Starter Liberator with its Ion engine.
 const INERTIA_FALLOFF_SPEED: float = 40.0
 const MIN_INERTIA_RATIO: float = 0.3
+# Servers turn remote ships toward commanded angles no faster than this. Mouse
+# easing completes ~95% of a turn in 0.2 s; 720°/s plus the allowance covers a
+# 180° flick in that time, so honest steering is not visibly delayed.
+const MAX_TURN_RATE: float = TAU * 2.0
+const TURN_LATENCY_ALLOWANCE: float = 0.05 # One command interval absorbs jittered packets.
 
 @export var cruise_speed: float = 41.0
 @export var boost_speed: float = 83.0
@@ -36,6 +41,7 @@ var robot_repairing: bool = false
 var time_since_attack: float = 100.0
 var extras_clock: float = 0.0
 var repair_visual: RepairBotVisual
+var turn_budget: float = 0.0
 
 
 func firing_blocker(target: SpaceShip) -> String:
@@ -157,6 +163,14 @@ func thrust_multiplier() -> float:
 	var inertia := MIN_INERTIA_RATIO + (1.0 - MIN_INERTIA_RATIO) * exp(
 		-(speed - INERTIA_REFERENCE_SPEED) / INERTIA_FALLOFF_SPEED)
 	return speed / INERTIA_REFERENCE_SPEED / inertia
+
+
+func turn_toward(angles: Vector3, delta: float) -> void:
+	# Clients predict their own facing; the server only follows it at a bounded rate.
+	turn_budget = minf(turn_budget + MAX_TURN_RATE * delta, MAX_TURN_RATE * (delta + TURN_LATENCY_ALLOWANCE))
+	var step := Vector2(angle_difference(rotation.y, angles.y), angles.x - rotation.x).limit_length(turn_budget)
+	turn_budget -= step.length()
+	rotation = Vector3(clampf(rotation.x + step.y, -1.48, 1.48), wrapf(rotation.y + step.x, -PI, PI), 0.0)
 
 
 func fly_command(delta: float, movement: Vector3, boost: bool) -> void:
