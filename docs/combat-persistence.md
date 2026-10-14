@@ -134,3 +134,19 @@ On 13 October 2026, the same machine measured full-snapshot commits at 9.43 ms
 above reduced them to 2.55–2.61 ms and 4.51–4.57 ms across two runs, with p95 of
 3.06 and 5.43 ms. Back-to-back reward and loot saves therefore fit the tick budget
 locally. Rare outliers still reached 11–20 ms on the larger ledger.
+
+On 14 October 2026, the [current-content ten-client workloads](../PERFORMANCE.md)
+measured Linux save I/O on Ubuntu 24.04.4 under WSL2, Ryzen 7 9800X3D, with
+disposable saves on native ext4. The spread run's 72 full checkpoints averaged
+2.972 ms, with 4.622 ms p95 and 5.009 ms maximum on a roughly 73 KB ledger.
+The M1 run's 60 checkpoints averaged 2.220 ms, with 3.159 ms p95 and 3.821 ms
+maximum on a roughly 62 KB ledger. Journal debits averaged 0.264 and 0.214 ms.
+These are ordinary mixed reward, loot, extras and industry saves; they are not
+the isolated 35/127 KB Windows microbenchmark above.
+
+A separately retained diagnostic run failed its intended map distribution but
+captured a 101.604 ms loot checkpoint inside a 102.784 ms callback, with 99.535 ms
+in backup replacement. That is evidence of a synchronous tail beyond the tick
+budget, despite low p95. The call includes I/O and scheduling time; its underlying
+cause remains unresolved. WSL timings are now measured; VPS storage latency,
+isolated native-Linux hardware and long-session behavior remain unmeasured.
