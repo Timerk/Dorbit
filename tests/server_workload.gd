@@ -230,7 +230,14 @@ func drive_client(delta: float) -> void:
 	var enemy: Alien = enemies[target_slot]
 	var target := enemy.position
 	var destination := target + Vector3(cos(phase) * 65.0, 15.0 + sin(phase * 0.7) * 10.0, sin(phase) * 65.0)
-	var closest := 250.0
+	if not enemy.available():
+		var gate_distance := INF
+		for next_map: int in SectorMaps.GATES[sector.map_id]:
+			var gate := SectorMaps.gate_position(sector.map_id, next_map)
+			if location.distance_to(gate) < gate_distance:
+				gate_distance = location.distance_to(gate)
+				destination = gate
+	var closest := 100.0
 	for drop: Dictionary in sector.loot.drops.values():
 		var distance := location.distance_to(drop["position"])
 		if distance < closest and CargoResources.units(sector.cargo) < sector.cargo_capacity:
