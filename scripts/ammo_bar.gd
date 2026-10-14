@@ -61,19 +61,25 @@ func build_picker() -> void:
 	add_child(picker)
 	picker.set_as_top_level(true)
 	picker.z_index = 20
-	picker.add_theme_stylebox_override("panel", StationUi.style(StationUi.SURFACE, FlightHud.LINE))
+	picker.theme = StationUi.page_theme()
+	picker.add_theme_stylebox_override("panel", StationUi.window_style())
 	var rows := StationUi.rows(picker, 8)
 	rows.add_theme_constant_override("separation", 4)
-	var header := HBoxContainer.new()
-	rows.add_child(header)
-	selection_label = StationUi.text(header, "QUICKSLOTS", 18, FlightHud.AMBER)
-	selection_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var close := StationUi.button(header, "Close", close_picker)
-	close.custom_minimum_size.y = 28
-	close.add_theme_font_size_override("font_size", 16)
-	picker_help = StationUi.text(rows, "Click automation to toggle. Drag to assign; Shift-click a slot to select it.", 14)
+	selection_label = StationUi.header(rows, "QUICKSLOTS", "", 20)
+	var close := StationUi.button(StationUi.header_row(selection_label), "×", close_picker)
+	close.tooltip_text = "Close"
+	close.custom_minimum_size = Vector2(30, 28)
+	close.add_theme_font_size_override("font_size", 20)
+	picker_help = StationUi.text(rows, "Click automation to toggle. Drag to assign; Shift-click a slot to select it.", 14, FlightHud.MUTED)
 	tabs = TabContainer.new()
 	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# Compact tabs leave room for complete tiles in the small flight picker.
+	for state: String in ["unselected", "hovered", "selected", "focus", "disabled"]:
+		var compact := StationUi.tab_style(state)
+		compact.content_margin_top = 3
+		compact.content_margin_bottom = 3
+		tabs.add_theme_stylebox_override("tab_" + state, compact)
+	tabs.add_theme_font_size_override("font_size", 15)
 	rows.add_child(tabs)
 	rebuild_picker()
 	extra_ammo_row = HBoxContainer.new()
@@ -97,10 +103,15 @@ func build_picker() -> void:
 	clear_button = StationUi.button(footer, "Clear slot", func(): config.assign(selected_slot, ""))
 	reset_button = StationUi.button(footer, "Reset slots", config.reset_slots)
 	orientation_button = StationUi.button(footer, "Vertical", toggle_orientation)
-	var done := StationUi.button(footer, "Done", close_picker)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	footer.add_child(spacer)
+	var done := StationUi.button(footer, "DONE", close_picker)
+	StationUi.primary(done)
 	for button: Button in [clear_button, reset_button, orientation_button, done]:
-		button.custom_minimum_size.y = 28
-		button.add_theme_font_size_override("font_size", 16)
+		button.custom_minimum_size.y = 30
+		button.add_theme_font_size_override("font_size", 15)
+	done.custom_minimum_size.x = 96
 	picker.hide()
 
 
@@ -137,10 +148,13 @@ func rebuild_picker() -> void:
 		for action: String in actions:
 			var tile := QuickslotTile.new()
 			tile.bar = self
+			tile.picker = true
 			tile.action_id = action
 			tile.custom_minimum_size = Vector2(86, 80)
 			grid.add_child(tile)
 			picker_tiles.append(tile)
+	for index in tabs.get_tab_count():
+		tabs.set_tab_title(index, tabs.get_child(index).name.to_upper())
 
 
 # Extras owners register their command and live state. Saved IDs survive removal.
