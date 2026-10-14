@@ -303,6 +303,7 @@ func tick(delta: float) -> void:
 			else:
 				sector.auto_fire = false
 	if sector.dedicated_server: session.store.begin_combat_tick()
+	var phase_started := Time.get_ticks_usec() if session.benchmark_timing else 0
 	for id: int in records:
 		pay_pending_contracts(id)
 		var ship := session.ships[id]
@@ -355,6 +356,9 @@ func tick(delta: float) -> void:
 			ship.try_fire(enemy)
 	if sector.dedicated_server: session.store.end_combat_tick()
 	if sector.dedicated_server and session.store.failed: return
+	if session.benchmark_timing:
+		session.benchmark_phases["pilot_combat_us"] = Time.get_ticks_usec() - phase_started
+		phase_started = Time.get_ticks_usec()
 	for alien: Alien in sector.world_aliens.values():
 		alien.tick_combat(delta)
 		if alien.alive:
@@ -367,12 +371,16 @@ func tick(delta: float) -> void:
 				alien.reset_encounter()
 	if records.has(1):
 		update_local(records[1])
+	if session.benchmark_timing:
+		session.benchmark_phases["alien_combat_us"] = Time.get_ticks_usec() - phase_started
+		phase_started = Time.get_ticks_usec()
 	if sector.dedicated_server and boost_save_clock >= 5.0:
 		boost_save_clock = 0.0
 		if not flush_boosts():
 			session.stop_for_save_failure()
 			return
 	sector.loot.tick(delta)
+	if session.benchmark_timing: session.benchmark_phases["loot_and_boost_flush_us"] = Time.get_ticks_usec() - phase_started
 
 
 func remote_target(id: int) -> Alien:
