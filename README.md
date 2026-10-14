@@ -364,7 +364,7 @@ preserves existing reserves. Both require a launched living ship.
 
 Removing Slot CPU 1 returns equipment from its added slots to inventory. Cargo
 capacity removal is blocked until excess cargo is sold. Items and settings persist
-with the pilot. Client and server must both use network schema 15. See
+with the pilot. Client and server must both use network schema 16. See
 [the agreed mechanics and prices](GAME_PLAN.md#extras-equipment) and
 [generated artwork and prompts](assets/ui/extras/README.md).
 
@@ -413,7 +413,7 @@ Buy rocket batches under Shop > Ammo and HST-1/HST-2 under Weapons, then fit the
 launcher in Hangar's launcher slot. Uridium reference prices use **100 credits per
 Uridium**. Balance settings are in `scripts/ammunition.gd` and
 `scripts/rocket_weapons.gd`; see [the game plan](GAME_PLAN.md#manual-single-rockets-and-classic-hellstorm).
-Use matching network-schema-15 client/server builds and save schema 8. Back up server data before upgrading; older servers need the previous
+Use matching network-schema-16 client/server builds and save schema 8. Back up server data before upgrading; older servers need the previous
 ledger for rollback. New/migrated pilots receive 100 R-310 once.
 
 Run `tests/rocket_test.gd` with Godot (headless for authoritative checks, rendered
@@ -479,7 +479,7 @@ Weapon rounds commit before damage. Server writes validate ingredients,
 compatibility, quantities and duplicate protection. Refining requires a living
 ship and the current ship life; equipment boosts also require station restrictions.
 
-This requires matching network-schema-15 builds. Ledger schemas 1–7 migrate to
+This requires matching network-schema-16 builds. Ledger schemas 1–7 migrate to
 schema 8, preserving progression and adding any missing reserves and rocket ammo; keep a backup for
 rollback. The provisioning tool preserves and validates boosts during rotation.
 `res://tests/resource_upgrades_test.gd` exercises authenticated refining and
@@ -501,8 +501,9 @@ Human economy and balance playtesting remains necessary.
 
 ### Current compatibility
 
-The current **network schema is 15** (`FlightSession.NETWORK_SCHEMA`), including
-four-map membership, transfers and the shared collision layout. Clients and servers must use
+The current **network schema is 16** (`FlightSession.NETWORK_SCHEMA`), including
+four-map membership, transfers, the shared collision layout and owner-only pilot
+progress in player snapshots. Clients and servers must use
 matching builds and protocol fingerprints; the connection handshake rejects
 incompatible builds before gameplay. **Save schema 8** is separate from the
 network schema. Update the provisioning tool alongside the server and back up
@@ -583,7 +584,7 @@ The regular Liberator has 116,000 hull. New pilots start with LF-1, SG3N-A01 and
 
 LF-3 adds 175 base damage and 15% more for that laser against aliens (201.25 total) per installed copy. Its bonus never multiplies other lasers. FS-01 adds 3,200 shield, 70% absorption and +6.25% regeneration; its regeneration bonuses add together and multiply normal shield recovery after the existing six-second delay. Shield capacity adds, while absorption is weighted by each generator's capacity. Current fitting and installation previews show these special bonuses. Fitting changes do not repair or refill your ship. Inventory and fittings survive rescue, reconnects and restart. Equipment purchases require the persistent dedicated server; the offline development fixture uses the same starter combat and flight values. Reference prices need human progression playtesting with the existing rewards.
 
-Client and server must use matching network-schema-15 builds; the compatibility handshake rejects older builds before gameplay. Save schema 8 adds the combat journal to schema 7's persistent industry, ammunition and combat boosts; Skylab uses credits exclusively. Update the operator provisioning tool with the server so credential rotation preserves pending combat debits, every equipment model and industry jobs.
+Client and server must use matching network-schema-16 builds; the compatibility handshake rejects older builds before gameplay. Save schema 8 adds the combat journal to schema 7's persistent industry, ammunition and combat boosts; Skylab uses credits exclusively. Update the operator provisioning tool with the server so credential rotation preserves pending combat debits, every equipment model and industry jobs.
 
 ### Credit income
 
@@ -608,7 +609,7 @@ The save is a **schema-8 pair**: `DORBIT_DATA_DIR/pilots.json` is the full snaps
 
 Every reward, repair charge, rescue fee, purchase and fitting change is committed before the server confirms it. All contributors' shares use one commit. Full snapshot writes use a sibling temporary file, flush and verify its contents, then rename over the destination. `pilots.json.bak` includes all committed combat debits preceding that checkpoint. Each laser/rocket debit appends a small ordered, checksummed journal record, flushes and verifies it **before damage or launch**; laser ammo and resource reserves commit together. Full economy saves, scheduled industry saves, clean shutdown and a 1 MiB journal limit checkpoint the journal. A save failure stops simulation and exits with code 1 before granting the pending transaction.
 
-Each pilot's equipment record contains owned ship IDs, the active ship, item IDs with a single ship/slot location, and a successful-request sequence. Empty ship and slot strings mean storage. Inventory is sent reliably only to its owner; snapshots carry combat and movement stats for all ships. Purchase and fitting requests supply the next sequence and the current life, never a pilot ID, price or stat bonus. Retrying a successful sequence refreshes inventory without applying another transaction. After reconnecting, review the server inventory before making a new purchase.
+Each pilot's equipment record contains owned ship IDs, the active ship, item IDs with a single ship/slot location, and a successful-request sequence. Empty ship and slot strings mean storage. Inventory is sent reliably only to its owner. Player snapshots, map transfers and dock acknowledgements give every viewer on the map only public ship state: position, rotation, velocity, boost energy, hull, shield, flight life, combat and movement stats, hull model, docked state, map, radiation exposure and repair-robot state. Credits, kills, objective stage, rescue countdown and hunting contracts go only to the owning pilot, like ammunition, boosts, cargo and inventory. Purchase and fitting requests supply the next sequence and the current life, never a pilot ID, price or stat bonus. Retrying a successful sequence refreshes inventory without applying another transaction. After reconnecting, review the server inventory before making a new purchase.
 
 Only one server or provisioning tool may own the directory. `pilots.json.lock` is an exclusive directory lock. Clean shutdown checkpoints pending combat and removes it. On Linux, use `tools/server.sh run`: its launcher translates SIGTERM and Ctrl+C into a scene-tree shutdown, allowing the server to release the lock. Signaling Godot directly bypasses this launcher. A crash, SIGKILL, power loss or shutdown timeout can still leave the lock behind and requires operator recovery. Missing, malformed, unsupported or out-of-range data fails closed, including a missing, mismatched, damaged or incomplete journal. The server does not replace invalid progression with zero balances. Never edit or replace either file while the server runs.
 

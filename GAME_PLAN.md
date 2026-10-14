@@ -486,7 +486,7 @@ Fitting never repairs or refills hull, shield or boost energy.
 
 Items and per-item automation settings survive death, reconnect and server restart
 in the current save schema 8 without an extras starter grant or extra-specific migration. Older binaries cannot read
-new extra model IDs: back up before introducing these items. Network schema 15
+new extra model IDs: back up before introducing these items. Network schema 16
 requires matching clients and servers. Original generated images and their exact
 prompts are under `assets/ui/extras`; prices, repair gates and automation behavior
 still need user playtesting.
@@ -691,7 +691,7 @@ Drobit choices requiring playtesting. Premium is an optional operator-set durati
 Save schema 7 migrates versions 1–6 before admission, preserving both earlier
 ammunition/boost and industry layouts. Legacy industry wallets convert once at
 100 credits per unit; active/queued robots retain their lifetime.
-Network schema 15 requires matching client/server builds. See [implementation policies,
+Network schema 16 requires matching client/server builds. See [implementation policies,
 rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot's
 454/870 power budget and exact inventories/capacities remain a separate debug fixture.
 
@@ -762,7 +762,7 @@ Save schema 7 migrates schema 1–6 while preserving progression and grants
 100 R-310 once, with zero other rocket ammo. New pilots receive the same grant.
 The provisioning tool supports the same migration and launcher fittings.
 Back up the ledger before upgrading; rollback needs a pre-migration backup.
-Network schema 15 requires matching client/server builds. Resource rocket
+Network schema 16 requires matching client/server builds. Resource rocket
 boosts use the existing per-ship reserve and combat journal formats; no new save
 or network schema is required. Laser/timed reserve behavior is unchanged.
 
@@ -946,7 +946,7 @@ protection is around the service point, not the entire station. The larger upper
 hangars and outer docking arms do not extend station services or protection.
 Clients and dedicated servers load the same 53 simple collision boxes, with
 open hangar entrances. Autopilot chooses a clear service approach when the tower
-or reactor occupies its usual radial stopping point. Network schema 15 requires
+or reactor occupies its usual radial stopping point. Network schema 16 requires
 matching builds because the physical station layout changed; saves are unchanged.
 Final visual acceptance, scale, approach comfort and group performance remain
 playtesting decisions within Milestone 3.
@@ -1117,10 +1117,13 @@ and quitting to the station menu return pilots to the home map.
 One persistent authoritative session simulates all four populations. Maps have
 separate membership and distant origins in the existing physics world. Rendering,
 snapshots, effects, loot collection, targeting and damage are scoped to map
-membership; owner ammunition and inventory remain private. Each transfer
+membership; owner ammunition and inventory remain private. Player snapshots give
+other pilots only public ship state (movement, health, fitting stats, effects and
+repair state); credits, kills, objective stage, rescue countdown and contracts go
+only to their owner (network schema 16). Each transfer
 increments the flight life and map-visit epoch, so delayed commands, world state
 and effects cannot revive an earlier visit, including returning to the same map.
-Network schema 15 requires matching client/server builds; save schema 8 is unchanged
+Network schema 16 requires matching client/server builds; save schema 8 is unchanged
 because flight locations are temporary. Ordinary travel gates are separate from
 the future Galaxy Gates alien-wave challenges.
 
