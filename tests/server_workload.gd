@@ -47,6 +47,7 @@ func run() -> void:
 	sector = make_sector("Workload", server)
 	physics_frame.connect(step)
 	if not server:
+		if DisplayServer.get_name() == "headless": sector.settings.effects_quality = 0
 		var index := int(options.get("index", "0"))
 		sector.session.credential_id = "pilot%d" % index
 		sector.session.credential_token = test_token(index)
@@ -243,7 +244,10 @@ func drive_client(delta: float) -> void:
 		if distance < closest and CargoResources.units(sector.cargo) < sector.cargo_capacity:
 			closest = distance
 			destination = drop["position"]
-	var facing := Basis.looking_at((target - location).normalized(), Vector3.UP)
+	var facing := Basis.from_euler(sector.player.rotation)
+	var direction := target - location
+	if direction.length_squared() > 0.01:
+		facing = Basis.looking_at(direction, Vector3.RIGHT if absf(direction.normalized().dot(Vector3.UP)) > 0.98 else Vector3.UP)
 	var movement := (facing.inverse() * (destination - location) / 25.0).limit_length()
 	sector.session.command_flight.rpc_id(1, movement, facing.get_euler(), false,
 		enemy.available(), int(sector.player.get_meta("life", 0)), enemy.life, enemy.alien_id)
