@@ -102,7 +102,7 @@ func run() -> void:
 	check(ship.alive and ship.position.distance_to(Sector.STATION_POSITION) < 75 and ship.radiation_exposure == 0, "Rescue returns pilot safely with exposure reset")
 	await replicate(server)
 	check(client.player.alive and client.player.radiation_exposure == 0, "Rescue state reaches owner")
-	check(var_to_bytes([{id: server.session.combat.pack_player(id)}, {}, 1]).size() < 1200, "Radiation player state stays below packet budget")
+	check(var_to_bytes([{id: server.session.combat.pack_player(id, true)}, {}, 1]).size() < 1200, "Radiation player state stays below packet budget")
 	check(FlightNavigation.compass_point(Vector3.FORWARD).is_equal_approx(Vector2.ZERO), "Forward destination centers the compass")
 	check(FlightNavigation.compass_point(Vector3.BACK).is_equal_approx(Vector2.DOWN), "Behind destination stays on compass rim")
 	(client.get_parent() as SubViewport).size = Vector2i(960, 600)
