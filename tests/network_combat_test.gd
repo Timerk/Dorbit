@@ -68,10 +68,27 @@ func run() -> void:
 	combat.tick(0.01)
 	check(alien.shield == before_blocked, "Host rejects out-of-range fire intent")
 	remote.position = Vector3(12, 200, 0)
+	# Turn away without fire first: the ship still faces the alien early in a limited turn.
+	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3(0, PI, 0), false, false, 0, 0, 0)
+	await settle(0.06)
+	for frame in range(20):
+		host.session.tick(1.0 / 60.0)
+	check(remote.firing_blocker(alien) == "TURN TOWARD TARGET", "Server-limited rotation reaches the requested facing")
 	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3(0, PI, 0), false, true, 0, 0, 0)
 	await settle(0.06)
-	host.session.tick(0.01)
+	host.session.tick(1.0 / 60.0)
 	check(alien.shield == before_blocked, "Host rejects shots facing away from the alien")
+	# A modified client cannot snap back onto the target: the arc uses the server's limited turn.
+	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false, true, 0, 0, 0)
+	await settle(0.06)
+	host.session.tick(1.0 / 60.0)
+	check(absf(remote.rotation.y) > 2.0 and remote.firing_blocker(alien) == "TURN TOWARD TARGET", "Firing arc uses the server-limited rotation")
+	check(alien.shield == before_blocked, "Host rejects fire after an instant client turn")
+	for frame in range(20):
+		host.session.tick(1.0 / 60.0)
+	check(alien.shield < before_blocked, "Fire resumes once the server turn faces the alien")
+	before_blocked = alien.shield
+	remote.shot_cooldown = 0
 	remote.rotation = Vector3.ZERO
 	var wall := StaticBody3D.new()
 	var shape := CollisionShape3D.new()
