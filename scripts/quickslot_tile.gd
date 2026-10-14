@@ -12,6 +12,7 @@ var amount: Label
 var selected_style: StyleBoxFlat
 var normal_style: StyleBoxFlat
 var last_selected := false
+var picker := false
 
 
 func _ready() -> void:
@@ -19,8 +20,14 @@ func _ready() -> void:
 	toggle_mode = true
 	selected_style = StationUi.style(Color("172b3b"), FlightHud.AMBER)
 	normal_style = StationUi.style(Color("0c141e"), FlightHud.LINE)
+	if picker:
+		# Picker entries use the station item tiles; the flight bar keeps its HUD style.
+		selected_style = EquipmentTile.tile_style("selected")
+		normal_style = EquipmentTile.tile_style("filled")
 	for style_name: String in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
 		add_theme_stylebox_override(style_name, normal_style)
+	if picker:
+		add_theme_stylebox_override("hover", EquipmentTile.tile_style("hover"))
 	var rows := VBoxContainer.new()
 	add_child(rows)
 	rows.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -84,6 +91,8 @@ func refresh(state: Dictionary, shortcut: String) -> void:
 		last_selected = selected
 		for style_name: String in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
 			add_theme_stylebox_override(style_name, selected_style if selected else normal_style)
+		if picker and not selected:
+			add_theme_stylebox_override("hover", EquipmentTile.tile_style("hover"))
 
 
 func _get_drag_data(_position: Vector2) -> Variant:
