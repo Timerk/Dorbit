@@ -105,12 +105,25 @@ func _ready() -> void:
 	status = StationUi.text(rows, "", 16, StationUi.AMBER)
 	specifications = StationUi.card(rows)
 	var stats_rows := StationUi.rows(specifications, 12)
-	StationUi.heading(stats_rows, "SHIP SPECIFICATIONS", 15, StationUi.MUTED)
-	stats_rows.add_child(HSeparator.new())
+	StationUi.heading(stats_rows, "SHIP SPECIFICATIONS", 14, StationUi.MUTED).add_theme_font_override("font", StationUi.tracked(true, 3))
+	# The same accent rule and divided stat bar as the Overview specifications.
+	var rule := Control.new()
+	rule.custom_minimum_size.y = 4
+	rule.draw.connect(func():
+		rule.draw_rect(Rect2(0, 1, rule.size.x, 1), StationUi.LINE)
+		rule.draw_rect(Rect2(0, 0, 56, 3), StationUi.AMBER))
+	stats_rows.add_child(rule)
 	var stats_bar := HBoxContainer.new()
-	stats_bar.add_theme_constant_override("separation", 12)
+	stats_bar.add_theme_constant_override("separation", 14)
 	stats_rows.add_child(stats_bar)
 	for entry: Array in [["hull", "Hull"], ["shield", "Shield"], ["damage", "Damage"], ["speed", "Cruise"], ["cargo", "Cargo"]]:
+		if stats_bar.get_child_count() > 0:
+			var divider := ColorRect.new()
+			divider.color = Color(StationUi.LINE, 0.7)
+			divider.custom_minimum_size = Vector2(1, 40)
+			divider.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+			divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			stats_bar.add_child(divider)
 		var cell := HBoxContainer.new()
 		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		stats_bar.add_child(cell)
@@ -120,6 +133,7 @@ func _ready() -> void:
 		icon.custom_minimum_size = Vector2(28, 50)
 		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		icon.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		icon.modulate = StationUi.MUTED
 		var values := VBoxContainer.new()
 		values.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		values.add_theme_constant_override("separation", 0)
@@ -127,8 +141,7 @@ func _ready() -> void:
 		stat_values[entry[0]] = StationUi.text(values, "", 24)
 		stat_values[entry[0]].add_theme_font_override("font", StationUi.BOLD)
 		stat_values[entry[0]].autowrap_mode = TextServer.AUTOWRAP_OFF
-		var caption := StationUi.text(values, entry[1], 16, StationUi.MUTED)
-		caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+		var caption := StationUi.heading(values, entry[1].to_upper(), 13, StationUi.MUTED)
 		stat_notes[entry[0]] = StationUi.text(values, "", 14, StationUi.MUTED)
 		stat_notes[entry[0]].autowrap_mode = TextServer.AUTOWRAP_OFF
 	ship_stats = StationUi.text(stats_rows, "", 14, StationUi.MUTED)
