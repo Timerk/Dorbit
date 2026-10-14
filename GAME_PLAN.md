@@ -394,6 +394,11 @@ scrollbars. A bottom-right Esc hint shows Back or Resume flight. The flight
 pause menu uses the same header with a left-aligned list of entries. The
 Ctrl + Alt HUD editor sidebar and the quickslot item picker share this finish;
 quickslot tiles on the flight bar keep the HUD style.
+On 2026-10-15 the user extended the finish to Overview, the header and the
+navigation rail. The header shows the open page beside the brand. The rail
+uses tracked labels and marks the open page with an amber edge glow. Overview
+shades the hangar art behind its text and uses a chamfered specifications card
+and Start button.
 
 The [approved flight HUD](docs/hud-design/README.md) omits the full-width header,
 uses a shared small top margin for contracts/radar, and aligns ship, destination
