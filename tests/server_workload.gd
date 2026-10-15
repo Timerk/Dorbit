@@ -84,7 +84,7 @@ func run() -> void:
 	# Start near the ordinary ammunition-CPU threshold so automation is exercised
 	# in the measured window, independent of how many warmup kills occurred.
 	var initial_ammo := {}
-	var ammo_type := "x3" if options.get("scenario", "single-map") == "spread" else "x1"
+	var ammo_type := "x3" if frontier_fitting() else "x1"
 	for id: int in sector.session.ships:
 		sector.session.ships[id].ammo[ammo_type] = 990
 		initial_ammo[sector.session.pilot_ids[id]] = sector.session.ships[id].ammo.duplicate()
@@ -102,11 +102,13 @@ func run() -> void:
 	started = Time.get_ticks_usec()
 	started_unix = Time.get_unix_time_from_system()
 	previous_tick = 0
+	network_totals() # Reset ENet host counters after warmup.
 	measuring = true
 	benchmark_store.measuring = true
 	write_json("start.json", {"started_us": started})
 	await settle(float(options.get("seconds", "120")))
 	measuring = false
+	var enet_outbound := network_totals()
 	benchmark_store.measuring = false
 	var elapsed := (Time.get_ticks_usec() - started) / 1000000.0
 	var wall_elapsed := Time.get_unix_time_from_system() - started_unix
@@ -141,7 +143,7 @@ func run() -> void:
 		check(lab["lastSimulatedAt"] > lab_before[pilot_id]["lastSimulatedAt"] and lab["inventory"] != lab_before[pilot_id]["inventory"], "Pilot industry produces resources during window")
 		lab_after[pilot_id] = {"before_at": lab_before[pilot_id]["lastSimulatedAt"], "after_at": lab["lastSimulatedAt"], "before_inventory": lab_before[pilot_id]["inventory"], "after_inventory": lab["inventory"]}
 	var expected_maps := 4 if options.get("scenario", "single-map") == "spread" else 1
-	check(map_tick_counts.size() == expected_maps and map_tick_counts.values().all(func(count: int): return count >= tick_us.size() * 2), "Expected map membership is maintained throughout measurement")
+	check(map_tick_counts.size() == expected_maps and map_tick_counts.has(selected_map()) and map_tick_counts.values().all(func(count: int): return count >= tick_us.size() * 2), "Expected map membership is maintained throughout measurement")
 	write_json("server.json", {
 		"passed": failures == 0, "elapsed_seconds": elapsed,
 		"physics_ticks": tick_us.size(), "ticks_per_second": tick_us.size() / elapsed,
@@ -154,7 +156,8 @@ func run() -> void:
 		"hits_by_alien": hits_by_alien, "deaths_by_alien": deaths_by_alien,
 		"simultaneous_combat_tick_fraction": float(simultaneous_ticks) / maxi(tick_us.size(), 1),
 		"alien_alive_tick_fraction": float(alive_ticks) / maxi(tick_us.size(), 1),
-		"scenario": options.get("scenario", "single-map"), "world_maps": 4, "world_aliens": sector.world_aliens.size(),
+		"enet_outbound": enet_outbound,
+		"scenario": options.get("scenario", "single-map"), "single_map": selected_map(), "world_maps": 4, "world_aliens": sector.world_aliens.size(),
 		"lasers_by_peer": lasers, "rocket_launches": rocket_launches, "rocket_hits": rocket_hits,
 		"pickup_units_by_peer": pickup_units, "map_pilot_ticks": map_tick_counts, "pilot_maps": maps,
 		"peer_ports": peer_ports, "skylab": lab_after, "persistence_us": save_timings,
@@ -259,8 +262,24 @@ func drive_client(delta: float) -> void:
 	if launcher_clock >= 6.2:
 		launcher_clock = 0.0
 		send_rocket("launcher", enemy)
-	if options.get("scenario", "single-map") == "spread" and sector.player.ammo_type != "x3":
+	if frontier_fitting() and sector.player.ammo_type != "x3":
 		sector.session.combat.select_ammo.rpc_id(1, int(sector.player.get_meta("life", 0)), "x3")
+
+
+func selected_map() -> int:
+	return int(options.get("map", "0"))
+
+
+func frontier_fitting() -> bool:
+	# Weak lasers keep M1 encounters alive; stronger maps need the spread fitting.
+	return options.get("scenario", "single-map") == "spread" or selected_map() != 0
+
+
+func network_totals() -> Dictionary:
+	# Popping resets the counters. ENet totals exclude IP/UDP headers.
+	var host: ENetConnection = (sector.multiplayer.multiplayer_peer as ENetMultiplayerPeer).host
+	return {"bytes": host.pop_statistic(ENetConnection.HOST_TOTAL_SENT_DATA),
+		"packets": host.pop_statistic(ENetConnection.HOST_TOTAL_SENT_PACKETS)}
 
 
 func send_rocket(action: String, enemy: Alien) -> void:
@@ -280,7 +299,7 @@ func prepare_inventory() -> void:
 		for slot: String in ShipCatalog.slots("goliath"):
 			var model := ""
 			if slot.begins_with("laser"):
-				if options.get("scenario", "single-map") == "spread": model = "lf-3"
+				if frontier_fitting(): model = "lf-3"
 				elif int(slot.trim_prefix("laser")) <= 4: model = "laser"
 			elif slot.begins_with("generator"): model = "sg3n-b02" if int(slot.trim_prefix("generator")) <= 10 else "g3n-7900"
 			elif slot == "launcher1": model = "hst-2"
@@ -290,7 +309,7 @@ func prepare_inventory() -> void:
 			if not model.is_empty():
 				equipment["items"][slot] = {"model": model, "ship": "starter", "slot": slot}
 				if model in ["ammo-cpu", "generator-cpu"]: equipment["items"][slot]["enabled"] = true
-				if model == "ammo-cpu": equipment["items"][slot]["ammo_type"] = "x3" if options.get("scenario", "single-map") == "spread" else "x1"
+				if model == "ammo-cpu": equipment["items"][slot]["ammo_type"] = "x3" if frontier_fitting() else "x1"
 		equipment["items"]["repair"] = {"model": "rep-2", "ship": "starter", "slot": "extra4"}
 		equipment["items"]["repair-auto"] = {"model": "repair-auto", "ship": "starter", "slot": "extra5", "enabled": true}
 		check(Equipment.valid(equipment), "Benchmark fitting uses valid catalog equipment")
@@ -308,12 +327,13 @@ func prepare_inventory() -> void:
 
 func prepare_peer(id: int) -> void:
 	var index := int(sector.session.pilot_ids[id].trim_prefix("pilot"))
-	var map := index % 4 if options.get("scenario", "single-map") == "spread" else 0
+	var spread: bool = options.get("scenario", "single-map") == "spread"
+	var map := index % 4 if spread else selected_map()
 	var ship := sector.session.ships[id]
 	# Initial placement is fixture setup, before warmup. Measurement uses normal input.
 	ship.map_id = map
 	ship.map_visit += 1
-	ship.position = sector.map_rosters[map].values()[index / 4 if map != 0 else index / 2].position + Vector3(50 + index * 5, 30, 0)
+	ship.position = sector.map_rosters[map].values()[index / 4 if spread and map != 0 else index / 2].position + Vector3(50 + index * 5, 30, 0)
 	ship.velocity = Vector3.ZERO
 	ship.fired.connect(func(_a: Vector3, _b: Vector3, _hostile: bool):
 		if measuring: lasers[id] = lasers.get(id, 0) + 1)

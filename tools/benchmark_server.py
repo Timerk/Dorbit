@@ -110,11 +110,15 @@ def main():
     parser.add_argument("--seconds", type=int, default=120)
     parser.add_argument("--warmup", type=int, default=15)
     parser.add_argument("--scenario", choices=("spread", "single-map"), required=True)
+    parser.add_argument("--map", type=int, choices=range(4), default=0,
+                        help="Zero-based map for the single-map scenario; 3 is M4")
     parser.add_argument("--git", default="git", help="Use git.exe for a Windows-owned worktree in WSL")
     parser.add_argument("--output", type=Path, required=True, help="New directory for logs and JSON")
     args = parser.parse_args()
     if platform.system() != "Linux" or args.seconds < 30 or args.warmup < 1:
         parser.error("Requires Linux, seconds >= 30, warmup >= 1")
+    if args.scenario == "spread" and args.map:
+        parser.error("--map applies only to the single-map scenario")
     output = args.output.resolve()
     revision = subprocess.check_output([args.git, "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     git_status = subprocess.check_output([args.git, "status", "--short"], cwd=ROOT, text=True)
@@ -144,7 +148,8 @@ def main():
         environment.pop("DORBIT_TEST_CLOCK", None)
         child = subprocess.Popen(command + ["--script", "res://tests/server_workload.gd", "--",
             f"--role={role}", f"--index={index}", f"--seconds={args.seconds}",
-            f"--warmup={args.warmup}", f"--scenario={args.scenario}", f"--output={output}"],
+            f"--warmup={args.warmup}", f"--scenario={args.scenario}", f"--map={args.map}",
+            f"--output={output}"],
             env=environment, stdout=log, stderr=subprocess.STDOUT)
         processes.append(child)
         return child
@@ -203,7 +208,7 @@ def main():
             "git_commit": revision, "git_status": git_status,
             "source_sha256": source_hashes, "started_utc": started_utc,
             "command": command, "clients": 10, "transport": "ENet UDP IPv4 loopback port 24683",
-            "seconds": args.seconds, "warmup": args.warmup, "scenario": args.scenario,
+            "seconds": args.seconds, "warmup": args.warmup, "scenario": args.scenario, "map": args.map,
             "save_filesystem": subprocess.check_output(["findmnt", "-T", str(output), "-o", "TARGET,SOURCE,FSTYPE"], text=True),
             "invocation": __import__("sys").argv,
         }
@@ -211,6 +216,7 @@ def main():
             "network": {"window_raw_seconds": traffic_seconds, "per_client": client_traffic,
                 "total_packets_per_second": sum(c["packets_per_second"] for c in client_traffic.values()),
                 "total_ip_bytes_per_second": sum(c["ip_bytes_per_second"] for c in client_traffic.values()),
+                "enet_host_outbound": server_result["enet_outbound"],
                 **capture_stats}, "process": {
             "sample_window_seconds": samples[-1]["monotonic_seconds"] - samples[0]["monotonic_seconds"],
             "sample_window_raw_seconds": samples[-1]["monotonic_raw_seconds"] - samples[0]["monotonic_raw_seconds"],
