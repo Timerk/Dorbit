@@ -159,7 +159,7 @@ func run() -> void:
 		client.get_viewport().render_target_update_mode = SubViewport.UPDATE_ALWAYS
 		await settle()
 		var bar := client.hud.ammo_bar.get_rect()
-		check(client.hud.ammo_bar.counts["x4"].get_theme_color("font_color") == FlightHud.RED and client.hud.ammo_bar.buttons["x4"].tooltip_text.contains("4 rounds per volley"), "HUD marks an incomplete volley and explains the fitted round cost")
+		check(client.hud.ammo_bar.counts["x4"].get_theme_color("font_color") == FlightHud.RED and client.hud.ammo_bar.buttons["x4"].get_tooltip(Vector2.ZERO).contains("4 rounds per volley"), "HUD marks an incomplete volley and explains the fitted round cost")
 		check(not bar.intersects(client.hud.navigation.guidance_rect()) and not bar.intersects(client.hud.ship_rect()) and not bar.intersects(client.hud.target_rect()), "Ammo bar clears other HUD panels at %s" % dimensions)
 		check(absf(bar.get_center().x - client.hud.size.x * 0.5) < 1 and bar.end.y < client.hud.size.y - 45, "Ammo bar is centered above controls at %s" % dimensions)
 		for button: Button in client.hud.ammo_bar.buttons.values():
