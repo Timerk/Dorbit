@@ -398,7 +398,9 @@ On 2026-10-15 the user extended the finish to Overview, the header and the
 navigation rail. The header shows the open page beside the brand. The rail
 uses tracked labels and marks the open page with an amber edge glow. Overview
 shades the hangar art behind its text and uses a chamfered specifications card
-and Start button.
+and Start button. The same day the finish reached the Connected maps tab:
+chamfered map cards with tier pips, gate markers on each link, and an amber
+route preview to the hovered map.
 
 The [approved flight HUD](docs/hud-design/README.md) omits the full-width header,
 uses a shared small top margin for contracts/radar, and aligns ship, destination
