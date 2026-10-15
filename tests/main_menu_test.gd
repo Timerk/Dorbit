@@ -218,7 +218,7 @@ func run() -> void:
 	check(not client.preflight and not client.paused and not menu.visible and not client.hud.contract_panel.visible, "Start closes preparation screens and enters flight")
 	check(menu.ship_art.stage.render_target_update_mode == SubViewport.UPDATE_DISABLED, "Launched flight does not render the hidden hangar")
 	check(not ship.get_meta("docked") and ship.visible and ship.collision_layer == 2, "Launch enables the server ship and collision")
-	var delayed := server.session.combat.pack_player(id)
+	var delayed := server.session.combat.pack_player(id, true)
 	delayed.merge({"docked": true, "position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}, true)
 	client.session.snapshot({id: delayed}, {}, client.session.player_sequences[id] + 1)
 	check(client.player.visible and client.player.collision_layer == 2, "Delayed docked snapshot cannot hide a launched ship")
@@ -247,7 +247,7 @@ func run() -> void:
 	server.alien.contributors.assign([id, observer.multiplayer.get_unique_id()])
 	await replicate(server)
 	var old_life: int = ship.get_meta("life")
-	var old_flight := server.session.combat.pack_player(id)
+	var old_flight := server.session.combat.pack_player(id, true)
 	old_flight.merge({"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy})
 	client.client_only = false # Joining from the offline development client must retain return navigation.
 	for dimensions in [Vector2i(960, 600), Vector2i(1440, 900), Vector2i(1920, 1080)]:

@@ -1,0 +1,6 @@
+{
+  "triangles": 174328,
+  "materials": 5,
+  "aperture_radius_m": 12.6,
+  "purpose": "Client-only travel gate presentation; no collision"
+}

@@ -124,6 +124,7 @@ static func environment(parent: Node3D, render: bool = true) -> void:
 		settings.sky.radiance_size = Sky.RADIANCE_SIZE_512
 		var sky_material := ShaderMaterial.new()
 		sky_material.shader = preload("res://shaders/space.gdshader")
+		sky_material.set_shader_parameter("nebula_panorama", preload("res://assets/sector/nebula-panorama.png"))
 		settings.sky.sky_material = sky_material
 		settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 		settings.ambient_light_color = Color("8ca6c4")
@@ -142,18 +143,11 @@ static func environment(parent: Node3D, render: bool = true) -> void:
 		sun.light_energy = 1.55
 		parent.add_child(sun)
 		var fill := DirectionalLight3D.new()
+		fill.name = "Fill"
 		fill.rotation_degrees = Vector3(25, 145, 0)
 		fill.light_color = Color("6e9edb")
 		fill.light_energy = 0.45
 		parent.add_child(fill)
-		var planet := SphereMesh.new()
-		planet.radius = 600.0
-		planet.height = 1200.0
-		planet.radial_segments = 64
-		planet.rings = 32
-		var planet_surface := ShaderMaterial.new()
-		planet_surface.shader = preload("res://shaders/planet.gdshader")
-		mesh(parent, planet, Vector3(1350, 480, -2500), planet_surface).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		# Distant scenery sits beyond the safe sector and has no colliders.
 		distant_scenery(parent)
 	var rng := RandomNumberGenerator.new()
@@ -258,40 +252,7 @@ static func asteroid_surface() -> StandardMaterial3D:
 
 
 static func distant_scenery(parent: Node3D) -> void:
-	var root := Node3D.new()
-	root.name = "DistantScenery"
-	parent.add_child(root)
-	# Three derelict silhouettes frame the outer hunting grounds without fake service markers.
-	for location in [Vector3(-800, -190, -840), Vector3(920, 110, -900), Vector3(-580, 360, 750)]:
-		var wreck := (load("res://assets/sector/derelict.glb") as PackedScene).instantiate() as Node3D
-		wreck.position = location * 1.7
-		wreck.rotation_degrees = Vector3(12, 32, -18)
-		configure_texture_filtering(wreck)
-		for part: MeshInstance3D in wreck.find_children("*", "MeshInstance3D"):
-			part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(wreck)
-	# A distant belt adds scale and parallax for three draw calls, outside playable space.
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 4671
-	var surface := asteroid_surface()
-	for variant in range(3):
-		var source := (load("res://assets/sector/asteroid-%d.glb" % variant) as PackedScene).instantiate()
-		var shape := (source.find_children("*", "MeshInstance3D")[0] as MeshInstance3D).mesh
-		var instances := MultiMesh.new()
-		instances.transform_format = MultiMesh.TRANSFORM_3D
-		instances.mesh = shape
-		instances.instance_count = 20
-		for index in range(instances.instance_count):
-			var location := Vector3(rng.randf_range(-1600, 1600), rng.randf_range(-410, -200), rng.randf_range(-1800, -950)) * 1.7
-			var radius := rng.randf_range(12, 38)
-			var basis := Basis.from_euler(Vector3(rng.randf(), rng.randf(), rng.randf())).scaled(Vector3.ONE * radius)
-			instances.set_instance_transform(index, Transform3D(basis, location))
-		var belt := MultiMeshInstance3D.new()
-		belt.multimesh = instances
-		belt.material_override = surface
-		belt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(belt)
-		source.free()
+	SectorBackdrop.build(parent, 0)
 
 
 static func laser(parent: Node3D, start: Vector3, finish: Vector3, hostile: bool, ammo_type: String = "x1") -> void:

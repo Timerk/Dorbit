@@ -386,6 +386,20 @@ Menus retain a left navigation rail and a top-right wallet with credits, without
 an outpost/docked label. Start belongs only to preflight Overview; flight browsing
 uses Resume flight. Ship specifications appear only on Overview and Hangar.
 
+The user requested a published-game finish for every page except Overview on
+2026-10-14, keeping the palette. Pages sit directly on the dimmed hangar backdrop,
+filling the content area. Each page has a section label, a large title and an amber accent rule. Pages use
+chamfered cards, underlined tabs, switch toggles, keycap bindings and slim
+scrollbars. A bottom-right Esc hint shows Back or Resume flight. The flight
+pause menu uses the same header with a left-aligned list of entries. The
+Ctrl + Alt HUD editor sidebar and the quickslot item picker share this finish;
+quickslot tiles on the flight bar keep the HUD style.
+On 2026-10-15 the user extended the finish to Overview, the header and the
+navigation rail. The header shows the open page beside the brand. The rail
+uses tracked labels and marks the open page with an amber edge glow. Overview
+shades the hangar art behind its text and uses a chamfered specifications card
+and Start button.
+
 The [approved flight HUD](docs/hud-design/README.md) omits the full-width header,
 uses a shared small top margin for contracts/radar, and aligns ship, destination
 and target status along the bottom. Preserve contextual gameplay feedback.
@@ -486,7 +500,7 @@ Fitting never repairs or refills hull, shield or boost energy.
 
 Items and per-item automation settings survive death, reconnect and server restart
 in the current save schema 8 without an extras starter grant or extra-specific migration. Older binaries cannot read
-new extra model IDs: back up before introducing these items. Network schema 15
+new extra model IDs: back up before introducing these items. Network schema 16
 requires matching clients and servers. Original generated images and their exact
 prompts are under `assets/ui/extras`; prices, repair gates and automation behavior
 still need user playtesting.
@@ -691,7 +705,7 @@ Drobit choices requiring playtesting. Premium is an optional operator-set durati
 Save schema 7 migrates versions 1–6 before admission, preserving both earlier
 ammunition/boost and industry layouts. Legacy industry wallets convert once at
 100 credits per unit; active/queued robots retain their lifetime.
-Network schema 15 requires matching client/server builds. See [implementation policies,
+Network schema 16 requires matching client/server builds. See [implementation policies,
 rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot's
 454/870 power budget and exact inventories/capacities remain a separate debug fixture.
 
@@ -762,7 +776,7 @@ Save schema 7 migrates schema 1–6 while preserving progression and grants
 100 R-310 once, with zero other rocket ammo. New pilots receive the same grant.
 The provisioning tool supports the same migration and launcher fittings.
 Back up the ledger before upgrading; rollback needs a pre-migration backup.
-Network schema 15 requires matching client/server builds. Resource rocket
+Network schema 16 requires matching client/server builds. Resource rocket
 boosts use the existing per-ship reserve and combat journal formats; no new save
 or network schema is required. Laser/timed reserve behavior is unchanged.
 
@@ -771,6 +785,8 @@ or network schema is required. Laser/timed reserve behavior is unchanged.
 ### Dedicated server direction
 
 The user chose a dedicated Linux server at the start of Milestone 3. Everyone connects to the same server; playing alone means being the only connected pilot. The server runs independently of any player's game client and controls movement, alien behavior, damage, rewards and action validation. The normal client has a connection menu and does not fall back to a playable offline world.
+
+Clients predict their own facing and send it with each flight command. The server does not adopt it directly. It turns each remote ship toward the requested angles at no more than 720°/s, plus one 50 ms command interval of allowance for network jitter. Firing arcs, rocket launch points and snapshots use this server-limited facing. That rate lets a 180° mouse flick complete in the 0.2 seconds normal steering already takes, so local steering and prediction are unchanged; a modified client can no longer snap onto a target behind it. The rate remains a playtesting setting, and the limit is required before any PvP work. Network schema 15 is unchanged.
 
 The first implementation runs headlessly from source with Godot 4.7.2 on Linux x86-64, initially in Ubuntu on WSL2. It supports ten client pilots without a host ship and keeps simulating when everyone disconnects. The original solo/listen-host modes remain development fixtures behind `--offline`, not a separate progression path for normal play. Offline startup includes the main menu with explicit START and return from the Esc flight menu. All menu pages are viewable offline for visual review, using the solo starter fitting without creating a server inventory. Catalog and quest selection remain available; purchases, sales, fitting, hull activation and contract actions are disabled until connected to the dedicated server.
 
@@ -946,7 +962,7 @@ protection is around the service point, not the entire station. The larger upper
 hangars and outer docking arms do not extend station services or protection.
 Clients and dedicated servers load the same 53 simple collision boxes, with
 open hangar entrances. Autopilot chooses a clear service approach when the tower
-or reactor occupies its usual radial stopping point. Network schema 15 requires
+or reactor occupies its usual radial stopping point. Network schema 16 requires
 matching builds because the physical station layout changed; saves are unchanged.
 Final visual acceptance, scale, approach comfort and group performance remain
 playtesting decisions within Milestone 3.
@@ -1114,15 +1130,37 @@ waypoint without jumping. Local radar, markers, contacts, radiation and autopilo
 use the current map. Station services remain exclusively on M1. Death, reconnect
 and quitting to the station menu return pilots to the home map.
 
+The user approved an industrial transit gate with segmented titanium and cobalt
+armor, graphite service recesses, wrapped outer conduits, three illuminated power
+modules and an animated cyan vortex. All eight gates use the same client-only
+model with readable front and rear approaches. Their travel and protection rules
+remain the rules above. The Connected maps tab uses pictures captured from each
+actual campaign background, thin routed bidirectional links, a current-sector
+marker and hover route previews. Mouse selection and arrow keys with Enter set
+the same next-gate waypoint. The four-map topology and unrestricted access remain
+unchanged. Authoring files and visual review are in
+[art/gate-review](art/gate-review/README.md).
+
 One persistent authoritative session simulates all four populations. Maps have
 separate membership and distant origins in the existing physics world. Rendering,
 snapshots, effects, loot collection, targeting and damage are scoped to map
-membership; owner ammunition and inventory remain private. Each transfer
+membership; owner ammunition and inventory remain private. Player snapshots give
+other pilots only public ship state (movement, health, fitting stats, effects and
+repair state); credits, kills, objective stage, rescue countdown and contracts go
+only to their owner (network schema 16). Each transfer
 increments the flight life and map-visit epoch, so delayed commands, world state
 and effects cannot revive an earlier visit, including returning to the same map.
-Network schema 15 requires matching client/server builds; save schema 8 is unchanged
+Network schema 16 requires matching client/server builds; save schema 8 is unchanged
 because flight locations are temporary. Ordinary travel gates are separate from
 the future Galaxy Gates alien-wave challenges.
+
+### Reclamation campaign background art
+
+The user approved the campaign map concepts in [art/map-background-concepts](art/map-background-concepts/README.md) for implementation. Their history follows the reclamation story proposed in [PR #76](https://github.com/Timerk/Dorbit/pull/76): these were human sectors lost to an alien invasion, with Outpost 01 now supporting the return.
+
+The first visual implementation gives M1 an inhabited planet with bombardment scars, a shattered orbital defense ring and distant human supply staging. M2 has an occupied desert planet with alien orbital collectors and a damaged human receiver. M3 has alien salvage machinery attached to a human carrier wreck, plus a scarred colony moon and abandoned communications infrastructure. M4 has a larger extraction complex attached to a captured human orbital ring and alien relay structures. Blue, amber, rust-red and violet nebula palettes distinguish the maps.
+
+The backgrounds are decorative client scenery outside the flight boundary. Planet surfaces show ruined settlement grids, scorched sites and terraced excavation areas. Alien collectors share segmented dark armor and teal seams; their extraction streams animate cosmetically. Existing gates, obstacle geometry, station services, enemy populations, progression and map access remain as implemented. The scenery depicts a fixed post-arrival home sector and occupied outer sectors. Campaign-driven restoration, mining interactions and station construction stages require separate implementation.
 
 ## Open decisions
 

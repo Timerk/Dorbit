@@ -1,5 +1,7 @@
 # Outpost 01 environment validation
 
+The latest four-map redesign is documented in the [reclamation campaign background review](campaign-backgrounds.md), with in-game screenshots and current validation.
+
 Validated on Windows with Godot 4.7.2, the GL Compatibility renderer and an
 AMD Radeon(TM) Graphics adapter. The original artwork is documented in
 [assets/sector](../../assets/sector/README.md).

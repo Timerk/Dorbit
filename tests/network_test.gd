@@ -90,6 +90,29 @@ func run() -> void:
 	await settle()
 	check(client.session.received_snapshot, "Client receives authoritative snapshots")
 	check(client.player.energy < 100, "Host boost energy reaches the client")
+	# The server follows requested facing at a bounded rate instead of snapping to it.
+	var remote := host.session.ships[id]
+	remote.rotation = Vector3.ZERO
+	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3(0, PI, 0), false)
+	await settle(0.06)
+	host.session.tick(1.0 / 60.0)
+	var turn_limit := Pilot.MAX_TURN_RATE * (1.0 / 60.0 + Pilot.TURN_LATENCY_ALLOWANCE) + 0.001
+	check(absf(remote.rotation.y) <= turn_limit, "Host limits an instant 180-degree turn request")
+	for frame in range(15):
+		host.session.tick(1.0 / 60.0)
+	check(absf(angle_difference(remote.rotation.y, PI)) < 0.001, "Limited turns still reach the requested facing")
+	# Fast mouse steering, sent at the client's 20 Hz command rate, tracks without added lag.
+	var tracked := true
+	for step in range(1, 9):
+		var angles := Vector3(clampf(0.25 * step, -1.48, 1.48), wrapf(PI + 0.4 * step, -PI, PI), 0)
+		client.session.command_flight.rpc_id(1, Vector3.ZERO, angles, false)
+		await settle(0.06)
+		for frame in range(3):
+			host.session.tick(1.0 / 60.0)
+		tracked = tracked and absf(angle_difference(remote.rotation.y, angles.y)) < 0.001 and absf(remote.rotation.x - angles.x) < 0.001
+	check(tracked, "Normal steering converges on every command without server lag")
+	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false)
+	await settle(0.06)
 	var command_before: Dictionary = host.session.commands[id].duplicate()
 	client.session.command_flight.rpc_id(1, Vector3(NAN, 0, 0), Vector3.ZERO, true)
 	await settle()

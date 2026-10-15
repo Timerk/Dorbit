@@ -76,10 +76,8 @@ func catalog() -> Dictionary:
 func _ready() -> void:
 	StationUi.frame(self, Vector2(1150, 690))
 	var rows := padded_rows(self, 16)
-	var header := HBoxContainer.new()
-	rows.add_child(header)
-	page_title = text(header, "SHOP", 28)
-	page_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rows.add_theme_constant_override("separation", 10)
+	page_title = StationUi.header(rows, "SHOP", "STATION")
 	equipment_page = HBoxContainer.new()
 	equipment_page.add_theme_constant_override("separation", 16)
 	equipment_page.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -91,7 +89,7 @@ func _ready() -> void:
 	cargo_page.add_theme_constant_override("separation", 14)
 	cargo_page.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rows.add_child(cargo_page)
-	cargo_summary = StationUi.text(cargo_page, "", 20, StationUi.MUTED)
+	cargo_summary = StationUi.heading(cargo_page, "", 18, StationUi.MUTED)
 	build_resource_cards()
 	sell_all = StationUi.button(cargo_page, "", func(): sector.session.combat.request_station("sell", "all"))
 	StationUi.primary(sell_all)
@@ -115,16 +113,17 @@ func build_resource_cards() -> void:
 		var info: Dictionary = CargoResources.TYPES[resource]
 		var card := StationUi.card(catalog)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var frame := StationUi.style(Color("0c1217"), StationUi.LINE)
-		frame.set_border_width_all(1)
-		frame.set_content_margin_all(4)
+		var frame := StationUi.chamfer(StationUi.CARD, StationUi.LINE, 0, 12)
+		frame.border_width_top = 2
+		frame.border_color = StationUi.LINE
+		frame.set_content_margin_all(6)
 		card.add_theme_stylebox_override("panel", frame)
 		var content := VBoxContainer.new()
 		content.add_theme_constant_override("separation", 4)
 		card.add_child(content)
 		var unit_price := trade_readout(content, "%d CR / unit" % info["price"], 16)
 		unit_price.add_theme_color_override("font_color", StationUi.MUTED)
-		var name_label := StationUi.text(content, info["name"].to_upper(), 18, info["color"])
+		var name_label := StationUi.heading(content, info["name"].to_upper(), 17, info["color"])
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		var image := TextureRect.new()
@@ -149,7 +148,7 @@ func build_resource_cards() -> void:
 		input.add_theme_constant_override("minimum_character_width", 2)
 		input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		input.add_theme_font_size_override("font_size", 14)
-		var input_frame := StationUi.style(Color("0b1115"), StationUi.LINE)
+		var input_frame := StationUi.chamfer(StationUi.DEEP, StationUi.LINE, 0, 0)
 		input_frame.set_content_margin_all(3)
 		input.add_theme_stylebox_override("normal", input_frame)
 		input.add_theme_stylebox_override("read_only", input_frame)
@@ -163,13 +162,15 @@ func build_resource_cards() -> void:
 		input.focus_exited.connect(func(): input.text = str(selected[resource]))
 		increases[resource] = quantity_button(controls, "+", func(): set_quantity(resource, selected[resource] + 1))
 		totals[resource] = trade_readout(content, "0 CR", 22)
+		totals[resource].add_theme_font_override("font", StationUi.BOLD)
+		totals[resource].add_theme_color_override("font_color", StationUi.AMBER)
 		sells[resource] = StationUi.button(content, "SELL", func(): sector.session.combat.request_station("sell", "%s:%d" % [resource, selected[resource]]))
 		sells[resource].custom_minimum_size.y = 42
 
 
 func trade_readout(parent: Node, content: String, font_size: int) -> Label:
 	var panel := PanelContainer.new()
-	var frame := StationUi.style(Color("0b1115"), StationUi.LINE)
+	var frame := StationUi.chamfer(Color(StationUi.DEEP, 0.7), Color(StationUi.LINE, 0.6), 0, 0)
 	frame.set_content_margin_all(3)
 	panel.add_theme_stylebox_override("panel", frame)
 	parent.add_child(panel)
@@ -183,7 +184,7 @@ func quantity_button(parent: Node, caption: String, action: Callable) -> Button:
 	var button := StationUi.button(parent, caption, action)
 	button.custom_minimum_size = Vector2(22, 28)
 	for state in ["normal", "hover", "disabled", "focus"]:
-		var frame := StationUi.style(Color("111a20"), StationUi.LINE)
+		var frame := StationUi.chamfer(Color("111a20") if state != "hover" else Color("2e2216"), StationUi.LINE if state != "hover" else StationUi.AMBER, 0, 0)
 		frame.set_content_margin_all(2)
 		button.add_theme_stylebox_override(state, frame)
 	return button
@@ -209,9 +210,17 @@ func build_categories(parent: Node) -> void:
 	parent.add_child(tabs)
 	for id: String in CATEGORIES:
 		var entry := button(tabs, "All" if id == "all" else CATEGORIES[id], func(): select_category(id))
-		entry.add_theme_font_size_override("font_size", 16)
+		entry.add_theme_font_size_override("font_size", 15)
 		entry.toggle_mode = true
 		entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		StationUi.tab(entry)
+		entry.add_theme_font_override("font", StationUi.tracked(true, 1))
+		entry.add_theme_constant_override("h_separation", 0)
+		for state: String in ["normal", "hover", "pressed", "hover_pressed", "focus", "disabled"]:
+			var narrow := entry.get_theme_stylebox(state).duplicate() as StyleBoxFlat
+			narrow.content_margin_left = 4
+			narrow.content_margin_right = 4
+			entry.add_theme_stylebox_override(state, narrow)
 		categories[id] = entry
 
 
@@ -242,10 +251,11 @@ func build_catalog(parent: Node) -> void:
 		var content := padded_rows(card, 8)
 		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var title := text(content, info["name"], 20)
+		title.add_theme_font_override("font", StationUi.tracked(true, 1))
 		title.custom_minimum_size.y = 34
 		var art := StationUi.art(content, model, Vector2(0, 60))
 		art.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		text(content, offer, 20, StationUi.AMBER)
+		text(content, offer, 20, StationUi.AMBER).add_theme_font_override("font", StationUi.BOLD)
 		cards[model] = card
 	empty_catalog = text(rows, "No items in this category.", 14, FlightHud.MUTED)
 	empty_catalog.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -253,7 +263,8 @@ func build_catalog(parent: Node) -> void:
 
 func build_product(parent: Node) -> void:
 	product_rows = column(parent, 360, true)
-	product_title = text(product_rows, "", 30)
+	product_title = text(product_rows, "", 32)
+	product_title.add_theme_font_override("font", StationUi.tracked(true, 2))
 	product_art = StationUi.art(product_rows, "laser", Vector2(0, 160))
 	product_art.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	bonus = text(product_rows, "", 22)
@@ -281,6 +292,7 @@ func build_order(parent: Node) -> void:
 	purchase_increase = quantity_button(purchase_controls, "+", func(): set_purchase_quantity(purchase_quantity + 1))
 	purchase_increase.tooltip_text = "Increase purchase quantity by one"
 	price = text(parent, "", 30, StationUi.AMBER)
+	price.add_theme_font_override("font", StationUi.BOLD)
 	ownership = text(parent, "", 16, StationUi.MUTED)
 	balance = text(parent, "", 18, StationUi.MUTED)
 	availability = text(parent, "", 16, StationUi.MUTED)
@@ -317,9 +329,9 @@ static func column(parent: Node, minimum: float, expand: bool = false) -> VBoxCo
 	panel.custom_minimum_size.x = minimum
 	if expand:
 		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.add_theme_stylebox_override("panel", StationUi.style(StationUi.SURFACE, StationUi.LINE))
+	panel.add_theme_stylebox_override("panel", StationUi.chamfer(StationUi.CARD, StationUi.LINE, 0, 12))
 	parent.add_child(panel)
-	return padded_rows(panel, 8)
+	return padded_rows(panel, 10)
 
 
 static func text(parent: Node, content: String, font_size: int = 14, color: Color = FlightHud.INK) -> Label:

@@ -1,35 +1,49 @@
 shader_type spatial;
 render_mode unshaded;
-
 varying vec3 local_position;
-
+uniform sampler2D surface_map : source_color, filter_linear_mipmap, repeat_enable;
+uniform vec4 surface_tint : source_color = vec4(1.0);
+uniform float surface_desaturation = 0.0;
+uniform float surface_rotation = 0.0;
+uniform vec4 atmosphere_color : source_color = vec4(0.15,0.48,0.85,1.0);
+uniform float settlement_amount = 1.0;
+uniform float mining_amount = 0.0;
+uniform float terrain_seed = 0.0;
+uniform float war_damage = 0.0;
 float hash3(vec3 p) {
-	p = fract(p * 0.3183099 + vec3(0.11, 0.23, 0.37));
+	p = fract(p*0.3183099+vec3(0.11,0.23,0.37));
 	p *= 17.0;
-	return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+	return fract(p.x*p.y*p.z*(p.x+p.y+p.z));
 }
 float noise3(vec3 p) {
 	vec3 i = floor(p), f = fract(p);
-	f = f * f * (3.0 - 2.0 * f);
-	return mix(mix(mix(hash3(i), hash3(i+vec3(1,0,0)), f.x), mix(hash3(i+vec3(0,1,0)), hash3(i+vec3(1,1,0)), f.x), f.y),
-		mix(mix(hash3(i+vec3(0,0,1)), hash3(i+vec3(1,0,1)), f.x), mix(hash3(i+vec3(0,1,1)), hash3(i+vec3(1,1,1)), f.x), f.y), f.z);
+	f = f*f*(3.0-2.0*f);
+	return mix(mix(mix(hash3(i),hash3(i+vec3(1,0,0)),f.x),mix(hash3(i+vec3(0,1,0)),hash3(i+vec3(1,1,0)),f.x),f.y),
+		mix(mix(hash3(i+vec3(0,0,1)),hash3(i+vec3(1,0,1)),f.x),mix(hash3(i+vec3(0,1,1)),hash3(i+vec3(1,1,1)),f.x),f.y),f.z);
 }
-float fbm(vec3 p) {
-	return noise3(p)*0.53 + noise3(p*2.03)*0.27 + noise3(p*4.11)*0.13 + noise3(p*8.31)*0.07;
-}
-void vertex() {
-	local_position = VERTEX;
-}
+void vertex() { local_position = VERTEX; }
 void fragment() {
 	vec3 d = normalize(local_position);
-	float terrain = fbm(d * 5.0 + vec3(8,3,2));
-	float continent = smoothstep(0.52, 0.58, terrain);
-	vec3 ocean = mix(vec3(0.015,0.05,0.09), vec3(0.04,0.20,0.24), terrain);
-	vec3 land = mix(vec3(0.16,0.20,0.14), vec3(0.42,0.39,0.28), fbm(d*23.0));
-	vec3 cloud_warp = vec3(fbm(d*4.0), fbm(d*4.0+7.0), fbm(d*4.0+13.0));
-	float clouds = smoothstep(0.49,0.70,fbm(d*9.0+cloud_warp*2.5+vec3(4,1,6)));
-	vec3 surface = mix(mix(ocean, land, continent), vec3(0.63,0.73,0.79), clouds*0.7);
-	float daylight = smoothstep(-0.12,0.8,dot(d,normalize(vec3(-0.65,0.4,0.7))));
-	float rim = pow(1.0-max(dot(normalize(NORMAL),normalize(VIEW)),0.0), 3.5);
-	ALBEDO = surface*(0.025+daylight*0.85) + vec3(0.08,0.34,0.55)*rim*(0.2+daylight*0.8);
+	vec2 uv = vec2(fract(atan(d.x,d.z)/6.2831853+0.5+surface_rotation),acos(clamp(d.y,-1.0,1.0))/3.1415927);
+	vec3 painted = texture(surface_map,uv).rgb;
+	float seam = 0.5*(1.0-smoothstep(0.0,0.018,min(uv.x,1.0-uv.x)));
+	painted = mix(painted,texture(surface_map,vec2(1.0-uv.x,uv.y)).rgb,seam);
+	vec3 surface = mix(painted,vec3(dot(painted,vec3(0.2126,0.7152,0.0722))),surface_desaturation)*surface_tint.rgb;
+	// The extraction site stays aligned with the real orbital stream endpoint.
+	float pit = length((d.xy-vec2(-0.12,0.08))*vec2(1.0,1.4));
+	pit += (noise3(d*95.0)-0.5)*0.012;
+	float excavation = (1.0-smoothstep(0.11,0.125,pit))*step(0.0,d.z)*mining_amount;
+	float terraces = smoothstep(0.1,0.4,fract(pit*155.0));
+	surface = mix(surface,surface*(0.35+terraces*0.36),excavation);
+	float daylight = smoothstep(-0.18,0.85,dot(d,normalize(vec3(-0.65,0.4,0.7))));
+	float rim = pow(1.0-max(dot(normalize(NORMAL),normalize(VIEW)),0.0),5.0);
+	// Surviving city clusters are interrupted by dead districts, without a global grid.
+	float inhabited = smoothstep(0.58,0.78,noise3(d*32.0+terrain_seed));
+	float land = smoothstep(-0.015,0.04,painted.r-painted.b)*(1.0-step(0.55,painted.b));
+	float windows = pow(noise3(d*900.0),12.0)*inhabited*land*settlement_amount;
+	// The colony's blackened districts no longer produce surviving window lights.
+	float survival = smoothstep(0.018,0.075,max(painted.r,max(painted.g,painted.b)));
+	windows *= mix(1.0,survival,war_damage);
+	vec3 city_lights = vec3(0.9,0.48,0.18)*windows*(1.0-daylight)*(1.0-excavation)*1.4;
+	ALBEDO = surface*(0.045+daylight*1.1)+city_lights+atmosphere_color.rgb*rim*(0.1+daylight*0.35);
 }

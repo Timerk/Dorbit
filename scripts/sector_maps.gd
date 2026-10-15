@@ -60,20 +60,45 @@ static func first_hop(source: int, destination: int) -> int:
 
 static func gate_model(parent: Node3D, map: int, destination: int) -> void:
 	var root := Node3D.new()
+	root.name = "GateToM%d" % (destination+1)
 	root.position = gate_position(map, destination)
 	parent.add_child(root)
 	root.look_at(origin(map), Vector3.UP)
-	var armor := SectorVisuals.material(Color("506375"))
-	var glow := SectorVisuals.material(MAPS[destination]["color"], true)
-	for index in range(24):
-		var angle := index * TAU / 24.0
-		var rim := SectorVisuals.box(root, Vector3(cos(angle), sin(angle), 0) * 16.0, Vector3(3.0, 4.4, 3.0), armor)
-		rim.rotation.z = angle
-		var light := SectorVisuals.box(root, Vector3(cos(angle), sin(angle), -1.7) * Vector3(12.8, 12.8, 1), Vector3(0.6, 3.2, 0.4), glow)
-		light.rotation.z = angle
+	var model := (load("res://assets/sector/transit-gate.glb") as PackedScene).instantiate() as Node3D
+	model.name = "TransitGate"
+	root.add_child(model)
+	for part: MeshInstance3D in model.find_children("*","MeshInstance3D",true,false):
+		part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		part.layers = 2
+		for index in part.mesh.get_surface_count():
+			var surface := part.mesh.surface_get_material(index) as BaseMaterial3D
+			if surface.resource_name == "Gate cyan":
+				surface.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+				surface.albedo_color = Color(0.02,0.72,1.0)
+				surface.emission_energy_multiplier = 0.4
+	SectorVisuals.configure_texture_filtering(model)
+	var aperture := QuadMesh.new()
+	aperture.size = Vector2.ONE*25.2
+	var energy := ShaderMaterial.new()
+	energy.shader = preload("res://shaders/gate_portal.gdshader")
+	energy.set_shader_parameter("turbulence",preload("res://assets/sector/nebula-panorama.png"))
+	var portal := SectorVisuals.mesh(root,aperture,Vector3.ZERO,energy)
+	portal.name = "Portal"
+	portal.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# Restrict the portal spill to gate armor; nearby ships and scenery keep their
+	# existing lighting. Two soft lights make both approaches readable without bloom.
+	for side in [-1,1]:
+		var light := OmniLight3D.new()
+		light.position = Vector3(0,0,side*5.0)
+		light.light_color = Color("48e6f5")
+		light.light_energy = 5.0
+		light.omni_range = 29
+		light.omni_attenuation = 0.8
+		light.light_cull_mask = 2
+		root.add_child(light)
 	var label := Label3D.new()
 	label.text = "GATE TO " + MAPS[destination]["name"]
-	label.position = Vector3(0, 23, 0)
+	label.position = Vector3(0, 27, 0)
 	label.font_size = 40
 	label.pixel_size = 0.08
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED

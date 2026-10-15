@@ -40,11 +40,10 @@ var last_replacement := ""
 func _ready() -> void:
 	StationUi.frame(self, SIZE)
 	var rows := StationUi.rows(self, 16)
-	var header := HBoxContainer.new()
-	rows.add_child(header)
-	StationUi.text(header, "REFINING & UPGRADES", 28).size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cargo_summary = StationUi.text(header, "", 18, StationUi.MUTED)
-	cargo_summary.autowrap_mode = TextServer.AUTOWRAP_OFF
+	rows.add_theme_constant_override("separation", 10)
+	var header := StationUi.header_row(StationUi.header(rows, "REFINING & UPGRADES", "STATION"))
+	cargo_summary = StationUi.heading(header, "", 17, StationUi.MUTED)
+	cargo_summary.size_flags_vertical = Control.SIZE_SHRINK_END
 	var tab_row := HBoxContainer.new()
 	rows.add_child(tab_row)
 	for entry: Array in [["refining", "REFINING"], ["update", "UPDATE"]]:
@@ -52,6 +51,7 @@ func _ready() -> void:
 		tabs[key] = StationUi.button(tab_row, entry[1], func(): select_tab(key))
 		tabs[key].toggle_mode = true
 		tabs[key].custom_minimum_size.x = 150
+		StationUi.tab(tabs[key])
 	build_refining(rows)
 	build_update(rows)
 	status = StationUi.text(rows, "", 16, StationUi.AMBER)
@@ -127,7 +127,7 @@ func build_refining(parent: Node) -> void:
 	var tree_card := StationUi.card(body)
 	tree_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var tree_rows := StationUi.rows(tree_card, 12)
-	StationUi.text(tree_rows, "RAW ORE → REFINED RESOURCES", 18, StationUi.MUTED)
+	StationUi.heading(tree_rows, "RAW ORE → REFINED RESOURCES", 16, StationUi.MUTED)
 	var tree := Control.new()
 	tree.name = "RefiningTree"
 	tree.custom_minimum_size = Vector2(650, 460)
@@ -150,12 +150,12 @@ func build_refining(parent: Node) -> void:
 	var detail := StationUi.card(body)
 	detail.custom_minimum_size.x = 340
 	var rows := StationUi.rows(detail, 16)
-	refine_title = StationUi.text(rows, "", 26)
-	StationUi.text(rows, "Choose an output, enter an amount, then confirm refining. Ingredients come from this ship's cargo.", 17, StationUi.MUTED)
+	refine_title = StationUi.heading(rows, "", 26)
+	refine_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	StationUi.text(rows, "Choose an output, enter an amount, then confirm refining. Ingredients come from this ship's cargo.", 16, StationUi.MUTED)
 	refine_amount = amount_control(rows, "UNITS TO PRODUCE", func(): return ResourceBoosts.maximum(sector.cargo, output))
 	rows.add_child(HSeparator.new())
-	recipe = StationUi.text(rows, "", 19)
-	recipe.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	recipe = StationUi.text(text_area(rows), "", 17)
 	refine_button = StationUi.button(rows, "REFINE", refine)
 	StationUi.primary(refine_button)
 
@@ -173,7 +173,7 @@ func build_update(parent: Node) -> void:
 	var resources := VBoxContainer.new()
 	resources.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.add_child(resources)
-	StationUi.text(resources, "RESOURCE BAR", 18, StationUi.MUTED)
+	StationUi.heading(resources, "RESOURCE BAR", 16, StationUi.MUTED)
 	var cards := HBoxContainer.new()
 	cards.name = "UpgradeCards"
 	cards.add_theme_constant_override("separation", 6)
@@ -182,7 +182,7 @@ func build_update(parent: Node) -> void:
 		upgrade_cards[key] = card(cards, key, func(): select_resource(key), Vector2(162, 164))
 		upgrade_cards[key].tooltip_text = BOOST_TEXT[key] + "\nDrag onto compatible equipment, or select a resource and equipment card."
 		upgrade_cards[key].set_drag_forwarding(func(position: Vector2): return resource_drag(position, key), Callable(), Callable())
-	StationUi.text(resources, "DROP ON EQUIPMENT · THEN CHOOSE AN AMOUNT", 18, StationUi.MUTED)
+	StationUi.heading(resources, "DROP ON EQUIPMENT · THEN CHOOSE AN AMOUNT", 16, StationUi.MUTED)
 	var equipment_row := HBoxContainer.new()
 	equipment_row.add_theme_constant_override("separation", 6)
 	resources.add_child(equipment_row)
@@ -192,9 +192,9 @@ func build_update(parent: Node) -> void:
 	var detail := StationUi.card(columns)
 	detail.custom_minimum_size.x = 340
 	var rows := StationUi.rows(detail, 16)
-	upgrade_title = StationUi.text(rows, "", 26)
-	upgrade_description = StationUi.text(rows, "", 18)
-	upgrade_description.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	upgrade_title = StationUi.heading(rows, "", 26)
+	upgrade_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	upgrade_description = StationUi.text(text_area(rows), "", 18)
 	upgrade_amount = amount_control(rows, "RESOURCE UNITS TO APPLY", func(): return int(sector.cargo.get(resource, 0)))
 	upgrade_amount.get_line_edit().text_changed.connect(clamp_upgrade_input)
 	replace_warning = CheckButton.new()
@@ -449,3 +449,16 @@ func _process(_delta: float) -> void:
 	upgrade_button.text = "REPLACE BOOST" if replacement else "APPLY BOOST"
 	var page_blocker := refining_blocked if page == "refining" else blocked
 	status.text = page_blocker if not page_blocker.is_empty() else sector.session.combat.station_message
+
+
+func text_area(parent: Node) -> VBoxContainer:
+	# Longer recipes scroll inside the detail card instead of resizing the page.
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	parent.add_child(scroll)
+	var rows := VBoxContainer.new()
+	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(rows)
+	return rows

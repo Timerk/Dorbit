@@ -46,8 +46,103 @@ func run() -> void:
 	check(not space.intersect_ray(PhysicsRayQueryParameters3D.create(center + Vector3(0, -63, 30), center + Vector3(0, -63, -30), 1)).is_empty(), "Underside reactor has collision")
 	client.free()
 	server.free()
+	await check_campaign_backdrops()
 	print("Sector visual checks: %d passed, %d failed" % [checks - failures, failures])
 	quit(0 if failures == 0 else 1)
+
+
+func check_campaign_backdrops() -> void:
+	var flight := preload("res://scenes/sector.tscn").instantiate() as Sector
+	flight.offline = true
+	root.add_child(flight)
+	flight.set_physics_process(false)
+	var authority := preload("res://scenes/sector.tscn").instantiate() as Sector
+	authority.dedicated_server = true
+	authority.server_port = 24967 + int(OS.get_environment("DORBIT_TEST_PORT_OFFSET"))
+	var previous_directory := OS.get_environment("DORBIT_DATA_DIR")
+	var directory := ProjectSettings.globalize_path("user://backdrop-server-%d" % OS.get_process_id())
+	DirAccess.make_dir_recursive_absolute(directory)
+	var ledger := FileAccess.open(directory.path_join("pilots.json"),FileAccess.WRITE)
+	ledger.store_string(JSON.stringify({"version":1,"pilots":{"backdrop":{"verifier":"backdrop-test-token".sha256_text(),"credits":0}}}))
+	ledger.close()
+	OS.set_environment("DORBIT_DATA_DIR",directory)
+	root.add_child(authority)
+	authority.set_physics_process(false)
+	var client_obstacles := static_obstacles(flight)
+	check(client_obstacles == static_obstacles(authority) and client_obstacles.size() == 149, "All four rendered maps retain identical server obstacles")
+	check(render_nodes(authority) == 0, "Four-map server creates no campaign planets, machines or sky")
+	for map: int in SectorMaps.MAPS:
+		flight.activate_map(map)
+		for destination: int in SectorMaps.GATES[map]:
+			var gate := flight.get_node("Map%dGates/GateToM%d" % [map+1,destination+1]) as Node3D
+			check(gate.global_position.is_equal_approx(SectorMaps.gate_position(map,destination)), "Detailed gate retains its authoritative travel position")
+			check(gate.find_children("*","CollisionObject3D",true,false).is_empty(), "Transit armor and portal add no collision bodies")
+			check(gate.global_basis.z.dot((gate.global_position-SectorMaps.origin(map)).normalized()) > 0.99, "Transit gate aperture faces the local sector")
+			var parts := gate.find_children("*","MeshInstance3D",true,false)
+			var surfaces := 0
+			for part: MeshInstance3D in parts:
+				surfaces += part.mesh.get_surface_count()
+				check((part.transform*part.get_aabb()).size.length() < SectorMaps.PROTECTION_RADIUS, "Gate presentation stays within its protected approach")
+			check(surfaces <= 6, "Shared detailed gate uses at most six mesh surfaces including the portal")
+			var portal := gate.get_node("Portal") as MeshInstance3D
+			check((portal.material_override as ShaderMaterial).get_shader_parameter("turbulence") is Texture2D, "Animated portal has its packaged turbulence texture")
+		var backdrop_name := "DistantScenery" if map == 0 else "Map%dBackdrop" % (map+1)
+		var backdrop := flight.get_node(backdrop_name) as Node3D
+		check(backdrop.is_visible_in_tree() and backdrop.position == SectorMaps.origin(map), "Current map backdrop follows its sector origin")
+		check(backdrop.find_children("*", "CollisionObject3D", true, false).is_empty(), "Background landmarks add no collision or targeting bodies")
+		var planet := backdrop.get_node("ColonyPlanet") as MeshInstance3D
+		check(planet.position.length()-(planet.mesh as SphereMesh).radius > Sector.MAP_RADIUS, "Colony planet is outside the entire flight volume")
+		var planet_material := planet.material_override as ShaderMaterial
+		var surface_map := planet_material.get_shader_parameter("surface_map") as Texture2D
+		check(surface_map != null and surface_map.get_width() >= 1700 and surface_map.get_width() == surface_map.get_height()*2, "Planet has its complete spherical surface texture")
+		check(surface_map.resource_path.ends_with("colony-surface-war.png" if map == 0 else "mineral-surface.png"), "Only the home colony uses the revised war-damage surface")
+		check(planet_material.get_shader_parameter("war_damage") == (1.0 if map == 0 else 0.0), "Burned settlement light suppression applies only on M1")
+		check(backdrop.get_node_or_null("Atmosphere") != null, "Planet has a separate atmosphere beyond the solid limb")
+		var sky := (flight.get_node("WorldEnvironment") as WorldEnvironment).environment.sky.sky_material as ShaderMaterial
+		var panorama := sky.get_shader_parameter("nebula_panorama") as Texture2D
+		check(panorama != null and panorama.get_width() == panorama.get_height()*2, "Sky has its panoramic texture after map activation")
+		check(sky.get_shader_parameter("nebula_warm") == SectorBackdrop.THEMES[map]["warm"], "Map transfer updates its nebula palette")
+		for key: int in flight.map_scenery:
+			for node: Node3D in flight.map_scenery[key]:
+				check(node.visible == (key == map), "Map transfer hides all other maps' scenery")
+		check_background_bounds(backdrop, SectorMaps.origin(map))
+		# Enter and leave each map twice so a prior visit cannot leave a visible backdrop.
+		flight.activate_map(0)
+		flight.activate_map(map)
+		check(backdrop.is_visible_in_tree(), "Revisited map restores its background")
+	authority.session.disconnect_session("Backdrop validation complete")
+	if previous_directory.is_empty():
+		OS.unset_environment("DORBIT_DATA_DIR")
+	else:
+		OS.set_environment("DORBIT_DATA_DIR",previous_directory)
+	flight.free()
+	authority.free()
+
+
+func static_obstacles(node: Node) -> Array:
+	var shapes: Array = []
+	if node is StaticBody3D:
+		for child: Node in node.get_children():
+			if child is CollisionShape3D:
+				shapes.append([child.global_transform, child.shape.get_class(), child.shape.radius if child.shape is SphereShape3D else child.shape.size])
+	for child: Node in node.get_children():
+		shapes.append_array(static_obstacles(child))
+	return shapes
+
+
+func check_background_bounds(node: Node, origin: Vector3) -> void:
+	if node is MeshInstance3D:
+		var bounds: AABB = node.global_transform * node.get_aabb()
+		var nearest := Vector3(clampf(origin.x,bounds.position.x,bounds.end.x),clampf(origin.y,bounds.position.y,bounds.end.y),clampf(origin.z,bounds.position.z,bounds.end.z))
+		check(nearest.distance_to(origin) > Sector.MAP_RADIUS, "Solid-looking decorative landmark stays outside safe space")
+	# The dummy headless rendering server does not retain MultiMesh GPU transforms.
+	if node is MultiMeshInstance3D and DisplayServer.get_name() != "headless":
+		for index in node.multimesh.instance_count:
+			var transform: Transform3D = node.global_transform * node.multimesh.get_instance_transform(index)
+			var radius: float = node.multimesh.mesh.get_aabb().size.length()*transform.basis.get_scale().x*0.5
+			check(transform.origin.distance_to(origin)-radius > Sector.MAP_RADIUS, "Instanced belt rock remains outside safe space")
+	for child: Node in node.get_children():
+		check_background_bounds(child, origin)
 
 
 func collision_manifest(node: Node) -> Array:

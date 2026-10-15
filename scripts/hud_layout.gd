@@ -36,13 +36,18 @@ func _ready() -> void:
 	theme = StationUi.menu_theme()
 	load_layout()
 	sidebar = PanelContainer.new()
+	sidebar.theme = StationUi.page_theme()
 	add_child(sidebar)
-	var rail_style := FlightHud.panel_style()
-	rail_style.bg_color.a = 1.0
+	var rail_style := StationUi.chamfer(Color(0.047, 0.071, 0.09, 0.98), StationUi.LINE, 0, 0)
+	rail_style.set_border_width_all(0)
+	rail_style.border_width_right = 1
+	rail_style.shadow_color = Color(0, 0, 0, 0.45)
+	rail_style.shadow_size = 18
 	sidebar.add_theme_stylebox_override("panel", rail_style)
-	var rows := StationUi.rows(sidebar, 8)
-	StationUi.text(rows, "HUD EDITOR", 22, FlightHud.AMBER)
-	StationUi.text(rows, "Ctrl + Alt / Esc to finish\nDrag panels to move\nResize from lower right", 14)
+	var rows := StationUi.rows(sidebar, 12)
+	StationUi.header(rows, "HUD EDITOR", "CUSTOMIZE", 28)
+	StationUi.text(rows, "Drag panels to move\nResize from the lower-right corner", 14, FlightHud.MUTED)
+	StationUi.heading(rows, "PANELS", 14, FlightHud.MUTED)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -55,9 +60,8 @@ func _ready() -> void:
 		button.icon = load("res://assets/ui/menu/%s.svg" % ITEMS[id][1])
 		button.expand_icon = true
 		button.add_theme_constant_override("icon_max_width", 20)
-		button.custom_minimum_size.y = 30
-		button.add_theme_font_size_override("font_size", 16)
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.custom_minimum_size.y = 32
+		StationUi.list_entry(button, false, 15)
 		button.tooltip_text = "Show " + ITEMS[id][0]
 		buttons[id] = button
 	var snapping := CheckButton.new()
@@ -65,11 +69,21 @@ func _ready() -> void:
 	snapping.button_pressed = snap
 	snapping.toggled.connect(func(value: bool): snap = value)
 	rows.add_child(snapping)
-	StationUi.button(rows, "Reset layout", reset_layout)
-	StationUi.button(rows, "Done [Esc]", func(): set_editing(false))
-	StationUi.button(rows, "Hide sidebar", func(): sidebar.hide(); rail_toggle.show())
+	var tools := HBoxContainer.new()
+	rows.add_child(tools)
+	for entry: Array in [["Reset layout", reset_layout], ["Hide sidebar", func(): sidebar.hide(); rail_toggle.show()]]:
+		var tool := StationUi.button(tools, entry[0], entry[1])
+		tool.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tool.add_theme_font_size_override("font_size", 15)
+	var done := StationUi.button(rows, "DONE  /  ESC", func(): set_editing(false))
+	StationUi.primary(done)
+	done.custom_minimum_size.y = 42
+	done.add_theme_font_size_override("font_size", 18)
 	sidebar.hide()
-	rail_toggle = StationUi.button(self, "HUD editor / Show sidebar", func(): sidebar.show(); rail_toggle.hide())
+	rail_toggle = StationUi.button(self, "HUD EDITOR  /  SHOW SIDEBAR", func(): sidebar.show(); rail_toggle.hide())
+	rail_toggle.theme = StationUi.page_theme()
+	rail_toggle.add_theme_font_override("font", StationUi.tracked(true, 2))
+	rail_toggle.add_theme_font_size_override("font_size", 15)
 	rail_toggle.position = Vector2(8, 8)
 	rail_toggle.hide()
 
@@ -337,9 +351,12 @@ func _draw() -> void:
 		if not shown(id):
 			continue
 		var rect := rect_for(id)
-		draw_rect(rect, Color(FlightHud.AMBER, 0.95 if id == selected_id else 0.55), false, 2 if id == selected_id else 1)
+		var selected := id == selected_id
+		draw_rect(rect, Color(FlightHud.AMBER, 0.08 if selected else 0.03))
+		draw_rect(rect, Color(FlightHud.AMBER, 0.95 if selected else 0.5), false, 2 if selected else 1)
 		var header := header_rect(rect)
-		draw_rect(header, Color("263039"))
-		draw_string(StationUi.FONT, header.position + Vector2(6, 17), ITEMS[id][0], HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 30, 14, FlightHud.INK)
+		draw_rect(header, Color("3a2814") if selected else Color("141d23", 0.96))
+		draw_rect(Rect2(header.position, Vector2(3, header.size.y)), FlightHud.AMBER)
+		draw_string(StationUi.tracked(true, 1), header.position + Vector2(10, 17), ITEMS[id][0].to_upper(), HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - 34, 13, FlightHud.INK if selected else FlightHud.MUTED)
 		draw_string(StationUi.FONT, header.position + Vector2(header.size.x - 18, 17), "×", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, FlightHud.AMBER)
 		draw_line(rect.end - Vector2(18, 3), rect.end - Vector2(3, 18), FlightHud.AMBER, 3)

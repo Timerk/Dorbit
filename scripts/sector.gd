@@ -626,7 +626,7 @@ func build_maps() -> void:
 			map_scenery[map].append(terrain)
 			var rng := RandomNumberGenerator.new()
 			rng.seed = 7301 + map * 97
-			var surface := SectorVisuals.material(Color(SectorMaps.MAPS[map]["color"]).darkened(0.65)) if not dedicated_server else null
+			var surface := SectorVisuals.asteroid_surface() if not dedicated_server else null
 			for index in range(24):
 				var rock := StaticBody3D.new()
 				rock.position = Vector3(rng.randf_range(-550, 550), rng.randf_range(-160, 160), rng.randf_range(-550, 550))
@@ -638,13 +638,14 @@ func build_maps() -> void:
 				collider.shape = shape
 				rock.add_child(collider)
 				if not dedicated_server:
-					var mesh := SphereMesh.new()
-					mesh.radius = radius
-					mesh.height = radius * 2
-					mesh.radial_segments = 10
-					mesh.rings = 5
-					SectorVisuals.mesh(rock, mesh, Vector3.ZERO, surface)
+					var model := (load("res://assets/sector/asteroid-%d.glb" % (index % 3)) as PackedScene).instantiate() as Node3D
+					model.scale = Vector3.ONE * radius
+					model.rotation = Vector3(index*0.71, index*1.13, index*0.37)
+					SectorVisuals.apply_surface(model, surface)
+					rock.add_child(model)
 		if not dedicated_server:
+			if map != 0:
+				map_scenery[map].append(SectorBackdrop.build(self, map))
 			var gates := Node3D.new()
 			gates.name = "Map%dGates" % (map + 1)
 			add_child(gates)
@@ -685,6 +686,4 @@ func activate_map(map: int) -> void:
 		hud.navigation.waypoint_key = "station" if map == 0 else "gate%d" % SectorMaps.GATES[map].keys()[0]
 		hud.navigation.reset_view()
 		hud.navigation.close_overview(false)
-	var environment := get_node_or_null("WorldEnvironment") as WorldEnvironment
-	if environment != null:
-		(environment.environment.sky.sky_material as ShaderMaterial).set_shader_parameter("map_tint", Color.WHITE if map == 0 else SectorMaps.MAPS[map]["color"])
+	SectorBackdrop.activate(self, map)
