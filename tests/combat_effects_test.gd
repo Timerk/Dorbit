@@ -97,10 +97,24 @@ func destruction_checks() -> void:
 	var overlord := Alien.new()
 	overlord.kind = "Overlord"
 	root.add_child(overlord)
-	var wing_hit := SectorVisuals.hull_contact(overlord, Vector3(1.0, -0.06, 0.2).normalized())
-	check(wing_hit.x > 20.0, "Large Overlord wing sparks reach the hull beyond the old 20 m ray")
+	var direction := Vector3(1.0, -0.06, 0.2).normalized()
+	var wing_hit := SectorVisuals.hull_contact(overlord, direction)
+	var visual := overlord.model.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D
+	var wing_edge := overlord.to_local(visual.to_global(visual.get_aabb().end)).x
+	check(is_equal_approx(wing_hit.x, wing_edge + direction.x * 0.08),
+		"Overlord wing sparks reach its actual scaled mesh bounds")
 	check(SectorVisuals.shield_radius(overlord) > 3.6,
 		"Overlord shield presentation grows with the larger hull")
+	# Keep the old short-ray regression independent of the authored hull's width.
+	var wide_hull := MeshInstance3D.new()
+	var wide_box := BoxMesh.new()
+	wide_box.size = Vector3(50.0, 6.0, 12.0)
+	wide_hull.mesh = wide_box
+	wide_hull.scale = Vector3.ONE / overlord.model.scale
+	overlord.model.add_child(wide_hull)
+	var wide_hit := SectorVisuals.hull_contact(overlord, direction)
+	check(is_equal_approx(wide_hit.x, 25.0 + direction.x * 0.08),
+		"Wide hull sparks reach the surface beyond the old 20 m ray")
 	overlord.free()
 	sector = preload("res://scenes/sector.tscn").instantiate()
 	sector.client_only = false
