@@ -38,6 +38,8 @@ var attempted_port: int = PORT
 var preference_label: Label
 var combat: SessionCombat
 var store: PilotStore
+var benchmark_timing := false
+var benchmark_phases: Dictionary = {}
 var pilot_ids: Dictionary[int, String] = {}
 var challenges: Dictionary[int, PackedByteArray] = {}
 # May also be supplied by a client UI. Neither value is a wallet selector in gameplay RPCs.
@@ -676,11 +678,16 @@ func tick(delta: float) -> void:
 	var boost := not sector.dedicated_server and not sector.paused and not sector.autopilot.enabled and Input.is_action_pressed("boost")
 	send_clock += delta
 	if multiplayer.is_server():
+		var phase_started := Time.get_ticks_usec() if benchmark_timing else 0
+		if benchmark_timing: benchmark_phases.clear()
 		if sector.dedicated_server:
 			lab_clock += delta
 			if lab_clock >= 1.0:
 				lab_clock = 0.0
 				combat.advance_labs()
+		if benchmark_timing:
+			benchmark_phases["industry_us"] = Time.get_ticks_usec() - phase_started
+			phase_started = Time.get_ticks_usec()
 		if not sector.dedicated_server and sector.player.alive:
 			sector.player.fly_command(delta, movement, boost)
 		for id: int in ships:
@@ -696,10 +703,17 @@ func tick(delta: float) -> void:
 					ship.turn_toward(command["rotation"], delta)
 				ship.fly_command(delta, command["movement"] if fresh else Vector3.ZERO, command["boost"] if fresh else false)
 			sector.tick_radiation(ship, delta)
+		if benchmark_timing:
+			benchmark_phases["flight_us"] = Time.get_ticks_usec() - phase_started
+			phase_started = Time.get_ticks_usec()
 		combat.tick(delta)
+		if benchmark_timing:
+			benchmark_phases["combat_us"] = Time.get_ticks_usec() - phase_started
+			phase_started = Time.get_ticks_usec()
 		if send_clock >= 0.05:
 			send_clock = 0.0
 			send_snapshot()
+		if benchmark_timing: benchmark_phases["snapshot_us"] = Time.get_ticks_usec() - phase_started
 	else:
 		if not received_snapshot:
 			connect_clock += delta

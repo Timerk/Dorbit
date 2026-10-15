@@ -171,15 +171,17 @@ func fly(delta: float, player: Pilot, station_position: Vector3) -> void:
 	velocity = velocity.move_toward(offset.limit_length(1.0) * minf(float(tuning()["speed"]), offset.length()), delta * 22.0)
 	var look_point := player.global_position if engaged else destination
 	if global_position.distance_squared_to(look_point) > 0.1:
-		var direction := (look_point-global_position).normalized()
+		var direction := look_point - global_position
+		var unit := direction.normalized()
 		var look_up := Vector3.UP
-		if absf(direction.dot(look_up)) > 0.98:
+		if absf(unit.dot(look_up)) > 0.98:
 			# Near a vertical heading, carry the current roll through the pole.
 			look_up = global_basis.y
-			if absf(direction.dot(look_up)) > 0.98:
+			if absf(unit.dot(look_up)) > 0.98:
 				look_up = global_basis.z
-		var desired := Transform3D(global_basis, global_position).looking_at(look_point, look_up)
-		global_basis = global_basis.slerp(desired.basis, minf(1.0, delta * 3.0)).orthonormalized()
+		# Compare a local direction; approximate point equality grows with map origins.
+		var desired := Basis.looking_at(direction, look_up)
+		global_basis = global_basis.slerp(desired, minf(1.0, delta * 3.0)).orthonormalized()
 	move_and_slide()
 	if engaged:
 		try_fire(player)
