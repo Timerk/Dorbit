@@ -9,6 +9,7 @@ import importlib.util
 import json
 import re
 import struct
+import sys
 import zlib
 from pathlib import Path
 
@@ -21,6 +22,13 @@ OUTPUT=ROOT/'assets/aliens'
 module=importlib.util.spec_from_file_location('alien_builder',REVIEW/'build_models.py')
 builder=importlib.util.module_from_spec(module)
 module.loader.exec_module(builder)
+if '--outer' in sys.argv:
+    module=importlib.util.spec_from_file_location('outer_builder',REVIEW/'outer-sectors/build_models.py')
+    outer=importlib.util.module_from_spec(module)
+    module.loader.exec_module(outer)
+    REVIEW=outer.HERE
+    builder=outer.review
+    builder.NAMES=outer.NAMES
 builder.surfaces.SIZE=2048
 
 
@@ -51,11 +59,12 @@ def runtime_map(path: Path, channel: str, target: Path) -> None:
 
 def main() -> None:
     OUTPUT.mkdir(parents=True,exist_ok=True)
-    source=(ROOT/'scripts/alien.gd').read_text()
+    source=(ROOT/'scripts/alien.gd').read_text().split('const VISUAL_DIAMETERS := {',1)[1].split('}',1)[0]
     diameters=dict((name,float(value)) for name,value in
-                   re.findall(r'"(Scout|Sentinel|Heavy)": ([0-9.]+),',source))
-    assert set(diameters)==set(builder.NAMES), 'Missing runtime visual diameters'
-    report={}
+                   re.findall(r'"(\w+)": ([0-9.]+),',source))
+    assert set(builder.NAMES)<=set(diameters), 'Missing runtime visual diameters'
+    report_path=OUTPUT/'export-stats.json'
+    report=json.loads(report_path.read_text()) if report_path.exists() else {}
     for name in builder.NAMES:
         bpy.ops.wm.open_mainfile(filepath=str(REVIEW/'models'/(name.lower()+'.blend')))
         builder.geo.PARTS=[o for o in bpy.context.scene.objects if o.type=='MESH']

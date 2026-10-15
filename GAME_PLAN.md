@@ -1109,7 +1109,16 @@ The first implementation uses the following provisional names and populations:
 | M3 / Debris Fields | Three Marauders, two Wardens | 14,000 / 7,000; 24,000 / 12,000 | 14,000; 18,000 | 14,000; 22,000 |
 | M4 / Frontier | Three Ravagers, two Overlords | 36,000 / 18,000; 60,000 / 30,000 | 24,000; 32,000 | 32,000; 50,000 |
 
-New types reuse simple colored procedural ship geometry with different sizes.
+The six outer-sector types now use reference-based Blender models with distinct
+silhouettes, fitted colored armor, exposed hydraulic mounts and recessed drives.
+The user approved the [modeling references](art/alien-review/concepts/outer-sectors/README.md)
+and requested models and renders that follow them closely. Editable packed
+sources, six construction views, three detail renders per model and comparisons
+are in the [model gallery](art/alien-review/outer-sectors/README.md). Derived game
+GLBs retain the previous bounding diameters and existing visual scale multipliers,
+with shared 2K PBR maps and generated distance LODs. Gameplay collision and combat
+tuning retain their settings. Servers record the visual bounds for effects
+without loading the meshes. The three existing M1 models remain as authored.
 Each has its own resource loot table, patrol/detection/leash settings and respawn
 timer. All encounters on a higher new map have more health, shield, damage and
 credits than those on the preceding new map. Travel remains unrestricted;

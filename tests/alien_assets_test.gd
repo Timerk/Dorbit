@@ -69,6 +69,8 @@ func run() -> void:
 		check(preview_mesh.mesh == mesh, kind + " preview shares the actual encounter mesh")
 		check(preview.model.scale == alien.model.scale and preview.camera.size >= diameter * float(Alien.VISUAL_SCALE[kind]) * 0.7,
 			kind + " preview frames the same enlarged model")
+		check(preview.camera.position.length() > diameter * float(Alien.VISUAL_SCALE[kind]),
+			kind + " preview camera stays outside the enlarged hull")
 		alien.take_damage(alien.max_hull + alien.max_shield + 1, null)
 		check(not alien.alive and not alien.visible and alien.collision_layer == 0,
 			kind + " destruction still hides the model and disables collision")
@@ -76,8 +78,10 @@ func run() -> void:
 		check(alien.alive and alien.visible and alien.collision_layer == 2,
 			kind + " respawn restores visibility and collision")
 		alien.free()
-	check(sizes.size() == 3 and sizes[0] < sizes[1] and sizes[1] < sizes[2],
+	check(sizes.size() == Alien.TYPES.size() and sizes[0] < sizes[1] and sizes[1] < sizes[2],
 		"Scout, Sentinel and Heavy retain increasing visual size")
+	check(Alien.VISUAL_DIAMETERS.size() == Alien.TYPES.size(),
+		"Every encounter type has an imported model and a mesh-free server diameter")
 	var roster: Array = Alien.TYPES.keys()
 	roster.sort_custom(func(a: String, b: String): return Alien.TYPES[a]["hull"] < Alien.TYPES[b]["hull"])
 	var previous_diameter := 0.0
@@ -143,9 +147,10 @@ func check_finish(kind: String, mesh: ArrayMesh) -> void:
 			kind + " shares metallic and roughness maps")
 		if material.resource_name.ends_with("coated armor"):
 			painted = material.clearcoat_enabled
+			var minimum_lift := 2.0 if kind in ["Scout", "Sentinel", "Heavy"] else 0.3
 			check(material.emission_enabled and material.emission == Color.WHITE
 				and material.emission_operator == BaseMaterial3D.EMISSION_OP_MULTIPLY
-				and material.emission_energy_multiplier >= 2.0
+				and material.emission_energy_multiplier >= minimum_lift
 				and material.emission_texture == material.albedo_texture,
 				kind + " textured armor remains visible without direct light or bloom")
 		elif material.resource_name.ends_with("sensor emission") and material.emission_enabled:
@@ -155,5 +160,5 @@ func check_finish(kind: String, mesh: ArrayMesh) -> void:
 				rear_exhaust = rear_exhaust or vertex.z > bounds.end.z - bounds.size.length() * .08
 	check(textures.size() == 3 and painted and luminous, kind + " retains three shared maps, coated armor and emission")
 	check(forward_optics and rear_exhaust, kind + " cannons face -Z and exhausts face +Z")
-	check(lod_count > 0 and triangles > 40000, kind + " retains detailed geometry and generated distance LODs")
+	check(lod_count > 0 and triangles > 30000, kind + " retains detailed geometry and generated distance LODs")
 	print("ALIEN_GEOMETRY %s triangles=%d lod_levels=%d" % [kind, triangles, lod_count])

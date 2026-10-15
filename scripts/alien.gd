@@ -7,6 +7,12 @@ const VISUAL_DIAMETERS := {
 	"Scout": 7.547966,
 	"Sentinel": 9.702295,
 	"Heavy": 13.515700,
+	"Skirmisher": 9.289846,
+	"Raider": 10.575819,
+	"Marauder": 12.480946,
+	"Warden": 13.199097,
+	"Ravager": 14.993888,
+	"Overlord": 17.013710,
 }
 # Stronger encounters should remain easy to track among cooperating pilots.
 const VISUAL_SCALE := {
@@ -73,7 +79,7 @@ static func model_scene(alien_kind: String) -> Node3D:
 				material.emission = Color.WHITE
 				material.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY
 				material.emission_texture = material.albedo_texture
-				material.emission_energy_multiplier = 2.0
+				material.emission_energy_multiplier = 2.0 if alien_kind in ["Scout", "Sentinel", "Heavy"] else 0.35
 	return instance
 
 
