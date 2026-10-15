@@ -7,7 +7,7 @@ const MAX_PLAYERS: int = 10
 const COMMAND_TIMEOUT: float = 0.5
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when packet contents or shared physics change without an RPC signature change.
-const NETWORK_SCHEMA: int = 16
+const NETWORK_SCHEMA: int = 17
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
@@ -23,6 +23,11 @@ var received_snapshot: bool = false
 var snapshot_sequence: int = 0
 var player_sequences: Dictionary[int, int] = {}
 var alien_sequences: Dictionary[int, int] = {}
+# Client caches of rarely changing fields, keyed by peer or alien ID.
+var player_profiles: Dictionary[int, Array] = {}
+var alien_profiles: Dictionary[int, Array] = {}
+# Server: profiles each viewer has been sent during its current map visit.
+var sent_profiles: Dictionary[int, Dictionary] = {}
 var host_port: int = PORT
 var menu: PanelContainer
 var address: LineEdit
@@ -655,6 +660,7 @@ func despawn(id: int) -> void:
 	if ships.has(id) and ships[id] != sector.player:
 		ships[id].queue_free()
 	jump_until.erase(id)
+	sent_profiles.erase(id)
 	ships.erase(id)
 	commands.erase(id)
 	goals.erase(id)
@@ -754,28 +760,73 @@ func player_state(id: int, owner_view: bool) -> Dictionary:
 func send_snapshot() -> void:
 	if multiplayer.get_peers().is_empty():
 		return
-	# One player per datagram leaves room for all three active hunts below the ENet MTU.
 	snapshot_sequence += 1
+	# Pack each entity once per tick, then batch everything on a viewer's map
+	# into one unreliable packet. Profiles go reliably, only when they change.
+	var entries: Dictionary[int, PackedByteArray] = {}
+	var profiles: Dictionary[int, Array] = {}
 	for id: int in ships:
-		var ship := ships[id]
-		# Private ammunition travels separately to keep three-hunt flight packets below MTU.
-		combat.publish_ammo(id, snapshot_sequence)
-		# Other viewers get public ship state; credits, kills and contracts go only to the owner.
-		var public := {id: player_state(id, false)}
-		for viewer: int in ships:
-			if viewer == 1:
-				continue
-			if viewer == id:
-				snapshot.rpc_id(viewer, {id: player_state(id, true)}, {}, snapshot_sequence, ships[viewer].map_visit)
-			elif not ship.get_meta("docked", false) and ships[viewer].map_id == ship.map_id:
-				snapshot.rpc_id(viewer, public, {}, snapshot_sequence, ships[viewer].map_visit)
-		if sector.dedicated_server:
-			var revision: int = store.pilots[pilot_ids[id]]["equipment"]["revision"]
-			combat.boost_state.rpc_id(id, ship.resource_boosts, snapshot_sequence, revision)
-	for enemy: Alien in sector.world_aliens.values():
-		for viewer: int in ships:
-			if viewer != 1 and ships[viewer].map_id == enemy.map_id:
-				snapshot.rpc_id(viewer, {}, combat.pack_alien(enemy), snapshot_sequence, ships[viewer].map_visit)
+		var data := player_state(id, false)
+		entries[id] = SnapshotCodec.player_entry(id, data)
+		profiles[id] = SnapshotCodec.player_profile(data)
+	var map_aliens: Dictionary[int, Array] = {}
+	var alien_profiles_by_map: Dictionary[int, Dictionary] = {}
+	for viewer: int in ships:
+		var map := ships[viewer].map_id
+		if viewer == 1 or map_aliens.has(map):
+			continue
+		var packed: Array[PackedByteArray] = []
+		var known := {}
+		for enemy: Alien in sector.world_aliens.values():
+			if enemy.map_id == map:
+				var data := combat.pack_alien(enemy)
+				packed.append(SnapshotCodec.alien_entry(data))
+				known[enemy.alien_id] = SnapshotCodec.alien_profile(data)
+		map_aliens[map] = packed
+		alien_profiles_by_map[map] = known
+	for viewer: int in ships:
+		if viewer == 1:
+			continue
+		var own := player_state(viewer, true)
+		var players: Array[PackedByteArray] = [SnapshotCodec.player_entry(viewer, own, owner_extras(viewer))]
+		var visible := {viewer: SnapshotCodec.player_profile(own)}
+		for id: int in ships:
+			if id != viewer and not ships[id].get_meta("docked", false) and ships[id].map_id == ships[viewer].map_id:
+				players.append(entries[id])
+				visible[id] = profiles[id]
+		var map := ships[viewer].map_id
+		send_profiles(viewer, visible, alien_profiles_by_map[map])
+		world_snapshot.rpc_id(viewer, SnapshotCodec.world(snapshot_sequence, ships[viewer].map_visit, players, map_aliens[map]))
+
+
+## Private ammunition, rocket and boost state carried in the owner's entry.
+func owner_extras(id: int) -> Dictionary:
+	var ship := ships[id]
+	var extras := {"rounds": combat.ammo_rounds(id), "rockets": ship.rockets.state()}
+	if sector.dedicated_server:
+		extras["boosts"] = ship.resource_boosts
+		extras["revision"] = store.pilots[pilot_ids[id]]["equipment"]["revision"]
+	return extras
+
+
+## Reliably sends profiles the viewer lacks. Each new map visit resends all of them.
+func send_profiles(viewer: int, players: Dictionary, aliens: Dictionary) -> void:
+	var visit := ships[viewer].map_visit
+	if sent_profiles.get(viewer, {}).get("visit", -1) != visit:
+		sent_profiles[viewer] = {"visit": visit, "players": {}, "aliens": {}}
+	var known: Dictionary = sent_profiles[viewer]
+	var changed_players := {}
+	var changed_aliens := {}
+	for id: int in players:
+		if known["players"].get(id) != players[id]:
+			changed_players[id] = players[id]
+			known["players"][id] = players[id]
+	for id: int in aliens:
+		if known["aliens"].get(id) != aliens[id]:
+			changed_aliens[id] = aliens[id]
+			known["aliens"][id] = aliens[id]
+	if not changed_players.is_empty() or not changed_aliens.is_empty():
+		entity_profiles.rpc_id(viewer, changed_players, changed_aliens)
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered", 1)
@@ -797,11 +848,46 @@ func command_flight(movement: Vector3, angles: Vector3, boost: bool, fire: bool 
 	}
 
 
+@rpc("authority", "call_remote", "reliable")
+func entity_profiles(players: Dictionary, aliens: Dictionary) -> void:
+	if not active:
+		return
+	for id: int in players:
+		player_profiles[id] = players[id]
+	for id: int in aliens:
+		alien_profiles[id] = aliens[id]
+
+
 @rpc("authority", "call_remote", "unreliable", 2)
+func world_snapshot(packet: PackedByteArray) -> void:
+	if not active:
+		return
+	var world := SnapshotCodec.decode_world(packet)
+	if world.is_empty() or not receives_map(world["visit"]):
+		return
+	var sequence: int = world["sequence"]
+	var visit: int = world["visit"]
+	var owner: Dictionary = world["owner"]
+	if not owner.is_empty():
+		combat.ammo_snapshot(owner["rounds"], sequence, owner["rockets"], visit)
+		if owner.has("boosts"):
+			combat.boost_state(owner["boosts"], sequence, owner["revision"])
+	# An entity waits for its reliable profile, which follows within one round trip.
+	var players := {}
+	for id: int in world["players"]:
+		if player_profiles.has(id):
+			players[id] = SnapshotCodec.player_state(world["players"][id], player_profiles[id])
+	snapshot(players, {}, sequence, visit)
+	for id: int in world["aliens"]:
+		if alien_profiles.has(id):
+			snapshot({}, SnapshotCodec.alien_state(world["aliens"][id], alien_profiles[id]), sequence, visit)
+
+
+## Applies decoded world state. Each entity rejects state older than its last update.
 func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int, visit: int = -1) -> void:
 	if not active or not receives_map(visit):
 		return
-	# Chunks may arrive out of order. Reject stale state per entity, not per whole packet.
+	# Packets may arrive out of order. Reject stale state per entity, not per whole packet.
 	if not alien_state.is_empty():
 		var alien_id: int = alien_state["id"]
 		if sequence > alien_sequences.get(alien_id, -1):
@@ -863,6 +949,9 @@ func disconnect_session(message: String) -> void:
 	snapshot_sequence = 0
 	player_sequences.clear()
 	alien_sequences.clear()
+	player_profiles.clear()
+	alien_profiles.clear()
+	sent_profiles.clear()
 	jump_pending = false
 	jump_until.clear()
 	send_clock = 0.0

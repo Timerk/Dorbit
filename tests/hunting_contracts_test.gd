@@ -96,12 +96,14 @@ func run() -> void:
 	packet[id].merge({"position": Vector3.ZERO, "rotation": Vector3.ZERO, "velocity": Vector3.ZERO, "energy": 100.0})
 	packet[id]["systems"][1] = 165.0
 	packet[id]["systems"][2] = 1.0
-	check(var_to_bytes([packet, {}, 1, 0]).size() < 1300, "One player with all hunts fits the snapshot datagram budget")
+	var entry := SnapshotCodec.player_entry(id, packet[id])
+	check(SnapshotCodec.player_profile(packet[id])[4] == packet[id]["contracts"], "All hunts travel in the owner's reliable profile")
 	packet[id]["docked"] = true
-	check(var_to_bytes([packet, {}, 1, 0]).size() < 1300 and not packet[id].has("spawn"), "Docked quests fit the packet budget without a server-only spawn origin")
+	check(SnapshotCodec.player_entry(id, packet[id]).size() == entry.size() and not packet[id].has("spawn"), "Docked quests keep the fixed owner entry size without a server-only spawn origin")
 	var public := combat.pack_player(id)
+	public.merge({"position": Vector3.ZERO, "rotation": Vector3.ZERO, "velocity": Vector3.ZERO, "energy": 100.0})
 	check(SessionCombat.PRIVATE_FIELDS.all(func(field: String) -> bool: return not public.has(field)), "Viewer packets omit credits, kills and contracts")
-	check(var_to_bytes([{id: public}, {}, 1, 0]).size() < var_to_bytes([packet, {}, 1, 0]).size() - 200, "Viewer packets leave out three hunts' worth of owner data")
+	check(SnapshotCodec.player_profile(public).size() == 4 and SnapshotCodec.player_entry(id, public).size() < entry.size(), "Viewer entries and profiles leave out the owner's hunts and progress")
 	for client in [partner, spectator]:
 		station(server, client)
 		await action(server, client, "accept", "scout")
