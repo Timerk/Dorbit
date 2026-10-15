@@ -4,6 +4,8 @@ extends RefCounted
 
 const MAX_CREDITS: int = 2_000_000_000
 const PREVIEW_CREDIT_GRANT: int = 100_000_000
+# Live journal verification reads only the header and this many final bytes.
+const JOURNAL_TAIL_BYTES: int = 512
 var path: String
 var error: String = ""
 var pilots: Dictionary = {}
@@ -14,7 +16,8 @@ var locked: bool = false
 var failed: bool = false
 var next_lab_due: int = 0
 var journal_metadata: Dictionary = {}
-var journal_text: String = ""
+var journal_header: PackedByteArray
+var journal_tail: PackedByteArray
 var journal_sequence: int = 0
 var checkpoint_sequence: int = 0
 var journal_file: FileAccess
@@ -144,14 +147,15 @@ func open(directory: String) -> bool:
 	if data["version"] == 8:
 		journal_metadata = data["combat_journal"]
 		checkpoint_sequence = int(journal_metadata["sequence"])
-		journal_text = FileAccess.get_file_as_bytes(path + ".combat").get_string_from_utf8()
-		journal_sequence = CombatJournal.replay(journal_text, journal_metadata, pilots)
+		var journal := FileAccess.get_file_as_bytes(path + ".combat")
+		journal_sequence = CombatJournal.replay(journal.get_string_from_utf8(), journal_metadata, pilots)
 		if journal_sequence < 0: return fail("Missing, mismatched or damaged combat journal. Preserve and recover both files.")
-		journal_bytes = journal_text.to_utf8_buffer().size()
+		remember_journal(journal)
 	else:
 		journal_metadata = {"id": Crypto.new().generate_random_bytes(16).hex_encode(), "sequence": 0}
-		journal_text = CombatJournal.header(journal_metadata)
-		if not replace_file(path + ".combat", journal_text): return false
+		var header := CombatJournal.header(journal_metadata)
+		if not replace_file(path + ".combat", header): return false
+		remember_journal(header.to_utf8_buffer())
 		if data["version"] == 7:
 			for pilot: Dictionary in pilots.values(): Skylab.advance(pilot, Skylab.now())
 		if not persist(pilots): return false
@@ -184,6 +188,7 @@ func commit_combat(ammo: Dictionary, boosts: Dictionary = {}) -> bool:
 	# 8–20 ms in the Windows benchmark, versus fractions of a ms for flush.
 	file.seek_end()
 	var start := file.get_position()
+	if start != journal_bytes: return fail("Combat journal changed or became unreadable while running. Stop and recover both files.")
 	file.store_string(entry)
 	file.flush()
 	var result := file.get_error()
@@ -191,7 +196,8 @@ func commit_combat(ammo: Dictionary, boosts: Dictionary = {}) -> bool:
 	var verified := file.get_buffer(entry_bytes.size()).get_string_from_utf8() == entry
 	if result != OK or not verified: return fail("Combat journal write failed. Files preserved for recovery.")
 	journal_modified_time = FileAccess.get_modified_time(path + ".combat")
-	journal_text += entry
+	journal_tail.append_array(entry_bytes)
+	journal_tail = journal_tail.slice(-JOURNAL_TAIL_BYTES)
 	journal_bytes += entry_bytes.size()
 	journal_sequence += 1
 	CombatJournal.apply_updates(pilots, ammo, boosts)
@@ -501,9 +507,10 @@ func persist(next: Dictionary) -> bool:
 	var compacted := CombatJournal.header(metadata)
 	# Replace only after the snapshot is safe. Old records are harmless on replay
 	# if a process stops between these two replacements.
-	if journal_text != compacted and not replace_file(path + ".combat", compacted): return false
-	journal_text = compacted
-	journal_bytes = compacted.to_utf8_buffer().size()
+	var compacted_bytes := compacted.to_utf8_buffer()
+	if journal_bytes == journal_header.size() and journal_header == compacted_bytes: return true
+	if not replace_file(path + ".combat", compacted): return false
+	remember_journal(compacted_bytes)
 	return true
 
 
@@ -525,10 +532,24 @@ func unchanged_files() -> bool:
 	if journal_file == null: return fail("Combat journal became unreadable while running. Stop and recover both files.")
 	if not FileAccess.file_exists(path + ".combat") or FileAccess.get_modified_time(path + ".combat") != journal_modified_time:
 		return fail("Combat journal changed or disappeared while running. Stop and recover both files.")
+	# Constant cost regardless of journal size: compare the length, the header and
+	# the final bytes. Appends, truncation and rewrites change at least one of
+	# them; every record is also checksummed for replay at startup.
+	if FileAccess.get_size(path + ".combat") != journal_bytes or journal_file.get_length() != journal_bytes:
+		return fail("Combat journal changed or became unreadable while running. Stop and recover both files.")
 	journal_file.seek(0)
-	if journal_file.get_buffer(journal_file.get_length()).get_string_from_utf8() != journal_text:
+	var header := journal_file.get_buffer(journal_header.size())
+	journal_file.seek(journal_bytes - journal_tail.size())
+	if header != journal_header or journal_file.get_buffer(journal_tail.size()) != journal_tail:
 		return fail("Combat journal changed or became unreadable while running. Stop and recover both files.")
 	return true
+
+
+# The header is the first line; the tail is a bounded suffix checked live.
+func remember_journal(bytes: PackedByteArray) -> void:
+	journal_bytes = bytes.size()
+	journal_header = bytes.slice(0, bytes.find(10) + 1)
+	journal_tail = bytes.slice(-JOURNAL_TAIL_BYTES)
 
 
 func remember_snapshot() -> void:
