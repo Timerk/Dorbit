@@ -364,7 +364,7 @@ preserves existing reserves. Both require a launched living ship.
 
 Removing Slot CPU 1 returns equipment from its added slots to inventory. Cargo
 capacity removal is blocked until excess cargo is sold. Items and settings persist
-with the pilot. Client and server must both use network schema 16. See
+with the pilot. Client and server must both use network schema 17. See
 [the agreed mechanics and prices](GAME_PLAN.md#extras-equipment) and
 [generated artwork and prompts](assets/ui/extras/README.md).
 
@@ -501,9 +501,9 @@ Human economy and balance playtesting remains necessary.
 
 ### Current compatibility
 
-The current **network schema is 16** (`FlightSession.NETWORK_SCHEMA`), including
-four-map membership, transfers, the shared collision layout and owner-only pilot
-progress in player snapshots. Clients and servers must use
+The current **network schema is 17** (`FlightSession.NETWORK_SCHEMA`), including
+four-map membership, transfers, the shared collision layout, owner-only pilot
+progress and batched binary world snapshots. Clients and servers must use
 matching builds and protocol fingerprints; the connection handshake rejects
 incompatible builds before gameplay. **Save schema 8** is separate from the
 network schema. Update the provisioning tool alongside the server and back up
@@ -609,7 +609,7 @@ The save is a **schema-8 pair**: `DORBIT_DATA_DIR/pilots.json` is the full snaps
 
 Every reward, repair charge, rescue fee, purchase and fitting change is committed before the server confirms it. All contributors' shares use one commit. Full snapshot writes use a sibling temporary file, flush and verify its contents, then rename over the destination. `pilots.json.bak` includes all committed combat debits preceding that checkpoint. Each laser/rocket debit appends a small ordered, checksummed journal record, flushes and verifies it **before damage or launch**; laser ammo and resource reserves commit together. Full economy saves, scheduled industry saves, clean shutdown and a 1 MiB journal limit checkpoint the journal. A save failure stops simulation and exits with code 1 before granting the pending transaction.
 
-Each pilot's equipment record contains owned ship IDs, the active ship, item IDs with a single ship/slot location, and a successful-request sequence. Empty ship and slot strings mean storage. Inventory is sent reliably only to its owner. Player snapshots, map transfers and dock acknowledgements give every viewer on the map only public ship state: position, rotation, velocity, boost energy, hull, shield, flight life, combat and movement stats, hull model, docked state, map, radiation exposure and repair-robot state. Credits, kills, objective stage, rescue countdown and hunting contracts go only to the owning pilot, like ammunition, boosts, cargo and inventory. Purchase and fitting requests supply the next sequence and the current life, never a pilot ID, price or stat bonus. Retrying a successful sequence refreshes inventory without applying another transaction. After reconnecting, review the server inventory before making a new purchase.
+Each pilot's equipment record contains owned ship IDs, the active ship, item IDs with a single ship/slot location, and a successful-request sequence. Empty ship and slot strings mean storage. Inventory is sent reliably only to its owner. Player snapshots, map transfers and dock acknowledgements give every viewer on the map only public ship state: position, rotation, velocity (transfers and dock acknowledgements only), boost energy, hull, shield, flight life, combat and movement stats, hull model, docked state, map, radiation exposure and repair-robot state. Credits, kills, objective stage, rescue countdown and hunting contracts go only to the owning pilot, like ammunition, boosts, cargo and inventory. Purchase and fitting requests supply the next sequence and the current life, never a pilot ID, price or stat bonus. Retrying a successful sequence refreshes inventory without applying another transaction. After reconnecting, review the server inventory before making a new purchase.
 
 Only one server or provisioning tool may own the directory. `pilots.json.lock` is an exclusive directory lock. Clean shutdown checkpoints pending combat and removes it. On Linux, use `tools/server.sh run`: its launcher translates SIGTERM and Ctrl+C into a scene-tree shutdown, allowing the server to release the lock. Signaling Godot directly bypasses this launcher. A crash, SIGKILL, power loss or shutdown timeout can still leave the lock behind and requires operator recovery. Missing, malformed, unsupported or out-of-range data fails closed, including a missing, mismatched, damaged or incomplete journal. The server does not replace invalid progression with zero balances. Never edit or replace either file while the server runs.
 
@@ -809,4 +809,4 @@ is required. New preview branches must include this export support.
 - `scripts/settings_menu.gd`: flight menu and Controls, Audio and Graphics tabs.
 - `scripts/game_settings.gd`: saved control/display preferences and input bindings.
 
-Combat emits visual signals; visual effects do not award rewards or apply damage. Shared play sends movement and fire intent to the host at 20 Hz and receives authoritative snapshots at 20 Hz, with local flight prediction and smoothing of other players and aliens. Only the host simulates combat; repair requests identify the requesting peer, never a client-supplied price or damage amount.
+Combat emits visual signals; visual effects do not award rewards or apply damage. Shared play sends movement and fire intent to the host at 20 Hz and receives authoritative snapshots at 20 Hz, with local flight prediction and smoothing of other players and aliens. Each viewer receives one unreliable binary packet per tick (`scripts/snapshot_codec.gd`) containing every visible pilot and alien on its map; the owner's entry adds velocity, private progress, ammunition, rocket and boost state. Rarely changing fields (hull model, stats, fitting, contracts, alien kind and home) are sent reliably only when they change, and again after each map visit begins. Only the host simulates combat; repair requests identify the requesting peer, never a client-supplied price or damage amount.
