@@ -1,9 +1,14 @@
 shader_type sky;
 
 // The dark visible nebula needs a brighter radiance exposure for metal surfaces.
-// Undo this exposure when drawing the background, retaining the existing sky.
+// The visible sky samples its texture separately, without the reflection exposure.
 uniform float reflection_energy : hint_range(1.0, 4.0) = 3.0;
-uniform vec4 map_tint : source_color = vec4(1.0);
+uniform vec4 nebula_cool : source_color = vec4(0.08, 0.24, 0.46, 1.0);
+uniform vec4 nebula_warm : source_color = vec4(0.12, 0.38, 0.54, 1.0);
+uniform vec4 nebula_light : source_color = vec4(0.22, 0.55, 0.68, 1.0);
+uniform vec3 cloud_offset = vec3(5.0, 1.0, 9.0);
+uniform sampler2D nebula_panorama : source_color, filter_linear_mipmap, repeat_enable;
+uniform float panorama_rotation = 0.0;
 
 // Direction-space noise remains continuous across the panorama seam and poles.
 float hash3(vec3 p) {
@@ -17,9 +22,6 @@ float noise3(vec3 p) {
 	return mix(mix(mix(hash3(i),hash3(i+vec3(1,0,0)),f.x),mix(hash3(i+vec3(0,1,0)),hash3(i+vec3(1,1,0)),f.x),f.y),
 		mix(mix(hash3(i+vec3(0,0,1)),hash3(i+vec3(1,0,1)),f.x),mix(hash3(i+vec3(0,1,1)),hash3(i+vec3(1,1,1)),f.x),f.y),f.z);
 }
-float fbm(vec3 p) {
-	return noise3(p)*0.51+noise3(p*2.03)*0.26+noise3(p*4.11)*0.13+noise3(p*8.21)*0.065+noise3(p*16.4)*0.035;
-}
 vec3 stars(vec3 d, float scale, float threshold) {
 	vec3 p = d*scale;
 	vec3 cell = floor(p);
@@ -30,20 +32,24 @@ vec3 stars(vec3 d, float scale, float threshold) {
 }
 void sky() {
 	vec3 d = normalize(EYEDIR);
+	vec2 uv = vec2(fract(atan(d.x,-d.z)/6.2831853+0.5+panorama_rotation),acos(clamp(d.y,-1.0,1.0))/3.1415927);
+	vec3 painted = texture(nebula_panorama,uv).rgb;
+	float seam_blend = 0.5*(1.0-smoothstep(0.0,0.025,min(uv.x,1.0-uv.x)));
+	painted = mix(painted,texture(nebula_panorama,vec2(1.0-uv.x,uv.y)).rgb,seam_blend);
+	float value = max(painted.r,max(painted.g,painted.b));
+	float warm = smoothstep(0.02,0.42,value);
+	vec3 gas = mix(nebula_cool.rgb,nebula_warm.rgb,warm);
+	// The edge blend closes the seam; fade the polar caps to avoid pinching.
+	float poles = smoothstep(0.0,0.06,min(uv.y,1.0-uv.y));
+	gas /= max(gas.r,max(gas.g,gas.b));
+	float filaments = noise3(d*140.0+cloud_offset);
+	vec3 nebula = gas*pow(value,1.15)*(0.42+filaments*0.32) + nebula_light.rgb*pow(value,2.5)*0.45;
+	float corridor = mix(0.2,1.0,smoothstep(0.12,0.65,length(d.xy-vec2(0.0,0.08))));
+	vec3 background = vec3(0.002,0.004,0.009)+nebula*poles*corridor;
 	if (AT_CUBEMAP_PASS) {
-		// Static clouds bake once; flight only samples the cubemap and draws sharp stars.
-		float shape = fbm(d*3.2+vec3(5,1,9));
-		vec3 warp = vec3(fbm(d*4.0),fbm(d*4.0+7.0),fbm(d*4.0+19.0));
-		float cloud = fbm(d*8.0+warp*3.2);
-		float ribbon = exp(-pow((d.y+d.x*0.32-0.10+(shape-0.5)*0.5)*3.6,2.0));
-		float luminous = smoothstep(0.30,0.78,cloud)*ribbon;
-		float dust = smoothstep(0.38,0.67,fbm(d*17.0+warp*4.0));
-		vec3 gas = mix(vec3(0.035,0.095,0.19),vec3(0.23,0.075,0.27),smoothstep(0.38,0.65,shape));
-		vec3 nebula = gas*luminous*(0.5+cloud)*1.35;
-		nebula *= 1.0-dust*0.72;
-		nebula += vec3(0.08,0.22,0.27)*pow(luminous,3.0)*0.65;
-		COLOR = (vec3(0.003,0.005,0.012)+nebula)*map_tint.rgb*reflection_energy;
+		COLOR = background*reflection_energy;
 	} else {
-		COLOR = texture(RADIANCE,d).rgb/reflection_energy+stars(d,420.0,0.974)+stars(d,125.0,0.993)*1.5;
+		// Sample the panorama directly so the visible sky retains full texture detail.
+		COLOR = background+stars(d,620.0,0.945)*1.0+stars(d,180.0,0.992)*1.4;
 	}
 }

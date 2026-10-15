@@ -1130,6 +1130,17 @@ waypoint without jumping. Local radar, markers, contacts, radiation and autopilo
 use the current map. Station services remain exclusively on M1. Death, reconnect
 and quitting to the station menu return pilots to the home map.
 
+The user approved an industrial transit gate with segmented titanium and cobalt
+armor, graphite service recesses, wrapped outer conduits, three illuminated power
+modules and an animated cyan vortex. All eight gates use the same client-only
+model with readable front and rear approaches. Their travel and protection rules
+remain the rules above. The Connected maps tab uses pictures captured from each
+actual campaign background, thin routed bidirectional links, a current-sector
+marker and hover route previews. Mouse selection and arrow keys with Enter set
+the same next-gate waypoint. The four-map topology and unrestricted access remain
+unchanged. Authoring files and visual review are in
+[art/gate-review](art/gate-review/README.md).
+
 One persistent authoritative session simulates all four populations. Maps have
 separate membership and distant origins in the existing physics world. Rendering,
 snapshots, effects, loot collection, targeting and damage are scoped to map
@@ -1142,6 +1153,14 @@ and effects cannot revive an earlier visit, including returning to the same map.
 Network schema 16 requires matching client/server builds; save schema 8 is unchanged
 because flight locations are temporary. Ordinary travel gates are separate from
 the future Galaxy Gates alien-wave challenges.
+
+### Reclamation campaign background art
+
+The user approved the campaign map concepts in [art/map-background-concepts](art/map-background-concepts/README.md) for implementation. Their history follows the reclamation story proposed in [PR #76](https://github.com/Timerk/Dorbit/pull/76): these were human sectors lost to an alien invasion, with Outpost 01 now supporting the return.
+
+The first visual implementation gives M1 an inhabited planet with bombardment scars, a shattered orbital defense ring and distant human supply staging. M2 has an occupied desert planet with alien orbital collectors and a damaged human receiver. M3 has alien salvage machinery attached to a human carrier wreck, plus a scarred colony moon and abandoned communications infrastructure. M4 has a larger extraction complex attached to a captured human orbital ring and alien relay structures. Blue, amber, rust-red and violet nebula palettes distinguish the maps.
+
+The backgrounds are decorative client scenery outside the flight boundary. Planet surfaces show ruined settlement grids, scorched sites and terraced excavation areas. Alien collectors share segmented dark armor and teal seams; their extraction streams animate cosmetically. Existing gates, obstacle geometry, station services, enemy populations, progression and map access remain as implemented. The scenery depicts a fixed post-arrival home sector and occupied outer sectors. Campaign-driven restoration, mining interactions and station construction stages require separate implementation.
 
 ## Open decisions
 

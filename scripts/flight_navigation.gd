@@ -25,40 +25,139 @@ var font: Font = StationUi.FONT
 var info: Label
 var overview_title: Label
 var overview_hint: Label
+var overview_legend: Label
 var tabs: TabContainer
 var network_plot: NetworkPlot
 
 
 class NetworkPlot extends Control:
 	var navigation: FlightNavigation
-	const POINTS := [Vector2(0.15, 0.5), Vector2(0.42, 0.5), Vector2(0.77, 0.24), Vector2(0.77, 0.76)]
+	var hovered_map := -1
+	var keyboard_map := -1
+	const POINTS := [Vector2(0.155, 0.5), Vector2(0.47, 0.5), Vector2(0.8, 0.26), Vector2(0.8, 0.74)]
+	const PICTURES := [preload("res://assets/ui/maps/m1.png"), preload("res://assets/ui/maps/m2.png"), preload("res://assets/ui/maps/m3.png"), preload("res://assets/ui/maps/m4.png")]
+
+	func _ready() -> void:
+		focus_mode = Control.FOCUS_ALL
+		texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		mouse_exited.connect(func():
+			hovered_map = -1
+			tooltip_text = ""
+			queue_redraw())
+		focus_exited.connect(func():
+			keyboard_map = -1
+			queue_redraw())
 
 	func map_rect(map: int) -> Rect2:
-		return Rect2(size * POINTS[map] - Vector2(92, 42), Vector2(184, 84))
+		var dimensions := Vector2(size.x * 0.245, minf(192, (size.y - 76) * 0.46))
+		return Rect2(size * POINTS[map] - dimensions * 0.5, dimensions)
+
+	func link_points(source: int, destination: int) -> PackedVector2Array:
+		var a := map_rect(source)
+		var b := map_rect(destination)
+		if source == 2 and destination == 3:
+			var rail := a.end.x + 24
+			return PackedVector2Array([Vector2(a.end.x, a.get_center().y), Vector2(rail, a.get_center().y), Vector2(rail, b.get_center().y), Vector2(b.end.x, b.get_center().y)])
+		var start := Vector2(a.end.x, a.get_center().y)
+		var end := Vector2(b.position.x, b.get_center().y)
+		var rail := (start.x + end.x) * 0.5
+		return PackedVector2Array([start, Vector2(rail, start.y), Vector2(rail, end.y), end])
+
+	func route_edges(destination: int) -> Array[Vector2i]:
+		var result: Array[Vector2i] = []
+		var source := navigation.sector.map_id
+		while destination >= 0 and source != destination:
+			var hop := SectorMaps.first_hop(source, destination)
+			if hop < 0:
+				break
+			result.append(Vector2i(mini(source, hop), maxi(source, hop)))
+			source = hop
+		return result
+
+	func select_map(map: int) -> void:
+		var hop := SectorMaps.first_hop(navigation.sector.map_id, map)
+		if hop >= 0:
+			navigation.choose_contact("gate%d" % hop)
 
 	func _draw() -> void:
 		var current := navigation.sector.map_id
+		var selected := hovered_map if hovered_map >= 0 else keyboard_map
+		var route := route_edges(selected)
+		draw_rect(Rect2(Vector2.ZERO, size), Color("09131b"))
+		for x in range(24, int(size.x), 32):
+			for y in range(20, int(size.y), 32):
+				draw_circle(Vector2(x,y), 0.7, Color("263944"))
 		for source: int in SectorMaps.GATES:
 			for destination: int in SectorMaps.GATES[source]:
 				if source < destination:
-					draw_line(size * POINTS[source], size * POINTS[destination], FlightHud.MUTED, 3, true)
+					var points := link_points(source, destination)
+					var highlighted := route.has(Vector2i(source, destination))
+					var color := FlightHud.AMBER if highlighted else Color("657e8d")
+					if highlighted:
+						draw_polyline(points, Color(color, 0.12), 7, true)
+					draw_polyline(points, color, 1.5, true)
+					for port: Vector2 in [points[0], points[-1]]:
+						draw_circle(port, 3.5, color)
 		for map: int in SectorMaps.MAPS:
 			var rect := map_rect(map)
 			var color: Color = SectorMaps.MAPS[map]["color"]
-			draw_style_box(StationUi.style(StationUi.SURFACE, color if map == current else FlightHud.LINE), rect)
-			navigation.label_at(self, rect.position + Vector2(12, 24), SectorMaps.MAPS[map]["name"], 16, color)
-			navigation.label_at(self, rect.position + Vector2(12, 47), "HOME / STATION" if map == 0 else "ALIEN STRENGTH / TIER %d" % map, 12, FlightHud.MUTED)
-			navigation.label_at(self, rect.position + Vector2(12, 69), "YOU ARE HERE" if current == map else "CLICK TO SET GATE WAYPOINT", 11, FlightHud.INK)
-		navigation.label_at(self, Vector2(20, size.y - 18), "All gates are two-way. Every map is open from the start.", 16, FlightHud.MUTED)
+			var border := FlightHud.AMBER if selected == map else color if map == current else Color("405767")
+			draw_rect(Rect2(rect.position+Vector2(4,6), rect.size), Color(0,0,0,0.45))
+			if map == current or map == selected:
+				draw_rect(rect.grow(4), Color(border,0.12))
+			draw_rect(rect, border)
+			var picture := Rect2(rect.position+Vector2.ONE*2, rect.size-Vector2(4,42))
+			# Crop, rather than stretch, the actual rendered sector view.
+			var texture: Texture2D = PICTURES[map]
+			var crop := texture.get_size()
+			crop.y = minf(crop.y, crop.x*picture.size.y/picture.size.x)
+			crop.x = minf(crop.x, crop.y*picture.size.x/picture.size.y)
+			draw_texture_rect_region(texture, picture, Rect2((texture.get_size()-crop)*0.5,crop))
+			draw_rect(Rect2(picture.position,Vector2(picture.size.x,27)), Color(0.015,0.03,0.045,0.65))
+			navigation.label_at(self, picture.position+Vector2(9,19), "M%d" % (map+1), 18, color)
+			var status := "YOU ARE HERE" if map == current else "HOME / STATION" if map == 0 else "TIER %d" % map
+			var status_width := navigation.font.get_string_size(status,HORIZONTAL_ALIGNMENT_LEFT,-1,13).x
+			navigation.label_at(self, Vector2(picture.end.x-status_width-9,picture.position.y+18),status,13,border if map == current else FlightHud.INK)
+			draw_rect(Rect2(Vector2(rect.position.x+1,rect.end.y-40),Vector2(rect.size.x-2,39)),Color("101e28"))
+			var name: String = SectorMaps.MAPS[map]["name"].get_slice(" / ",1)
+			navigation.label_at(self, Vector2(rect.position.x+10,rect.end.y-15),name,20,FlightHud.INK)
+			if map == current:
+				draw_line(Vector2(rect.position.x,rect.end.y),rect.end,color,3)
+		navigation.label_at(self, Vector2(18, size.y-14), "RECLAMATION SECTORS  /  4 OPEN MAPS",14,FlightHud.MUTED)
+		var legend := "CONNECTED GATES / TWO-WAY"
+		var width := navigation.font.get_string_size(legend,HORIZONTAL_ALIGNMENT_LEFT,-1,14).x
+		navigation.label_at(self, Vector2(size.x-width-18,size.y-14),legend,14,FlightHud.MUTED)
 
 	func _gui_input(event: InputEvent) -> void:
-		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		if event is InputEventMouseMotion:
+			hovered_map = -1
 			for map: int in SectorMaps.MAPS:
 				if map_rect(map).has_point(event.position):
-					var hop := SectorMaps.first_hop(navigation.sector.map_id, map)
-					if hop >= 0:
-						navigation.choose_contact("gate%d" % hop)
+					hovered_map = map
+			mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if hovered_map >= 0 and hovered_map != navigation.sector.map_id else Control.CURSOR_ARROW
+			tooltip_text = ""
+			if hovered_map >= 0:
+				var hop := SectorMaps.first_hop(navigation.sector.map_id,hovered_map)
+				tooltip_text = SectorMaps.MAPS[hovered_map]["description"]
+				if hop >= 0:
+					tooltip_text += "\nSet waypoint to " + SectorMaps.MAPS[hop]["name"]
+			queue_redraw()
+		elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			for map: int in SectorMaps.MAPS:
+				if map_rect(map).has_point(event.position):
+					select_map(map)
 					accept_event()
+		elif event is InputEventKey and event.pressed:
+			if event.keycode in [KEY_LEFT,KEY_RIGHT,KEY_UP,KEY_DOWN]:
+				if keyboard_map < 0:
+					keyboard_map = navigation.sector.map_id
+				keyboard_map = posmod(keyboard_map + (-1 if event.keycode in [KEY_LEFT,KEY_UP] else 1),SectorMaps.MAPS.size())
+				hovered_map = -1
+				queue_redraw()
+				accept_event()
+			elif event.keycode in [KEY_ENTER,KEY_KP_ENTER,KEY_SPACE] and keyboard_map >= 0:
+				select_map(keyboard_map)
+				accept_event()
 
 
 class SectorPlot extends Control:
@@ -244,7 +343,7 @@ func build_overview() -> void:
 	network_plot = NetworkPlot.new()
 	network_plot.name = "Connected maps"
 	network_plot.navigation = self
-	network_plot.custom_minimum_size = Vector2(810, 280)
+	network_plot.custom_minimum_size = Vector2(810, 360)
 	tabs.add_child(network_plot)
 	var sidebar := StationUi.card(body)
 	sidebar.custom_minimum_size.x = 230
@@ -266,7 +365,7 @@ func build_overview() -> void:
 	plot.clip_contents = true
 	body.add_child(plot)
 	info = StationUi.text(rows, "", 16, FlightHud.AMBER)
-	StationUi.text(rows, "White: you / Colored: gates and aliens / Green: outpost / Cyan: pilots", 14, FlightHud.MUTED)
+	overview_legend = StationUi.text(rows, "White: you / Colored: gates and aliens / Green: outpost / Cyan: pilots", 14, FlightHud.MUTED)
 	overview.hide()
 
 
@@ -291,8 +390,9 @@ func close_overview(resume: bool = true) -> void:
 
 
 func update_contacts() -> void:
-	overview_title.text = "SECTOR OVERVIEW / " + SectorMaps.MAPS[sector.map_id]["name"]
+	overview_title.text = ("STAR SYSTEM / " if tabs.current_tab == 1 else "SECTOR OVERVIEW / ") + SectorMaps.MAPS[sector.map_id]["name"]
 	reset_button.visible = tabs.current_tab == 0
+	overview_legend.text = "Hover to preview a route / Click a sector to navigate / Arrow keys + Enter also select" if tabs.current_tab == 1 else "White: you / Colored: gates and aliens / Green: outpost / Cyan: pilots"
 	overview_hint.text = "Click a map to set the next gate on its route. Fly to the gate and press %s to jump." % GameSettings.binding_text("jump_gate") if tabs.current_tab == 1 else "Click a contact to navigate. Drag to rotate / Scroll to zoom"
 	network_plot.queue_redraw()
 	var current := contacts()
@@ -326,6 +426,7 @@ func update_contacts() -> void:
 func _process(_delta: float) -> void:
 	sync_waypoint()
 	if overview.visible:
+		StationUi.centered(overview, Vector2(1100,700) if tabs.current_tab == 1 else Vector2(880,550))
 		if not sector.session.active and (sector.client_only or overview_shared):
 			close_overview(false)
 		elif not sector.player.alive:

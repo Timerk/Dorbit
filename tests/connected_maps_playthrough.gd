@@ -10,7 +10,7 @@ func run() -> void:
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 	sector.show_performance = false
 	var navigation := sector.hud.navigation
-	for pixels in [Vector2i(960, 600), Vector2i(1280, 720)]:
+	for pixels in [Vector2i(960, 600), Vector2i(1280, 720), Vector2i(1920,1080)]:
 		root.size = pixels
 		root.content_scale_size = pixels
 		DisplayServer.window_set_size(pixels)
@@ -21,8 +21,33 @@ func run() -> void:
 		check(navigation.tabs.current_tab == 1, "M opens the map and the connections tab is clickable")
 		await capture("connected-map-network-%d" % pixels.x)
 		check(Rect2(Vector2.ZERO, Vector2(pixels)).encloses(navigation.overview.get_global_rect()), "Connections view fits the %d window" % pixels.x)
-		await click_at(navigation.network_plot.global_position + navigation.network_plot.map_rect(3).get_center())
+		var chart := navigation.network_plot
+		for map: int in SectorMaps.MAPS:
+			check(Rect2(Vector2.ZERO, chart.size).encloses(chart.map_rect(map)), "Image card remains inside the map canvas")
+			check(chart.PICTURES[map].get_width() >= 720, "Every card uses a detailed sector capture")
+			for other: int in SectorMaps.MAPS:
+				if map < other:
+					check(not chart.map_rect(map).intersects(chart.map_rect(other)), "Sector images do not overlap")
+		var route := chart.route_edges(3)
+		check(route == [Vector2i(0,1),Vector2i(1,3)], "Route preview to M4 follows real M1-M2-M4 gates")
+		var hover := InputEventMouseMotion.new()
+		hover.position = chart.get_global_transform() * chart.map_rect(3).get_center()
+		root.push_input(hover)
+		await process_frame
+		check(chart.hovered_map == 3 and chart.tooltip_text.contains("M2"), "Hover shows the destination details and real next gate")
+		if pixels.x == 1280:
+			await capture("connected-map-route-preview")
+		await click_at(chart.get_global_transform() * chart.map_rect(3).get_center())
 		check(navigation.waypoint_key == "gate1" and not navigation.overview.visible and not sector.paused, "Clicking M4 from M1 selects the first gate on its route")
+	# Keyboard selection follows the same travel action as image-card clicks.
+	await tap_key(KEY_M)
+	navigation.tabs.current_tab = 1
+	await sync_physics()
+	navigation.network_plot.grab_focus()
+	await tap_key(KEY_RIGHT)
+	check(navigation.network_plot.keyboard_map == 1, "Arrow keys select the next illustrated map")
+	await tap_key(KEY_ENTER)
+	check(navigation.waypoint_key == "gate1" and not navigation.overview.visible, "Enter sets the selected map's gate waypoint")
 	for destination in [1, 2, 3, 2, 1, 3, 1, 0]:
 		var source := sector.map_id
 		sector.player.position = SectorMaps.gate_position(source, destination) + Vector3(0, 0, 42)
