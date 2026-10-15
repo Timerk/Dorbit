@@ -13,6 +13,10 @@ var selected_style: StyleBoxFlat
 var normal_style: StyleBoxFlat
 var last_selected := false
 var picker := false
+# Values last applied; theme overrides notify even when unchanged, so skip equal states.
+var shown: Array = []
+var font_size := 0
+var font_color := Color.TRANSPARENT
 
 
 func _ready() -> void:
@@ -74,25 +78,45 @@ func _ready() -> void:
 
 
 func refresh(state: Dictionary, shortcut: String) -> void:
-	key_label.text = shortcut
-	title.text = state.get("name", "Empty")
-	art.texture = state.get("icon")
 	var compact: bool = bar.config.vertical and slot >= 0
-	amount.text = state.get("compact", state.get("count", "")).replace("\n", " ") if compact else state.get("count", "")
-	amount.add_theme_font_size_override("font_size", 11 if compact else 13)
-	amount.add_theme_color_override("font_color", state.get("color", FlightHud.INK))
-	set_pressed_no_signal(state.get("active", false))
-	disabled = not bar.slot_editing and (bar.sector.hud.layout.editing or not state.get("available", true))
-	tooltip_text = state.get("tooltip", "Empty slot") + ("\nPress %s or click." % shortcut if not shortcut.is_empty() and not state.get("edit_toggle", false) else "")
-	if bar.slot_editing:
-		tooltip_text += "\nDrag to assign or swap. Shift-click a slot to select it." if state.get("edit_toggle", false) else "\nDrag to assign or swap. Click a slot, then an item to assign."
-	var selected: bool = state.get("active", false) or (bar.slot_editing and slot >= 0 and slot == bar.selected_slot)
+	var active: bool = state.get("active", false)
+	var selected: bool = active or (bar.slot_editing and slot >= 0 and slot == bar.selected_slot)
+	var locked: bool = not bar.slot_editing and (bar.sector.hud.layout.editing or not state.get("available", true))
+	var count: String = state.get("compact", state.get("count", "")).replace("\n", " ") if compact else state.get("count", "")
+	var next := [shortcut, state.get("name", "Empty"), state.get("icon"), count, compact, state.get("color", FlightHud.INK), active, locked, selected]
+	# Clicks toggle the button itself, so its pressed state is checked separately.
+	if next == shown and button_pressed == active:
+		return
+	shown = next
+	key_label.text = shortcut
+	title.text = next[1]
+	art.texture = next[2]
+	amount.text = count
+	if font_size != (11 if compact else 13):
+		font_size = 11 if compact else 13
+		amount.add_theme_font_size_override("font_size", font_size)
+	if font_color != next[5]:
+		font_color = next[5]
+		amount.add_theme_color_override("font_color", font_color)
+	set_pressed_no_signal(active)
+	disabled = locked
 	if selected != last_selected:
 		last_selected = selected
 		for style_name: String in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
 			add_theme_stylebox_override(style_name, selected_style if selected else normal_style)
 		if picker and not selected:
 			add_theme_stylebox_override("hover", EquipmentTile.tile_style("hover"))
+
+
+# Built when Godot shows the tooltip instead of on every refresh.
+func _get_tooltip(_at_position: Vector2) -> String:
+	var state := bar.state_for(action_id, true)
+	var shortcut := key_label.text
+	var edit_toggle: bool = state.get("edit_toggle", false)
+	var text: String = state.get("tooltip", "Empty slot") + ("\nPress %s or click." % shortcut if not shortcut.is_empty() and not edit_toggle else "")
+	if bar.slot_editing:
+		text += "\nDrag to assign or swap. Shift-click a slot to select it." if edit_toggle else "\nDrag to assign or swap. Click a slot, then an item to assign."
+	return text
 
 
 func _get_drag_data(_position: Vector2) -> Variant:
