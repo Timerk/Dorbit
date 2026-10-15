@@ -4,6 +4,19 @@ The current workload measures one Linux dedicated server with ten independent he
 
 These measurements do not validate rendered client FPS, internet transport or VPS capacity. The VPS SSH connection timed out on 14 October 2026; no live service, release, credentials or saves were changed. The Linux runs use WSL2 instead.
 
+## Batched snapshots, 15 October 2026
+
+Network schema 17 replaces per-entity snapshot, ammunition and boost RPCs with one binary world packet per viewer and tick; rarely changing fields are sent reliably only on change. `tests/snapshot_traffic_benchmark.gd` connects ten in-process headless clients to a dedicated server on Windows, keeps all ten pilots and five aliens on M1 moving, and reads the server's ENet host counters over 100 steady-state snapshots. ENet bytes include ENet/Godot headers but not IP/UDP headers.
+
+| Build | ENet bytes per client per snapshot | Datagrams per client per snapshot | Per client at 20 Hz | Server outbound at 20 Hz |
+|---|---|---|---|---|
+| `main` at `ec9ecfb` | 6,881 | 15.9 | 1.10 Mbit/s | 11.0 Mbit/s |
+| Batched snapshots | 877 | 0.9 | 0.14 Mbit/s | 1.4 Mbit/s |
+
+That is 7.8 times less traffic and about 18 instead of 318 datagrams per client per second. `tests/snapshot_codec_test.gd` also reports the serialized payload for one viewer with ten pilots and five aliens (8,360 bytes before, 1,076 after) and checks that the packet stays below 1,200 bytes. The Linux workload tables below predate this change and were not rerun.
+
+Run the comparison with `--headless --path . --script res://tests/snapshot_traffic_benchmark.gd`; copy the script into an older checkout to measure it with identical steps.
+
 ## Current-content results, 14 October 2026
 
 The qualifying runs both completed with exit 0 at `9ece26e1738324ca8bc504fb99b670be13dfb1dd`. [Spread raw data](docs/performance-spread-2026-10-14.json) and [single-map raw data](docs/performance-single-map-2026-10-14.json) retain source SHA-256 hashes, exact invocation, process samples, persistence events, industry inventories and every over-budget callback. The captured dirty status consists of documentation/result archival work. No gameplay source changed between the two measurements.
@@ -87,7 +100,7 @@ Per-client outbound traffic below is measured across the capture window. Bytes/s
 
 ### Inferred snapshot load
 
-At exactly 20 Hz, the current RPC loops imply `20 × [sum(n_map²) + 5 × 10 + 2 × 10]` calls/s for player snapshots, five local aliens per pilot, ammo and boost. That gives **1,920 RPC calls/s** at 3/3/2/2 and **3,400 RPC calls/s** with all ten on M1. This is a code-derived estimate. Measured UDP datagrams above include additional events, acknowledgements and fragmentation, and may also reflect RPC coalescing. The ten-on-M1 measurement tests the user's approximate 3,400 packets/s estimate; it does not turn the RPC formula into a wire-level count. Internet/Tailscale bytes and VPS capacity remain unmeasured.
+Before network schema 17, at exactly 20 Hz, the RPC loops implied `20 × [sum(n_map²) + 5 × 10 + 2 × 10]` calls/s for player snapshots, five local aliens per pilot, ammo and boost. That gives **1,920 RPC calls/s** at 3/3/2/2 and **3,400 RPC calls/s** with all ten on M1. This is a code-derived estimate. Measured UDP datagrams above include additional events, acknowledgements and fragmentation, and may also reflect RPC coalescing. The ten-on-M1 measurement tests the user's approximate 3,400 packets/s estimate; it does not turn the RPC formula into a wire-level count. Internet/Tailscale bytes and VPS capacity remain unmeasured.
 
 ## Reproduce
 
