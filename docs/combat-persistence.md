@@ -46,8 +46,16 @@ Each replacement reads its temporary file back through the write handle before
 renaming it. The snapshot check compares full contents only when the primary's
 size or modification second differs from the last load or save. Reopening a
 just-replaced file cost several milliseconds on Windows. An external edit that
-keeps the same size within that second is therefore not detected; the journal is
-still compared in full.
+keeps the same size within that second is therefore not detected.
+
+The journal check has a constant cost regardless of journal size. It compares the
+modification second, the size on disk and through the append handle, the header
+line, and the final 512 bytes. Each append also checks that the handle's end
+matches the expected length, even between checks inside a combat pass. The store
+keeps only those bytes and a running length, not the journal text. Appends,
+truncation and edits to the header or recent records are detected. An edit inside
+older records that keeps the size and modification second is not, until startup
+replay verifies every record's checksum and fails closed.
 
 A process death before step 3 leaves the old primary plus its complete journal.
 A death after step 3 but before step 4 leaves already-checkpointed records, which
@@ -97,8 +105,10 @@ Neither the server nor provisioning tool performs that rollback implicitly.
 checkpoint, rocket debits, backups containing spent ammo, interrupted compaction
 after a purchase, malformed journals, runtime edits and a real server process
 exiting before damage on persistence failure, including an actual failed append.
-It also checks the journal size limit, CRLF input, and real Godot/Python rotation
-in both directions. Operator tests cover pending-debit rotation, new pilots,
+Runtime edits cover truncation, same-size header and tail rewrites and an append
+during a combat pass. It also checks the journal size limit, appends that fill the
+journal with real debits across two size-bound checkpoints, replay after a restart
+following them, CRLF input, and real Godot/Python rotation in both directions. Operator tests cover pending-debit rotation, new pilots,
 Premium, stale checkpointed records and corruption preservation.
 Both Windows and Linux suites include the journal correctness test.
 
@@ -111,7 +121,10 @@ godot --headless --path . --script res://tests/combat_persistence_benchmark.gd
 The workload provisions ten disposable pilots, compares full-snapshot commits with
 combat journal commits, and repeats with 999 stored items on one pilot. It measures
 300 debits per case and 30 groups of ten volleys in the same synchronous combat
-pass. Timings are observations, not CI thresholds or a complete simulation benchmark.
+pass. A growth section then times the live integrity check and 300 debits, with
+every call verifying or one verification per pass, starting from a header-only
+journal and from one of about 500 KB. Timings are observations, not CI thresholds
+or a complete simulation benchmark.
 
 On 9 October 2026, Godot 4.7.2 on Windows (Ryzen 7 5700U), with this worktree's
 validation suite stopped, produced the following local measurements. Other
@@ -143,6 +156,21 @@ The M1 run's 60 checkpoints averaged 2.220 ms, with 3.159 ms p95 and 3.821 ms
 maximum on a roughly 62 KB ledger. Journal debits averaged 0.264 and 0.214 ms.
 These are ordinary mixed reward, loot, extras and industry saves; they are not
 the isolated 35/127 KB Windows microbenchmark above.
+
+On 15 October 2026, the growth section on the Windows machine above (Godot
+4.7.2, headless dedicated sector) gave these medians across four runs of each
+build. Before this change, the integrity check read and compared the whole
+journal; it now reads the header and tail only.
+
+| Median per call, 57 B → 500 KB journal | Before | After |
+| --- | ---: | ---: |
+| Integrity check | 0.31–0.40 → 0.82–0.86 ms | 0.41–0.46 → 0.44–0.45 ms |
+| Debit, verifying every call | 0.39–0.57 → 1.28–1.35 ms | 0.52–0.62 → 0.51–0.60 ms |
+| Debit, one verification per pass | 0.11–0.14 → 0.41–0.46 ms | 0.09–0.12 → 0.10 ms |
+
+The remaining check cost is filesystem metadata calls, independent of journal
+size. Means and p95 values varied by several milliseconds between runs on this
+shared machine because of flush and metadata latency spikes, in both builds.
 
 A separately retained diagnostic run failed its intended map distribution but
 captured a 101.604 ms loot checkpoint inside a 102.784 ms callback, with 99.535 ms
