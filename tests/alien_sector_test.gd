@@ -39,7 +39,7 @@ func run() -> void:
 	await replicate(server)
 	check(server.aliens.size() == 5 and first.aliens.size() == 5, "Bounded roster contains two Scouts, two Sentinels and one Heavy")
 	for enemy: Alien in server.aliens.values():
-		check(var_to_bytes([{}, combat.pack_alien(enemy), 1]).size() < 1200, "Alien snapshot fits below the packet budget")
+		check(SnapshotCodec.alien_entry(combat.pack_alien(enemy)).size() <= 56, "Alien snapshot entry stays compact")
 		check(not first.aliens[enemy.alien_id].simulation_authority, "Clients cannot simulate any alien")
 	first.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false, true, 0, 0, 999)
 	await settle(0.06)
@@ -94,7 +94,7 @@ func run() -> void:
 	await replicate(server)
 	for enemy: Alien in server.aliens.values():
 		var copy := late.aliens[enemy.alien_id]
-		check(copy.kind == enemy.kind and copy.life == enemy.life and copy.alive == enemy.alive and copy.returning == enemy.returning and copy.hull == enemy.hull and copy.shield == enemy.shield and copy.respawn == enemy.respawn and copy.position.is_equal_approx(enemy.position), "Late join receives current identity, position, health, reset and respawn state")
+		check(copy.kind == enemy.kind and copy.life == enemy.life and copy.alive == enemy.alive and copy.returning == enemy.returning and copy.hull == enemy.hull and copy.shield == enemy.shield and is_equal_approx(copy.respawn, enemy.respawn) and copy.position.is_equal_approx(enemy.position), "Late join receives current identity, position, health, reset and respawn state")
 	# Reject stale snapshots independently; another entity's older chunk is still useful.
 	var newer := combat.pack_alien(heavy)
 	newer["hull"] = 200.0

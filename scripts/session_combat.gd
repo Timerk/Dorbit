@@ -612,18 +612,17 @@ func pack_player(id: int, owner_view: bool = false) -> Dictionary:
 	return data
 
 
-func publish_ammo(id: int, sequence: int) -> void:
-	if id == 1:
-		return # Listen-host pilot already owns its authoritative inventory.
+## Owner-only ammunition counts followed by the selected laser ammunition index.
+func ammo_rounds(id: int) -> PackedInt32Array:
 	var ship := session.ships[id]
 	var rounds := PackedInt32Array()
 	for kind: String in Ammunition.types():
 		rounds.append(ship.ammo[kind])
 	rounds.append(Ammunition.TYPES.keys().find(ship.ammo_type))
-	ammo_snapshot.rpc_id(id, rounds, sequence, ship.rockets.state(), ship.map_visit)
+	return rounds
 
 
-@rpc("authority", "call_remote", "unreliable_ordered", 4)
+## Applies the owner's ammunition from a world snapshot.
 func ammo_snapshot(rounds: PackedInt32Array, sequence: int, rocket_data: Dictionary = {}, visit: int = -1) -> void:
 	if not session.active or sequence <= ammo_sequence or not session.receives_map(visit):
 		return
@@ -946,10 +945,9 @@ func advance_labs() -> void:
 		publish_inventory(id)
 
 
-@rpc("authority", "call_remote", "unreliable_ordered", 2)
 func boost_state(data: Dictionary, sequence: int, revision: int) -> void:
-	# Separate owner packets preserve the world-snapshot size budget. Reliable
-	# station replies supersede older packets, including those from another hull.
+	# Owner world snapshots carry boosts. Reliable station replies supersede
+	# older snapshots, including those from another hull.
 	if session.active and sequence > boost_sequence and revision == int(inventory.get("revision", -1)):
 		boost_sequence = sequence
 		session.sector.player.resource_boosts = data.duplicate(true)

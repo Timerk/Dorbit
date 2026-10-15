@@ -56,7 +56,7 @@ func run() -> void:
 	await settle(0.5)
 	await replicate(server)
 	check(late.aliens[1].home_position == enemy.home_position and late.aliens[1].life == enemy.life, "Late join receives current home and life")
-	check(var_to_bytes([{}, server.session.combat.pack_alien(enemy), 1]).size() < 1200, "Random-home snapshot stays below ENet packet budget")
+	check(SnapshotCodec.alien_profile(server.session.combat.pack_alien(enemy)) == [enemy.kind, enemy.home_position], "Random homes travel in the reliable alien profile")
 
 	ship.reset_health()
 	for direction in [Vector3.RIGHT, Vector3.LEFT, Vector3.UP, Vector3.DOWN, Vector3.FORWARD, Vector3.BACK]:
@@ -102,7 +102,7 @@ func run() -> void:
 	check(ship.alive and ship.position.distance_to(Sector.STATION_POSITION) < 75 and ship.radiation_exposure == 0, "Rescue returns pilot safely with exposure reset")
 	await replicate(server)
 	check(client.player.alive and client.player.radiation_exposure == 0, "Rescue state reaches owner")
-	check(var_to_bytes([{id: server.session.combat.pack_player(id, true)}, {}, 1]).size() < 1200, "Radiation player state stays below packet budget")
+	check(SnapshotCodec.player_entry(id, server.session.player_state(id, true), server.session.owner_extras(id)).size() < 300, "Radiation owner state stays within its compact entry budget")
 	check(FlightNavigation.compass_point(Vector3.FORWARD).is_equal_approx(Vector2.ZERO), "Forward destination centers the compass")
 	check(FlightNavigation.compass_point(Vector3.BACK).is_equal_approx(Vector2.DOWN), "Behind destination stays on compass rim")
 	(client.get_parent() as SubViewport).size = Vector2i(960, 600)
