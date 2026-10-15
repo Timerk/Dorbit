@@ -69,6 +69,8 @@ func run() -> void:
 	write_text(path + ".combat", clean + "external edit")
 	check(not store.commit_combat({"pilot0": ammo}) and store.failed and store.pilots == before, "Runtime journal edits cancel combat without consuming ammo")
 	store.close()
+	check_runtime_tampering(directory, checkpoint, clean, ammo)
+	check_rollover(directory, checkpoint, clean, ammo)
 	# A large but valid header exercises the size-bound checkpoint without
 	# thousands of synthetic shots or timing assertions.
 	var bounded_dir := directory.path_join("bounded")
@@ -109,6 +111,79 @@ func write_text(path: String, text: String) -> void:
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	file.store_string(text)
 	file.close()
+
+
+# Live checks read only the size, header and tail. Each same-size edit below
+# keeps the remembered modification time so the content check alone must fail.
+func check_runtime_tampering(directory: String, checkpoint: String, clean: String, ammo: Dictionary) -> void:
+	var path := directory.path_join("pilots.json")
+	var cases := {
+		"truncated": func(text: String) -> String: return text.substr(0, text.rfind("
+", text.length() - 2) + 1),
+		"tail rewritten": func(text: String) -> String: return text.substr(0, text.length() - 4) + ("0" if text[-4] != "0" else "1") + text.right(3),
+		"header rewritten": func(text: String) -> String: return text.substr(0, 8) + ("0" if text[8] != "0" else "1") + text.substr(9),
+		"appended mid-tick": func(text: String) -> String: return text + "[]
+",
+	}
+	for label: String in cases:
+		write_text(path, checkpoint)
+		write_text(path + ".combat", clean)
+		var store := PilotStore.new()
+		check(store.open(directory), "Tampering fixture opens: " + label)
+		var next := ammo.duplicate()
+		for shot in range(3):
+			next["x1"] -= 1
+			store.commit_combat({"pilot0": next})
+		var mid_tick := label == "appended mid-tick"
+		if mid_tick:
+			store.begin_combat_tick()
+			next["x1"] -= 1
+			check(store.commit_combat({"pilot0": next}), "Mid-tick fixture verifies once")
+		var before := store.pilots.duplicate(true)
+		write_text(path + ".combat", cases[label].call(FileAccess.get_file_as_string(path + ".combat")))
+		store.journal_modified_time = FileAccess.get_modified_time(path + ".combat")
+		next["x1"] -= 1
+		check(not store.commit_combat({"pilot0": next}) and store.failed and store.pilots == before, "Live debit detects a journal edit: " + label)
+		store.close()
+	write_text(path, checkpoint)
+	write_text(path + ".combat", clean)
+
+
+# Fill the journal to MAX_BYTES with real debits, cross the size-bound checkpoint
+# and restart without close(): replay must reproduce every flushed debit.
+func check_rollover(directory: String, checkpoint: String, clean: String, ammo: Dictionary) -> void:
+	var path := directory.path_join("pilots.json")
+	var store := PilotStore.new()
+	check(store.open(directory), "Rollover fixture opens")
+	var next := ammo.duplicate()
+	var rolled := 0
+	var consistent := true
+	store.begin_combat_tick()
+	while rolled < 2:
+		var size := store.journal_bytes
+		next["x1"] -= 1
+		if not store.commit_combat({"pilot0": next}):
+			consistent = false
+			break
+		if store.journal_bytes < size: rolled += 1
+		if rolled > 0 and store.journal_bytes > CombatJournal.MAX_BYTES: consistent = false
+		if rolled == 1:
+			# Appends after the checkpoint continue from the compacted header.
+			consistent = consistent and FileAccess.get_size(path + ".combat") == store.journal_bytes
+	store.end_combat_tick()
+	check(consistent and rolled == 2, "Appends continue across size-bound checkpoints")
+	var saved: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
+	var replayed: Dictionary = saved["pilots"]
+	check(CombatJournal.replay(FileAccess.get_file_as_string(path + ".combat"), saved["combat_journal"], replayed) == store.journal_sequence and same_json(replayed["pilot0"]["ammo"], next), "Journal after rollover replays to the live ledger")
+	store.close_journal()
+	DirAccess.remove_absolute(path + ".lock")
+	store.locked = false
+	store = PilotStore.new()
+	check(store.open(directory) and same_json(store.pilots["pilot0"]["ammo"], next), "Restart after rollover replays every flushed debit")
+	next["x1"] -= 1
+	check(store.commit_combat({"pilot0": next}) and store.close(), "Restarted store appends and checkpoints")
+	write_text(path, checkpoint)
+	write_text(path + ".combat", clean)
 
 
 func check_provisioning_interop(directory: String, snapshot: String, journal: String, ammo: Dictionary, boosts: Dictionary) -> void:
