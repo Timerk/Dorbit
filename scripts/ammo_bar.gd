@@ -25,6 +25,7 @@ var reset_button: Button
 var extras: Dictionary = {}
 var extra_ammo: OptionButton
 var extra_ammo_row: HBoxContainer
+var icons: Dictionary[String, Texture2D] = {}
 
 
 func _ready() -> void:
@@ -198,7 +199,7 @@ func equipment_extra_state(family: String) -> Dictionary:
 		hint += "\n" + Extras.repair_blocker(sector.player)
 	if item.is_empty():
 		hint += "\nEquip this extra on the active ship to use it."
-	return {"name": {"repair": "Repair", "repair-auto": "Auto repair", "ammo": "Auto ammo", "generators": "Auto boost"}[family], "icon": StationUi.texture(model), "count": count, "active": active, "available": available, "edit_toggle": automated, "tooltip": hint, "blocker": blocker}
+	return {"name": {"repair": "Repair", "repair-auto": "Auto repair", "ammo": "Auto ammo", "generators": "Auto boost"}[family], "icon": icon(model), "count": count, "active": active, "available": available, "edit_toggle": automated, "tooltip": hint, "blocker": blocker}
 
 
 func use_equipment_extra(family: String) -> void:
@@ -300,27 +301,28 @@ func update_geometry() -> void:
 	picker.position = origin.clamp(Vector2(16, 16), (area - picker.size - Vector2(16, 16)).max(Vector2(16, 16)))
 
 
-func state_for(action: String) -> Dictionary:
+# Tooltips are formatted only when detailed; per-frame refreshes leave them empty.
+func state_for(action: String, detailed := false) -> Dictionary:
 	var ship := sector.player
 	if action.begins_with("ammo:"):
 		var kind := action.trim_prefix("ammo:")
 		if Ammunition.TYPES.has(kind):
 			var amount := int(ship.ammo.get(kind, 0))
-			return {"name": kind, "icon": StationUi.texture(kind), "count": compact_count(amount), "active": ship.ammo_type == kind, "color": FlightHud.INK if amount >= maxi(1, ship.laser_count) else FlightHud.RED, "tooltip": "%s / %dx laser damage / %s shots\n%d rounds per volley (%d installed lasers)" % [kind, Ammunition.TYPES[kind]["multiplier"], StationShop.credits_text(amount), ship.laser_count, ship.laser_count]}
+			return {"name": kind, "icon": icon(kind), "count": compact_count(amount), "active": ship.ammo_type == kind, "color": FlightHud.INK if amount >= maxi(1, ship.laser_count) else FlightHud.RED, "tooltip": "%s / %dx laser damage / %s shots\n%d rounds per volley (%d installed lasers)" % [kind, Ammunition.TYPES[kind]["multiplier"], StationShop.credits_text(amount), ship.laser_count, ship.laser_count] if detailed else ""}
 		if Ammunition.ROCKETS.has(kind):
 			var rockets := ship.rockets
 			var amount := rockets.available(kind)
-			return {"name": Ammunition.ROCKETS[kind]["name"], "icon": StationUi.texture(kind), "count": compact_count(amount), "active": kind in [rockets.single_type, rockets.launcher_type], "color": FlightHud.INK if amount > 0 else FlightHud.RED, "tooltip": "%s\n%s\n%s available / select ammunition" % [Ammunition.ROCKETS[kind]["name"], StationShop.ammo_description(kind), StationShop.credits_text(amount)]}
+			return {"name": Ammunition.ROCKETS[kind]["name"], "icon": icon(kind), "count": compact_count(amount), "active": kind in [rockets.single_type, rockets.launcher_type], "color": FlightHud.INK if amount > 0 else FlightHud.RED, "tooltip": "%s\n%s\n%s available / select ammunition" % [Ammunition.ROCKETS[kind]["name"], StationShop.ammo_description(kind), StationShop.credits_text(amount)] if detailed else ""}
 	if action.begins_with("rocket:"):
 		var rockets := ship.rockets
 		if action == "rocket:single":
-			return {"name": "Rocket", "icon": StationUi.texture(rockets.single_type), "count": "%.1fs" % rockets.single_cooldown if rockets.single_cooldown > 0 else "FIRE", "tooltip": "Fire one selected %s rocket. Independent of laser fire." % Ammunition.ROCKETS[rockets.single_type]["name"]}
+			return {"name": "Rocket", "icon": icon(rockets.single_type), "count": "%.1fs" % rockets.single_cooldown if rockets.single_cooldown > 0 else "FIRE", "tooltip": "Fire one selected %s rocket. Independent of laser fire." % Ammunition.ROCKETS[rockets.single_type]["name"] if detailed else ""}
 		if action == "rocket:launcher":
 			var dots := ""
 			for index in rockets.capacity:
 				dots += "●" if index < rockets.loaded else "○"
 			var status := "%.1fs" % rockets.launcher_cooldown if rockets.launcher_cooldown > 0 else ("%.1fs LOAD" % rockets.load_clock if rockets.loading else ("FIRE %d" % rockets.loaded if rockets.loaded > 0 else "LOAD"))
-			return {"name": "Hellstorm", "icon": StationUi.texture("hst-2" if rockets.capacity == 5 else "hst-1") if rockets.capacity > 0 else null, "count": dots + "\n" + status, "compact": "%d/%d %s" % [rockets.loaded, rockets.capacity, status], "available": rockets.capacity > 0, "tooltip": "Load without a target; activate again to fire loaded %s rockets.\n%s / %s" % [Ammunition.ROCKETS[rockets.launcher_type]["name"], dots if rockets.capacity > 0 else "No launcher equipped", status]}
+			return {"name": "Hellstorm", "icon": icon("hst-2" if rockets.capacity == 5 else "hst-1") if rockets.capacity > 0 else null, "count": dots + "\n" + status, "compact": "%d/%d %s" % [rockets.loaded, rockets.capacity, status], "available": rockets.capacity > 0, "tooltip": "Load without a target; activate again to fire loaded %s rockets.\n%s / %s" % [Ammunition.ROCKETS[rockets.launcher_type]["name"], dots if rockets.capacity > 0 else "No launcher equipped", status] if detailed else ""}
 		if action == "rocket:unload":
 			return {"name": "Unload", "count": str(rockets.loaded), "available": rockets.loaded > 0 or rockets.loading, "tooltip": "Unload Hellstorm and release unfired ammunition."}
 	if extras.has(action) and extras[action]["state"].is_valid() and extras[action]["command"].is_valid():
@@ -328,6 +330,13 @@ func state_for(action: String) -> Dictionary:
 		if value is Dictionary:
 			return value.merged({"name": action.get_slice(":", 1), "available": false})
 	return {"name": "Empty" if action.is_empty() else action.get_slice(":", 1), "available": false, "tooltip": "Empty slot" if action.is_empty() else "This action is unavailable on the active ship."}
+
+
+# Cached so per-frame tile state avoids a load() path lookup.
+func icon(model: String) -> Texture2D:
+	if not icons.has(model):
+		icons[model] = StationUi.texture(model)
+	return icons[model]
 
 
 static func compact_count(amount: int) -> String:
@@ -351,11 +360,6 @@ func activate(action: String) -> void:
 
 
 func refresh_tiles() -> void:
-	if is_instance_valid(extra_ammo):
-		var item := equipment_extra("ammo")
-		extra_ammo_row.visible = tabs.current_tab == 3
-		extra_ammo.disabled = item.is_empty() or sector.session.combat.station_pending
-		extra_ammo.select(["x1", "x2", "x3"].find(item.get("ammo_type", "x1")))
 	buttons.clear()
 	counts.clear()
 	single_fire = null
@@ -375,6 +379,13 @@ func refresh_tiles() -> void:
 			"rocket:single": single_fire = tile
 			"rocket:launcher": launcher_fire = tile
 			"rocket:unload": unload_button = tile
+	# A hidden picker does no work; begin_editing() refreshes it when shown.
+	if not picker.visible:
+		return
+	var item := equipment_extra("ammo")
+	extra_ammo_row.visible = tabs.current_tab == 3
+	extra_ammo.disabled = item.is_empty() or sector.session.combat.station_pending
+	extra_ammo.select(["x1", "x2", "x3"].find(item.get("ammo_type", "x1")))
 	for tile: QuickslotTile in picker_tiles:
 		tile.refresh(state_for(tile.action_id), "")
 	selection_label.text = "EDIT SLOT %d" % (selected_slot + 1) if slot_editing and selected_slot >= 0 else "QUICKSLOTS"
