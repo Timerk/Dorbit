@@ -1,0 +1,80 @@
+{
+  "Skirmisher": {
+    "mesh_components": 633,
+    "base_faces": 7684,
+    "atlas_size": 4096,
+    "drive_count": 2,
+    "draft": false,
+    "export": {
+      "triangles": 42504,
+      "materials": 7,
+      "bytes": 54965132,
+      "omitted_degenerate_triangles": 0
+    }
+  },
+  "Raider": {
+    "mesh_components": 571,
+    "base_faces": 6762,
+    "atlas_size": 4096,
+    "drive_count": 2,
+    "draft": false,
+    "export": {
+      "triangles": 38804,
+      "materials": 7,
+      "bytes": 55233940,
+      "omitted_degenerate_triangles": 0
+    }
+  },
+  "Marauder": {
+    "mesh_components": 761,
+    "base_faces": 9253,
+    "atlas_size": 4096,
+    "drive_count": 3,
+    "draft": false,
+    "export": {
+      "triangles": 51366,
+      "materials": 7,
+      "bytes": 56636748,
+      "omitted_degenerate_triangles": 0
+    }
+  },
+  "Warden": {
+    "mesh_components": 689,
+    "base_faces": 9972,
+    "atlas_size": 4096,
+    "drive_count": 2,
+    "draft": false,
+    "export": {
+      "triangles": 51200,
+      "materials": 7,
+      "bytes": 55461252,
+      "omitted_degenerate_triangles": 0
+    }
+  },
+  "Ravager": {
+    "mesh_components": 703,
+    "base_faces": 10855,
+    "atlas_size": 4096,
+    "drive_count": 3,
+    "draft": false,
+    "export": {
+      "triangles": 52082,
+      "materials": 7,
+      "bytes": 55266248,
+      "omitted_degenerate_triangles": 0
+    }
+  },
+  "Overlord": {
+    "mesh_components": 836,
+    "base_faces": 13160,
+    "atlas_size": 4096,
+    "drive_count": 4,
+    "draft": false,
+    "export": {
+      "triangles": 63824,
+      "materials": 7,
+      "bytes": 55933604,
+      "omitted_degenerate_triangles": 0
+    }
+  }
+}

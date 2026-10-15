@@ -1,0 +1,109 @@
+{
+  "models": [
+    {
+      "name": "Skirmisher",
+      "components": 633,
+      "source_triangles": 133512,
+      "exported_triangles": 42504,
+      "drive_count": 2,
+      "packed_images": 4,
+      "dimensions": [
+        5.3349,
+        8.2085,
+        1.0328
+      ],
+      "blend_bytes": 55375525,
+      "glb_bytes": 54965132,
+      "renders": 9
+    },
+    {
+      "name": "Raider",
+      "components": 571,
+      "source_triangles": 124324,
+      "exported_triangles": 38804,
+      "drive_count": 2,
+      "packed_images": 4,
+      "dimensions": [
+        5.8806,
+        7.415,
+        1.269
+      ],
+      "blend_bytes": 56063325,
+      "glb_bytes": 55233940,
+      "renders": 9
+    },
+    {
+      "name": "Marauder",
+      "components": 761,
+      "source_triangles": 166766,
+      "exported_triangles": 51366,
+      "drive_count": 3,
+      "packed_images": 4,
+      "dimensions": [
+        5.5386,
+        8.4585,
+        1.8506
+      ],
+      "blend_bytes": 56685236,
+      "glb_bytes": 56636748,
+      "renders": 9
+    },
+    {
+      "name": "Warden",
+      "components": 689,
+      "source_triangles": 159868,
+      "exported_triangles": 51200,
+      "drive_count": 2,
+      "packed_images": 4,
+      "dimensions": [
+        5.7577,
+        6.675,
+        2.413
+      ],
+      "blend_bytes": 55865276,
+      "glb_bytes": 55461252,
+      "renders": 9
+    },
+    {
+      "name": "Ravager",
+      "components": 703,
+      "source_triangles": 155378,
+      "exported_triangles": 52082,
+      "drive_count": 3,
+      "packed_images": 4,
+      "dimensions": [
+        6.2007,
+        9.755,
+        1.5691
+      ],
+      "blend_bytes": 55514466,
+      "glb_bytes": 55266248,
+      "renders": 9
+    },
+    {
+      "name": "Overlord",
+      "components": 836,
+      "source_triangles": 195840,
+      "exported_triangles": 63824,
+      "drive_count": 4,
+      "packed_images": 4,
+      "dimensions": [
+        5.7388,
+        7.6585,
+        2.7318
+      ],
+      "blend_bytes": 55758751,
+      "glb_bytes": 55933604,
+      "renders": 9
+    }
+  ],
+  "checks": [
+    "Saved models reopen with editable parented components and nine cameras",
+    "Finite nondegenerate evaluated geometry, active atlas UVs and symmetric bounds",
+    "Approved reference and three 4K PBR maps are packed with correct color spaces",
+    "Nine final 1600 x 1200 renders per model postdate the saved source",
+    "Portable GLBs have one mesh, normals, UVs and three embedded maps",
+    "GLBs round-trip with matching dimensions and no studio nodes",
+    "All 16 rear exhaust centers remain visible in source and exported geometry"
+  ]
+}
