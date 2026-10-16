@@ -55,7 +55,10 @@ matches the expected length, even between checks inside a combat pass. The store
 keeps only those bytes and a running length, not the journal text. Appends,
 truncation and edits to the header or recent records are detected. An edit inside
 older records that keeps the size and modification second is not, until startup
-replay verifies every record's checksum and fails closed.
+replay verifies every record's checksum and fails closed. The remembered
+modification second comes only from startup, a verified append or the store's own
+replacement, never from reopening the handle, so a checkpoint cannot compact away
+an older-record edit that changed it.
 
 A process death before step 3 leaves the old primary plus its complete journal.
 A death after step 3 but before step 4 leaves already-checkpointed records, which
@@ -105,8 +108,8 @@ Neither the server nor provisioning tool performs that rollback implicitly.
 checkpoint, rocket debits, backups containing spent ammo, interrupted compaction
 after a purchase, malformed journals, runtime edits and a real server process
 exiting before damage on persistence failure, including an actual failed append.
-Runtime edits cover truncation, same-size header and tail rewrites and an append
-during a combat pass. It also checks the journal size limit, appends that fill the
+Runtime edits cover truncation, same-size header and tail rewrites, an append
+during a combat pass, and an older-record edit detected by the next checkpoint. It also checks the journal size limit, appends that fill the
 journal with real debits across two size-bound checkpoints, replay after a restart
 following them, CRLF input, and real Godot/Python rotation in both directions. Operator tests cover pending-debit rotation, new pilots,
 Premium, stale checkpointed records and corruption preservation.

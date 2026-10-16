@@ -70,6 +70,7 @@ func run() -> void:
 	check(not store.commit_combat({"pilot0": ammo}) and store.failed and store.pilots == before, "Runtime journal edits cancel combat without consuming ammo")
 	store.close()
 	check_runtime_tampering(directory, checkpoint, clean, ammo)
+	check_checkpoint_after_edit(directory, checkpoint, clean, ammo)
 	check_rollover(directory, checkpoint, clean, ammo)
 	# A large but valid header exercises the size-bound checkpoint without
 	# thousands of synthetic shots or timing assertions.
@@ -145,6 +146,33 @@ func check_runtime_tampering(directory: String, checkpoint: String, clean: Strin
 		next["x1"] -= 1
 		check(not store.commit_combat({"pilot0": next}) and store.failed and store.pilots == before, "Live debit detects a journal edit: " + label)
 		store.close()
+	write_text(path, checkpoint)
+	write_text(path + ".combat", clean)
+
+
+# A checkpoint reopens the journal. The remembered modification time must
+# survive that, or a same-size edit to an older record would be compacted away.
+func check_checkpoint_after_edit(directory: String, checkpoint: String, clean: String, ammo: Dictionary) -> void:
+	var path := directory.path_join("pilots.json")
+	write_text(path, checkpoint)
+	write_text(path + ".combat", clean)
+	var store := PilotStore.new()
+	check(store.open(directory), "Checkpoint edit fixture opens")
+	var next := ammo.duplicate()
+	while store.journal_bytes < store.journal_header.size() + PilotStore.JOURNAL_TAIL_BYTES * 2:
+		next["x1"] -= 1
+		store.commit_combat({"pilot0": next})
+	var journal := FileAccess.get_file_as_string(path + ".combat")
+	var middle := store.journal_header.size() + (store.journal_bytes - store.journal_header.size() - PilotStore.JOURNAL_TAIL_BYTES) / 2
+	var edited := journal.substr(0, middle) + ("0" if journal[middle] != "0" else "1") + journal.substr(middle + 1)
+	var baseline := store.journal_modified_time
+	for attempt in range(30):
+		write_text(path + ".combat", edited)
+		if FileAccess.get_modified_time(path + ".combat") != baseline: break
+		OS.delay_msec(100)
+	var before := store.pilots.duplicate(true)
+	check(not store.commit({"pilot0": 1}) and store.failed and store.pilots == before and FileAccess.get_file_as_string(path + ".combat") == edited, "Checkpoint detects an older-record edit and preserves the journal")
+	store.close()
 	write_text(path, checkpoint)
 	write_text(path + ".combat", clean)
 
