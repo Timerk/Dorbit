@@ -16,9 +16,9 @@ func same(a: Variant, b: Variant) -> bool:
 
 
 func round_trip_player(id: int, data: Dictionary, extras: Dictionary = {}) -> Dictionary:
-	var packet := SnapshotCodec.world(7, 3, [SnapshotCodec.player_entry(id, data, extras)], [])
+	var packet := SnapshotCodec.world(7, 3, [SnapshotCodec.player_entry(id, data, 65535, extras)], [])
 	var world := SnapshotCodec.decode_world(packet)
-	check(world.get("sequence") == 7 and world.get("visit") == 3 and world["players"].has(id), "World header and player ID decode")
+	check(world.get("sequence") == 7 and world.get("visit") == 3 and world["players"].has(id) and world["players"][id]["profile"] == 65535, "World header, player ID and profile revision decode")
 	return world
 
 
@@ -104,18 +104,18 @@ func run() -> void:
 	enemy.engaged = true
 	enemy.respawn = 2.5
 	var alien := combat.pack_alien(enemy)
-	var alien_packet := SnapshotCodec.world(9, 0, [], [SnapshotCodec.alien_entry(alien)])
+	var alien_packet := SnapshotCodec.world(9, 0, [], [SnapshotCodec.alien_entry(alien, 9)])
 	world = SnapshotCodec.decode_world(alien_packet)
-	check(same(SnapshotCodec.alien_state(world["aliens"][enemy.alien_id], SnapshotCodec.alien_profile(alien)), alien), "Alien state packs and unpacks")
+	check(world["aliens"][enemy.alien_id]["profile"] == 9 and same(SnapshotCodec.alien_state(world["aliens"][enemy.alien_id], SnapshotCodec.alien_profile(alien)), alien), "Alien state and profile revision pack and unpack")
 	check(SnapshotCodec.decode_world(alien_packet.slice(0, 8)).is_empty() and SnapshotCodec.decode_world(alien_packet + PackedByteArray([0])).is_empty(), "Short or oversized packets are rejected")
 
 	# Ten pilots and five aliens fit one datagram and shrink at least fivefold.
-	var players: Array[PackedByteArray] = [SnapshotCodec.player_entry(id, owner, extras)]
+	var players: Array[PackedByteArray] = [SnapshotCodec.player_entry(id, owner, 1, extras)]
 	for index in range(9):
-		players.append(SnapshotCodec.player_entry(other, session.player_state(other, false)))
+		players.append(SnapshotCodec.player_entry(other, session.player_state(other, false), 1))
 	var aliens: Array[PackedByteArray] = []
 	for each: Alien in server.map_rosters[0].values():
-		aliens.append(SnapshotCodec.alien_entry(combat.pack_alien(each)))
+		aliens.append(SnapshotCodec.alien_entry(combat.pack_alien(each), 1))
 	var batch := var_to_bytes(SnapshotCodec.world(1, 0, players, aliens)).size()
 	var legacy := legacy_bytes(server, id) + 8 * var_to_bytes([{other: session.player_state(other, false)}, {}, 1, 0]).size()
 	print("SNAPSHOT_PAYLOAD=", JSON.stringify({"legacy_bytes": legacy, "batched_bytes": batch, "ratio": snappedf(float(legacy) / batch, 0.01)}))
@@ -127,12 +127,33 @@ func run() -> void:
 	# Joining clients receive every visible profile reliably.
 	await replicate(server)
 	check(first.session.player_profiles.has(id) and first.session.player_profiles.has(other), "Pilots receive profiles for themselves and visible pilots")
-	check(first.session.player_profiles[id].size() == 5 and first.session.player_profiles[other].size() == 4, "Only the owner's profile carries contracts")
-	check(server.map_rosters[0].keys().all(func(alien_id: int) -> bool: return first.session.alien_profiles.get(alien_id, [""])[0] == server.world_aliens[alien_id].kind), "Pilots receive alien kinds for their map")
+	check(first.session.player_profiles[id][1].size() == 5 and first.session.player_profiles[other][1].size() == 4, "Only the owner's profile carries contracts")
+	check(server.map_rosters[0].keys().all(func(alien_id: int) -> bool: return first.session.alien_profiles.get(alien_id, [0, [""]])[1][0] == server.world_aliens[alien_id].kind), "Pilots receive alien kinds for their map")
 	check(first.active_contracts.size() == 3 and first.credits == 1_999_999_999, "Owner progress and contracts apply from the batch and profile")
 	session.ships[other].laser_damage = 4321.0
 	await replicate(server)
 	check(first.session.ships[other].laser_damage == 4321.0, "Changed profiles are resent")
+
+	# Unreliable state can overtake the reliable profile it was packed with. It
+	# waits for that revision rather than merging with the cached profile.
+	var cached: Array = first.session.player_profiles[other]
+	session.ships[other].laser_damage = 5000.0
+	var changed := session.player_state(other, false)
+	var sequence := session.snapshot_sequence
+	var applied: int = first.session.player_sequences.get(other, -1)
+	var entry := SnapshotCodec.player_entry(other, changed, (cached[0] + 1) % 65536)
+	first.session.world_snapshot(SnapshotCodec.world(sequence + 1, ship.map_visit, [entry], []))
+	check(first.session.player_sequences.get(other, -1) == applied and first.session.ships[other].laser_damage == 4321.0, "State packed with a newer profile waits instead of using the cached profile")
+	first.session.entity_profiles({other: [(cached[0] + 1) % 65536, SnapshotCodec.player_profile(changed)]}, {})
+	first.session.world_snapshot(SnapshotCodec.world(sequence + 2, ship.map_visit, [entry], []))
+	check(first.session.player_sequences.get(other, -1) == sequence + 2 and first.session.ships[other].laser_damage == 5000.0, "State applies once its profile revision arrives")
+	await replicate(server)
+	check(session.profile_revision(Vector2i(0, other), SnapshotCodec.player_profile(session.player_state(other, false)))[0] == (cached[0] + 1) % 65536, "The server advances the profile revision once per change")
+	session.ships[other].laser_damage = 4321.0
+	while session.snapshot_sequence <= sequence + 2:
+		session.send_snapshot()
+	await replicate(server)
+	check(first.session.ships[other].laser_damage == 4321.0, "Restored profiles are resent with a new revision")
 	late.client_only = true
 	late.session.credential_id = "pilot2"
 	late.session.credential_token = test_token(2)
@@ -148,7 +169,7 @@ func run() -> void:
 	# Arrival delivers the new map's alien profiles.
 	await travel(server, first, 1)
 	check(session.sent_profiles[id]["visit"] == ship.map_visit, "The server restarts profile tracking for the new visit")
-	check(server.map_rosters[1].keys().all(func(alien_id: int) -> bool: return first.session.alien_profiles.get(alien_id, [""])[0] == server.world_aliens[alien_id].kind), "Arrival delivers alien profiles for the new map")
+	check(server.map_rosters[1].keys().all(func(alien_id: int) -> bool: return first.session.alien_profiles.get(alien_id, [0, [""]])[1][0] == server.world_aliens[alien_id].kind), "Arrival delivers alien profiles for the new map")
 	await travel(server, first, 0)
 
 	# A docked pilot vanishes for viewers; relaunching restores it from cached profiles.
