@@ -6,14 +6,14 @@ These measurements do not validate rendered client FPS, internet transport or VP
 
 ## Batched snapshots, 15 October 2026
 
-Network schema 17 replaces per-entity snapshot, ammunition and boost RPCs with one binary world packet per viewer and tick; rarely changing fields are sent reliably only on change. `tests/snapshot_traffic_benchmark.gd` connects ten in-process headless clients to a dedicated server on Windows, keeps all ten pilots and five aliens on M1 moving, and reads the server's ENet host counters over 100 steady-state snapshots. ENet bytes include ENet/Godot headers but not IP/UDP headers.
+Network schema 17 replaces per-entity snapshot, ammunition and boost RPCs with one binary world packet per viewer and tick; rarely changing fields are sent reliably only on change, and each entry names the profile revision it was packed with. `tests/snapshot_traffic_benchmark.gd` connects ten in-process headless clients to a dedicated server on Windows, keeps all ten pilots and five aliens on M1 moving, and reads the server's ENet host counters over 100 steady-state snapshots. ENet bytes include ENet/Godot headers but not IP/UDP headers.
 
 | Build | ENet bytes per client per snapshot | Datagrams per client per snapshot | Per client at 20 Hz | Server outbound at 20 Hz |
 |---|---|---|---|---|
 | `main` at `ec9ecfb` | 6,881 | 15.9 | 1.10 Mbit/s | 11.0 Mbit/s |
-| Batched snapshots | 877 | 0.9 | 0.14 Mbit/s | 1.4 Mbit/s |
+| Batched snapshots | 913 | 0.9 | 0.15 Mbit/s | 1.5 Mbit/s |
 
-That is 7.8 times less traffic and about 18 instead of 318 datagrams per client per second. `tests/snapshot_codec_test.gd` also reports the serialized payload for one viewer with ten pilots and five aliens (8,360 bytes before, 1,076 after) and checks that the packet stays below 1,200 bytes. The Linux workload tables below predate this change and were not rerun.
+That is 7.5 times less traffic and about 18 instead of 318 datagrams per client per second. `tests/snapshot_codec_test.gd` also reports the serialized payload for one viewer with ten pilots and five aliens (8,360 bytes before, 1,104 after) and checks that the packet stays below 1,200 bytes. The Linux workload tables below predate this change and were not rerun.
 
 Run the comparison with `--headless --path . --script res://tests/snapshot_traffic_benchmark.gd`; copy the script into an older checkout to measure it with identical steps.
 

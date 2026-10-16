@@ -4,6 +4,8 @@ extends RefCounted
 ## Frequently changing state is packed once per entity. Rarely changing profile
 ## fields (model, stats, fitting, contracts, alien kind and home) travel
 ## separately as reliable arrays only when they change; see FlightSession.
+## Each entry names the revision of the profile it was packed with, so clients
+## never merge fresh state with an outdated profile.
 
 const OWNER := 1
 const ALIVE := 2
@@ -16,7 +18,7 @@ const ENGAGED := 8
 
 ## Public movement and health for one pilot. `extras` (owner entries only) adds
 ## velocity, private progress, ammunition, rocket and boost state.
-static func player_entry(id: int, data: Dictionary, extras: Dictionary = {}) -> PackedByteArray:
+static func player_entry(id: int, data: Dictionary, revision: int, extras: Dictionary = {}) -> PackedByteArray:
 	var owner := data.has("credits")
 	var systems: PackedFloat32Array = data["systems"]
 	var flags := (OWNER if owner else 0) | (ALIVE if data["alive"] else 0) | (DOCKED if data["docked"] else 0) | (REPAIRING if systems[2] > 0.0 else 0)
@@ -25,6 +27,7 @@ static func player_entry(id: int, data: Dictionary, extras: Dictionary = {}) -> 
 	var buffer := StreamPeerBuffer.new()
 	buffer.put_u32(id)
 	buffer.put_u8(flags)
+	buffer.put_u16(revision)
 	buffer.put_u32(data["life"])
 	buffer.put_u8(data["map"])
 	buffer.put_u32(data["visit"])
@@ -76,10 +79,11 @@ static func player_profile(data: Dictionary) -> Array:
 	return profile
 
 
-static func alien_entry(data: Dictionary) -> PackedByteArray:
+static func alien_entry(data: Dictionary, revision: int) -> PackedByteArray:
 	var buffer := StreamPeerBuffer.new()
 	buffer.put_u16(data["id"])
 	buffer.put_u8((ALIVE if data["alive"] else 0) | (RETURNING if data["returning"] else 0) | (ENGAGED if data["engaged"] else 0))
+	buffer.put_u16(revision)
 	buffer.put_u8(data["map"])
 	buffer.put_u32(data["encounter"])
 	put_vector(buffer, data["position"])
@@ -110,8 +114,8 @@ static func world(sequence: int, visit: int, players: Array[PackedByteArray], al
 
 
 ## Returns {sequence, visit, players: {id: state}, aliens: {id: state}, owner}.
-## Player and alien states lack profile fields until merged with `player_state`
-## or `alien_state`. `owner` holds ammunition, rockets and boosts, or is empty.
+## Each state's `profile` names its profile revision. States lack profile fields
+## until merged with `player_state` or `alien_state`. `owner` holds ammunition, rockets and boosts, or is empty.
 static func decode_world(packet: PackedByteArray) -> Dictionary:
 	if packet.size() < 10:
 		return {}
@@ -123,7 +127,7 @@ static func decode_world(packet: PackedByteArray) -> Dictionary:
 	for index in range(player_count):
 		var id := buffer.get_u32()
 		var flags := buffer.get_u8()
-		var data := {"life": buffer.get_u32(), "map": buffer.get_u8(), "visit": buffer.get_u32(),
+		var data := {"profile": buffer.get_u16(), "life": buffer.get_u32(), "map": buffer.get_u8(), "visit": buffer.get_u32(),
 			"position": get_vector(buffer), "rotation": get_vector(buffer), "hull": buffer.get_double(),
 			"shield": buffer.get_double(), "energy": buffer.get_float(), "since_hit": buffer.get_float()}
 		data["alive"] = flags & ALIVE != 0
@@ -159,7 +163,7 @@ static func decode_world(packet: PackedByteArray) -> Dictionary:
 	for index in range(alien_count):
 		var id := buffer.get_u16()
 		var flags := buffer.get_u8()
-		result["aliens"][id] = {"id": id, "alive": flags & ALIVE != 0, "returning": flags & RETURNING != 0,
+		result["aliens"][id] = {"id": id, "profile": buffer.get_u16(), "alive": flags & ALIVE != 0, "returning": flags & RETURNING != 0,
 			"engaged": flags & ENGAGED != 0, "map": buffer.get_u8(), "encounter": buffer.get_u32(),
 			"position": get_vector(buffer), "rotation": get_vector(buffer), "hull": buffer.get_double(),
 			"shield": buffer.get_double(), "since_hit": buffer.get_float(), "respawn": buffer.get_float()}
@@ -175,6 +179,7 @@ static func player_state(state: Dictionary, profile: Array) -> Dictionary:
 	data["systems"] = PackedFloat32Array([data["radiation"], profile[3], 1.0 if data["repairing"] else 0.0])
 	data.erase("radiation")
 	data.erase("repairing")
+	data.erase("profile")
 	if data.has("credits"):
 		data["contracts"] = profile[4].duplicate(true) if profile.size() > 4 else {}
 	return data
@@ -185,6 +190,7 @@ static func alien_state(state: Dictionary, profile: Array) -> Dictionary:
 	var data := state.duplicate()
 	data["kind"] = profile[0]
 	data["home"] = profile[1]
+	data.erase("profile")
 	return data
 
 

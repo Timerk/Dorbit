@@ -23,11 +23,13 @@ var received_snapshot: bool = false
 var snapshot_sequence: int = 0
 var player_sequences: Dictionary[int, int] = {}
 var alien_sequences: Dictionary[int, int] = {}
-# Client caches of rarely changing fields, keyed by peer or alien ID.
+# Client caches of rarely changing fields as [revision, profile], keyed by peer or alien ID.
 var player_profiles: Dictionary[int, Array] = {}
 var alien_profiles: Dictionary[int, Array] = {}
-# Server: profiles each viewer has been sent during its current map visit.
+# Server: profile revisions each viewer has been sent during its current map visit.
 var sent_profiles: Dictionary[int, Dictionary] = {}
+# Server: [revision, profile] per public (0), owner (1) or alien (2) profile ID.
+var profile_revisions: Dictionary[Vector2i, Array] = {}
 var host_port: int = PORT
 var menu: PanelContainer
 var address: LineEdit
@@ -661,6 +663,8 @@ func despawn(id: int) -> void:
 		ships[id].queue_free()
 	jump_until.erase(id)
 	sent_profiles.erase(id)
+	profile_revisions.erase(Vector2i(0, id))
+	profile_revisions.erase(Vector2i(1, id))
 	ships.erase(id)
 	commands.erase(id)
 	goals.erase(id)
@@ -767,8 +771,8 @@ func send_snapshot() -> void:
 	var profiles: Dictionary[int, Array] = {}
 	for id: int in ships:
 		var data := player_state(id, false)
-		entries[id] = SnapshotCodec.player_entry(id, data)
-		profiles[id] = SnapshotCodec.player_profile(data)
+		profiles[id] = profile_revision(Vector2i(0, id), SnapshotCodec.player_profile(data))
+		entries[id] = SnapshotCodec.player_entry(id, data, profiles[id][0])
 	var map_aliens: Dictionary[int, Array] = {}
 	var alien_profiles_by_map: Dictionary[int, Dictionary] = {}
 	for viewer: int in ships:
@@ -780,16 +784,16 @@ func send_snapshot() -> void:
 		for enemy: Alien in sector.world_aliens.values():
 			if enemy.map_id == map:
 				var data := combat.pack_alien(enemy)
-				packed.append(SnapshotCodec.alien_entry(data))
-				known[enemy.alien_id] = SnapshotCodec.alien_profile(data)
+				known[enemy.alien_id] = profile_revision(Vector2i(2, enemy.alien_id), SnapshotCodec.alien_profile(data))
+				packed.append(SnapshotCodec.alien_entry(data, known[enemy.alien_id][0]))
 		map_aliens[map] = packed
 		alien_profiles_by_map[map] = known
 	for viewer: int in ships:
 		if viewer == 1:
 			continue
 		var own := player_state(viewer, true)
-		var players: Array[PackedByteArray] = [SnapshotCodec.player_entry(viewer, own, owner_extras(viewer))]
-		var visible := {viewer: SnapshotCodec.player_profile(own)}
+		var visible := {viewer: profile_revision(Vector2i(1, viewer), SnapshotCodec.player_profile(own))}
+		var players: Array[PackedByteArray] = [SnapshotCodec.player_entry(viewer, own, visible[viewer][0], owner_extras(viewer))]
 		for id: int in ships:
 			if id != viewer and not ships[id].get_meta("docked", false) and ships[id].map_id == ships[viewer].map_id:
 				players.append(entries[id])
@@ -809,7 +813,16 @@ func owner_extras(id: int) -> Dictionary:
 	return extras
 
 
-## Reliably sends profiles the viewer lacks. Each new map visit resends all of them.
+## Returns [revision, profile], advancing the revision whenever the profile changes.
+func profile_revision(key: Vector2i, profile: Array) -> Array:
+	var known: Array = profile_revisions.get(key, [0, []])
+	if known[1] != profile:
+		known = [(known[0] + 1) % 65536, profile]
+		profile_revisions[key] = known
+	return known
+
+
+## Reliably sends [revision, profile] pairs the viewer lacks. Each new map visit resends all of them.
 func send_profiles(viewer: int, players: Dictionary, aliens: Dictionary) -> void:
 	var visit := ships[viewer].map_visit
 	if sent_profiles.get(viewer, {}).get("visit", -1) != visit:
@@ -818,13 +831,13 @@ func send_profiles(viewer: int, players: Dictionary, aliens: Dictionary) -> void
 	var changed_players := {}
 	var changed_aliens := {}
 	for id: int in players:
-		if known["players"].get(id) != players[id]:
+		if known["players"].get(id) != players[id][0]:
 			changed_players[id] = players[id]
-			known["players"][id] = players[id]
+			known["players"][id] = players[id][0]
 	for id: int in aliens:
-		if known["aliens"].get(id) != aliens[id]:
+		if known["aliens"].get(id) != aliens[id][0]:
 			changed_aliens[id] = aliens[id]
-			known["aliens"][id] = aliens[id]
+			known["aliens"][id] = aliens[id][0]
 	if not changed_players.is_empty() or not changed_aliens.is_empty():
 		entity_profiles.rpc_id(viewer, changed_players, changed_aliens)
 
@@ -872,15 +885,20 @@ func world_snapshot(packet: PackedByteArray) -> void:
 		combat.ammo_snapshot(owner["rounds"], sequence, owner["rockets"], visit)
 		if owner.has("boosts"):
 			combat.boost_state(owner["boosts"], sequence, owner["revision"])
-	# An entity waits for its reliable profile, which follows within one round trip.
+	# An entity waits until the reliable profile revision its state was packed
+	# with arrives, which takes at most one round trip.
 	var players := {}
 	for id: int in world["players"]:
-		if player_profiles.has(id):
-			players[id] = SnapshotCodec.player_state(world["players"][id], player_profiles[id])
+		var state: Dictionary = world["players"][id]
+		var profile: Array = player_profiles.get(id, [-1])
+		if profile[0] == state["profile"]:
+			players[id] = SnapshotCodec.player_state(state, profile[1])
 	snapshot(players, {}, sequence, visit)
 	for id: int in world["aliens"]:
-		if alien_profiles.has(id):
-			snapshot({}, SnapshotCodec.alien_state(world["aliens"][id], alien_profiles[id]), sequence, visit)
+		var state: Dictionary = world["aliens"][id]
+		var profile: Array = alien_profiles.get(id, [-1])
+		if profile[0] == state["profile"]:
+			snapshot({}, SnapshotCodec.alien_state(state, profile[1]), sequence, visit)
 
 
 ## Applies decoded world state. Each entity rejects state older than its last update.
@@ -952,6 +970,7 @@ func disconnect_session(message: String) -> void:
 	player_profiles.clear()
 	alien_profiles.clear()
 	sent_profiles.clear()
+	profile_revisions.clear()
 	jump_pending = false
 	jump_until.clear()
 	send_clock = 0.0

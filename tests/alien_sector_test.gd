@@ -39,7 +39,7 @@ func run() -> void:
 	await replicate(server)
 	check(server.aliens.size() == 5 and first.aliens.size() == 5, "Bounded roster contains two Scouts, two Sentinels and one Heavy")
 	for enemy: Alien in server.aliens.values():
-		check(SnapshotCodec.alien_entry(combat.pack_alien(enemy)).size() <= 56, "Alien snapshot entry stays compact")
+		check(SnapshotCodec.alien_entry(combat.pack_alien(enemy), 1).size() <= 58, "Alien snapshot entry stays compact")
 		check(not first.aliens[enemy.alien_id].simulation_authority, "Clients cannot simulate any alien")
 	first.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false, true, 0, 0, 999)
 	await settle(0.06)
