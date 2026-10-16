@@ -59,7 +59,24 @@ func run() -> void:
 	await settle(0.3)
 	check(not client.session.active and client.session.status.contains("build"), "Older servers without a compatibility handshake are rejected clearly")
 	server.multiplayer.peer_authenticating.disconnect(legacy)
+	# Schema 17 previews share this RPC table but pack world entries and profiles
+	# without revisions, so only the schema separates their fingerprints.
+	var preview := server.session.protocol_fingerprint(17)
+	check(preview != server.session.protocol_fingerprint() and FlightSession.NETWORK_SCHEMA == 18, "Profile revisions change the protocol fingerprint")
+	var preview_server := func(id: int): server.multiplayer.send_auth(id, JSON.stringify({"nonce": "00".repeat(32), "protocol": preview}).to_utf8_buffer())
+	server.multiplayer.peer_authenticating.connect(preview_server)
+	client.session.join("127.0.0.1", test_port(24683))
+	await settle(0.3)
+	check(not client.session.active and client.session.status.contains("build"), "Clients reject schema 17 preview servers")
+	server.multiplayer.peer_authenticating.disconnect(preview_server)
 	server.multiplayer.peer_authenticating.connect(server.session.begin_authentication)
+	client.multiplayer.auth_callback = func(id: int, data: PackedByteArray):
+		var envelope: Dictionary = JSON.parse_string(data.get_string_from_utf8())
+		var proof := Crypto.new().hmac_digest(HashingContext.HASH_SHA256, client.session.credential_token.sha256_buffer(), envelope["nonce"].hex_decode())
+		client.multiplayer.send_auth(id, JSON.stringify({"id": "pilot0", "proof": proof.hex_encode(), "protocol": preview}).to_utf8_buffer())
+	client.session.join("127.0.0.1", test_port(24683))
+	await settle(0.3)
+	check(not client.session.active and server.session.ships.is_empty() and server.session.pilot_ids.is_empty(), "Servers reject schema 17 preview clients before gameplay")
 	# A peer cannot skip the server-side check by sending a valid pilot proof alone.
 	client.multiplayer.auth_callback = func(id: int, data: PackedByteArray):
 		var envelope: Dictionary = JSON.parse_string(data.get_string_from_utf8())

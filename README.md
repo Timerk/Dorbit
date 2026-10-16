@@ -364,7 +364,7 @@ preserves existing reserves. Both require a launched living ship.
 
 Removing Slot CPU 1 returns equipment from its added slots to inventory. Cargo
 capacity removal is blocked until excess cargo is sold. Items and settings persist
-with the pilot. Client and server must both use network schema 17. See
+with the pilot. Client and server must both use network schema 18. See
 [the agreed mechanics and prices](GAME_PLAN.md#extras-equipment) and
 [generated artwork and prompts](assets/ui/extras/README.md).
 
@@ -501,7 +501,7 @@ Human economy and balance playtesting remains necessary.
 
 ### Current compatibility
 
-The current **network schema is 17** (`FlightSession.NETWORK_SCHEMA`), including
+The current **network schema is 18** (`FlightSession.NETWORK_SCHEMA`), including
 four-map membership, transfers, the shared collision layout, owner-only pilot
 progress and batched binary world snapshots. Clients and servers must use
 matching builds and protocol fingerprints; the connection handshake rejects
