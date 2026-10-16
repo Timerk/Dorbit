@@ -7,7 +7,7 @@ const MAX_PLAYERS: int = 10
 const COMMAND_TIMEOUT: float = 0.5
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when packet contents or shared physics change without an RPC signature change.
-const NETWORK_SCHEMA: int = 17
+const NETWORK_SCHEMA: int = 18
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
@@ -309,8 +309,8 @@ func rpc_signature(node: Node) -> Array:
 	return signature
 
 
-func protocol_fingerprint() -> String:
-	return JSON.stringify([NETWORK_SCHEMA, rpc_signature(self), rpc_signature(combat)]).sha256_text()
+func protocol_fingerprint(schema: int = NETWORK_SCHEMA) -> String:
+	return JSON.stringify([schema, rpc_signature(self), rpc_signature(combat)]).sha256_text()
 
 
 func begin_authentication(id: int) -> void:

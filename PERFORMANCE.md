@@ -6,7 +6,7 @@ These measurements do not validate rendered client FPS, internet transport or VP
 
 ## Batched snapshots, 15 October 2026
 
-Network schema 17 replaces per-entity snapshot, ammunition and boost RPCs with one binary world packet per viewer and tick; rarely changing fields are sent reliably only on change, and each entry names the profile revision it was packed with. `tests/snapshot_traffic_benchmark.gd` connects ten in-process headless clients to a dedicated server on Windows, keeps all ten pilots and five aliens on M1 moving, and reads the server's ENet host counters over 100 steady-state snapshots. ENet bytes include ENet/Godot headers but not IP/UDP headers.
+Network schema 18 replaces per-entity snapshot, ammunition and boost RPCs with one binary world packet per viewer and tick; rarely changing fields are sent reliably only on change, and each entry names the profile revision it was packed with. `tests/snapshot_traffic_benchmark.gd` connects ten in-process headless clients to a dedicated server on Windows, keeps all ten pilots and five aliens on M1 moving, and reads the server's ENet host counters over 100 steady-state snapshots. ENet bytes include ENet/Godot headers but not IP/UDP headers.
 
 | Build | ENet bytes per client per snapshot | Datagrams per client per snapshot | Per client at 20 Hz | Server outbound at 20 Hz |
 |---|---|---|---|---|
@@ -100,7 +100,7 @@ Per-client outbound traffic below is measured across the capture window. Bytes/s
 
 ### Inferred snapshot load
 
-Before network schema 17, at exactly 20 Hz, the RPC loops implied `20 × [sum(n_map²) + 5 × 10 + 2 × 10]` calls/s for player snapshots, five local aliens per pilot, ammo and boost. That gives **1,920 RPC calls/s** at 3/3/2/2 and **3,400 RPC calls/s** with all ten on M1. This is a code-derived estimate. Measured UDP datagrams above include additional events, acknowledgements and fragmentation, and may also reflect RPC coalescing. The ten-on-M1 measurement tests the user's approximate 3,400 packets/s estimate; it does not turn the RPC formula into a wire-level count. Internet/Tailscale bytes and VPS capacity remain unmeasured.
+With network schema 16 and earlier, before batched snapshots, at exactly 20 Hz, the RPC loops implied `20 × [sum(n_map²) + 5 × 10 + 2 × 10]` calls/s for player snapshots, five local aliens per pilot, ammo and boost. That gives **1,920 RPC calls/s** at 3/3/2/2 and **3,400 RPC calls/s** with all ten on M1. This is a code-derived estimate. Measured UDP datagrams above include additional events, acknowledgements and fragmentation, and may also reflect RPC coalescing. The ten-on-M1 measurement tests the user's approximate 3,400 packets/s estimate; it does not turn the RPC formula into a wire-level count. Internet/Tailscale bytes and VPS capacity remain unmeasured.
 
 ## Reproduce
 
