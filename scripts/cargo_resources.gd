@@ -27,7 +27,9 @@ const LOOT := {
 static func capacity(equipment: Dictionary, ship: String = "") -> int:
 	if ship.is_empty():
 		ship = equipment["active_ship"]
-	return int(ShipCatalog.info(equipment["ships"][ship])["cargo"]) * (2 if not Equipment.extra(equipment, "cargo", ship).is_empty() else 1)
+	var base := int(ShipCatalog.info(equipment["ships"][ship])["cargo"]) * (2 if not Equipment.extra(equipment, "cargo", ship).is_empty() else 1)
+	# Whole percentages avoid float truncation, matching tools/pilots.py.
+	return base * (100 + roundi(Research.bonus(equipment, "cargo") * 100.0)) / 100
 
 static func empty_holds(equipment: Dictionary) -> Dictionary:
 	var holds := {}
@@ -89,6 +91,20 @@ static func collect(hold: Dictionary, contents: Dictionary, limit: int) -> Dicti
 		taken[resource] = count
 		room -= count
 	return taken
+
+# Tractor Beam adds extra units without taking them from the shared box. Fractions
+# round up by chance so low skill levels still matter for small pickups.
+static func collect_bonus(hold: Dictionary, taken: Dictionary, rate: float, limit: int) -> Dictionary:
+	var extra := {}
+	if rate <= 0.0:
+		return extra
+	for resource: String in taken:
+		var share: float = taken[resource] * rate
+		var count := mini(maxi(0, limit - units(hold)), int(share) + (1 if randf() < share - int(share) else 0))
+		if count > 0:
+			hold[resource] = int(hold.get(resource, 0)) + count
+			extra[resource] = count
+	return extra
 
 static func describe(amounts: Dictionary) -> String:
 	var parts: PackedStringArray = []

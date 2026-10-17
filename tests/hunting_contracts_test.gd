@@ -117,7 +117,7 @@ func run() -> void:
 	var path := server.session.store.path
 	var disk: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	for contract: Dictionary in disk["pilots"]["pilot0"]["contracts"].values():
-		for field in ["progress", "required", "reward"]:
+		for field in ["progress", "required", "reward", "research"]:
 			contract[field] = int(contract[field])
 	check(disk["pilots"]["pilot0"]["contracts"] == pilot.active_contracts and disk["pilots"]["pilot0"]["credits"] == pilot.credits, "All progress and kill credits commit together")
 	var saved := pilot.active_contracts.duplicate(true)

@@ -94,8 +94,9 @@ func open(directory: String) -> bool:
 		if not HuntingContracts.valid_collection(contracts):
 			return fail("Invalid hunting contracts. Original file preserved.")
 		for contract: Dictionary in contracts.values():
-			for field in ["required", "reward", "progress"]:
-				contract[field] = int(contract[field])
+			for field in ["required", "reward", "progress", "research"]:
+				if contract.has(field):
+					contract[field] = int(contract[field])
 		pilot.erase("contract")
 		pilot["contracts"] = contracts
 		if data["version"] == 1:
@@ -105,6 +106,8 @@ func open(directory: String) -> bool:
 		elif not Equipment.valid(pilot.get("equipment")):
 			return fail("Invalid pilot equipment. Original file preserved.")
 		pilot["equipment"]["revision"] = int(pilot["equipment"]["revision"])
+		if pilot["equipment"].has("research"):
+			Research.normalize(pilot["equipment"]["research"])
 		if data["version"] < 3:
 			if pilot.has("cargo"):
 				return fail("Unexpected cargo in legacy save. Original file preserved.")
@@ -224,7 +227,8 @@ func verifies(id: String, nonce: PackedByteArray, proof: PackedByteArray) -> boo
 
 
 # Commit all shares of a kill together, before combat publishes the new balances.
-func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}, ammo: Dictionary = {}, boosts: Dictionary = {}) -> bool:
+# Research holds points earned by each pilot in this transaction.
+func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}, ammo: Dictionary = {}, boosts: Dictionary = {}, research: Dictionary = {}) -> bool:
 	if failed or not locked:
 		return false
 	var next := pilots.duplicate(true)
@@ -249,6 +253,11 @@ func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary 
 		if not next.has(id) or not ResourceBoosts.valid(boosts[id], next[id]["equipment"]):
 			return fail("Invalid server boost update.")
 		next[id]["boosts"] = boosts[id].duplicate(true)
+	for id: String in research:
+		var earned: Variant = research[id]
+		if not next.has(id) or not earned is int or earned < 0 or earned > 1000:
+			return fail("Invalid server research update.")
+		Research.add_points(next[id]["equipment"], earned)
 	return persist(next)
 
 
@@ -399,6 +408,28 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 				return "Sell excess cargo before removing cargo capacity. No items were moved."
 		if not Skylab.valid(pilot["skylab"], equipment):
 			return "Wait for the Skylab shipment before removing cargo capacity. No items were moved."
+	elif action == "research":
+		if not ship.is_empty() or not slot.is_empty():
+			return "Invalid research request."
+		var blocker := Research.learn(equipment, pilot["skylab"]["inventory"], subject)
+		if not blocker.is_empty():
+			return blocker
+	elif action == "research_reset":
+		if not subject.is_empty() or not ship.is_empty() or not slot.is_empty():
+			return "Invalid research reset."
+		var research := Research.state(equipment)
+		if Research.spent(research) == 0:
+			return "No skills to reset."
+		var price := Research.reset_price(research)
+		if pilot["credits"] < price:
+			return "Insufficient credits. Need %d CR." % price
+		Research.reset(equipment)
+		pilot["credits"] -= price
+		for cargo_ship: String in equipment["ships"]:
+			if CargoResources.units(pilot["cargo"][cargo_ship]) > CargoResources.capacity(equipment, cargo_ship):
+				return "Sell excess cargo before resetting Logistics. Skills unchanged."
+		if not Skylab.valid(pilot["skylab"], equipment):
+			return "Wait for the Skylab shipment before resetting Logistics. Skills unchanged."
 	elif action == "configure_extra":
 		var item: Dictionary = equipment["items"].get(subject, {})
 		if item.is_empty() or not Equipment.MODELS[item["model"]].get("family", "") in ["ammo", "generators", "repair-auto"] or not ship in ["on", "off"]:
@@ -417,6 +448,10 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		return "Preview: added %d test credits." % (pilot["credits"] - previous_credits)
 	if action == "configure_extra":
 		return "Extra settings saved."
+	if action == "research":
+		return "%s researched to level %d." % [Research.SKILLS[subject]["name"], Research.level(Research.state(equipment), subject)]
+	if action == "research_reset":
+		return "Skill tree reset. Research points refunded; %d available." % Research.state(equipment)["points"]
 	if action == "buy_ammo":
 		return "Purchased %d %s shots." % [subject.get_slice(":", 1).to_int() * Ammunition.BATCH_SIZE, subject.get_slice(":", 0)]
 	if action == "sell":
