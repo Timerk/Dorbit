@@ -509,6 +509,7 @@ station service rules and apply to the flying ship immediately. See
 [the agreed values](GAME_PLAN.md#research-skill-tree).
 `res://tests/research_test.gd` covers the rules, contract rewards and
 authenticated learn/reset transactions; the offline menu test captures the page.
+Review the [Research page at 1440 × 900](docs/feedback/research-menu.png).
 
 ## Dedicated server and connections
 
