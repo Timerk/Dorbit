@@ -171,7 +171,7 @@ func run() -> void:
 		check(enemy.alive and enemy.contributors.is_empty(), "Every slot respawns without stale contributors")
 	check(scout.life == 1 and heavy.life == 3, "Each death respawns once and retreat resets increment only their own life")
 	var blocked := server.aliens[0]
-	blocked.position = blocked.home_position + Vector3(240, 0, 0)
+	blocked.position = blocked.home_position + Vector3(float(blocked.tuning()["leash"]) + 10.0, 0, 0)
 	blocked.check_retreat(null)
 	SectorVisuals.add_box_collider(server, blocked.position, Vector3(30, 30, 30))
 	await physics_frame
