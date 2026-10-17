@@ -744,7 +744,7 @@ Scout, Sentinel and Heavy contracts award 1, 2 and 4 research points with their
 credits. Runs accepted before this change pay their offer's current points.
 Each level takes Skylab stock: 50 Prometid + 50 Duranium; 100 Prometid +
 100 Duranium + 10 Promerium; 25 Promerium; 50 Promerium + 2 Seprom; 80 Promerium
-+ 5 Seprom. Pilots can hold at most 30 of the 50 levels, so they must specialize.
++ 5 Seprom. Pilots can hold at most 30 of the 55 levels, so they must specialize.
 A reset refunds all points but not materials. It costs 100,000 credits and doubles
 each time. Resets that would leave cargo or a Skylab shipment above the reduced
 Logistics capacity are refused.

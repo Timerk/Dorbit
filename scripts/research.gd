@@ -4,7 +4,7 @@ extends RefCounted
 ## Values follow the DarkOrbit skill tree; costs, caps and rewards are provisional.
 
 const MAX_LEVEL := 5
-# Researched levels at once. The tree holds 50, so pilots must specialize.
+# Researched levels at once. The tree holds 55, so pilots must specialize.
 const SPENT_CAP := 30
 const MAX_POINTS := 1_000_000
 const RESET_BASE_CREDITS := 100_000
