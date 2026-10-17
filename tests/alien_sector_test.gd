@@ -98,13 +98,15 @@ func run() -> void:
 	var heavy_command: Dictionary = server.session.commands.get(second_id, {})
 	check(second.target == second.aliens[4] and second.auto_fire and combat.remote_target(second_id) == heavy and heavy_command.get("fire", false) and heavy_command.get("encounter", -1) == heavy.life, "Another alien's death preserves Heavy targeting and fire intent")
 	var timer := scout.respawn
+	var damaged_hull := heavy.hull
+	var damaged_shield := heavy.shield
 	# Crossing the leash invalidates the life before any queued lethal shot can land.
 	heavy.position = heavy.home_position + Vector3(float(heavy.tuning()["leash"]) + 1, 0, 0)
 	heavy.take_damage(heavy.max_hull + heavy.max_shield + 1.0, q)
 	check(heavy.alive, "Lethal damage outside the leash cannot grant a kill")
 	combat.tick(0.01)
 	check(heavy.returning and heavy.life == heavy_life + 1 and heavy.contributors.is_empty(), "Leash reset clears only that life's contributions")
-	check(heavy.hull == heavy.max_hull and heavy.shield == heavy.max_shield and scout.respawn < timer, "Reset restores health without restarting another respawn")
+	check(heavy.hull == damaged_hull and heavy.shield == damaged_shield and scout.respawn < timer, "Retreat preserves damaged health without restarting another respawn")
 	heavy.take_damage(heavy.max_hull + heavy.max_shield + 1.0, q)
 	check(heavy.alive and combat.records[second_id]["credits"] == 0, "Returning alien rejects damage and rewards")
 	await replicate(server)
@@ -134,6 +136,7 @@ func run() -> void:
 		combat.tick(1.0 / 60.0)
 	check(heavy.position.distance_to(heavy.home_position) <= 3.0, "Returning alien actually flies back to its territory")
 	check(not heavy.returning and heavy.available(), "Alien becomes huntable again only at home")
+	check(heavy.hull == damaged_hull, "Returning home before the recovery delay preserves hull damage")
 	await fire_at(server, [second], [heavy], heavy_life)
 	check(not combat.remote_firing(second_id), "Old fire intent cannot cross a retreat reset")
 	# Abandoning an active fight for station protection also resets eligibility.
@@ -171,6 +174,9 @@ func run() -> void:
 		check(enemy.alive and enemy.contributors.is_empty(), "Every slot respawns without stale contributors")
 	check(scout.life == 1 and heavy.life == 3, "Each death respawns once and retreat resets increment only their own life")
 	var blocked := server.aliens[0]
+	blocked.take_damage(100.0, null)
+	var blocked_hull := blocked.hull
+	var blocked_shield := blocked.shield
 	blocked.position = blocked.home_position + Vector3(240, 0, 0)
 	blocked.check_retreat(null)
 	SectorVisuals.add_box_collider(server, blocked.position, Vector3(30, 30, 30))
@@ -179,6 +185,7 @@ func run() -> void:
 	check(blocked.returning, "Blocked return stays unavailable")
 	blocked.fly(Alien.RETURN_TIMEOUT, null, Sector.STATION_POSITION)
 	check(blocked.available() and blocked.position.is_equal_approx(blocked.home_position) and blocked.contributors.is_empty(), "Return timeout restores a blocked slot safely at home")
+	check(blocked.hull == blocked_hull and blocked.shield == blocked_shield, "Return timeout never refills health independently of combat recovery")
 	# Each Tab selects by cursor distance, even when another target is already locked.
 	var control := first
 	(control.get_parent() as SubViewport).size = Vector2i(1280, 720)

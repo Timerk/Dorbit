@@ -2,6 +2,7 @@ class_name Alien
 extends SpaceShip
 
 const RETURN_TIMEOUT: float = 30.0
+const HULL_RESET_DELAY: float = 30.0
 # Baked asset diameters, before presentation scaling; independent of colliders.
 const VISUAL_DIAMETERS := {
 	"Scout": 7.547966,
@@ -45,6 +46,7 @@ var patrol_time: float = 0.0
 var engaged: bool = false
 var returning: bool = false
 var return_time: float = 0.0
+var recovery_time: float = 0.0
 var life: int = 0
 var respawn: float = 0.0
 var contributors: Array[int] = []
@@ -104,12 +106,26 @@ func available() -> bool:
 	return alive and not returning
 
 
-func reset_encounter() -> void:
+func reset_encounter(restore_health: bool = true) -> void:
 	life += 1
 	contributors.clear()
 	engaged = false
 	last_attacker = null
-	reset_health()
+	recovery_time = 0.0
+	if restore_health:
+		reset_health()
+
+
+func tick_combat(delta: float) -> void:
+	super.tick_combat(delta) # Alien shields use the same delay and rate as pilots.
+	if not simulation_authority or not alive:
+		return
+	if engaged:
+		recovery_time = 0.0
+	else:
+		recovery_time = minf(HULL_RESET_DELAY, recovery_time + delta)
+		if recovery_time >= HULL_RESET_DELAY:
+			hull = max_hull
 
 
 # Falls back to the last attacker when no pilot is inside detection range.
@@ -130,7 +146,8 @@ func check_retreat(player: Pilot) -> void:
 	if position.distance_to(home_position) >= float(tuning()["leash"]) or (engaged and not is_instance_valid(player)):
 		returning = true
 		return_time = 0.0
-		reset_encounter()
+		# Invalidate stale fire and rewards without erasing the damage just dealt.
+		reset_encounter(false)
 
 
 func take_damage(amount: float, attacker: SpaceShip) -> void:
@@ -143,6 +160,7 @@ func take_damage(amount: float, attacker: SpaceShip) -> void:
 		return
 	if simulation_authority and amount > 0.0:
 		engaged = true
+		recovery_time = 0.0
 		if attacker is Pilot:
 			last_attacker = attacker as Pilot
 	super.take_damage(amount, attacker)
@@ -160,6 +178,8 @@ func fly(delta: float, player: Pilot, station_position: Vector3) -> void:
 	engaged = engaged and player.map_id == map_id and not SectorMaps.protected(player)
 	engaged = engaged and (player == last_attacker or global_position.distance_to(player.global_position) < float(tuning()["detection"]))
 	engaged = engaged and not returning
+	if engaged:
+		recovery_time = 0.0
 	var destination := home_position + Vector3(sin(patrol_time * 0.22) * 18.0, sin(patrol_time * 0.35) * 8.0, 0.0)
 	if returning:
 		return_time += delta
@@ -168,7 +188,6 @@ func fly(delta: float, player: Pilot, station_position: Vector3) -> void:
 		if position.distance_to(home_position) <= 3.0 or return_time >= RETURN_TIMEOUT:
 			position = home_position
 			returning = false
-			reset_health()
 	if engaged:
 		var away := (global_position - player.global_position).normalized()
 		var lateral := away.cross(Vector3.UP).normalized()
