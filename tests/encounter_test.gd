@@ -103,6 +103,77 @@ func check_speed_inertia(player: Pilot) -> void:
 	player.energy = 100.0
 
 
+func check_alien_recovery(player: Pilot) -> void:
+	var original_position := player.position
+	var enemy := Alien.new()
+	enemy.kind = "Heavy"
+	enemy.render_enabled = false
+	enemy.position = Vector3(300, 300, 300)
+	enemy.home_position = enemy.position
+	sector.add_child(enemy)
+	enemy.laser_damage = 0.0
+	var pilot := Pilot.new()
+	pilot.render_enabled = false
+	pilot.max_hull = 30000.0
+	pilot.max_shield = enemy.max_shield
+	sector.add_child(pilot)
+	# Deplete both shields, then compare the actual shared regeneration rules.
+	player.position = enemy.position + Vector3(0, 0, 90)
+	enemy.take_damage(7500.0, player)
+	pilot.take_damage(pilot.max_shield / pilot.shield_absorption, enemy)
+	var damaged_hull := enemy.hull
+	enemy.shot_cooldown = 0.5
+	player.position = Sector.STATION_POSITION
+	enemy.check_retreat(null)
+	check(enemy.returning and enemy.hull == damaged_hull and enemy.shield == 0.0, "Losing the attacker starts retreat without restoring hull or shields")
+	check(enemy.time_since_hit == 0.0 and enemy.shot_cooldown == 0.5, "Retreat preserves the last-hit delay and weapon cooldown")
+	enemy.tick_combat(5.0)
+	pilot.tick_combat(5.0)
+	check(enemy.shield == 0.0 and pilot.shield == 0.0, "Alien and pilot shields both wait after damage")
+	enemy.fly(0.01, null, Sector.STATION_POSITION)
+	check(enemy.available() and enemy.hull == damaged_hull and enemy.shield == 0.0, "Arriving home early does not refill either health pool")
+	enemy.tick_combat(1.0)
+	pilot.tick_combat(1.0)
+	check(is_equal_approx(enemy.shield, pilot.shield) and is_equal_approx(enemy.shield, enemy.max_shield / 12.0), "Alien shields recover at the pilot rate after the same six-second delay")
+	enemy.tick_combat(Alien.HULL_RESET_DELAY - 6.0 - 0.01)
+	check(enemy.hull == damaged_hull, "Hull damage persists until the full disengagement delay")
+	# Acquisition without another hit must also cancel the pending hull reset.
+	player.position = enemy.position + Vector3(0, 0, 90)
+	enemy.fly(0.01, player, Sector.STATION_POSITION)
+	enemy.tick_combat(Alien.HULL_RESET_DELAY + 1.0)
+	check(enemy.engaged and enemy.hull == damaged_hull, "Re-engagement without a hit prevents hull recovery during a long fight")
+	player.position = Sector.STATION_POSITION
+	enemy.check_retreat(null)
+	enemy.tick_combat(Alien.HULL_RESET_DELAY - 0.01)
+	check(enemy.hull == damaged_hull, "A second disengagement requires a new full recovery delay")
+	# Even at the hull-reset boundary, shield charge is never refilled by it.
+	enemy.shield = 0.0
+	enemy.time_since_hit = 0.0
+	enemy.tick_combat(0.01)
+	check(enemy.hull == enemy.max_hull and enemy.shield == 0.0, "Delayed hull reset leaves shield recovery independent")
+	enemy.position = enemy.home_position
+	enemy.fly(0.01, null, Sector.STATION_POSITION)
+	player.position = enemy.position + Vector3(0, 0, 90)
+	enemy.take_damage(100.0, player)
+	damaged_hull = enemy.hull
+	enemy.tick_combat(Alien.HULL_RESET_DELAY + 1.0)
+	check(enemy.hull == damaged_hull and enemy.recovery_time == 0.0, "A new hit restarts recovery and keeps damage through combat")
+	enemy.engaged = false
+	enemy.simulation_authority = false
+	enemy.shield = 0.0
+	enemy.tick_combat(Alien.HULL_RESET_DELAY + 1.0)
+	check(enemy.hull == damaged_hull and enemy.shield == 0.0, "Client replicas cannot recover hull or shields locally")
+	enemy.simulation_authority = true
+	enemy.take_damage(enemy.max_hull + enemy.max_shield + 1.0, player)
+	enemy.tick_combat(Alien.HULL_RESET_DELAY + 1.0)
+	check(not enemy.alive and enemy.hull == 0.0, "Recovery cannot revive a destroyed alien")
+	enemy.reset_encounter()
+	check(enemy.alive and enemy.hull == enemy.max_hull and enemy.shield == enemy.max_shield and enemy.recovery_time == 0.0, "Respawn still starts with full health and a fresh recovery timer")
+	enemy.queue_free()
+	pilot.queue_free()
+	player.position = original_position
+
+
 func run() -> void:
 	sector = preload("res://scenes/sector.tscn").instantiate()
 	sector.client_only = false
@@ -137,6 +208,7 @@ func run() -> void:
 	player.tick_combat(1.0)
 	check(player.shield > 0.0, "Shields regenerate after the combat delay")
 	player.reset_health()
+	check_alien_recovery(player)
 
 	# Services include the boundary in every axis and stop immediately beyond it.
 	player.velocity = Vector3.ZERO
