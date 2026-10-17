@@ -53,7 +53,8 @@ def valid_equipment(data: object) -> bool:
             or not 0 <= data["revision"] <= 2_000_000_000
             or not isinstance(data.get("ships"), dict) or not data["ships"]
             or not isinstance(data.get("items"), dict)
-            or not isinstance(data.get("active_ship"), str) or data["active_ship"] not in data["ships"]):
+            or not isinstance(data.get("active_ship"), str) or data["active_ship"] not in data["ships"]
+            or ("research" in data and not valid_research(data["research"]))):
         return False
     for ship, model in data["ships"].items():
         if (not isinstance(ship, str) or not re.fullmatch(r"[a-z0-9_-]{1,32}", ship)
@@ -92,6 +93,23 @@ def valid_equipment(data: object) -> bool:
         occupied.add(location)
     return True
 
+# Mirrors Research.SKILLS["logistics"] in scripts/research.gd.
+LOGISTICS_PERCENT = (0, 4, 8, 12, 16, 25)
+
+
+def cargo_capacity(equipment: dict, ship: str) -> int:
+    capacity = ship_info(equipment["ships"][ship])["cargo"] * (2 if fitted_extra(equipment, "cargo-expander", ship) else 1)
+    level = equipment.get("research", {}).get("skills", {}).get("logistics", 0)
+    return capacity * (100 + LOGISTICS_PERCENT[level]) // 100
+
+
+def valid_research(data: object) -> bool:
+    # The server validates prerequisites and caps; bound what the tool relies on.
+    return (isinstance(data, dict) and data.keys() == {"points", "skills", "resets"}
+            and isinstance(data["skills"], dict)
+            and all(isinstance(level, int) and 1 <= level <= 5 for level in data["skills"].values()))
+
+
 def valid_cargo(data: object, equipment: dict) -> bool:
     prices = {"prometium", "endurium", "terbium", "prometid", "duranium", "xenomit", "promerium", "seprom"}
     if not isinstance(data, dict) or data.keys() != equipment["ships"].keys():
@@ -99,9 +117,7 @@ def valid_cargo(data: object, equipment: dict) -> bool:
     for ship, hold in data.items():
         if not isinstance(hold, dict):
             return False
-        capacity = ship_info(equipment["ships"][ship])["cargo"]
-        if fitted_extra(equipment, "cargo-expander", ship):
-            capacity *= 2
+        capacity = cargo_capacity(equipment, ship)
         if any(resource not in prices or type(amount) is not int or not 1 <= amount <= 2 * capacity
                for resource, amount in hold.items()) or sum(hold.values()) > 2 * capacity:
             return False
@@ -173,7 +189,7 @@ def valid_skylab(lab: object, equipment: dict) -> bool:
                 or shipment.get("recipientId") not in equipment["ships"]
                 or not isinstance(shipment.get("manifest"), dict) or not shipment["manifest"]
                 or any(r not in resources or not integer(a, 1) for r, a in shipment["manifest"].items())
-                or sum(shipment["manifest"].values()) > ship_info(equipment["ships"][shipment["recipientId"]])["cargo"] * (2 if fitted_extra(equipment, "cargo-expander", shipment["recipientId"]) else 1)
+                or sum(shipment["manifest"].values()) > cargo_capacity(equipment, shipment["recipientId"])
                 or not integer(shipment.get("dispatchedAt"), high=10_000_000_000)
                 or not integer(shipment.get("arrivesAt"), high=10_000_000_000)
                 or shipment["arrivesAt"] < shipment["dispatchedAt"] or shipment.get("delivered") is not False):

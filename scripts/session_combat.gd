@@ -188,7 +188,7 @@ func apply_equipment(id: int) -> void:
 	var ship := session.ships[id]
 	ship.resource_boosts = pilot["boosts"][pilot["equipment"]["active_ship"]].duplicate(true)
 	Equipment.apply_stats(ship, ResourceBoosts.stats(Equipment.stats(pilot["equipment"]), ship.resource_boosts))
-	ship.repair_seconds = Equipment.MODELS.get(Equipment.extra(pilot["equipment"], "repair").get("model", ""), {}).get("repair_seconds", 0.0)
+	ship.repair_seconds = Equipment.MODELS.get(Equipment.extra(pilot["equipment"], "repair").get("model", ""), {}).get("repair_seconds", 0.0) / (1.0 + Research.bonus(pilot["equipment"], "repair"))
 	ship.repair_auto = Extras.enabled(Equipment.extra(pilot["equipment"], "repair-auto"))
 	ship.repair_requested = false
 	ship.robot_repairing = false
@@ -423,9 +423,13 @@ func destroyed(ship: SpaceShip) -> void:
 		var balances: Dictionary[int, int] = {}
 		var contracts: Dictionary[int, Dictionary] = {}
 		var payouts: Dictionary[int, Dictionary] = {}
+		var research: Dictionary[int, int] = {}
 		for index in range(contributors.size()):
 			var id := contributors[index]
 			var reward := int(pool / contributors.size()) + (1 if index < pool % contributors.size() else 0)
+			# Greed adds to each pilot's own share without reducing anyone else's.
+			if session.sector.dedicated_server:
+				reward += int(reward * Research.bonus(session.store.pilots[session.pilot_ids[id]]["equipment"], "credits"))
 			balances[id] = mini(PilotStore.MAX_CREDITS, records[id]["credits"] + reward)
 			var next: Dictionary = records[id]["contracts"].duplicate(true)
 			var kind := alien.kind.to_lower()
@@ -434,7 +438,8 @@ func destroyed(ship: SpaceShip) -> void:
 			payouts[id] = HuntingContracts.settle(next, balances[id])
 			balances[id] = payouts[id]["credits"]
 			contracts[id] = payouts[id]["contracts"]
-		if not balances.is_empty() and not session.save_balances(balances, contracts):
+			research[id] = payouts[id]["research"]
+		if not balances.is_empty() and not session.save_balances(balances, contracts, research):
 			return
 		session.sector.loot.spawn_drop(alien)
 		for id: int in balances:
@@ -445,8 +450,10 @@ func destroyed(ship: SpaceShip) -> void:
 			records[id]["stage"] = maxi(records[id]["stage"], 3)
 			var notice := "Alien destroyed. Your share: +%d credits." % reward
 			if payouts[id]["reward"] > 0:
-				notice += " %s hunt completed: +%d credits paid automatically." % [", ".join(payouts[id]["paid"]), payouts[id]["reward"]]
+				notice += " " + HuntingContracts.paid_notice(payouts[id])
 			message(id, notice)
+			if research[id] > 0:
+				publish_inventory(id)
 		contributors.clear()
 		alien.respawn = alien.tuning()["respawn"]
 		if session.sector.target == alien:
@@ -483,11 +490,13 @@ func pay_pending_contracts(id: int) -> void:
 	var payout := HuntingContracts.settle(records[id]["contracts"], records[id]["credits"])
 	if payout["reward"] == 0:
 		return
-	if not session.save_balances({id: payout["credits"]}, {id: payout["contracts"]}):
+	if not session.save_balances({id: payout["credits"]}, {id: payout["contracts"]}, {id: payout["research"]}):
 		return
 	records[id]["credits"] = payout["credits"]
 	records[id]["contracts"] = payout["contracts"]
-	message(id, "%s hunt completed: +%d credits paid automatically." % [", ".join(payout["paid"]), payout["reward"]])
+	message(id, HuntingContracts.paid_notice(payout))
+	if payout["research"] > 0:
+		publish_inventory(id)
 
 
 func request_contract(action: String, offer: String = "") -> void:
@@ -857,7 +866,7 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 		session.commands.erase(id)
 		session.ships[id].velocity = Vector3.ZERO
 	publish_inventory(id, result)
-	if action in ["buy", "buy_ship", "buy_ammo", "sell", "refine", "boost", "replace_boost"] and pilot["equipment"]["revision"] > previous_revision:
+	if action in ["buy", "buy_ship", "buy_ammo", "sell", "refine", "boost", "replace_boost", "research", "research_reset"] and pilot["equipment"]["revision"] > previous_revision:
 		message(id, result, "purchase")
 
 
@@ -977,6 +986,9 @@ func collect_loot() -> void:
 			if taken.is_empty():
 				continue
 			changed[drop_id] = {} if drop["resources"].is_empty() else drop
+			var extra := CargoResources.collect_bonus(next[id][equipment["active_ship"]], taken, Research.bonus(equipment, "loot"), CargoResources.capacity(equipment))
+			for resource: String in extra:
+				taken[resource] += extra[resource]
 			if not notices.has(id):
 				notices[id] = {}
 			for resource: String in taken:
