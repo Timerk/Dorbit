@@ -709,6 +709,54 @@ Network schema 16 requires matching client/server builds. See [implementation po
 rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot's
 454/870 power budget and exact inventories/capacities remain a separate debug fixture.
 
+### Research skill tree
+
+The user requested a DarkOrbit-style [skill tree](https://darkorbit.fandom.com/wiki/Skill_tree)
+on 2026-10-17 and chose the starting rules below. It is the first slice of the
+personal research proposed for the reclamation campaign in
+[PR #76](https://github.com/Timerk/Dorbit/pull/76). Story intelligence quests can
+award research points once they exist; until then, hunting contracts award them.
+
+A Research console page shows three rows. Each skill has five levels, and each
+level costs one research point plus refined Skylab stock. A skill unlocks once
+the previous skill in its row is complete. Values follow DarkOrbit and are
+cumulative per skill:
+
+| Row | Skill | Effect at levels 1–5 |
+| --- | --- | --- |
+| Defense | Ship Hull I | +5,000 / 10,000 / 15,000 / 25,000 / 50,000 max hull |
+| | Shield Engineering | +4 / 8 / 12 / 18 / 25% shield capacity |
+| | Engineering | +5 / 10 / 15 / 20 / 30% repair robot speed |
+| | Shield Mechanics | +2 / 4 / 6 / 8 / 12 percentage points absorption (max 100%) |
+| | Ship Hull II | As Ship Hull I |
+| Economy | Logistics | +4 / 8 / 12 / 16 / 25% cargo capacity |
+| | Tractor Beam | +2 / 6 / 10 / 15 / 20% resources from collected boxes |
+| | Greed | +4 / 8 / 12 / 18 / 25% of the pilot's alien kill credit share |
+| Offense | Alien Hunter | +2 / 4 / 6 / 8 / 12% laser damage against aliens |
+| | Heat-Seeking Missiles | +1 / 2 / 4 / 6 / 10 percentage points rocket hit chance |
+| | Rocket Fusion | +2 / 4 / 6 / 8 / 15% rocket damage |
+
+DarkOrbit's Tactics, Cruelty, Luck, mines, Bounty Hunter, Electro-Optics and
+Evasive Maneuvers are omitted: Dorbit has no experience, honor, bonus boxes,
+mines or PvP yet, and lasers and aliens do not miss. Revisit them with those systems.
+
+Scout, Sentinel and Heavy contracts award 1, 2 and 4 research points with their
+credits. Runs accepted before this change pay their offer's current points.
+Each level takes Skylab stock: 50 Prometid + 50 Duranium; 100 Prometid +
+100 Duranium + 10 Promerium; 25 Promerium; 50 Promerium + 2 Seprom; 80 Promerium
++ 5 Seprom. Pilots can hold at most 30 of the 50 levels, so they must specialize.
+A reset refunds all points but not materials. It costs 100,000 credits and doubles
+each time. Resets that would leave cargo or a Skylab shipment above the reduced
+Logistics capacity are refused.
+
+Learning and resetting use station service rules and the economy request
+sequence; research changes apply immediately to the flying ship. Research lives in
+the pilot's saved equipment record, absent meaning nothing researched, so save
+schema 8 is unchanged. Network schema 19 requires matching builds. Greed adds to
+the pilot's own share without reducing others'. Tractor Beam bonus units do not
+come from the shared box; fractional units round up by chance. Point rewards,
+material costs, the level cap and reset price are provisional playtesting values.
+
 ### Manual single rockets and classic Hellstorm
 
 The user requested independent manual single rockets and equipped Hellstorm
@@ -1050,11 +1098,11 @@ The contract board follows the supplied Mission Control reference: hunting and a
 
 | Alien | Required kills | Fixed contract reward |
 | --- | --- | --- |
-| Scout | 3 | 900 credits |
-| Sentinel | 2 | 4,500 credits |
-| Heavy | 1 | 30,000 credits |
+| Scout | 3 | 900 credits + 1 research point |
+| Sentinel | 2 | 4,500 credits + 2 research points |
+| Heavy | 1 | 30,000 credits + 4 research points |
 
-Counts and rewards are provisional values for short hunting trips. Accepted contracts retain their original terms if later updates tune the offers.
+Counts and rewards are provisional values for short hunting trips. Accepted contracts retain their original terms if later updates tune the offers. Research points fund the [research skill tree](#research-skill-tree).
 
 Only qualifying kills after acceptance count. The existing encounter contribution rules decide eligibility, including connected contributors awaiting rescue. Every eligible pilot with a matching contract earns one full kill of progress, independently of the split kill-credit pool. Death preserves all contracts and progress. The final qualifying kill automatically grants the fixed hunting reward once and clears that run, wherever the pilot is. Other hunts remain active.
 
