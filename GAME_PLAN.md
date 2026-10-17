@@ -847,6 +847,17 @@ bounding diameter is 3.5 m, half the other hulls' 7 m default, with the same
 scale used in flight, the hangar and shop previews. Catalog `visual_diameter`
 controls export size independently of the shared gameplay collision sphere.
 
+The user requested an exhaust animation when ships accelerate, styled as a
+futuristic drive rather than a chemical rocket. Every modeled nozzle emits a
+shader-only ion plume: a white-cyan core fading to blue, travelling energy pulses
+and helical filaments, with a matching nozzle glow. Nozzles idle with a faint
+glow, holding cruise sustains a short plume, and forward acceleration stretches
+it to full length. Boost lengthens it further, tightens the pulses and shifts the
+tail toward violet. Clients infer thrust from each ship's rendered motion and
+boost energy, so remote pilots animate without network or save changes;
+dedicated servers create no exhaust. Plume length, brightness and colors remain
+playtesting settings.
+
 This is presentation work on the existing roster within the current milestone.
 Ship statistics, collision size, equipment, ownership and progression retain
 their agreed behavior. Art acceptance and performance on representative
