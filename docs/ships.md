@@ -104,6 +104,11 @@ sphere and chase camera remain shared across hulls; these are approximate game
 sizes, since PR 14 supplied no physical scale. Godot generates mesh LODs on
 import. The dedicated server never instantiates hull render meshes.
 
+Each catalog entry lists `exhausts` as `[x, y, z, radius]` in exported model
+space, taken from the rearmost ion-blue nozzle disc of each engine column
+(Aegis uses the aft faces of its green reactor pods). Re-measure these after
+re-exporting a hull whose engines move or change size.
+
 ## Validation
 
 Ship visual refinement checked on 7 October 2026 with Blender 5.2.2 LTS and
