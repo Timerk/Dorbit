@@ -41,6 +41,7 @@ var robot_repairing: bool = false
 var time_since_attack: float = 100.0
 var extras_clock: float = 0.0
 var repair_visual: RepairBotVisual
+var exhaust: ShipExhaust
 var turn_budget: float = 0.0
 
 
@@ -77,9 +78,14 @@ func set_ship_model(value: String) -> void:
 	if render_enabled and is_instance_valid(model):
 		remove_child(model)
 		model.queue_free()
-		model = ShipCatalog.model_scene(ship_model)
-		add_child(model)
-		SectorVisuals.configure_texture_filtering(model, SectorVisuals.texture_filtering_enabled(self))
+		attach_model()
+
+
+func attach_model() -> void:
+	model = ShipCatalog.model_scene(ship_model)
+	add_child(model)
+	SectorVisuals.configure_texture_filtering(model, SectorVisuals.texture_filtering_enabled(self))
+	exhaust = ShipExhaust.attach(model, self)
 
 
 func _ready() -> void:
@@ -89,9 +95,7 @@ func _ready() -> void:
 		return
 	remove_child(model)
 	model.queue_free()
-	model = ShipCatalog.model_scene(ship_model)
-	add_child(model)
-	SectorVisuals.configure_texture_filtering(model, SectorVisuals.texture_filtering_enabled(self))
+	attach_model()
 	arm = SpringArm3D.new()
 	arm.position = Vector3(0.0, 2.5, 0.0)
 	arm.rotation.x = -0.12

@@ -1,14 +1,14 @@
 {
-  "phoenix": {"name": "Phoenix", "hull": 104000, "speed": 320, "lasers": 1, "generators": 1, "extras": 1, "cargo": 100, "price": 0, "currency": "credits", "visual_diameter": 3.5},
-  "liberator": {"name": "Liberator", "hull": 116000, "speed": 330, "lasers": 4, "generators": 6, "extras": 2, "cargo": 400, "price": 40000, "currency": "credits"},
-  "piranha": {"name": "Piranha", "hull": 164000, "speed": 360, "lasers": 6, "generators": 8, "extras": 2, "cargo": 600, "price": 100000, "currency": "credits"},
-  "nostromo": {"name": "Nostromo", "hull": 220000, "speed": 340, "lasers": 7, "generators": 10, "extras": 3, "cargo": 700, "price": 195000, "currency": "credits"},
-  "bigboy": {"name": "Bigboy", "hull": 260000, "speed": 260, "lasers": 8, "generators": 15, "extras": 3, "cargo": 700, "price": 285000, "currency": "credits"},
-  "leonov": {"name": "Leonov", "hull": 164000, "speed": 360, "lasers": 6, "generators": 6, "extras": 1, "cargo": 1000, "price": 15000, "currency": "uridium"},
-  "vengeance": {"name": "Vengeance", "hull": 280000, "speed": 380, "lasers": 10, "generators": 10, "extras": 2, "cargo": 1000, "price": 30000, "currency": "uridium"},
-  "spearhead": {"name": "Spearhead", "hull": 200000, "speed": 370, "lasers": 5, "generators": 12, "extras": 2, "cargo": 500, "price": 45000, "currency": "uridium"},
-  "goliath": {"name": "Goliath", "hull": 356000, "speed": 300, "lasers": 15, "generators": 15, "extras": 3, "cargo": 1500, "price": 80000, "currency": "uridium"},
-  "aegis": {"name": "Aegis", "hull": 375000, "speed": 300, "lasers": 10, "generators": 15, "extras": 3, "cargo": 2000, "price": 80000, "currency": "uridium"},
-  "defcom": {"name": "Defcom", "hull": 250000, "speed": 340, "lasers": 12, "generators": 8, "extras": 2, "cargo": 800, "price": 150000, "currency": "credits"},
-  "yamato": {"name": "Yamato", "hull": 260000, "speed": 260, "lasers": 8, "generators": 12, "extras": 2, "cargo": 1000, "price": 150000, "currency": "credits"}
+  "phoenix": {"name": "Phoenix", "hull": 104000, "speed": 320, "lasers": 1, "generators": 1, "extras": 1, "cargo": 100, "price": 0, "currency": "credits", "visual_diameter": 3.5, "exhausts": [[0.3, -0.55, 1.01, 0.06], [-0.3, -0.55, 1.01, 0.06]]},
+  "liberator": {"name": "Liberator", "hull": 116000, "speed": 330, "lasers": 4, "generators": 6, "extras": 2, "cargo": 400, "price": 40000, "currency": "credits", "exhausts": [[1.02, 0.11, 2.69, 0.14], [-1.02, 0.11, 2.69, 0.14]]},
+  "piranha": {"name": "Piranha", "hull": 164000, "speed": 360, "lasers": 6, "generators": 8, "extras": 2, "cargo": 600, "price": 100000, "currency": "credits", "exhausts": [[0.54, -0.11, 2.63, 0.085], [-0.54, -0.11, 2.63, 0.085]]},
+  "nostromo": {"name": "Nostromo", "hull": 220000, "speed": 340, "lasers": 7, "generators": 10, "extras": 3, "cargo": 700, "price": 195000, "currency": "credits", "exhausts": [[0.87, 0.29, 2.5, 0.21], [-0.87, 0.29, 2.5, 0.21]]},
+  "bigboy": {"name": "Bigboy", "hull": 260000, "speed": 260, "lasers": 8, "generators": 15, "extras": 3, "cargo": 700, "price": 285000, "currency": "credits", "exhausts": [[0.44, 0.18, 2.28, 0.135], [-0.44, 0.18, 2.28, 0.135]]},
+  "leonov": {"name": "Leonov", "hull": 164000, "speed": 360, "lasers": 6, "generators": 6, "extras": 1, "cargo": 1000, "price": 15000, "currency": "uridium", "exhausts": [[0.54, -0.51, 2.66, 0.11], [-0.54, -0.51, 2.66, 0.11]]},
+  "vengeance": {"name": "Vengeance", "hull": 280000, "speed": 380, "lasers": 10, "generators": 10, "extras": 2, "cargo": 1000, "price": 30000, "currency": "uridium", "exhausts": [[1.75, -0.78, 2.25, 0.12], [-1.75, -0.78, 2.25, 0.12], [1.67, 0.72, 2.1, 0.135], [-1.67, 0.72, 2.1, 0.135]]},
+  "spearhead": {"name": "Spearhead", "hull": 200000, "speed": 370, "lasers": 5, "generators": 12, "extras": 2, "cargo": 500, "price": 45000, "currency": "uridium", "exhausts": [[0, 0.85, 2.26, 0.15], [0, -0.98, 1.85, 0.085]]},
+  "goliath": {"name": "Goliath", "hull": 356000, "speed": 300, "lasers": 15, "generators": 15, "extras": 3, "cargo": 1500, "price": 80000, "currency": "uridium", "exhausts": [[0.2, -0.41, 2.23, 0.08], [-0.2, -0.41, 2.23, 0.08]]},
+  "aegis": {"name": "Aegis", "hull": 375000, "speed": 300, "lasers": 10, "generators": 15, "extras": 3, "cargo": 2000, "price": 80000, "currency": "uridium", "exhausts": [[0.7, -1.55, 1.04, 0.08], [-0.7, -1.55, 1.04, 0.08]]},
+  "defcom": {"name": "Defcom", "hull": 250000, "speed": 340, "lasers": 12, "generators": 8, "extras": 2, "cargo": 800, "price": 150000, "currency": "credits", "exhausts": [[0.46, -0.32, 2.05, 0.115], [-0.46, -0.32, 2.05, 0.115]]},
+  "yamato": {"name": "Yamato", "hull": 260000, "speed": 260, "lasers": 8, "generators": 12, "extras": 2, "cargo": 1000, "price": 150000, "currency": "credits", "exhausts": [[1.52, 0.72, 2.02, 0.135], [-1.52, 0.72, 2.02, 0.135], [1.03, -1.02, 0.43, 0.07], [-1.03, -1.02, 0.43, 0.07]]}
 }
