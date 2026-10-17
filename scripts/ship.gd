@@ -11,7 +11,7 @@ signal damaged(ship: SpaceShip, attacker: SpaceShip)
 @export_range(0.0, 1.0) var shield_absorption: float = 0.4
 @export var laser_damage: float = 65.0
 @export var laser_interval: float = 0.42
-@export var laser_range: float = 170.0
+@export var laser_range: float = 440.0
 @export_range(-1.0, 1.0) var firing_arc_cosine: float = 0.25
 
 var hull: float
