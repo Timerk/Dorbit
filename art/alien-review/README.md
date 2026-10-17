@@ -1,5 +1,8 @@
 # Dorbit alien model review
 
+The six additional M2–M4 models, Blender sources, mesh renders and reference
+comparisons are in the [outer-sector model gallery](outer-sectors/README.md).
+
 Editable Scout, Sentinel and Heavy spacecraft built from the
 [approved concept sheets](concepts/README.md), with interlocking contoured armor,
 exposed hydraulic wing mounts, plated drives, recessed turbine nozzles,

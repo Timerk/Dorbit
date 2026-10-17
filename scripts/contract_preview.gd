@@ -43,7 +43,11 @@ func show_kind(kind: String) -> void:
 	if kind == selected_kind:
 		return
 	selected_kind = kind
-	camera.size = {"Scout": 5.5, "Sentinel": 7.0, "Heavy": 10.0}[kind] * float(Alien.VISUAL_SCALE[kind])
+	var diameter := float(Alien.VISUAL_DIAMETERS[kind]) * float(Alien.VISUAL_SCALE[kind])
+	var framing := float({"Scout": 5.5, "Sentinel": 7.0, "Heavy": 10.0}.get(kind, float(Alien.VISUAL_DIAMETERS[kind]) * 0.75))
+	camera.size = framing * float(Alien.VISUAL_SCALE[kind])
+	camera.position = Vector3(8, 7, -10).normalized() * maxf(15.0, diameter * 1.5)
+	camera.look_at(Vector3.ZERO)
 	if is_instance_valid(model):
 		viewport.remove_child(model)
 		model.queue_free()

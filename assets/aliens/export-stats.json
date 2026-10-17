@@ -43,5 +43,95 @@
     "forward": "-Z",
     "up": "+Y",
     "atlas_size": 2048
+  },
+  "Skirmisher": {
+    "triangles": 42504,
+    "materials": 7,
+    "bytes": 13326464,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 9.289846,
+    "bounds_godot": [
+      5.034519,
+      0.974663,
+      7.746282
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
+  },
+  "Raider": {
+    "triangles": 38804,
+    "materials": 7,
+    "bytes": 13140672,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 10.575819,
+    "bounds_godot": [
+      6.513254,
+      1.405534,
+      8.212791
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
+  },
+  "Marauder": {
+    "triangles": 51366,
+    "materials": 7,
+    "bytes": 14191076,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 12.480946,
+    "bounds_godot": [
+      6.725443,
+      2.247142,
+      10.270967
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
+  },
+  "Warden": {
+    "triangles": 51200,
+    "materials": 7,
+    "bytes": 13796008,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 13.199097,
+    "bounds_godot": [
+      8.315245,
+      3.48489,
+      9.639938
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
+  },
+  "Ravager": {
+    "triangles": 52082,
+    "materials": 7,
+    "bytes": 13777396,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 14.993888,
+    "bounds_godot": [
+      7.970282,
+      2.0169,
+      12.538876
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
+  },
+  "Overlord": {
+    "triangles": 63824,
+    "materials": 7,
+    "bytes": 14483368,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 17.01371,
+    "bounds_godot": [
+      9.810667,
+      4.669402,
+      13.092512
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
   }
 }

@@ -1,8 +1,8 @@
 # M2, M3 and M4 alien modeling references
 
 Generated with the built-in image generation tool on 12 October 2026.
-These six proposed concept sheets cover the existing outer-sector roster.
-They await user art review. The exact [prompts](prompts.json) are retained;
+These six approved concept sheets cover the existing outer-sector roster.
+The user requested Blender models and renders from these references. The exact [prompts](prompts.json) are retained;
 no input reference images were supplied to the generator.
 
 | Map | Alien | Reference sheet | Proposed modeling direction | Existing accent |
@@ -48,10 +48,11 @@ armor gaps and joint assemblies as geometry. Fine grain and wear belong in the
 surface maps.
 
 The existing `art/.gdignore` excludes these source references from Godot imports.
-This collection contains generated concepts, not editable models or actual
-mesh renders. The six types continue using their current procedural game
-visuals. Existing M1 models and the game's combat, collision and size settings
-are unaffected.
+This folder contains the generated references. Editable Blender sources, actual
+mesh renders and comparisons are in the [outer-sector model gallery](../../outer-sectors/README.md).
+Derived textured GLBs replace the six procedural game visuals while retaining
+their visual bounding diameters and presentation scale. Existing M1 models and
+the game's combat and collision settings retain their behavior.
 
 ## Gallery
 
