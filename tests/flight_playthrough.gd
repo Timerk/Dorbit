@@ -124,7 +124,7 @@ func feedback_checks() -> void:
 	sector.set_physics_process(false)
 	var start := sector.player.position
 	sector.player.position = Vector3(200, 100, 50)
-	sector.alien.position = sector.player.position + Vector3(0, 0, -250)
+	sector.alien.position = sector.player.position + Vector3(0, 0, -500)
 	await create_timer(0.1).timeout
 	check(sector.hud.fire_feedback() == "NO TARGET", "Missing target has its own feedback")
 	if rendered:

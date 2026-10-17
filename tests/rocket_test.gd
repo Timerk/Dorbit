@@ -117,7 +117,7 @@ func run() -> void:
 		check(not weapons.fire_single(target).is_empty(), "Missing or friendly target is rejected")
 	remote.position = Sector.STATION_POSITION
 	check(weapons.fire_single(enemy) == "STATION PROTECTION", "Safe zone rejects rockets")
-	remote.position = enemy.position + Vector3(0, 0, 130)
+	remote.position = enemy.position + Vector3(0, 0, 250)
 	check(weapons.fire_single(enemy) == "OUT OF RANGE", "Short rocket range is measured in game metres")
 	remote.position = Vector3(0, 200, 0)
 	remote.ammo["r-310"] = 0
