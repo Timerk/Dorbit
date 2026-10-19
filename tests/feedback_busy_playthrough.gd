@@ -32,10 +32,15 @@ func run() -> void:
 	sector.weapon_status = sector.player.firing_blocker(sector.target)
 	await create_timer(0.5).timeout
 	sampling = true
+	var spawn_usec: Array[int] = []
+	var peak_objects := 0
 	for volley in range(80):
+		var started := Time.get_ticks_usec()
 		for ship: Pilot in sector.session.ships.values():
 			SectorVisuals.laser(sector, ship.position, sector.alien.position, false)
 			SectorVisuals.impact(ship, ship.position, volley % 2 == 0, volley % 2 != 0)
+		spawn_usec.append(Time.get_ticks_usec() - started)
+		peak_objects = maxi(peak_objects, int(Performance.get_monitor(Performance.OBJECT_COUNT)))
 		if volley % 10 == 0:
 			SectorVisuals.explosion(sector, sector.alien.position + Vector3(12, 0, 0))
 		check(get_nodes_in_group("transient_feedback").size() <= 80, "Transient effects remain bounded")
@@ -44,6 +49,9 @@ func run() -> void:
 		await create_timer(0.1).timeout
 	sampling = false
 	frame_times.sort()
+	spawn_usec.sort()
+	# Each volley requests 10 lasers and 10 impacts, including capped requests.
+	print("Busy feedback spawn: median=%d us; p95=%d us per 20 requests; peak objects=%d" % [spawn_usec[spawn_usec.size() / 2], spawn_usec[int(spawn_usec.size() * 0.95)], peak_objects])
 	if rendered:
 		check(root.get_texture().get_size() == Vector2(2560, 1440), "Busy feedback uses the full requested render size")
 	print("Busy feedback: 10 pilot models, 1 alien, 100 laser + 100 impact requests/s; render_size=%s; p95=%.2f ms; frames=%d; GPU=%s" % [root.get_texture().get_size(), frame_times[int(frame_times.size() * 0.95)], frame_times.size(), RenderingServer.get_video_adapter_name()])
