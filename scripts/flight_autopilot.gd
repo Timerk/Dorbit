@@ -289,6 +289,8 @@ func command(delta: float) -> Vector3:
 	var location: Vector3 = selected["position"]
 	var offset := location - pilot.position
 	var arrival_radius := 50.0 if selected["key"] == "station" else 20.0
+	if str(selected["key"]).begins_with("story_"):
+		arrival_radius = 5.0 # Stop inside the smallest objective radius.
 	if selected["key"] == "safe":
 		arrival_radius = 0.0
 	if offset.length() <= arrival_radius + 1.0:

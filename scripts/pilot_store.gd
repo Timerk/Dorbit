@@ -111,6 +111,8 @@ func open(directory: String) -> bool:
 		pilot["equipment"]["revision"] = int(pilot["equipment"]["revision"])
 		if pilot["equipment"].has("research"):
 			Research.normalize(pilot["equipment"]["research"])
+		if pilot["equipment"].has("story"):
+			Story.normalize(pilot["equipment"]["story"])
 		if data["version"] < 3:
 			if pilot.has("cargo"):
 				return fail("Unexpected cargo in legacy save. Original file preserved.")
@@ -230,8 +232,9 @@ func verifies(id: String, nonce: PackedByteArray, proof: PackedByteArray) -> boo
 
 
 # Commit all shares of a kill together, before combat publishes the new balances.
-# Research holds points earned by each pilot in this transaction.
-func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}, ammo: Dictionary = {}, boosts: Dictionary = {}, research: Dictionary = {}) -> bool:
+# Research holds points earned by each pilot in this transaction; stories hold
+# each pilot's next chapter position.
+func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}, ammo: Dictionary = {}, boosts: Dictionary = {}, research: Dictionary = {}, stories: Dictionary = {}) -> bool:
 	if failed or not locked:
 		return false
 	var next := pilots.duplicate(true)
@@ -261,6 +264,10 @@ func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary 
 		if not next.has(id) or not earned is int or earned < 0 or earned > 1000:
 			return fail("Invalid server research update.")
 		Research.add_points(next[id]["equipment"], earned)
+	for id: String in stories:
+		if not next.has(id) or not Story.valid(stories[id]):
+			return fail("Invalid server story update.")
+		next[id]["equipment"]["story"] = stories[id].duplicate()
 	return persist(next)
 
 
@@ -278,6 +285,7 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 	var next := pilots.duplicate(true)
 	var pilot: Dictionary = next[id]
 	var previous_credits: int = pilot["credits"]
+	var story_notice := ""
 	var equipment: Dictionary = pilot["equipment"]
 	var previous_points := int(Research.state(equipment)["points"])
 	if active_boosts != null:
@@ -442,6 +450,32 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 				return "Sell excess cargo before resetting Cargo Compression. Skills unchanged."
 		if not Skylab.valid(pilot["skylab"], equipment):
 			return "Wait for the Skylab shipment before resetting Cargo Compression. Skills unchanged."
+	elif action in ["story_deliver", "story_skip"]:
+		if not subject.is_empty() or not ship.is_empty() or not slot.is_empty():
+			return "Invalid story request."
+		var story := Story.state(equipment)
+		var step := Story.current(story)
+		var result := Story.skip(story)
+		if step.is_empty():
+			return "Prologue already complete."
+		if action == "story_deliver":
+			if step["type"] != "deliver":
+				return "Nothing to deliver for this step."
+			var hold: Dictionary = pilot["cargo"][equipment["active_ship"]]
+			var resource: String = step["resource"]
+			var amount: int = step["required"]
+			if int(hold.get(resource, 0)) < amount:
+				return "Need %s in your active ship's cargo." % CargoResources.describe({resource: amount})
+			hold[resource] -= amount
+			if hold[resource] == 0:
+				hold.erase(resource)
+			result = Story.advance(story, "deliver", amount)
+		if result["credits"] > MAX_CREDITS - pilot["credits"]:
+			return "Reward exceeds the credit limit. Free wallet space first."
+		pilot["credits"] += result["credits"]
+		Research.add_points(equipment, result["research"])
+		equipment["story"] = result["story"]
+		story_notice = "%s %s." % ["Delivered %s." % CargoResources.describe({step["resource"]: step["required"]}) if action == "story_deliver" else "Prologue skipped.", Story.reward_text(result["credits"], result["research"])]
 	elif action == "configure_extra":
 		var item: Dictionary = equipment["items"].get(subject, {})
 		if item.is_empty() or not Equipment.MODELS[item["model"]].get("family", "") in ["ammo", "generators", "repair-auto"] or not ship in ["on", "off"]:
@@ -456,6 +490,8 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 	equipment["revision"] = sequence
 	if not persist(next):
 		return "Persistence unavailable."
+	if not story_notice.is_empty():
+		return story_notice
 	if action == "test_credits":
 		return "Preview: added %d test credits." % (pilot["credits"] - previous_credits)
 	if action == "test_research":

@@ -278,6 +278,12 @@ class ProvisioningTest(unittest.TestCase):
         equipment["research"]["skills"]["cargo_compression"] = 6
         self.assertFalse(pilots.valid_equipment(equipment))
         del equipment["research"]
+        # Story progress is optional and bounded to the prologue's ten steps.
+        equipment["story"] = {"step": 4, "progress": 1}
+        self.assertTrue(pilots.valid_equipment(equipment))
+        equipment["story"] = {"step": 11, "progress": 0}
+        self.assertFalse(pilots.valid_equipment(equipment))
+        del equipment["story"]
         equipment["items"]["ammo-cpu"]["ammo_type"] = "x4"
         self.assertFalse(pilots.valid_equipment(equipment))
         equipment["items"]["ammo-cpu"]["ammo_type"] = "x2"

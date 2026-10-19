@@ -271,6 +271,13 @@ func contacts_current() -> bool:
 	if contact_cache_map != sector.map_id:
 		return false
 	var index: int = SectorMaps.GATES[sector.map_id].size() + (1 if sector.map_id == 0 else 0)
+	var site := Story.site(sector.story_state(), sector.map_id)
+	if not site.is_empty():
+		if index >= contact_cache.size() or contact_cache[index]["key"] != "story_" + site["id"]:
+			return false
+		index += 1
+	elif index < contact_cache.size() and str(contact_cache[index]["key"]).begins_with("story_"):
+		return false
 	for alien_id: int in sector.aliens:
 		var enemy := sector.aliens[alien_id]
 		if enemy.alive and enemy.visible:
@@ -302,6 +309,9 @@ func build_contacts() -> Array[Dictionary]:
 		result.append({"key": "station", "name": "Outpost 01", "position": Sector.STATION_POSITION, "color": FlightHud.GREEN, "ship": null})
 	for map: int in SectorMaps.GATES[sector.map_id]:
 		result.append({"key": "gate%d" % map, "name": "Gate to " + SectorMaps.MAPS[map]["name"], "position": SectorMaps.gate_position(sector.map_id, map), "color": SectorMaps.MAPS[map]["color"], "ship": null})
+	var site := Story.site(sector.story_state(), sector.map_id)
+	if not site.is_empty():
+		result.append({"key": "story_" + site["id"], "name": "Objective: " + site["site"], "position": Story.site_position(site), "color": StorySites.GOLD, "ship": null})
 	for enemy: Alien in sector.aliens.values():
 		if enemy.alive and enemy.visible:
 			result.append({"key": "alien%d" % enemy.alien_id, "name": "%s %d" % [enemy.kind, enemy.alien_id % 100 + 1], "position": enemy.position, "color": enemy.tuning()["color"], "ship": enemy})
@@ -424,7 +434,7 @@ func build_overview() -> void:
 	plot.clip_contents = true
 	body.add_child(plot)
 	info = StationUi.text(rows, "", 16, FlightHud.AMBER)
-	overview_legend = StationUi.text(rows, "White: you / Colored: gates and aliens / Green: outpost / Cyan: pilots", 14, FlightHud.MUTED)
+	overview_legend = StationUi.text(rows, "White: you / Colored: gates and aliens / Green: outpost / Gold: objective / Cyan: pilots", 14, FlightHud.MUTED)
 	overview.hide()
 
 
@@ -455,7 +465,7 @@ func update_contacts() -> void:
 		overview_state = state
 		overview_title.text = ("STAR SYSTEM / " if tabs.current_tab == 1 else "SECTOR OVERVIEW / ") + SectorMaps.MAPS[sector.map_id]["name"]
 		reset_button.visible = tabs.current_tab == 0
-		overview_legend.text = "Hover to preview a route / Click a sector to navigate / Arrow keys + Enter also select" if tabs.current_tab == 1 else "White: you / Colored: gates and aliens / Green: outpost / Cyan: pilots"
+		overview_legend.text = "Hover to preview a route / Click a sector to navigate / Arrow keys + Enter also select" if tabs.current_tab == 1 else "White: you / Colored: gates and aliens / Green: outpost / Gold: objective / Cyan: pilots"
 		overview_hint.text = "Click a map to set the next gate on its route. Fly to the gate and press %s to jump." % GameSettings.binding_text("jump_gate") if tabs.current_tab == 1 else "Click a contact to navigate. Drag to rotate / Scroll to zoom"
 	network_plot.queue_redraw()
 	var current := contacts()

@@ -49,6 +49,7 @@ var shop: StationShop
 var equipment_menu: ShipEquipment
 var resource_workshop: ResourceWorkshop
 var research_menu: ResearchMenu
+var story_sites: StorySites
 var dedicated_server: bool = false
 var client_only: bool = true
 var offline: bool = false
@@ -124,6 +125,10 @@ func _ready() -> void:
 	add_child(session)
 	if not dedicated_server:
 		session.combat.connect_rockets(player)
+		story_sites = StorySites.new()
+		story_sites.name = "StorySites"
+		story_sites.sector = self
+		add_child(story_sites)
 	loot = ResourceLoot.new()
 	loot.sector = self
 	loot.name = "ResourceLoot"
@@ -626,6 +631,12 @@ func request_repair() -> bool:
 	notify("Repairs complete. Hull, shields and boost restored. Cost: %d credits." % cost)
 	SectorVisuals.sound(self, "purchase", player.position)
 	return true
+
+
+# The owner's saved chapter position, or empty without a dedicated-server inventory.
+func story_state() -> Dictionary:
+	var inventory := session.combat.inventory
+	return Story.state(inventory) if session.active and not inventory.is_empty() else {}
 
 
 func notify(message: String) -> void:

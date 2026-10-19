@@ -54,7 +54,8 @@ def valid_equipment(data: object) -> bool:
             or not isinstance(data.get("ships"), dict) or not data["ships"]
             or not isinstance(data.get("items"), dict)
             or not isinstance(data.get("active_ship"), str) or data["active_ship"] not in data["ships"]
-            or ("research" in data and not valid_research(data["research"]))):
+            or ("research" in data and not valid_research(data["research"]))
+            or ("story" in data and not valid_story(data["story"]))):
         return False
     for ship, model in data["ships"].items():
         if (not isinstance(ship, str) or not re.fullmatch(r"[a-z0-9_-]{1,32}", ship)
@@ -108,6 +109,17 @@ def valid_research(data: object) -> bool:
     return (isinstance(data, dict) and data.keys() == {"points", "skills", "resets"}
             and isinstance(data["skills"], dict)
             and all(isinstance(level, int) and 1 <= level <= 5 for level in data["skills"].values()))
+
+
+# Mirrors Story.STEPS in scripts/story.gd: ten prologue steps.
+STORY_STEPS = 10
+
+
+def valid_story(data: object) -> bool:
+    # The server validates per-step progress limits; bound what the tool relies on.
+    return (isinstance(data, dict) and data.keys() == {"step", "progress"}
+            and type(data["step"]) is int and 0 <= data["step"] <= STORY_STEPS
+            and type(data["progress"]) is int and 0 <= data["progress"] <= 1000)
 
 
 def valid_cargo(data: object, equipment: dict) -> bool:

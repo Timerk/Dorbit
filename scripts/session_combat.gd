@@ -169,7 +169,7 @@ func add_player(id: int, location: Vector3) -> void:
 	ship.set_meta("life", 0)
 	ship.set_meta("feedback_health_received", false)
 	if multiplayer.is_server():
-		records[id] = {"credits": 0, "kills": 0, "stage": 0, "respawn": 0.0, "life": 0, "spawn": location}
+		records[id] = {"credits": 0, "kills": 0, "stage": 0, "respawn": 0.0, "life": 0, "spawn": location, "scan": 0.0}
 		records[id]["contracts"] = {}
 		cargo_holds[id] = CargoResources.empty_holds(Equipment.starter())
 		if session.sector.dedicated_server:
@@ -354,6 +354,8 @@ func tick(delta: float) -> void:
 		Extras.tick_repair(ship, delta, firing)
 		if sector.dedicated_server and not tick_extras(id, delta):
 			return
+		if sector.dedicated_server and not tick_story(id, delta):
+			return
 		if firing and is_instance_valid(enemy) and enemy.available():
 			records[id]["stage"] = maxi(records[id]["stage"], 2)
 			ship.try_fire(enemy)
@@ -424,6 +426,7 @@ func destroyed(ship: SpaceShip) -> void:
 		var contracts: Dictionary[int, Dictionary] = {}
 		var payouts: Dictionary[int, Dictionary] = {}
 		var research: Dictionary[int, int] = {}
+		var stories: Dictionary[int, Dictionary] = {}
 		for index in range(contributors.size()):
 			var id := contributors[index]
 			var reward := int(pool / contributors.size()) + (1 if index < pool % contributors.size() else 0)
@@ -439,11 +442,21 @@ func destroyed(ship: SpaceShip) -> void:
 			balances[id] = payouts[id]["credits"]
 			contracts[id] = payouts[id]["contracts"]
 			research[id] = payouts[id]["research"]
-		if not balances.is_empty() and not session.save_balances(balances, contracts, research):
+			# Story kills follow the same contribution rules as hunting contracts.
+			if session.sector.dedicated_server:
+				var story := Story.advance(Story.state(session.store.pilots[session.pilot_ids[id]]["equipment"]), "kill", 1, alien.kind)
+				if not story.is_empty():
+					stories[id] = story
+					balances[id] = mini(PilotStore.MAX_CREDITS, balances[id] + story["credits"])
+					research[id] += story["research"]
+		var saved_stories: Dictionary[int, Dictionary] = {}
+		for id: int in stories:
+			saved_stories[id] = stories[id]["story"]
+		if not balances.is_empty() and not session.save_balances(balances, contracts, research, saved_stories):
 			return
 		session.sector.loot.spawn_drop(alien)
 		for id: int in balances:
-			var reward: int = balances[id] - records[id]["credits"] - payouts[id]["reward"]
+			var reward: int = balances[id] - records[id]["credits"] - payouts[id]["reward"] - int(stories.get(id, {}).get("credits", 0))
 			records[id]["credits"] = balances[id]
 			records[id]["contracts"] = contracts[id]
 			records[id]["kills"] += 1
@@ -452,7 +465,9 @@ func destroyed(ship: SpaceShip) -> void:
 			if payouts[id]["reward"] > 0:
 				notice += " " + HuntingContracts.paid_notice(payouts[id])
 			message(id, notice)
-			if research[id] > 0:
+			if stories.has(id):
+				announce_story(id)
+			elif research[id] > 0:
 				publish_inventory(id)
 		contributors.clear()
 		alien.respawn = alien.tuning()["respawn"]
@@ -484,6 +499,43 @@ func request_repair() -> bool:
 		return repair(1, records[1]["life"])
 	repair_request.rpc_id(1, int(session.sector.player.get_meta("life", 0)))
 	return false # Host confirms the result asynchronously.
+
+
+func tick_story(id: int, delta: float) -> bool:
+	var step := Story.current(Story.state(session.store.pilots[session.pilot_ids[id]]["equipment"]))
+	if step.is_empty():
+		return true
+	if step["type"] == "contract":
+		return records[id]["contracts"].is_empty() or advance_story(id, "contract")
+	if not step["type"] in Story.POSITIONAL:
+		return true
+	var ship := session.ships[id]
+	if ship.map_id != step["map"] or ship.position.distance_to(Story.site_position(step)) > step["radius"]:
+		records[id]["scan"] = 0.0
+		return true
+	if step["type"] != "scan":
+		return advance_story(id, step["type"])
+	records[id]["scan"] += delta
+	return records[id]["scan"] < step["required"] or advance_story(id, "scan", step["required"])
+
+
+# Save one pilot's story event and reward before announcing either.
+func advance_story(id: int, type: String, amount: int = 1) -> bool:
+	var result := Story.advance(Story.state(session.store.pilots[session.pilot_ids[id]]["equipment"]), type, amount)
+	if result.is_empty():
+		return true
+	var balance := mini(PilotStore.MAX_CREDITS, records[id]["credits"] + result["credits"])
+	if not session.save_balances({id: balance}, {}, {id: result["research"]}, {id: result["story"]}):
+		return false
+	records[id]["credits"] = balance
+	announce_story(id)
+	return true
+
+
+# Owners present the contact's lines from the published chapter position.
+func announce_story(id: int) -> void:
+	records[id]["scan"] = 0.0
+	publish_inventory(id)
 
 
 func pay_pending_contracts(id: int) -> void:
@@ -1006,6 +1058,8 @@ func collect_loot() -> void:
 		session.sector.loot.change(drop_id, changed[drop_id])
 	for id: int in notices:
 		message(id, "Collected " + CargoResources.describe(notices[id]))
+		if session.sector.dedicated_server and not advance_story(id, "collect", CargoResources.units(notices[id])):
+			return
 		if session.sector.dedicated_server:
 			var equipment: Dictionary = session.store.pilots[session.pilot_ids[id]]["equipment"]
 			cargo_result.rpc_id(id, next[id][equipment["active_ship"]], CargoResources.capacity(equipment))
