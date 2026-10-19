@@ -6,11 +6,11 @@ class RecordingCombat extends SessionCombat:
 	## Every player state dictionary this peer applied, keyed by the ship's peer ID.
 	var received: Dictionary = {}
 
-	func apply_player(id: int, data: Dictionary) -> bool:
+	func apply_player(id: int, data: Dictionary, sequence: int = -1) -> bool:
 		if not received.has(id):
 			received[id] = []
 		received[id].append(data.duplicate(true))
-		return super(id, data)
+		return super(id, data, sequence)
 
 
 func record(sector: Sector) -> RecordingCombat:
