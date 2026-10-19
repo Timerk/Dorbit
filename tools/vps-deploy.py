@@ -8,6 +8,7 @@ This helper offers no arbitrary root commands, unit edits, plaintext downloads o
 import fcntl
 from datetime import datetime, timezone
 import hashlib
+import io
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -17,6 +18,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import tempfile
 import time
 import uuid
 
@@ -118,6 +120,60 @@ def clean_data(directory=None):
     for name in ("pilots.json.lock", "pilots.json.tmp", "pilots.json.bak.tmp", "pilots.json.combat.tmp"):
         require(not os.path.lexists(directory / name), "Save lock or interrupted write requires operator recovery")
     require((directory / "pilots.json").is_file(), "Missing pilot ledger")
+
+
+def recovery_snapshot(output):
+    """Called only by the separately installed recovery forced command, under STATE/lock."""
+    require(not PREVIEW, "Recovery is production-only")
+    require(not (STATE / "pending.json").exists(), "Pending deployment requires operator recovery")
+    require(run("systemctl", "is-active", SERVICE) == "active", "Service must initially be running")
+    require(run("systemctl", "show", SERVICE, "--property=FragmentPath", "--value") == str(UNIT),
+            "Unexpected service unit")
+    require(run("systemctl", "show", SERVICE, "--property=DropInPaths", "--value") == "",
+            "Unit overrides require operator review")
+    recipient = RECIPIENT.read_text().strip()
+    require(re.fullmatch(r"age1[0-9a-z]+", recipient), "Missing age recipient")
+    run("age", "--version")
+    require(shutil.disk_usage(STATE).free > 3 * 1024**3, "Need 3 GiB free for recovery")
+    with tempfile.TemporaryDirectory(prefix="recovery-", dir=STATE) as temporary:
+        archive = Path(temporary) / "backup.tar"
+        encrypted = Path(temporary) / "backup.tar.age"
+        # A failed stop or dirty directory stays stopped for manual recovery.
+        run("systemctl", "stop", SERVICE)
+        stopped()
+        clean_data()
+        require((DATA / "pilots.json.combat").is_file(), "Missing combat journal")
+        try:
+            with tarfile.open(archive, "w") as backup:
+                total = 0
+                for path, name in ((DATA, "data"), (DATA.parent / "credentials", "credentials"),
+                                   (UNIT, "dorbit.service"), (ENV, "server.env")):
+                    require(path.exists(), "Missing recovery input")
+                    # Never follow links or archive arbitrary linked targets / special files.
+                    def regular(member):
+                        nonlocal total
+                        require(member.isfile() or member.isdir(), "Unsafe recovery input")
+                        total += member.size + 1024
+                        require(total <= 1024**3 - 1024**2, "Recovery input exceeds 1 GiB")
+                        return member
+                    backup.add(path, arcname=name, filter=regular)
+                metadata = json.dumps({"commit": active_commit(),
+                                       "created_at": datetime.now(timezone.utc).isoformat()}).encode()
+                member = tarfile.TarInfo("recovery.json")
+                member.size = len(metadata)
+                member.mode = 0o600
+                backup.addfile(member, io.BytesIO(metadata))
+            require(archive.stat().st_size <= 1024**3, "Recovery archive exceeds 1 GiB")
+            run("age", "-r", recipient, "-o", str(encrypted), str(archive))
+        finally:
+            # Only clean, fully stopped data is eligible for automatic restart.
+            # Restart even on an encryption/disk error, but never hide a readiness failure.
+            run("systemctl", "start", SERVICE)
+            ready()
+        # No successful stream is returned before game readiness. No plaintext leaves VPS.
+        output.write((digest(encrypted) + "\n").encode())
+        with encrypted.open("rb") as source:
+            shutil.copyfileobj(source, output)
 
 
 def prepare(sha, previous, checksum, preview=None):
@@ -320,6 +376,10 @@ def main(command):
     STATE.mkdir(mode=0o700, exist_ok=True)
     with (STATE / "lock").open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        if Path(sys.argv[0]).name == "dorbit-recovery":
+            require(command == "snapshot", "Command not allowed")
+            recovery_snapshot(sys.stdout.buffer)
+            return
         if PREVIEW and command == "stop":
             stop_preview()
             return
@@ -356,6 +416,10 @@ if __name__ == "__main__":
         # Never forward subprocess output, journal lines, ledger content or secrets.
         if isinstance(error, RuntimeError):
             print(str(error), file=sys.stderr)
-        print("Deployment refused or failed. Inspect the pending transaction and journal as dorbit-admin; "
-              "follow DEPLOYMENT.md. No automatic rollback was attempted.", file=sys.stderr)
+        if Path(sys.argv[0]).name == "dorbit-recovery":
+            print("Recovery backup refused or failed. Inspect the game service and journal privately; "
+                  "follow docs/periodic-recovery.md. No saves were restored.", file=sys.stderr)
+        else:
+            print("Deployment refused or failed. Inspect the pending transaction and journal as dorbit-admin; "
+                  "follow DEPLOYMENT.md. No automatic rollback was attempted.", file=sys.stderr)
         sys.exit(1)

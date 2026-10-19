@@ -652,6 +652,11 @@ Recovery is an operator action:
 
 Keep dated copies of the entire data directory on another disk or machine, especially before provisioning and server updates. Stop the server while taking a copy. The automatic `.bak` is one full checkpoint old, not one volley old, and does not protect against disk loss. Godot's runtime flush does not guarantee directory metadata reaches physical storage before sudden power loss; recovery may require a backup after a machine or storage failure. Process restarts replay complete combat transactions. Public accounts remain outside this slice; owned ships, fittings and cargo persist.
 
+[Periodic off-machine recovery](docs/periodic-recovery.md) provides an age-encrypted
+stopped-server pull operation, bounded receiver retention, timer templates and a
+disposable restore rehearsal. The destination, RPO, alert delivery and production
+schedule still require operator configuration; repository tests do not install it.
+
 ### Start a server in Ubuntu / WSL2
 
 Requires Linux x86-64, `bash`, `curl`, `python3` and `sha256sum`. On this Windows checkout, run in PowerShell:
