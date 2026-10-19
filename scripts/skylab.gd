@@ -508,6 +508,24 @@ static func snapshot(pilot: Dictionary, at: int) -> Dictionary:
 	return {"server_time": at, "inventory": lab["inventory"].duplicate(), "capacities": caps, "modules": modules, "power": budget, "robots": lab["robots"].duplicate(true), "shipment": lab["shipment"].duplicate(true) if lab["shipment"] != null else null, "net_per_hour": net, "credits": pilot["credits"], "premium": pilot["premium"], "revision": pilot["equipment"]["revision"], "balance_label": data()["label"]}
 
 
+# Preview tools only: every module at its final level, enabled, idle and with full storage.
+static func preview_max(lab: Dictionary) -> void:
+	for id: String in MODULES:
+		var module: Dictionary = lab["modules"][id]
+		module["level"] = data()["modules"][id].size()
+		module["enabled"] = true
+		module["upgrade"] = null
+		lab["carry"][id] = 0.0
+	lab["inventory"] = capacities(lab)
+
+
+# Preview tools only: starting levels and stock. A shipment in flight still delivers.
+static func preview_reset(lab: Dictionary, at: int) -> Dictionary:
+	var fresh := bootstrap(at)
+	fresh["shipment"] = lab["shipment"]
+	return fresh
+
+
 static func screenshot_fixture(at: int) -> Dictionary:
 	var lab := bootstrap(at)
 	var levels := {"basic": 9, "solar": 8, "storage": 8, "transport": 1, "prometiumCollector": 7, "enduriumCollector": 7, "terbiumCollector": 7, "prometidRefinery": 6, "duraniumRefinery": 6, "promeriumRefinery": 4, "xeno": 5, "sepromRefinery": 3}

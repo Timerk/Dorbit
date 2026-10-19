@@ -18,6 +18,7 @@ var detail_effect: Label
 var detail_cost: Label
 var learn_button: Button
 var reset_button: Button
+var test_points_button: Button
 var stock_label: Label
 var status: Label
 
@@ -72,6 +73,9 @@ func _ready() -> void:
 	learn_button = StationUi.button(detail_rows, "RESEARCH", learn)
 	StationUi.primary(learn_button)
 	reset_button = StationUi.button(detail_rows, "RESET TREE", func(): sector.session.combat.request_station("research_reset", ""))
+	test_points_button = StationUi.button(detail_rows, "Preview: +%d research points" % PilotStore.PREVIEW_RESEARCH_GRANT, func(): sector.session.combat.request_station("test_research", ""))
+	test_points_button.tooltip_text = "Adds saved test research points on an authorized preview server."
+	test_points_button.hide()
 	stock_label = StationUi.text(rows, "", 15, StationUi.MUTED)
 	status = StationUi.text(rows, "", 16, StationUi.AMBER)
 	status.custom_minimum_size.y = 26
@@ -199,6 +203,12 @@ func _process(_delta: float) -> void:
 		reset_reason = "Insufficient credits."
 	reset_button.disabled = not reset_reason.is_empty()
 	reset_button.tooltip_text = reset_reason if not reset_reason.is_empty() else "Refund every research point. Consumed Skylab materials are not returned; the next reset costs twice as much."
+	test_points_button.visible = not StationUi.offline_preview(sector) and sector.session.combat.preview_tools_available
+	var points_reason := StationUi.blocker(sector)
+	if points_reason.is_empty() and int(data["points"]) >= Research.MAX_POINTS:
+		points_reason = "Research point limit reached."
+	test_points_button.disabled = not points_reason.is_empty()
+	test_points_button.tooltip_text = points_reason if not points_reason.is_empty() else "Adds saved test research points on an authorized preview server."
 	var held: PackedStringArray = []
 	for resource: String in ["prometid", "duranium", "promerium", "seprom"]:
 		held.append("%s %d" % [CargoResources.TYPES[resource]["name"], int(lab.get(resource, 0))])

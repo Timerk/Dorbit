@@ -473,6 +473,9 @@ func ready_for_flight(docked: bool = false) -> void:
 	else:
 		spawn.rpc(id, location)
 	ships[id].set_meta("spawn_slot", slot)
+	if can_grant_test_credits(id) and not store.preview_max_lab(pilot_ids[id], Skylab.now()):
+		stop_for_save_failure()
+		return
 	combat.publish_inventory(id)
 	combat.loot_state.rpc_id(id, loot_for_map(0), ships[id].map_visit)
 	status = "Server on UDP %d. Players: %d/%d" % [host_port, ships.size(), MAX_PLAYERS]
