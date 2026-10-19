@@ -94,7 +94,7 @@ camera positions, primitive ranges, PNG dimensions/formats/mipmap flags and mode
 texture/geometry inventories. The full scene/HUD samples are for memory and visual
 inspection; use the controlled lineup to assess LODs.
 
-## Correctness validation
+## Initial correctness validation
 
 Ran the complete Windows suite with
 `rtk proxy python tools/check-game.py .tools/godot/Godot_v4.7.2-stable_win64_console.exe --suite windows --workers 2`.
@@ -110,3 +110,22 @@ source PNG/GLB verification and `git diff --check` also passed. Native rendered
 captures and monitor samples completed successfully before and after. The Linux
 correctness suite, export builds and representative multiplayer GPU performance
 were not run for this client-asset change.
+
+## CI follow-up
+
+The [initial CI run](https://github.com/Timerk/Dorbit/actions/runs/39238183654)
+passed the Windows source suite and the checked Linux server package. Windows
+export validation failed because `menu_assets_test.gd` still required 1024px item
+images. It now requires the budgeted 512 × 512 size, lossless pixel data, mipmaps,
+nonempty artwork and transparent padding for resource, rocket and collector-robot
+images. Full-page Skylab artwork retains its larger requirement.
+
+The report directory now has `.gdignore`, and the packaged menu test verifies
+that it is absent from the client pack. This keeps the review screenshots out of
+runtime imports and exports. No runtime textures or gameplay changed in this fix.
+
+`rtk proxy powershell -NoProfile -File tools/dev.ps1 build` passed locally after
+the fix, including source/export protocol matching, packaged ships, station,
+aliens, menus, offline launch/return, HUD shortcuts and notices. The final export
+log contains no report-directory resources. Updated CI results belong to the PR;
+the original memory and screenshot measurements above remain unchanged.

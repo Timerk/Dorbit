@@ -21,5 +21,15 @@
     }
   ],
   "asset_budget_assertions": 357,
-  "note": "Two first-run early exits had no assertion report; both isolated fresh-profile/port retries passed. The cause of the initial exits was not established. Linux correctness suite and export builds were not run."
+  "note": "Two first-run early exits had no assertion report; both isolated fresh-profile/port retries passed. The cause of the initial exits was not established. Linux correctness suite and export builds were not run.",
+  "ci_followup": {
+    "initial_ci_run": "https://github.com/Timerk/Dorbit/actions/runs/39238183654",
+    "initial_windows_source_suite": "passed",
+    "initial_linux_checked_package": "passed",
+    "initial_windows_export_failure": "Packaged menu test required at least 1024px item art, conflicting with 512px import budget.",
+    "local_windows_build_command": "rtk proxy powershell -NoProfile -File tools/dev.ps1 build",
+    "local_windows_build_passed": true,
+    "packaged_asset_and_menu_checks_passed": true,
+    "review_documentation_excluded_from_pack": true
+  }
 }
