@@ -39,6 +39,11 @@ static func valid_id(value: String) -> bool:
 	return true
 
 
+# Economy actions check the acting wallet before saving so open() can always reload it.
+static func valid_credits(value: Variant) -> bool:
+	return value is int and value >= 0 and value <= MAX_CREDITS
+
+
 static func valid_hex(value: String) -> bool:
 	if value.length() != 64:
 		return false
@@ -454,6 +459,9 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 	else:
 		return "Unknown station action."
 	equipment["revision"] = sequence
+	if not valid_credits(pilot["credits"]):
+		push_error("Rejected %s: credits %s outside the wallet range." % [action, pilot["credits"]])
+		return "Transaction rejected. Credits unchanged."
 	if not persist(next):
 		return "Persistence unavailable."
 	if action == "test_credits":
@@ -538,7 +546,7 @@ func transact_lab(id: String, sequence: int, action: String, payload: Dictionary
 		result = Skylab.command(next[id], sequence, action, payload, at)
 	if next[id] != pilots[id]:
 		next[id]["equipment"]["revision"] = sequence
-		if not Skylab.valid(next[id]["skylab"], next[id]["equipment"]) or not CargoResources.valid(next[id]["cargo"], next[id]["equipment"]):
+		if not valid_credits(next[id]["credits"]) or not Skylab.valid(next[id]["skylab"], next[id]["equipment"]) or not CargoResources.valid(next[id]["cargo"], next[id]["equipment"]):
 			fail("Invalid server Skylab update.")
 			return "Persistence unavailable."
 		if not persist(next):
