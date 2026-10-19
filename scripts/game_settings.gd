@@ -72,6 +72,9 @@ var ssao: bool = false
 var shadow_quality: int = 0
 var effects_quality: int = 2
 var save_failed: bool = false
+# Displayed binding labels, cleared whenever any action binding is installed.
+static var binding_labels: Dictionary[String, String] = {}
+static var binding_revision := 0
 
 
 func load_from(path: String = PATH) -> void:
@@ -160,6 +163,9 @@ func configure_input() -> void:
 
 
 static func install_binding(action: String, code: int) -> void:
+	# Every binding change passes here; HUD text caches compare the revision.
+	binding_labels.clear()
+	binding_revision += 1
 	if not InputMap.has_action(action):
 		InputMap.add_action(action)
 	Input.action_release(action)
@@ -179,6 +185,14 @@ static func install_binding(action: String, code: int) -> void:
 
 
 static func binding_text(action: String) -> String:
+	var label: String = binding_labels.get(action, "")
+	if label.is_empty():
+		label = binding_label(action)
+		binding_labels[action] = label
+	return label
+
+
+static func binding_label(action: String) -> String:
 	var events := InputMap.action_get_events(action)
 	if events.is_empty():
 		return "?"
