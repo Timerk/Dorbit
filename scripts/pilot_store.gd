@@ -28,6 +28,8 @@ var journal_modified_time: int = 0
 var journal_bytes: int = 0
 var combat_tick_active: bool = false
 var combat_tick_verified: bool = false
+# Optional benchmark observer. Normal sessions take no clocks or timing samples.
+var replacement_trace: Callable
 
 
 static func valid_id(value: String) -> bool:
@@ -643,21 +645,35 @@ func replace_file(destination: String, text: String) -> bool:
 	# A leftover temporary file is evidence of an interrupted save, for operator recovery.
 	if FileAccess.file_exists(temporary) or DirAccess.dir_exists_absolute(temporary):
 		return fail("Save temporary path already exists: " + temporary)
+	var tracing := replacement_trace.is_valid()
+	var marks: PackedInt64Array
+	if tracing: marks.append(Time.get_ticks_usec())
 	var file := FileAccess.open(temporary, FileAccess.WRITE_READ)
+	if tracing: marks.append(Time.get_ticks_usec())
 	if file == null:
 		return fail("Cannot write save temporary file: " + temporary)
 	var bytes := text.to_utf8_buffer()
+	if tracing: marks.append(Time.get_ticks_usec())
 	file.store_buffer(bytes)
+	if tracing: marks.append(Time.get_ticks_usec())
 	file.flush()
 	var result := file.get_error()
+	if tracing: marks.append(Time.get_ticks_usec())
 	# Read back through the same handle. Reopening a just-written file took
 	# 3–5 ms per replacement in the Windows benchmark, most of a checkpoint.
 	file.seek(0)
 	var verified := file.get_length() == bytes.size() and file.get_buffer(bytes.size()) == bytes
+	if tracing: marks.append(Time.get_ticks_usec())
 	file.close()
+	if tracing: marks.append(Time.get_ticks_usec())
 	if result != OK or not verified:
+		if tracing: replacement_trace.call(destination, marks, false)
 		return fail("Save write failed. Original and temporary files preserved.")
-	if DirAccess.rename_absolute(temporary, destination) != OK:
+	var renamed := DirAccess.rename_absolute(temporary, destination)
+	if tracing:
+		marks.append(Time.get_ticks_usec())
+		replacement_trace.call(destination, marks, renamed == OK)
+	if renamed != OK:
 		return fail("Save replacement failed. Original and temporary files preserved.")
 	return true
 

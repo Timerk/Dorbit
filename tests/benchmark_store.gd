@@ -8,6 +8,28 @@ var events: Array[Dictionary] = []
 var counts: Dictionary = {}
 
 
+func _init() -> void:
+	replacement_trace = trace_replacement
+
+
+func trace_replacement(destination: String, marks: PackedInt64Array, succeeded: bool) -> void:
+	if not measuring: return
+	var kind := replacement_kind(destination)
+	# Conversion is outside write timing; open, encode and all I/O remain visible.
+	var stages := ["open", "encode", "write", "flush", "readback", "close", "rename"]
+	var durations := {}
+	for index in range(marks.size() - 1):
+		var elapsed := float(marks[index + 1] - marks[index])
+		durations[stages[index]] = elapsed
+		record(kind + "_" + stages[index], marks[index], elapsed)
+	events.append({"kind": kind, "reason": reason, "started_us": marks[0],
+		"duration_us": marks[-1] - marks[0], "stages_us": durations, "succeeded": succeeded})
+
+
+func replacement_kind(destination: String) -> String:
+	return "replace_backup" if destination.ends_with(".bak") else ("replace_journal" if destination.ends_with(".combat") else "replace_primary")
+
+
 func record(kind: String, before: int, elapsed: float = -1.0) -> void:
 	if not measuring:
 		return
@@ -40,15 +62,15 @@ func persist(next: Dictionary) -> bool:
 func replace_file(destination: String, text: String) -> bool:
 	var before := Time.get_ticks_usec()
 	var result := super.replace_file(destination, text)
-	var kind := "replace_backup" if destination.ends_with(".bak") else ("replace_journal" if destination.ends_with(".combat") else "replace_primary")
+	var kind := replacement_kind(destination)
 	record(kind, before)
 	return result
 
 
-func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}, ammo: Dictionary = {}, boosts: Dictionary = {}) -> bool:
+func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}, ammo: Dictionary = {}, boosts: Dictionary = {}, research: Dictionary = {}) -> bool:
 	var previous := reason
 	reason = "extras" if not ammo.is_empty() else ("loot" if balances.is_empty() and not cargo.is_empty() else "economy")
-	var result := super.commit(balances, contracts, cargo, ammo, boosts)
+	var result := super.commit(balances, contracts, cargo, ammo, boosts, research)
 	reason = previous
 	return result
 

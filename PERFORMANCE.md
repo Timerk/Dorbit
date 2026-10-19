@@ -253,6 +253,11 @@ VPS SSH used `BatchMode=yes` and an eight-second connection timeout to `dorbit-v
 
 ## Diagnostic checkpoint stall
 
+The [19 October checkpoint follow-up](docs/checkpoint-tail-latency.md) adds optional
+replacement substep tracing, simultaneous resupply evidence and a checked report
+tool. Its Linux capture is blocked by the local environment; it provides no new
+performance measurement or claim that this historical risk is solved.
+
 An earlier 120-second four-map attempt at `56be979` failed the intended map-membership check because a frontier pilot was rescued to M1 before measurement. Its [diagnostic raw result](docs/performance-diagnostic-spread-2026-10-14.json) is retained separately and is not a qualifying 3/3/2/2 capacity result. It captured a real synchronous save stall on the same WSL ext4 filesystem:
 
 | Correlated operation | Duration |
