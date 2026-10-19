@@ -63,6 +63,9 @@ var send: Button
 var instant_send: Button
 var finish_send: Button
 var cancel_dialog: ConfirmationDialog
+var preview_max: Button
+var preview_reset: Button
+var reset_dialog: ConfirmationDialog
 
 
 func _ready() -> void:
@@ -121,6 +124,10 @@ func _ready() -> void:
 	power_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	status = StationUi.text(footer, "", 15, StationUi.MUTED)
 	status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	preview_max = StationUi.button(footer, "Preview: Max Skylab", func(): sector.session.combat.request_lab("test_skylab_max"))
+	preview_max.tooltip_text = "Sets every module to its final level and fills storage on an authorized preview server."
+	preview_reset = StationUi.button(footer, "Preview: Reset Skylab", func(): reset_dialog.popup_centered())
+	preview_reset.tooltip_text = "Returns every module and stock to the starting values on an authorized preview server."
 	StationUi.button(footer, "Refresh", func(): sector.session.combat.request_lab())
 	build_detail()
 	cancel_dialog = ConfirmationDialog.new()
@@ -128,6 +135,11 @@ func _ready() -> void:
 	cancel_dialog.dialog_text = "Paid credits and raw ore are forfeited. The completed level is kept."
 	cancel_dialog.confirmed.connect(func(): command("cancel"))
 	add_child(cancel_dialog)
+	reset_dialog = ConfirmationDialog.new()
+	reset_dialog.title = "Reset Skylab?"
+	reset_dialog.dialog_text = "Every module, stock and robot returns to the starting values. A shipment in flight still arrives."
+	reset_dialog.confirmed.connect(func(): sector.session.combat.request_lab("test_skylab_reset"))
+	add_child(reset_dialog)
 	hide()
 
 
@@ -469,6 +481,11 @@ func _process(delta: float) -> void:
 		if module["upgrade"] != null: level += " → %d" % module["upgrade"]["targetLevel"]
 		buttons[id].text = "%s\n%s · %d P%s" % [Skylab.MODULES[id], level, module["power"], " · %.0f%%" % module["productivity"] if Skylab.RECIPES.has(id) else ""]
 		buttons[id].set_pressed_no_signal(detail.visible and selected == id)
+	var preview := not StationUi.offline_preview(sector) and sector.session.combat.preview_tools_available
+	preview_max.visible = preview
+	preview_reset.visible = preview
+	preview_max.disabled = sector.session.combat.station_pending
+	preview_reset.disabled = sector.session.combat.station_pending
 	power_label.text = "POWER %d / %d" % [snapshot["power"]["demand"], snapshot["power"]["capacity"]]
 	power_label.tooltip_text = "Power is instantaneous capacity. All Skylab purchases use credits."
 	status.text = StationUi.OFFLINE_BLOCKER if StationUi.offline_preview(sector) else sector.session.combat.station_message

@@ -927,7 +927,7 @@ func skylab_request(sequence: int, action: String, payload: Dictionary) -> void:
 	if payload.size() > 4 or JSON.stringify(payload).length() > 4096:
 		publish_inventory(id, "Invalid Skylab request.")
 		return
-	var result := session.store.transact_lab(session.pilot_ids[id], sequence, action, payload, Skylab.now())
+	var result := session.store.transact_lab(session.pilot_ids[id], sequence, action, payload, Skylab.now(), session.can_grant_test_credits(id))
 	if session.store.failed:
 		session.stop_for_save_failure()
 		return

@@ -207,6 +207,13 @@ immediately, can buy normal equipment, and survive reconnects and restarts.
 Seeded sessions test item behavior; use an unseeded pilot to evaluate progression
 speed and prices.
 
+Allowed preview pilots also start every session with a maxed Skylab: every module
+at its final level with full storage. The Skylab footer has **Preview: Max
+Skylab** and **Preview: Reset Skylab**; reset returns modules, stock and robots to
+the starting values so you can test progression until your next login. In
+Research, **Preview: +30 research points** grants saved points under the same
+station-service rules as test credits.
+
 The operator enables this once in the preview service environment, for example
 `/etc/dorbit-preview/server.env`, then deploys or restarts preview:
 

@@ -4,6 +4,9 @@ extends RefCounted
 
 const MAX_CREDITS: int = 2_000_000_000
 const PREVIEW_CREDIT_GRANT: int = 100_000_000
+# Enough to fill the research spending cap once; resets refund spent points.
+const PREVIEW_RESEARCH_GRANT: int = Research.SPENT_CAP
+const PREVIEW_LAB_ACTIONS := ["test_skylab_max", "test_skylab_reset"]
 # Live journal verification reads only the header and this many final bytes.
 const JOURNAL_TAIL_BYTES: int = 512
 var path: String
@@ -263,17 +266,20 @@ func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary 
 
 # The persisted sequence rejects every old request, including after a reconnect or restart.
 # Only successful changes advance it; distinct station actions use the next sequence.
-func transact(id: String, sequence: int, action: String, subject: String, ship: String, slot: String, allow_preview_credits: bool = false, active_boosts: Variant = null) -> String:
+func transact(id: String, sequence: int, action: String, subject: String, ship: String, slot: String, allow_preview_tools: bool = false, active_boosts: Variant = null) -> String:
 	if failed or not locked or not pilots.has(id):
 		return "Persistence unavailable."
 	if not advance_lab(id, Skylab.now()):
 		return "Persistence unavailable."
-	if action == "test_credits" and not allow_preview_credits:
+	if action == "test_credits" and not allow_preview_tools:
 		return "Test credits are unavailable for this pilot on this server."
+	if action == "test_research" and not allow_preview_tools:
+		return "Test research points are unavailable for this pilot on this server."
 	var next := pilots.duplicate(true)
 	var pilot: Dictionary = next[id]
 	var previous_credits: int = pilot["credits"]
 	var equipment: Dictionary = pilot["equipment"]
+	var previous_points := int(Research.state(equipment)["points"])
 	if active_boosts != null:
 		pilot["boosts"][equipment["active_ship"]] = active_boosts.duplicate(true)
 		if not ResourceBoosts.valid(pilot["boosts"], equipment):
@@ -355,6 +361,12 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		if pilot["credits"] == MAX_CREDITS:
 			return "Credit limit reached."
 		pilot["credits"] = mini(MAX_CREDITS, pilot["credits"] + PREVIEW_CREDIT_GRANT)
+	elif action == "test_research":
+		if not subject.is_empty() or not ship.is_empty() or not slot.is_empty():
+			return "Invalid test research request."
+		if previous_points == Research.MAX_POINTS:
+			return "Research point limit reached."
+		Research.add_points(equipment, PREVIEW_RESEARCH_GRANT)
 	elif action == "sell":
 		# A resource:quantity subject sells a selection; legacy subjects sell the whole type.
 		var parts := subject.split(":")
@@ -446,6 +458,8 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		return "Persistence unavailable."
 	if action == "test_credits":
 		return "Preview: added %d test credits." % (pilot["credits"] - previous_credits)
+	if action == "test_research":
+		return "Preview: added %d research points." % (int(Research.state(equipment)["points"]) - previous_points)
 	if action == "configure_extra":
 		return "Extra settings saved."
 	if action == "research":
@@ -500,18 +514,28 @@ func schedule_labs(at: int) -> void:
 
 # Godot executes these commands synchronously on the server thread under its ledger lock.
 # The existing persisted inventory sequence is the request ID across all economy actions.
-func transact_lab(id: String, sequence: int, action: String, payload: Dictionary, at: int) -> String:
+func transact_lab(id: String, sequence: int, action: String, payload: Dictionary, at: int, allow_preview_tools: bool = false) -> String:
 	if not advance_lab(id, at):
 		return "Persistence unavailable."
 	if action == "snapshot":
 		return ""
+	if action in PREVIEW_LAB_ACTIONS and not allow_preview_tools:
+		return "Skylab preview tools are unavailable for this pilot on this server."
 	var revision := int(pilots[id]["equipment"]["revision"])
 	if sequence <= revision:
 		return "Request already processed. Skylab refreshed."
 	if sequence != revision + 1 or sequence > MAX_CREDITS:
 		return "Inventory changed. Review it and try again."
 	var next := pilots.duplicate(true)
-	var result := Skylab.command(next[id], sequence, action, payload, at)
+	var result: String
+	if action == "test_skylab_max":
+		Skylab.preview_max(next[id]["skylab"])
+		result = "Preview: Skylab maxed with full storage."
+	elif action == "test_skylab_reset":
+		next[id]["skylab"] = Skylab.preview_reset(next[id]["skylab"], at)
+		result = "Preview: Skylab reset to starting levels."
+	else:
+		result = Skylab.command(next[id], sequence, action, payload, at)
 	if next[id] != pilots[id]:
 		next[id]["equipment"]["revision"] = sequence
 		if not Skylab.valid(next[id]["skylab"], next[id]["equipment"]) or not CargoResources.valid(next[id]["cargo"], next[id]["equipment"]):
@@ -521,6 +545,18 @@ func transact_lab(id: String, sequence: int, action: String, payload: Dictionary
 			return "Persistence unavailable."
 	schedule_labs(at)
 	return result
+
+
+# Preview pilots start each session with a maxed Skylab. No request sequence is consumed.
+func preview_max_lab(id: String, at: int) -> bool:
+	if not advance_lab(id, at):
+		return false
+	var next := pilots.duplicate(true)
+	Skylab.preview_max(next[id]["skylab"])
+	if next != pilots and not persist(next):
+		return false
+	schedule_labs(at)
+	return true
 
 
 func persist(next: Dictionary) -> bool:
