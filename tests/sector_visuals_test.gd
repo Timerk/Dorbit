@@ -24,6 +24,7 @@ func run() -> void:
 	check(render_nodes(server) == 0, "Dedicated server creates no meshes, lights or environment")
 	check(client.get_node_or_null("DistantScenery") != null, "Client has distant scenery")
 	check(server.get_node_or_null("DistantScenery") == null, "Server skips distant scenery")
+	space_dust_checks(client, server)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7301
 	for index in range(24):
@@ -193,3 +194,29 @@ func render_nodes(node: Node) -> int:
 	for child in node.get_children():
 		count += render_nodes(child)
 	return count
+
+
+func space_dust_checks(client: Node3D, server: Node3D) -> void:
+	var dust := client.get_node_or_null("SpaceDust") as SpaceDust
+	check(dust != null and server.get_node_or_null("SpaceDust") == null, "Only rendering clients create space dust")
+	if dust == null:
+		return
+	check(dust.multimesh.instance_count == SpaceDust.COUNT and dust.multimesh.use_custom_data, "Dust motes share one instanced draw with per-mote seeds")
+	var camera := Camera3D.new()
+	client.add_child(camera)
+	camera.make_current()
+	# Drive the tracker directly so the result does not depend on frame timing.
+	dust._process(1.0 / 60.0)
+	for index in range(30):
+		camera.position += Vector3(0, 0, -41.0 / 60.0)
+		dust._process(1.0 / 60.0)
+	check(absf(dust.velocity.z + 41.0) < 1.0, "Dust streaks follow the camera's cruise velocity")
+	camera.position += Vector3(0, 0, -5000)
+	dust._process(1.0 / 60.0)
+	check(dust.velocity == Vector3.ZERO, "Jumps and rescues reset dust streaks instead of smearing them")
+	camera.position += Vector3(0, 0, -5.0)
+	for index in range(30):
+		camera.position += Vector3(0, 0, -5.0)
+		dust._process(1.0 / 60.0)
+	check(dust.velocity.length() <= SpaceDust.MAX_STREAK_SPEED + 0.01, "Fast camera motion cannot stretch streaks beyond the cap")
+	camera.free()

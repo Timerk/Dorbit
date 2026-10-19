@@ -10,6 +10,9 @@ const SHIELD_SHADER := preload("res://shaders/shield_hit.gdshader")
 const STREAK_SHADER := preload("res://shaders/combat_streak.gdshader")
 const SPARK_HOT := Color("ffe2ac")
 const SPARK_COOL := Color(1.0, 0.25, 0.03, 0.0)
+const SUN_ROTATION := Vector3(-30, -35, 0)
+const FIREBALL_SHADER := preload("res://shaders/explosion_fireball.gdshader")
+const DEBRIS_SHADER := preload("res://shaders/explosion_debris.gdshader")
 
 # Effects share unit meshes and materials; nodes scale them and set instance uniforms.
 static var _effect_resources: Dictionary[String, Resource] = {}
@@ -132,28 +135,38 @@ static func environment(parent: Node3D, render: bool = true) -> void:
 		sky_material.shader = preload("res://shaders/space.gdshader")
 		sky_material.set_shader_parameter("nebula_panorama", preload("res://assets/sector/nebula-panorama.png"))
 		settings.sky.sky_material = sky_material
+		# A dim cool ambient keeps unlit sides readable while the sun shapes hulls and rock.
 		settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-		settings.ambient_light_color = Color("8ca6c4")
-		settings.ambient_light_energy = 0.48
-		settings.tonemap_mode = Environment.TONE_MAPPER_LINEAR
-		settings.glow_hdr_threshold = 0.8
-		settings.glow_intensity = 0.35
+		settings.ambient_light_color = Color("7f97b8")
+		settings.ambient_light_energy = 0.3
+		# Filmic rolls off sun highlights and effect cores instead of clipping them flat.
+		settings.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+		settings.tonemap_exposure = 1.25
+		settings.tonemap_white = 6.0
+		settings.glow_hdr_threshold = 0.9
+		settings.glow_intensity = 0.45
+		settings.glow_bloom = 0.04
 		settings.ssao_radius = 3.0
 		settings.ssao_intensity = 1.2
 		world.environment = settings
 		parent.add_child(world)
 		var sun := DirectionalLight3D.new()
 		sun.name = "Sun"
-		sun.rotation_degrees = Vector3(-30, -35, 0)
+		sun.rotation_degrees = SUN_ROTATION
 		sun.light_color = Color("ffdfbd")
-		sun.light_energy = 1.55
+		sun.light_energy = 2.1
+		sun.light_specular = 0.8
 		parent.add_child(sun)
+		sky_material.set_shader_parameter("sun_direction", Basis.from_euler(SUN_ROTATION * PI / 180.0).z)
+		sky_material.set_shader_parameter("sun_color", sun.light_color)
 		var fill := DirectionalLight3D.new()
 		fill.name = "Fill"
 		fill.rotation_degrees = Vector3(25, 145, 0)
 		fill.light_color = Color("6e9edb")
-		fill.light_energy = 0.45
+		fill.light_energy = 0.3
+		fill.light_specular = 0.15
 		parent.add_child(fill)
+		SpaceDust.attach(parent)
 		# Distant scenery sits beyond the safe sector and has no colliders.
 		distant_scenery(parent)
 	var rng := RandomNumberGenerator.new()
@@ -245,13 +258,14 @@ static func effects_quality(parent: Node) -> int:
 
 
 static func asteroid_surface() -> StandardMaterial3D:
-	var surface := material(Color.WHITE)
-	surface.metallic = 0.05
-	surface.roughness = 0.96
+	# Real asteroids are dark; a low albedo leaves room for a bright sunlit rim.
+	var surface := material(Color("7a7774"))
+	surface.metallic = 0.0
+	surface.roughness = 1.0
 	surface.albedo_texture = load("res://assets/sector/rock-albedo.png")
 	surface.normal_enabled = true
 	surface.normal_texture = load("res://assets/sector/rock-normal.png")
-	surface.normal_scale = 0.7
+	surface.normal_scale = 1.1
 	surface.uv1_triplanar = true
 	surface.uv1_scale = Vector3.ONE * 2.5
 	return surface
@@ -296,8 +310,12 @@ static func _create_effect_resource(key: String) -> Resource:
 			shell.radial_segments = 16 if key == "shell_low" else 32
 			shell.rings = 8 if key == "shell_low" else 16
 			return shell
+		"debris":
+			var chunk := BoxMesh.new()
+			chunk.size = Vector3.ONE
+			return chunk
 	var surface := ShaderMaterial.new()
-	surface.shader = {"streak_material": STREAK_SHADER, "glow_material": GLOW_SHADER, "shield_material": SHIELD_SHADER}[key]
+	surface.shader = {"streak_material": STREAK_SHADER, "glow_material": GLOW_SHADER, "shield_material": SHIELD_SHADER, "fireball_material": FIREBALL_SHADER, "debris_material": DEBRIS_SHADER}[key]
 	return surface
 
 
@@ -350,12 +368,47 @@ static func explosion(parent: Node3D, location: Vector3, diameter: float = 9.7) 
 		return
 	effect.add_to_group("destruction_feedback")
 	var size := maxf(diameter, 1.0)
+	var high := effects_quality(parent) > 1
 	effect.set_meta("diameter", size)
-	var flash := glow(effect, Vector3.ZERO, Vector2.ONE * size * 2.6, Color("ffb453"), 0.85)
-	effect.create_tween().tween_property(flash, "scale", flash.scale * 2.4, 0.85).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	if effects_quality(parent) > 1:
-		glow(effect, Vector3.ZERO, Vector2(size * 4.8, size * 0.24), Color("ffd598"), 0.65)
-	sparks(effect, Vector3.ZERO, Vector3.ZERO, 4 if effects_quality(parent) == 1 else 12, size * 0.55, 1.15)
+	var flash := glow(effect, Vector3.ZERO, Vector2.ONE * size * 2.2, Color("ffc46e"), 0.55)
+	effect.create_tween().tween_property(flash, "scale", flash.scale * 2.0, 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	# Overlapping turbulent puffs burn out from white-hot to drifting smoke.
+	for index in range(6 if high else 2):
+		var offset := Vector3(randf_range(-1, 1), randf_range(-1, 1), randf_range(-1, 1)).limit_length(1.0) * size * (0.0 if index == 0 else 0.3)
+		var puff := effect_mesh(effect, "glow", "fireball_material", offset, Vector3.ONE * size * randf_range(0.9, 1.25))
+		puff.set_instance_shader_parameter("seed", randf())
+		puff.set_instance_shader_parameter("heat", 1.0 if index == 0 else randf_range(0.65, 0.95))
+		var lifetime := randf_range(0.85, 1.1)
+		var tween := puff.create_tween().set_parallel(true)
+		tween.tween_method(func(value: float): puff.set_instance_shader_parameter("progress", value), 0.0, 1.0, lifetime)
+		tween.tween_property(puff, "scale", puff.scale * 2.1, lifetime).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tween.tween_property(puff, "position", offset * 2.2, lifetime).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	if high:
+		glow(effect, Vector3.ZERO, Vector2(size * 4.8, size * 0.24), Color("ffd598"), 0.5)
+		var shockwave := glow(effect, Vector3.ZERO, Vector2.ONE * size, Color(1.0, 0.78, 0.55, 0.45), 0.5)
+		shockwave.set_instance_shader_parameter("ring", true)
+		effect.create_tween().tween_property(shockwave, "scale", Vector3(size * 4.5, size * 4.5, 1.0), 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		# The blast briefly lights nearby hulls, rock and station plating.
+		var light := OmniLight3D.new()
+		light.light_color = Color("ffa04a")
+		light.omni_range = maxf(size * 6.0, 20.0)
+		light.light_energy = 6.0
+		effect.add_child(light)
+		effect.create_tween().tween_property(light, "light_energy", 0.0, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		debris(effect, size)
+	sparks(effect, Vector3.ZERO, Vector3.ZERO, 4 if not high else 12, size * 0.55, 1.15)
+
+
+static func debris(parent: Node3D, size: float) -> void:
+	# Tumbling hull fragments glow hot, then cool to dark metal as they fly apart.
+	for index in range(6):
+		var chunk := effect_mesh(parent, "debris", "debris_material", Vector3.ZERO, Vector3(randf_range(0.6, 1.4), randf_range(0.25, 0.6), randf_range(0.4, 1.0)) * size * 0.09)
+		var direction := Vector3(randf_range(-1, 1), randf_range(-1, 1), randf_range(-1, 1)).normalized()
+		chunk.set_instance_shader_parameter("heat", 1.0)
+		var tween := chunk.create_tween().set_parallel(true)
+		tween.tween_property(chunk, "position", direction * size * randf_range(1.6, 3.2), 1.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.tween_property(chunk, "rotation", Vector3(randf_range(-9, 9), randf_range(-9, 9), randf_range(-9, 9)), 1.15)
+		tween.tween_method(func(value: float): chunk.set_instance_shader_parameter("heat", value), 1.0, 0.0, 0.9)
 
 
 static func destruction_size(ship: SpaceShip) -> float:
