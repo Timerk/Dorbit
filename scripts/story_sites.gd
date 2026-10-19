@@ -8,9 +8,22 @@ const GOLD := Color("ffd36b")
 const COMM_SECONDS := 26.0
 const BEACON_DARK := Color("6b2a24")
 const BEACON_LIT := Color("7dffd1")
+const GATE_SHADER := preload("res://shaders/objective_gate.gdshader")
+const BEAM_SHADER := preload("res://shaders/objective_beam.gdshader")
+const FIELD_SHADER := preload("res://shaders/objective_field.gdshader")
+const BURST_SECONDS := 0.9
+# Gate quads extend past the hoop, which sits at 72% of the quad's radius.
+const GATE_SCALE := 1.0 / 0.72
+const RECORDER_GATE_RADIUS := 7.0
+const BEAM_HALF_HEIGHT := 260.0
 
 var sector: Sector
-var ring: MeshInstance3D
+# The current objective: a waypoint gate or scan field, plus a locator beam.
+var site: Node3D
+var gate: MeshInstance3D
+var field: MeshInstance3D
+var field_material: ShaderMaterial
+var beam: MeshInstance3D
 var recorder: Node3D
 var beacon: Node3D
 var beacon_lamp: StandardMaterial3D
@@ -23,23 +36,41 @@ var comm_time := 0.0
 
 
 func _ready() -> void:
-	ring = MeshInstance3D.new()
-	ring.mesh = TorusMesh.new()
-	ring.material_override = glow(GOLD, 0.55)
-	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(ring)
+	site = Node3D.new()
+	add_child(site)
+	gate = effect(GATE_SHADER)
+	field = MeshInstance3D.new()
+	field.mesh = SphereMesh.new()
+	(field.mesh as SphereMesh).radial_segments = 64
+	(field.mesh as SphereMesh).rings = 32
+	field_material = ShaderMaterial.new()
+	field_material.shader = FIELD_SHADER
+	field.material_override = field_material
+	field.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	site.add_child(field)
+	beam = effect(BEAM_SHADER)
+	beam.scale = Vector3(2.4, BEAM_HALF_HEIGHT, 1.0)
 	recorder = Node3D.new()
-	var box := MeshInstance3D.new()
-	box.mesh = BoxMesh.new()
-	(box.mesh as BoxMesh).size = Vector3(1.6, 1.0, 2.2)
-	box.material_override = glow(Color("ff9a3c"), 1.0)
-	recorder.add_child(box)
+	var shell := MeshInstance3D.new()
+	shell.mesh = BoxMesh.new()
+	(shell.mesh as BoxMesh).size = Vector3(1.6, 1.0, 2.2)
+	var casing := StandardMaterial3D.new()
+	casing.albedo_color = Color("3a4048")
+	casing.metallic = 0.85
+	casing.roughness = 0.35
+	shell.material_override = casing
+	recorder.add_child(shell)
+	var strip := MeshInstance3D.new()
+	strip.mesh = BoxMesh.new()
+	(strip.mesh as BoxMesh).size = Vector3(1.7, 0.16, 2.3)
+	strip.material_override = glow(Color("ff9a3c"), 1.0)
+	recorder.add_child(strip)
 	var light := OmniLight3D.new()
 	light.light_color = Color("ff9a3c")
 	light.omni_range = 14.0
 	light.light_energy = 2.0
 	recorder.add_child(light)
-	add_child(recorder)
+	site.add_child(recorder)
 	beacon = Node3D.new()
 	var mast := MeshInstance3D.new()
 	mast.mesh = CylinderMesh.new()
@@ -71,6 +102,22 @@ func _ready() -> void:
 	hide_sites()
 
 
+# Camera-facing shader quad. Its vertex shader turns the quad, so the cull
+# bounds must cover every orientation.
+func effect(shader: Shader, parent: Node3D = site) -> MeshInstance3D:
+	var quad := QuadMesh.new()
+	quad.size = Vector2(2, 2)
+	quad.custom_aabb = AABB(Vector3(-1, -1, -1), Vector3(2, 2, 2))
+	var instance := MeshInstance3D.new()
+	instance.mesh = quad
+	var material := ShaderMaterial.new()
+	material.shader = shader
+	instance.material_override = material
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(instance)
+	return instance
+
+
 static func glow(color: Color, alpha: float) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -90,9 +137,19 @@ func set_lit(lit: bool) -> void:
 
 
 func hide_sites() -> void:
-	ring.hide()
-	recorder.hide()
+	site.hide()
 	beacon.hide()
+
+
+# A short flash and expanding ring where a completed objective stood.
+func burst(location: Vector3, radius: float) -> void:
+	var flash := effect(GATE_SHADER, self)
+	flash.position = location
+	flash.scale = Vector3.ONE * radius * GATE_SCALE
+	flash.set_instance_shader_parameter("burst", 0.0)
+	var tween := flash.create_tween()
+	tween.tween_method(func(value: float): flash.set_instance_shader_parameter("burst", value), 0.0, 1.0, BURST_SECONDS)
+	tween.tween_callback(flash.queue_free)
 
 
 func _process(delta: float) -> void:
@@ -108,8 +165,7 @@ func _process(delta: float) -> void:
 	beacon.visible = sector.map_id == 0
 	if beacon_lit != (int(story["step"]) > Story.BEACON_STEP):
 		set_lit(not beacon_lit)
-	ring.visible = not step.is_empty() and step["type"] != "recover"
-	recorder.visible = not step.is_empty() and step["type"] == "recover"
+	site.visible = not step.is_empty()
 	if step.is_empty():
 		scan_seconds = 0.0
 		return
@@ -117,18 +173,19 @@ func _process(delta: float) -> void:
 	var player := sector.player
 	var inside: bool = player.alive and player.map_id == step["map"] and player.position.distance_to(location) <= step["radius"]
 	scan_seconds = scan_seconds + delta if inside and step["type"] == "scan" else 0.0
-	if ring.visible:
-		ring.position = location
-		var torus := ring.mesh as TorusMesh
-		if not is_equal_approx(torus.outer_radius, step["radius"]):
-			torus.inner_radius = 0.0
-			torus.outer_radius = step["radius"]
-			torus.inner_radius = step["radius"] - 1.2
-		# Waypoints stand up as hoops visible from afar; scan fields lie flat.
-		ring.rotation.x = PI / 2 if step["type"] == "reach" else 0.0
-		ring.rotation.y = wrapf(ring.rotation.y + delta * 0.4, 0.0, TAU)
+	site.position = location
+	var scanning: bool = step["type"] == "scan"
+	var extent := RECORDER_GATE_RADIUS if step["type"] == "recover" else float(step["radius"])
+	(beam.material_override as ShaderMaterial).set_shader_parameter("gap", extent * 1.1 / BEAM_HALF_HEIGHT)
+	gate.visible = not scanning
+	field.visible = scanning
+	recorder.visible = step["type"] == "recover"
+	if scanning:
+		field.scale = Vector3.ONE * float(step["radius"])
+		field_material.set_shader_parameter("progress", scan_seconds / float(step["required"]))
 	else:
-		recorder.position = location
+		gate.scale = Vector3.ONE * extent * GATE_SCALE
+	if recorder.visible:
 		recorder.rotate_y(delta * 1.2)
 
 
@@ -138,7 +195,10 @@ func observe(story: Dictionary) -> void:
 		return
 	comm = ""
 	if seen_step >= 0 and step == seen_step + 1:
-		comm = Story.completion_notice(Story.STEPS[seen_step], story)
+		var finished: Dictionary = Story.STEPS[seen_step]
+		comm = Story.completion_notice(finished, story)
+		if finished["type"] in Story.POSITIONAL and finished["map"] == sector.map_id:
+			burst(Story.site_position(finished), RECORDER_GATE_RADIUS if finished["type"] == "recover" else float(finished["radius"]))
 		SectorVisuals.sound(sector, "purchase", sector.player.position)
 	elif not Story.complete(story):
 		comm = Story.transmission(Story.current(story))

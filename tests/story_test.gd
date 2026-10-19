@@ -92,7 +92,7 @@ func run() -> void:
 	check(pilot.story_state() == Story.empty(), "New and existing pilots start the prologue")
 	check(pilot.story_sites.comm.begins_with("VANCE: Pilot, this is Commander Vance"), "Joining shows the current briefing as a transmission")
 	await process_frame
-	check(pilot.story_sites.ring.visible and pilot.hud.story_height() > 0.0, "The first site and flight card section are shown")
+	check(pilot.story_sites.site.visible and pilot.hud.story_height() > 0.0, "The first site and flight card section are shown")
 	await capture(pilot, "story-comms-check")
 	var credits: int = store.pilots[pilot_id]["credits"]
 	await reach(server, pilot)
@@ -157,7 +157,7 @@ func run() -> void:
 	await replicate(server)
 	check(Story.complete(saved(server, pilot)) and Research.state(store.pilots[pilot_id]["equipment"])["points"] == research + 3, "Accepting a hunt completes the prologue with its research reward")
 	await process_frame
-	check(pilot.hud.story_height() == 0.0 and not pilot.story_sites.ring.visible and not pilot.hud.navigation.contacts().any(func(contact: Dictionary) -> bool: return str(contact["key"]).begins_with("story_")), "A finished chapter leaves the flight card, map and space clear")
+	check(pilot.hud.story_height() == 0.0 and not pilot.story_sites.site.visible and not pilot.hud.navigation.contacts().any(func(contact: Dictionary) -> bool: return str(contact["key"]).begins_with("story_")), "A finished chapter leaves the flight card, map and space clear")
 	var file: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(store.path))
 	check(int(file["pilots"][pilot_id]["equipment"]["story"]["step"]) == 10, "Story progress is written to the pilot ledger")
 	# The partner skips at the board after arming the confirmation.
