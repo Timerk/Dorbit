@@ -12,6 +12,8 @@ var connectors: Dictionary[String, ColorRect] = {}
 var summary: Label
 var detail_title: Label
 var detail_row: Label
+var detail_image: TextureRect
+var artwork: Dictionary[String, Texture2D] = {}
 var detail_effect: Label
 var detail_cost: Label
 var learn_button: Button
@@ -57,6 +59,13 @@ func _ready() -> void:
 	detail_rows.add_theme_constant_override("separation", 10)
 	detail_row = StationUi.heading(detail_rows, "", 13, StationUi.MUTED)
 	detail_title = StationUi.heading(detail_rows, "", 26)
+	detail_image = TextureRect.new()
+	detail_image.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	detail_image.custom_minimum_size = Vector2(0, 128)
+	detail_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	detail_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	detail_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	detail_rows.add_child(detail_image)
 	detail_effect = StationUi.text(detail_rows, "", 16)
 	detail_cost = StationUi.text(detail_rows, "", 16, StationUi.MUTED)
 	detail_cost.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -73,7 +82,7 @@ func _ready() -> void:
 
 func skill_node(parent: Node, id: String, row: String) -> void:
 	var button := StationUi.button(parent, "", func(): selected = id)
-	button.custom_minimum_size = Vector2(128, 84)
+	button.custom_minimum_size = Vector2(128, 148)
 	button.toggle_mode = true
 	button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var rows := VBoxContainer.new()
@@ -84,6 +93,15 @@ func skill_node(parent: Node, id: String, row: String) -> void:
 	rows.offset_top = 8
 	rows.offset_bottom = -8
 	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	artwork[id] = load("res://assets/ui/research/%s.png" % id)
+	var illustration := TextureRect.new()
+	illustration.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	illustration.texture = artwork[id]
+	illustration.custom_minimum_size = Vector2(0, 64)
+	illustration.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	illustration.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	illustration.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rows.add_child(illustration)
 	var name_label := StationUi.text(rows, Research.SKILLS[id]["name"].to_upper(), 14, ROW_COLORS[row])
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -152,6 +170,8 @@ func _process(_delta: float) -> void:
 	var current := Research.level(data, selected)
 	StationUi.set_text(detail_row, "%s  /  LEVEL %d OF %d" % [Research.ROW_NAMES[row].to_upper(), current, Research.MAX_LEVEL])
 	StationUi.set_text(detail_title, skill["name"].to_upper())
+	if detail_image.texture != artwork[selected]:
+		detail_image.texture = artwork[selected]
 	StationUi.set_text(detail_effect, Research.describe(selected, current))
 	var cost := Research.cost(data, selected)
 	var lines: PackedStringArray = []

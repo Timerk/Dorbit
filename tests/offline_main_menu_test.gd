@@ -53,6 +53,11 @@ func run() -> void:
 					check(client.shop.sells[resource].disabled, "Offline %s sale is disabled" % resource)
 			elif page == "research":
 				check(client.research_menu.learn_button.disabled and client.research_menu.reset_button.disabled and client.research_menu.levels["reinforced_plating"].text == "0 / 5", "Offline research tree is viewable and cannot be changed")
+				for id: String in Research.SKILLS:
+					await click(client, client.research_menu.nodes[id])
+					check(client.research_menu.selected == id and client.research_menu.detail_image.texture == client.research_menu.artwork[id] and client.research_menu.detail_image.texture != null, "Clicking illustrated %s selects its detail artwork" % id)
+					check(client.research_menu.nodes[id].get_global_rect().end.y <= panel.get_global_rect().end.y, "Illustrated %s fits inside Research" % id)
+				await click(client, client.research_menu.nodes["reinforced_plating"])
 			elif page == "refining":
 				check(client.resource_workshop.refine_button.disabled, "Offline refining cannot spend cargo")
 				client.resource_workshop.select_tab("update")

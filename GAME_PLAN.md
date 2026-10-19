@@ -719,7 +719,13 @@ hunting contracts award them.
 
 A Research console page shows three rows. Each skill has five levels, and each
 level costs one research point plus refined Skylab stock. A skill unlocks once
-the previous skill in its row is complete. Values are cumulative per skill:
+the previous skill in its row is complete.
+
+Each skill has an original generated equipment illustration in its node and
+selected-skill detail panel, with cyan Defense, violet Economy and orange-red
+Offense accents. Artwork and prompts live in `assets/ui/research`.
+
+Values are cumulative per skill:
 
 | Row | Skill | Effect at levels 1–5 |
 | --- | --- | --- |
