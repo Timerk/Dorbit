@@ -552,7 +552,7 @@ Credits survive disconnects and server restarts. Ship position, health, kills an
 
 ### Story prologue: Operation Foothold
 
-Every pilot, including existing ones, starts a personal ten-step prologue that teaches the game through Outpost 01's first operations. Commander Vance, Chief Engineer Brell and Dr. Sato brief each step in an incoming-transmission box below the flight card, which shows the current step, objective and a hint using your bindings. Positional steps place a gold objective marker in space and a selectable contact on the sector map, so **M** and **P** fly you there.
+Every pilot, including existing ones, starts a personal ten-step prologue that teaches the game through Outpost 01's first operations. Commander Vance, Chief Engineer Brell and Dr. Sato brief each step in an incoming-transmission box below the flight card, which shows the current step, objective and a hint using your bindings. Positional steps show a holographic objective in space: waypoints and the recorder use a camera-facing gate that fades as you fly through it, scans use a gridded field that fills as the scan progresses, and every site has a tall locator beam. A short burst marks each completed site. Each site is also a selectable contact on the sector map, so **M** and **P** fly you there.
 
 | Step | Objective | Reward |
 | --- | --- | --- |
@@ -565,7 +565,7 @@ Every pilot, including existing ones, starts a personal ten-step prologue that t
 | Light the Beacon | Stay at the approach beacon for 6 s | 2,000 CR |
 | Standing Orders | Hold any hunting contract | 5,000 CR + 3 RP |
 
-Press **C** and choose **Story** to read briefings, review completed steps, deliver cargo or skip the chapter. Skipping asks for a second press and pays every remaining step reward. Kills count with the hunting-contract contribution rules; scans restart when you leave the field; the recorder and the lit beacon are personal. Delivery and skipping use station service rules. The server saves each step and its reward together in the equipment record, so save schema 8 is unchanged; network schema 20 requires matching builds. Run `res://tests/story_test.gd` for the full authenticated playthrough, and run it with a renderer to capture `build/validation/story-*.png`. Review the [flight card and transmission](docs/feedback/story-flight.png) and the [Story tab](docs/feedback/story-board.png). Sites, quantities and rewards need playtesting.
+Press **C** and choose **Story** to read briefings, review completed steps, deliver cargo or skip the chapter. Skipping asks for a second press and pays every remaining step reward. Kills count with the hunting-contract contribution rules; scans restart when you leave the field; the recorder and the lit beacon are personal. Delivery and skipping use station service rules. The server saves each step and its reward together in the equipment record, so save schema 8 is unchanged; network schema 20 requires matching builds. Run `res://tests/story_test.gd` for the full authenticated playthrough, and run it with a renderer to capture `build/validation/story-*.png`. Review the [flight card and transmission](docs/feedback/story-flight.png), the [waypoint gate](docs/feedback/story-objective-gate.png), the [scan field](docs/feedback/story-objective-field.png) and the [Story tab](docs/feedback/story-board.png). Run `res://tests/objective_art_preview.gd` with a renderer to capture every objective visual under `build/validation/objective-review`. Sites, quantities and rewards need playtesting.
 
 ### Hunting contracts
 
