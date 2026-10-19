@@ -284,7 +284,7 @@ Downloading an artifact from the validation workflow does not deploy its server.
 
 1. Hold right mouse and move the mouse to steer. Use W/S for forward/backward movement, A/D to strafe, and Q/E to descend/rise.
 2. Start with an amber Scout near the station approach. Tab selects the on-screen alien closest to the mouse cursor, or screen center while steering; left click selects the ship under the pointer. The lock persists beyond weapon range and when you turn away or the alien returns home. Space toggles automatic lasers. Enemy encounter resets stop automatic fire while retaining the lock; death clears it.
-3. Keep the alien ahead, within 440 m, and clear of obstacles. Shift boosts while energy is available. Releasing movement brakes the ship.
+3. Keep the alien ahead, within 310 m, and clear of obstacles. Shift boosts while energy is available. Releasing movement brakes the ship.
 4. Scout, Sentinel and Heavy kills grant pools of **300, 1,500 and 10,000 credits** respectively, split equally among eligible contributors. Return within 120 m of the green outpost marker, slow below 8 m/s, and press R to repair. Repairs require five seconds without taking damage.
 
 Shields split each hit between shield and hull: starter generators absorb 40%, aliens absorb 80%, and depleted shield damage spills into hull. After six seconds without damage, shields recover at one twelfth of capacity per second. Destruction returns the ship to the station after three seconds and costs up to 10 credits. Hull repairs cost up to 15 credits according to the missing hull percentage, capped at the available balance so a player with no credits can recover. Scouts respawn after 10 seconds, Sentinels after 12, and the Heavy after 18. Each encounter respawns independently.
