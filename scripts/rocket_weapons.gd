@@ -22,6 +22,9 @@ var debit: Callable
 var pending: Array[Dictionary] = []
 var sequence: int = 0
 var rng := RandomNumberGenerator.new()
+# Research skills; set from the pilot's fitting stats on the authority.
+var accuracy_bonus: float = 0.0
+var damage_bonus: float = 0.0
 
 
 func available(kind: String) -> int:
@@ -132,7 +135,7 @@ func launch(target: Alien, kind: String, index: int, count: int, bonus: float = 
 	var id := "%d-%d" % [ship.get_instance_id(), sequence]
 	var origin := ship.global_position - ship.global_basis.z * 3.0 + ship.global_basis.x * (index - (count - 1) * 0.5) * 1.2
 	var event := {"map": ship.map_id, "id": id, "origin": origin, "target": target.alien_id, "life": target.life, "kind": kind, "index": index, "count": count}
-	pending.append({"id": id, "target": weakref(target), "life": target.life, "attacker_life": ship.get_meta("life", 0), "position": origin, "age": 0.0, "kind": kind, "hit": rng.randf() < float(info["accuracy"]), "damage": float(info["damage"]) * rng.randf_range(info["minimum"], info["maximum"]) * (1.0 + bonus)})
+	pending.append({"id": id, "target": weakref(target), "life": target.life, "attacker_life": ship.get_meta("life", 0), "position": origin, "age": 0.0, "kind": kind, "hit": rng.randf() < float(info["accuracy"]) + accuracy_bonus, "damage": float(info["damage"]) * rng.randf_range(info["minimum"], info["maximum"]) * (1.0 + bonus) * (1.0 + damage_bonus)})
 	launched.emit(event)
 
 

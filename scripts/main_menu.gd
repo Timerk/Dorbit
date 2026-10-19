@@ -266,7 +266,7 @@ func rail_button(text: String, icon_name: String, action: Callable) -> Button:
 
 
 func build_navigation() -> void:
-	for entry: Array in [["overview", "OVERVIEW"], ["hangar", "HANGAR"], ["quests", "QUESTS"], ["shop", "SHOP"], ["cargo", "CARGO TRADE"], ["refining", "REFINING"], ["skylab", "SKYLAB"], ["gates", "GALAXY GATES"], ["settings", "SETTINGS"], ["connection", "CONNECTION"]]:
+	for entry: Array in [["overview", "OVERVIEW"], ["hangar", "HANGAR"], ["quests", "QUESTS"], ["shop", "SHOP"], ["cargo", "CARGO TRADE"], ["refining", "REFINING"], ["skylab", "SKYLAB"], ["research", "RESEARCH"], ["gates", "GALAXY GATES"], ["settings", "SETTINGS"], ["connection", "CONNECTION"]]:
 		var page: String = entry[0]
 		var button := rail_button(entry[1], page, func(): select_page(page))
 		button.toggle_mode = true
@@ -443,6 +443,7 @@ func hide_pages() -> void:
 	sector.shop.hide()
 	sector.equipment_menu.hide()
 	sector.resource_workshop.hide()
+	sector.research_menu.hide()
 	sector.hud.contract_panel.hide()
 	sector.settings_menu.dismiss()
 	placeholder.hide()
@@ -480,7 +481,7 @@ func select_page(page: String) -> void:
 		show_home()
 		return
 	var offline := StationUi.offline_preview(sector)
-	if not offline and page in ["shop", "hangar", "cargo", "quests", "refining"] and (not sector.session.received_snapshot or sector.session.combat.inventory.is_empty()):
+	if not offline and page in ["shop", "hangar", "cargo", "quests", "refining", "research"] and (not sector.session.received_snapshot or sector.session.combat.inventory.is_empty()):
 		return
 	if not offline and page in ["shop", "hangar", "cargo", "quests"]:
 		var blocker := sector.repair_blocker()
@@ -502,6 +503,7 @@ func select_page(page: String) -> void:
 			sector.shop.select_cargo(page == "cargo")
 		"hangar": sector.equipment_menu.open()
 		"refining": sector.resource_workshop.open()
+		"research": sector.research_menu.open()
 		"quests": sector.hud.toggle_contracts()
 		"settings": sector.settings_menu.open()
 		"connection": sector.session.open_menu()
@@ -626,6 +628,8 @@ func _process(_delta: float) -> void:
 		selected_page = "hangar"
 	elif sector.resource_workshop.visible:
 		selected_page = "refining"
+	elif sector.research_menu.visible:
+		selected_page = "research"
 	elif sector.hud.contract_panel.visible:
 		selected_page = "quests"
 	elif sector.settings_menu.panel.visible:
@@ -646,7 +650,7 @@ func _process(_delta: float) -> void:
 	for page: String in navigation:
 		if navigation[page].button_pressed != (selected_page == page):
 			navigation[page].set_pressed_no_signal(selected_page == page)
-		if page in ["shop", "hangar", "cargo", "quests", "refining"]:
+		if page in ["shop", "hangar", "cargo", "quests", "refining", "research"]:
 			navigation[page].disabled = not ready or (not offline and not sector.player.alive)
 	StationUi.set_text(wallet, StationShop.credits_text(sector.credits) + " CR")
 	var current := navigation.get(selected_page) as Button
@@ -670,6 +674,6 @@ func _process(_delta: float) -> void:
 		StationUi.set_text(stat_values["damage"], str(int(stats["damage"])))
 		StationUi.set_text(stat_values["speed"], "%d m/s" % stats["speed"])
 		StationUi.set_text(stat_values["cargo"], "%d / %d" % [CargoResources.units(sector.cargo), sector.cargo_capacity])
-	for panel: Control in [placeholder, sector.shop, sector.equipment_menu, sector.resource_workshop, sector.hud.contract_panel]:
+	for panel: Control in [placeholder, sector.shop, sector.equipment_menu, sector.resource_workshop, sector.research_menu, sector.hud.contract_panel]:
 		if panel.visible:
 			fit_panel(panel, Vector2(1150, 690))

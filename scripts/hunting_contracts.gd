@@ -1,11 +1,12 @@
 class_name HuntingContracts
 extends RefCounted
 ## Concurrent hunts. Saved runs keep their own objective and reward across tuning changes.
+## Runs accepted before research existed pay the current offer's research points.
 
 const OFFERS: Dictionary = {
-	"scout": {"type": "scout", "required": 3, "reward": 900},
-	"sentinel": {"type": "sentinel", "required": 2, "reward": 4500},
-	"heavy": {"type": "heavy", "required": 1, "reward": 30000},
+	"scout": {"type": "scout", "required": 3, "reward": 900, "research": 1},
+	"sentinel": {"type": "sentinel", "required": 2, "reward": 4500, "research": 2},
+	"heavy": {"type": "heavy", "required": 1, "reward": 30000, "research": 4},
 }
 
 
@@ -23,7 +24,9 @@ static func valid(value: Variant) -> bool:
 		return false
 	if value.is_empty():
 		return true
-	if value.size() != 5 or not value.get("type") is String or not OFFERS.has(value["type"]):
+	if not value.size() in [5, 6] or not value.get("type") is String or not OFFERS.has(value["type"]):
+		return false
+	if value.size() == 6 and not Skylab.integer(value.get("research"), 0, 1000):
 		return false
 	if not value.get("run") is String or not PilotStore.valid_hex(value["run"]):
 		return false
@@ -55,14 +58,27 @@ static func settle(contracts: Dictionary, credits: int) -> Dictionary:
 	var next := contracts.duplicate(true)
 	var paid: Array[String] = []
 	var reward := 0
+	var research := 0
 	for kind: String in OFFERS:
 		if next.has(kind) and ready(next[kind]) and credits <= PilotStore.MAX_CREDITS - int(next[kind]["reward"]):
 			var amount := int(next[kind]["reward"])
 			credits += amount
 			reward += amount
+			research += research_reward(next[kind])
 			paid.append(kind.capitalize())
 			next.erase(kind)
-	return {"contracts": next, "credits": credits, "reward": reward, "paid": paid}
+	return {"contracts": next, "credits": credits, "reward": reward, "research": research, "paid": paid}
+
+
+static func research_reward(contract: Dictionary) -> int:
+	return int(contract.get("research", OFFERS[contract["type"]]["research"]))
+
+
+static func paid_notice(payout: Dictionary) -> String:
+	var notice := "%s hunt completed: +%d credits" % [", ".join(payout["paid"]), payout["reward"]]
+	if payout["research"] > 0:
+		notice += " and +%d research points" % payout["research"]
+	return notice + " paid automatically."
 
 
 static func ready(contract: Dictionary) -> bool:
@@ -70,4 +86,4 @@ static func ready(contract: Dictionary) -> bool:
 
 
 static func objective(contract: Dictionary) -> String:
-	return "%s hunt: %d / %d  |  %d CR%s" % [str(contract["type"]).capitalize(), contract["progress"], contract["required"], contract["reward"], "  |  WALLET FULL / REWARD PENDING" if ready(contract) else ""]
+	return "%s hunt: %d / %d  |  %d CR + %d RP%s" % [str(contract["type"]).capitalize(), contract["progress"], contract["required"], contract["reward"], research_reward(contract), "  |  WALLET FULL / REWARD PENDING" if ready(contract) else ""]
