@@ -270,20 +270,20 @@ func run() -> void:
 	var scout_home := scout.home_position
 	player.tick_combat(1.0)
 	alien.position = Vector3(0, 200, 400) # Clear the line of fire.
-	scout.position = Vector3(0, 200, -400)
+	scout.position = Vector3(0, 200, -280)
 	scout.home_position = scout.position
 	await sync_physics()
 	var scout_life := scout.life
-	check(player.try_fire(scout), "Lasers reach a Scout at 400 m, beyond its detection range")
+	check(player.try_fire(scout), "Lasers reach a Scout at 280 m, beyond its detection range")
 	var scout_health := scout.hull + scout.shield
 	for step in range(120):
 		scout.fly(1.0 / 60.0, null, Sector.STATION_POSITION)
 	check(scout.life == scout_life and scout.hull + scout.shield == scout_health and scout_health < scout.max_hull + scout.max_shield, "Laser damage from beyond detection range sticks")
-	check(scout.engaged and scout.position.distance_to(player.position) < 400.0, "The Scout engages its out-of-detection attacker")
+	check(scout.engaged and scout.position.distance_to(player.position) < 280.0, "The Scout engages its out-of-detection attacker")
 	scout.position = scout_home
 	scout.home_position = scout_home
 	scout.reset_encounter()
-	alien.position = Vector3(0, 200, -470)
+	alien.position = Vector3(0, 200, -325)
 	alien.home_position = alien.position
 	alien.reset_encounter()
 	var alien_life := alien.life
@@ -294,7 +294,7 @@ func run() -> void:
 		if player.rockets.rng.randf() < float(Ammunition.ROCKETS["plt-2021"]["accuracy"]):
 			player.rockets.rng.seed = seed_candidate
 			break
-	check(player.rockets.fire_single(alien).is_empty(), "A 480 m rocket fires at an alien 470 m away")
+	check(player.rockets.fire_single(alien).is_empty(), "A 335 m rocket fires at an alien 325 m away")
 	for step in range(180):
 		player.rockets.tick(1.0 / 60.0)
 		alien.fly(1.0 / 60.0, null, Sector.STATION_POSITION)
