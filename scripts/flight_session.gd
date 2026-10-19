@@ -59,6 +59,7 @@ var preview_tools_enabled: bool = false
 var preview_pilots: PackedStringArray = []
 var lab_clock: float = 0.0
 var jump_pending := false
+var jump_cover: CanvasLayer
 var jump_until: Dictionary[int, int] = {}
 
 
@@ -941,6 +942,7 @@ func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int, visit: 
 
 
 func disconnect_session(message: String) -> void:
+	clear_jump_cover()
 	if active and sector.dedicated_server and not combat.flush_boosts():
 		stop_for_save_failure()
 	sector.preflight = false
@@ -1026,17 +1028,43 @@ func request_jump() -> void:
 	if destination < 0:
 		sector.notify("Fly within 50 m of a gate, then press %s to jump." % GameSettings.binding_text("jump_gate"))
 		return
+	if not sector.map_scenery.has(destination) and DisplayServer.get_name() != "headless":
+		# Present a frame before synchronous geometry construction on first entry.
+		# The authoritative transfer, cooldown and visit epochs stay unchanged.
+		jump_pending = true
+		var visit := sector.player.map_visit
+		var was_active := active
+		jump_cover = CanvasLayer.new()
+		jump_cover.layer = 20
+		var curtain := ColorRect.new()
+		curtain.color = Color("071723")
+		curtain.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		jump_cover.add_child(curtain)
+		var caption := Label.new()
+		caption.text = "GATE TRANSIT"
+		caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		caption.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		curtain.add_child(caption)
+		add_child(jump_cover)
+		await RenderingServer.frame_post_draw
+		jump_pending = false
+		if active != was_active or sector.player.map_visit != visit or sector.paused or sector.preflight or not sector.player.alive:
+			clear_jump_cover()
+			return
 	if active:
 		if multiplayer.is_server():
 			var reason := jump(1, int(sector.player.get_meta("life", 0)), destination)
 			if not reason.is_empty():
 				sector.notify(reason)
+				clear_jump_cover()
 		else:
 			jump_pending = true
 			jump_request.rpc_id(1, int(sector.player.get_meta("life", 0)), destination)
 	else:
 		if Time.get_ticks_msec() < jump_until.get(1, 0):
 			sector.notify("Gate stabilizing. Wait two seconds between jumps.")
+			clear_jump_cover()
 			return
 		jump_until[1] = Time.get_ticks_msec() + int(SectorMaps.JUMP_COOLDOWN * 1000)
 		var source := sector.player.map_id
@@ -1060,7 +1088,27 @@ func jump_request(life: int, destination: int) -> void:
 @rpc("authority", "call_remote", "reliable")
 func jump_feedback(reason: String) -> void:
 	jump_pending = false
+	clear_jump_cover()
 	sector.notify(reason)
+
+
+func clear_jump_cover() -> void:
+	if is_instance_valid(jump_cover):
+		jump_cover.queue_free()
+	jump_cover = null
+
+
+func reveal_jump() -> void:
+	if not is_instance_valid(jump_cover):
+		return
+	# Allow the destination's first shader/sky draw to finish under the curtain.
+	var cover := jump_cover
+	jump_cover = null
+	await RenderingServer.frame_post_draw
+	if is_instance_valid(cover):
+		var fade := create_tween()
+		fade.tween_property(cover.get_child(0), "modulate:a", 0.0, 0.18)
+		fade.tween_callback(cover.queue_free)
 
 
 func jump(id: int, life: int, destination: int) -> String:
@@ -1145,3 +1193,4 @@ func finish_local_jump() -> void:
 		if sector.is_ancestor_of(effect):
 			effect.queue_free()
 	sector.notify("Arrived at %s. Gates are protected; press %s nearby to return." % [SectorMaps.MAPS[sector.map_id]["name"], GameSettings.binding_text("jump_gate")])
+	reveal_jump()
