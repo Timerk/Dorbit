@@ -1,0 +1,437 @@
+{
+  "baseline_commit": "0afcaa83791fe2fdad679cf2a6b46bbb05fe76b0",
+  "date": "2026-10-19",
+  "platform": "Windows, Ryzen 7 5700U, 15.4 GiB RAM, integrated AMD Radeon Graphics",
+  "engine": "Godot 4.7.2 stable official ed1daf0bf, editor/debug source runtime",
+  "resolution": "1440x900, Compatibility, default 4x MSAA, fresh profiles; warmed imports and filesystem cache",
+  "method": "Three separate processes per revision and mode, sequential. ready_ms measures scene creation; engine_ready_ms includes engine startup. Memory sampled after ten frames. process_seconds includes shutdown. Static memory is Godot's allocator, video memory is RenderingServer accounting, not OS residency. Server uses --headless --server with a disposable pilot ledger.",
+  "before": [
+    {
+      "buffer_bytes": 101769600,
+      "dedicated": false,
+      "engine_ready_ms": 8172.004,
+      "engine_settled_ms": 12061.651,
+      "label": "startup",
+      "ready_ms": 5372.966,
+      "renderer": "AMD Radeon(TM) Graphics",
+      "scenery_maps": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "settled_ms": 9262.612,
+      "static_bytes": 128354769,
+      "static_peak_bytes": 134289737,
+      "texture_bytes": 546193954,
+      "video_bytes": 647963554,
+      "run": 1,
+      "process_seconds": 12.738
+    },
+    {
+      "buffer_bytes": 106029984,
+      "dedicated": false,
+      "engine_ready_ms": 8805.055,
+      "engine_settled_ms": 12631.437,
+      "label": "startup",
+      "ready_ms": 5922.531,
+      "renderer": "AMD Radeon(TM) Graphics",
+      "scenery_maps": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "settled_ms": 9748.912,
+      "static_bytes": 128354993,
+      "static_peak_bytes": 134289737,
+      "texture_bytes": 546193954,
+      "video_bytes": 652223938,
+      "run": 2,
+      "process_seconds": 13.328
+    },
+    {
+      "buffer_bytes": 106029984,
+      "dedicated": false,
+      "engine_ready_ms": 8312.921,
+      "engine_settled_ms": 12044.038,
+      "label": "startup",
+      "ready_ms": 5497.549,
+      "renderer": "AMD Radeon(TM) Graphics",
+      "scenery_maps": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "settled_ms": 9228.665,
+      "static_bytes": 128354993,
+      "static_peak_bytes": 134289737,
+      "texture_bytes": 546193954,
+      "video_bytes": 652223938,
+      "run": 3,
+      "process_seconds": 12.637
+    },
+    {
+      "buffer_bytes": 0,
+      "dedicated": true,
+      "engine_ready_ms": 2055.433,
+      "engine_settled_ms": 2173.057,
+      "label": "startup",
+      "ready_ms": 76.277,
+      "renderer": "",
+      "scenery_maps": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "settled_ms": 193.9,
+      "static_bytes": 91503849,
+      "static_peak_bytes": 121406261,
+      "texture_bytes": 0,
+      "video_bytes": 0,
+      "run": 1,
+      "process_seconds": 2.384
+    },
+    {
+      "buffer_bytes": 0,
+      "dedicated": true,
+      "engine_ready_ms": 1789.978,
+      "engine_settled_ms": 1907.633,
+      "label": "startup",
+      "ready_ms": 60.211,
+      "renderer": "",
+      "scenery_maps": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "settled_ms": 177.866,
+      "static_bytes": 91489733,
+      "static_peak_bytes": 121406261,
+      "texture_bytes": 0,
+      "video_bytes": 0,
+      "run": 2,
+      "process_seconds": 2.09
+    },
+    {
+      "buffer_bytes": 0,
+      "dedicated": true,
+      "engine_ready_ms": 1935.568,
+      "engine_settled_ms": 2053.215,
+      "label": "startup",
+      "ready_ms": 49.158,
+      "renderer": "",
+      "scenery_maps": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "settled_ms": 166.804,
+      "static_bytes": 91489553,
+      "static_peak_bytes": 121406261,
+      "texture_bytes": 0,
+      "video_bytes": 0,
+      "run": 3,
+      "process_seconds": 2.269
+    }
+  ],
+  "after": [
+    {
+      "buffer_bytes": 77514860,
+      "dedicated": false,
+      "engine_ready_ms": 6943.873,
+      "engine_settled_ms": 10345.431,
+      "label": "startup",
+      "ready_ms": 4355.646,
+      "renderer": "AMD Radeon(TM) Graphics",
+      "scenery_maps": [
+        0
+      ],
+      "settled_ms": 7757.203,
+      "static_bytes": 125207023,
+      "static_peak_bytes": 130813891,
+      "texture_bytes": 546368716,
+      "video_bytes": 623883576,
+      "run": 1,
+      "process_seconds": 10.901
+    },
+    {
+      "buffer_bytes": 73254476,
+      "dedicated": false,
+      "engine_ready_ms": 6991.337,
+      "engine_settled_ms": 10074.492,
+      "label": "startup",
+      "ready_ms": 4308.38,
+      "renderer": "AMD Radeon(TM) Graphics",
+      "scenery_maps": [
+        0
+      ],
+      "settled_ms": 7391.535,
+      "static_bytes": 125206799,
+      "static_peak_bytes": 130813891,
+      "texture_bytes": 546368716,
+      "video_bytes": 619623192,
+      "run": 2,
+      "process_seconds": 10.606
+    },
+    {
+      "buffer_bytes": 73254476,
+      "dedicated": false,
+      "engine_ready_ms": 6820.123,
+      "engine_settled_ms": 10383.253,
+      "label": "startup",
+      "ready_ms": 4173.818,
+      "renderer": "AMD Radeon(TM) Graphics",
+      "scenery_maps": [
+        0
+      ],
+      "settled_ms": 7736.947,
+      "static_bytes": 125206799,
+      "static_peak_bytes": 130813891,
+      "texture_bytes": 546368716,
+      "video_bytes": 619623192,
+      "run": 3,
+      "process_seconds": 10.925
+    },
+    {
+      "buffer_bytes": 0,
+      "dedicated": true,
+      "engine_ready_ms": 1697.316,
+      "engine_settled_ms": 1814.875,
+      "label": "startup",
+      "ready_ms": 48.634,
+      "renderer": "",
+      "scenery_maps": [],
+      "settled_ms": 166.193,
+      "static_bytes": 91650114,
+      "static_peak_bytes": 121711998,
+      "texture_bytes": 0,
+      "video_bytes": 0,
+      "run": 1,
+      "process_seconds": 2.014
+    },
+    {
+      "buffer_bytes": 0,
+      "dedicated": true,
+      "engine_ready_ms": 1620.442,
+      "engine_settled_ms": 1738.306,
+      "label": "startup",
+      "ready_ms": 51.733,
+      "renderer": "",
+      "scenery_maps": [],
+      "settled_ms": 169.596,
+      "static_bytes": 91665682,
+      "static_peak_bytes": 121711998,
+      "texture_bytes": 0,
+      "video_bytes": 0,
+      "run": 2,
+      "process_seconds": 1.909
+    },
+    {
+      "buffer_bytes": 0,
+      "dedicated": true,
+      "engine_ready_ms": 1458.984,
+      "engine_settled_ms": 1576.826,
+      "label": "startup",
+      "ready_ms": 60.376,
+      "renderer": "",
+      "scenery_maps": [],
+      "settled_ms": 178.217,
+      "static_bytes": 91663790,
+      "static_peak_bytes": 121711998,
+      "texture_bytes": 0,
+      "video_bytes": 0,
+      "run": 3,
+      "process_seconds": 1.796
+    }
+  ],
+  "validation": [
+    {
+      "test": "sector_visuals_test.gd",
+      "seconds": 11.09,
+      "summaries": [
+        "Sector visual checks: 588 passed, 0 failed"
+      ],
+      "failed": false
+    },
+    {
+      "test": "alien_sector_test.gd",
+      "seconds": 30.84,
+      "summaries": [
+        "Network checks: 60 passed, 0 failed"
+      ],
+      "failed": false
+    },
+    {
+      "test": "map_layout_test.gd",
+      "seconds": 11.21,
+      "summaries": [
+        "Network checks: 133 passed, 0 failed"
+      ],
+      "failed": false
+    },
+    {
+      "test": "connected_maps_test.gd",
+      "seconds": 16.39,
+      "summaries": [
+        "Network checks: 440 passed, 0 failed"
+      ],
+      "failed": false
+    },
+    {
+      "test": "autopilot_test.gd",
+      "seconds": 45.57,
+      "summaries": [
+        "Network checks: 60 passed, 0 failed"
+      ],
+      "failed": false
+    },
+    {
+      "test": "connection_menu_test.gd",
+      "seconds": 10.31,
+      "summaries": [
+        "Network checks: 25 passed, 0 failed"
+      ],
+      "failed": false
+    },
+    {
+      "test": "connection_menu_test.gd",
+      "seconds": 7.98,
+      "summaries": [
+        "Network checks: 7 passed, 0 failed"
+      ],
+      "failed": false
+    },
+    {
+      "test": "display_test.gd",
+      "seconds": 9.5,
+      "summaries": [
+        "Settings checks: 31 passed, 0 failed"
+      ],
+      "failed": false
+    },
+    {
+      "test": "display_test.gd",
+      "seconds": 6.95,
+      "summaries": [
+        "Settings checks: 5 passed, 0 failed"
+      ],
+      "failed": false
+    },
+    {
+      "test": "graphics_test.gd",
+      "seconds": 7.57,
+      "summaries": [
+        "Graphics checks: 154 passed, 0 failed"
+      ],
+      "failed": false
+    },
+    {
+      "test": "graphics_test.gd",
+      "seconds": 6.85,
+      "summaries": [
+        "Graphics checks: 8 passed, 0 failed"
+      ],
+      "failed": false
+    },
+    {
+      "test": "graphics_test.gd",
+      "seconds": 9.4,
+      "summaries": [
+        "Graphics checks: 3 passed, 0 failed"
+      ],
+      "failed": false
+    },
+    {
+      "test": "graphics_test.gd",
+      "seconds": 9.23,
+      "summaries": [
+        "Graphics checks: 3 passed, 0 failed"
+      ],
+      "failed": false
+    },
+    {
+      "test": "graphics_test.gd",
+      "seconds": 7.76,
+      "summaries": [
+        "Graphics checks: 3 passed, 0 failed"
+      ],
+      "failed": false
+    }
+  ],
+  "rendered_replay": {
+    "command": "rtk proxy .tools/godot/Godot_v4.7.2-stable_win64_console.exe --path . --max-fps 60 --script res://tests/connected_maps_playthrough.gd",
+    "seconds": 68.15,
+    "failed": false,
+    "jumps": [
+      {
+        "destination": 2,
+        "first_visit": true,
+        "jump_ms": 212.09,
+        "source": 1,
+        "static_bytes": 127257958,
+        "video_bytes": 672401892
+      },
+      {
+        "destination": 3,
+        "first_visit": true,
+        "jump_ms": 272.034,
+        "source": 2,
+        "static_bytes": 128441282,
+        "video_bytes": 681853734
+      },
+      {
+        "destination": 4,
+        "first_visit": true,
+        "jump_ms": 334.143,
+        "source": 3,
+        "static_bytes": 129778355,
+        "video_bytes": 702780406
+      },
+      {
+        "destination": 3,
+        "first_visit": false,
+        "jump_ms": 8.956,
+        "source": 4,
+        "static_bytes": 129804909,
+        "video_bytes": 702807286
+      },
+      {
+        "destination": 2,
+        "first_visit": false,
+        "jump_ms": 10.626,
+        "source": 3,
+        "static_bytes": 129818805,
+        "video_bytes": 702821518
+      },
+      {
+        "destination": 4,
+        "first_visit": false,
+        "jump_ms": 8.807,
+        "source": 2,
+        "static_bytes": 129851385,
+        "video_bytes": 702799090
+      },
+      {
+        "destination": 2,
+        "first_visit": false,
+        "jump_ms": 7.731,
+        "source": 4,
+        "static_bytes": 129822859,
+        "video_bytes": 702821518
+      },
+      {
+        "destination": 1,
+        "first_visit": false,
+        "jump_ms": 9.139,
+        "source": 2,
+        "static_bytes": 129868113,
+        "video_bytes": 702782446
+      }
+    ]
+  }
+}
