@@ -925,6 +925,14 @@ The proposed target is 60 FPS at 1440p on the reference PC, with adjustable grap
 
 Test representative encounters with approximately 10 players, active aliens, and weapon effects. Determine the alien count and scene complexity budget through measurement. Check performance throughout development, starting with the first prototype.
 
+Map scenery is built for the local pilot's current map at startup and for other
+maps on first entry. Visited scenery stays cached until the sector is freed, so
+return jumps avoid rebuilding geometry; memory grows with visited maps and can
+approach the former four-map allocation after visiting all of them. First visits
+use a brief gate-transit cover while geometry and the first frame render. All map
+colliders, gate range/protection data, arrival positions and alien populations
+exist from startup, including on dedicated servers, which build no visual scenery.
+
 ## Art and tools
 
 Use placeholder ships, a simple station, and basic effects initially. Custom modeling is not a prerequisite for the first playable version.

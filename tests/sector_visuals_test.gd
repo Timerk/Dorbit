@@ -71,8 +71,37 @@ func check_campaign_backdrops() -> void:
 	var client_obstacles := static_obstacles(flight)
 	check(client_obstacles == static_obstacles(authority) and client_obstacles.size() == 149, "All four rendered maps retain identical server obstacles")
 	check(render_nodes(authority) == 0, "Four-map server creates no campaign planets, machines or sky")
+	check(flight.map_scenery.keys() == [0], "Startup builds only the current map's scenery")
+	check(authority.map_scenery.is_empty(), "Dedicated startup has no visual map cache")
 	for map: int in SectorMaps.MAPS:
+		if map != 0:
+			check(flight.get_node_or_null("Map%dBackdrop" % (map+1)) == null and flight.get_node_or_null("Map%dGates" % (map+1)) == null and flight.get_node_or_null("Map%dRocks" % (map+1)) == null, "Unvisited map has no backdrop, gate or asteroid visuals")
+			check(flight.map_terrain[map].get_child_count() == 24 and render_nodes(flight.map_terrain[map]) == 0, "Unvisited terrain contains all 24 physical obstacles without meshes")
+		flight.map_id = map
+		flight.autopilot.collect_obstacles()
+		check(flight.autopilot.obstacles.size() == (77 if map == 0 else 24), "Autopilot sees every map's obstacles before its scenery exists")
+		var enemy: Alien = authority.map_rosters[map].values()[0]
+		check(authority.alien_home_clear(enemy.home_position, enemy), "Alien relocation uses complete startup collision and gate data")
+		flight.player.map_id = map
+		for destination: int in SectorMaps.GATES[map]:
+			flight.player.position = SectorMaps.gate_position(map, destination)
+			check(SectorMaps.protected(flight.player), "Unvisited gate protection is available at startup")
+			check(SectorMaps.arrival(map, destination).distance_to(flight.player.position) <= SectorMaps.JUMP_RADIUS, "Unvisited reciprocal spawn stays inside the gate trigger range")
+	flight.player.map_id = 0
+	flight.player.position = Sector.SPAWN_POSITION
+	flight.map_id = 0
+	for map: int in SectorMaps.MAPS:
+		var before_count := flight.map_scenery.size()
+		var was_built := flight.map_scenery.has(map)
 		flight.activate_map(map)
+		check(flight.map_scenery.has(map) and flight.map_scenery.size() == before_count + (0 if was_built else 1), "Entering a map builds only that map's visuals")
+		check(static_obstacles(flight) == client_obstacles, "First visit preserves every collider's dimensions and transform")
+		if map != 0:
+			var rocks := flight.get_node("Map%dRocks" % (map+1))
+			for index in range(24):
+				var body := flight.map_terrain[map].get_child(index) as StaticBody3D
+				var model := rocks.get_child(index) as Node3D
+				check(model.global_position.is_equal_approx(body.global_position) and is_equal_approx(model.scale.x, body.get_child(0).shape.radius), "Lazy asteroid visuals align with their existing collider")
 		for destination: int in SectorMaps.GATES[map]:
 			var gate := flight.get_node("Map%dGates/GateToM%d" % [map+1,destination+1]) as Node3D
 			check(gate.global_position.is_equal_approx(SectorMaps.gate_position(map,destination)), "Detailed gate retains its authoritative travel position")
@@ -110,6 +139,10 @@ func check_campaign_backdrops() -> void:
 		flight.activate_map(0)
 		flight.activate_map(map)
 		check(backdrop.is_visible_in_tree(), "Revisited map restores its background")
+		check(flight.get_node(backdrop_name) == backdrop, "Revisiting reuses the original scenery without duplicates")
+		authority.activate_map(map)
+		authority.build_map_visuals(map)
+		check(authority.map_scenery.is_empty() and render_nodes(authority) == 0, "Dedicated map activation never creates visual scenery")
 	authority.session.disconnect_session("Backdrop validation complete")
 	if previous_directory.is_empty():
 		OS.unset_environment("DORBIT_DATA_DIR")

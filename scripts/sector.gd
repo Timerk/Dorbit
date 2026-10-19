@@ -24,6 +24,7 @@ var world_aliens: Dictionary[int, Alien] = {}
 var map_id: int = 0
 var map_rosters: Dictionary[int, Dictionary] = {}
 var map_scenery: Dictionary[int, Array] = {}
+var map_terrain: Dictionary[int, Node3D] = {}
 var alien: Alien:
 	get: return aliens.values()[0]
 var target: SpaceShip
@@ -72,10 +73,11 @@ func _ready() -> void:
 	settings.configure_input()
 	SectorVisuals.environment(self, not dedicated_server)
 	SectorVisuals.station(self, STATION_POSITION, not dedicated_server)
-	map_scenery[0] = []
-	for child in get_children():
-		if child is Node3D and not child is Light3D:
-			map_scenery[0].append(child)
+	if not dedicated_server:
+		map_scenery[0] = []
+		for child in get_children():
+			if child is Node3D and not child is Light3D:
+				map_scenery[0].append(child)
 	build_maps()
 	if not dedicated_server:
 		audio = FeedbackAudio.new()
@@ -616,17 +618,16 @@ func notify(message: String) -> void:
 
 
 func build_maps() -> void:
+	# Physics exists for every map before alien relocation or the first snapshot.
 	for map: int in SectorMaps.MAPS:
 		if map != 0:
-			map_scenery[map] = []
 			var terrain := Node3D.new()
 			terrain.name = "Map%dTerrain" % (map + 1)
 			terrain.position = SectorMaps.origin(map)
 			add_child(terrain)
-			map_scenery[map].append(terrain)
+			map_terrain[map] = terrain
 			var rng := RandomNumberGenerator.new()
 			rng.seed = 7301 + map * 97
-			var surface := SectorVisuals.asteroid_surface() if not dedicated_server else null
 			for index in range(24):
 				var rock := StaticBody3D.new()
 				rock.position = Vector3(rng.randf_range(-550, 550), rng.randf_range(-160, 160), rng.randf_range(-550, 550))
@@ -637,21 +638,40 @@ func build_maps() -> void:
 				shape.radius = radius
 				collider.shape = shape
 				rock.add_child(collider)
-				if not dedicated_server:
-					var model := (load("res://assets/sector/asteroid-%d.glb" % (index % 3)) as PackedScene).instantiate() as Node3D
-					model.scale = Vector3.ONE * radius
-					model.rotation = Vector3(index*0.71, index*1.13, index*0.37)
-					SectorVisuals.apply_surface(model, surface)
-					rock.add_child(model)
-		if not dedicated_server:
-			if map != 0:
-				map_scenery[map].append(SectorBackdrop.build(self, map))
-			var gates := Node3D.new()
-			gates.name = "Map%dGates" % (map + 1)
-			add_child(gates)
-			map_scenery[map].append(gates)
-			for destination: int in SectorMaps.GATES[map]:
-				SectorMaps.gate_model(gates, map, destination)
+	# M1's environment/station were built by _ready; finish only its gates here.
+	if not dedicated_server:
+		build_map_visuals(0)
+
+
+func build_map_visuals(map: int) -> void:
+	if dedicated_server or (map != 0 and map_scenery.has(map)) or get_node_or_null("Map%dGates" % (map + 1)) != null:
+		return
+	if map != 0:
+		map_scenery[map] = [SectorBackdrop.build(self, map)]
+		var rocks := Node3D.new()
+		rocks.name = "Map%dRocks" % (map + 1)
+		rocks.position = SectorMaps.origin(map)
+		add_child(rocks)
+		map_scenery[map].append(rocks)
+		var surface := SectorVisuals.asteroid_surface()
+		for index in map_terrain[map].get_child_count():
+			var body := map_terrain[map].get_child(index) as StaticBody3D
+			var radius := (body.get_child(0).shape as SphereShape3D).radius
+			var model := (load("res://assets/sector/asteroid-%d.glb" % (index % 3)) as PackedScene).instantiate() as Node3D
+			model.position = body.position
+			model.scale = Vector3.ONE * radius
+			model.rotation = Vector3(index*0.71, index*1.13, index*0.37)
+			SectorVisuals.apply_surface(model, surface)
+			rocks.add_child(model)
+	var gates := Node3D.new()
+	gates.name = "Map%dGates" % (map + 1)
+	add_child(gates)
+	map_scenery[map].append(gates)
+	for destination: int in SectorMaps.GATES[map]:
+		SectorMaps.gate_model(gates, map, destination)
+	# Newly created materials must respect the current device setting too.
+	for node: Node3D in map_scenery[map]:
+		SectorVisuals.configure_texture_filtering(node, settings.anisotropic_filtering > 0)
 
 
 func activate_map(map: int) -> void:
@@ -660,6 +680,7 @@ func activate_map(map: int) -> void:
 	aliens.assign(map_rosters[map])
 	if dedicated_server:
 		return
+	build_map_visuals(map)
 	for key: int in map_scenery:
 		for node: Node3D in map_scenery[key]:
 			node.visible = key == map
