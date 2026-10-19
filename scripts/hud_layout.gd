@@ -14,6 +14,8 @@ const ITEMS := {
 	"reticle": ["Reticle", "damage"], "autopilot": ["Autopilot status", "speed"],
 	"performance": ["Performance", "settings"], "ammo": ["Quickslots", "damage"]
 }
+# Read-only default, so per-frame layout lookups do not allocate a Dictionary.
+const NO_ENTRY := {}
 
 var hud: FlightHud
 var editing := false
@@ -108,12 +110,12 @@ func default_rect(id: String) -> Rect2:
 
 
 func shown(id: String) -> bool:
-	return entries.get(id, {}).get("visible", true)
+	return entries.get(id, NO_ENTRY).get("visible", true)
 
 
 func rect_for(id: String) -> Rect2:
 	var base := default_rect(id)
-	var entry: Dictionary = entries.get(id, {})
+	var entry: Dictionary = entries.get(id, NO_ENTRY)
 	if not entry.has("position") and id != "reticle":
 		return base
 	var factor := clampf(float(entry.get("scale", 1.0)), MIN_SCALE, 3.0)

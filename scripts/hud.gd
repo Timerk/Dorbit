@@ -12,6 +12,12 @@ const PANEL := Color(0.047, 0.071, 0.090, 0.92)
 const TOP_MARGIN := 24.0
 const SIDE_MARGIN := 32.0
 const BOTTOM_MARGIN := 71.0
+const CARDS := ["objectives", "radar", "ship", "target", "guidance"]
+const CORNERS := [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]
+const CONTROL_HINTS := [["steer", "Steer"], ["cycle_target", "Target"], ["fire", "Fire"], ["boost", "Boost"], ["repair", "Repair"], ["sector_map", "Map"], ["pause_game", "Menu"]]
+const NO_FIT := []
+# Fitted sizes per string: [requested size, width, fitted size], cleared at 256 entries.
+static var fitted: Dictionary[String, Array] = {}
 
 var sector: Sector
 var font: Font = StationUi.FONT
@@ -36,6 +42,11 @@ var contract_back: Button
 var navigation: FlightNavigation
 var ammo_bar: AmmoBar
 var layout: HudLayout
+# Binding phrases and control hints are rebuilt after any rebind.
+var phrases: Dictionary[String, String] = {}
+var phrases_revision := -1
+var control_hints: Array[Array] = []
+var control_hints_state := Vector3i(-1, -1, -1)
 
 
 func _ready() -> void:
@@ -59,7 +70,7 @@ func fire_feedback() -> String:
 	if not is_instance_valid(sector.target) or not sector.target.alive:
 		return "NO TARGET"
 	if not sector.auto_fire:
-		return "AUTO FIRE OFF / %s TO ENGAGE" % GameSettings.binding_text("fire")
+		return bound("AUTO FIRE OFF / %s TO ENGAGE", "fire")
 	if sector.weapon_status == "TURN TOWARD TARGET":
 		return "OUTSIDE FIRING ARC"
 	return sector.weapon_status if not sector.weapon_status.is_empty() else "AUTO FIRE ACTIVE"
@@ -225,9 +236,35 @@ func update_contract_panel() -> void:
 
 func text_at(point: Vector2, text: String, size_px: int = 16, color: Color = INK, width: float = -1.0) -> void:
 	# Fit long contact names and rebound keys without drawing outside their card.
-	while width > 0 and size_px > 12 and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px).x > width:
-		size_px -= 1
+	if width > 0:
+		size_px = fit_pixels(text, size_px, width)
 	draw_string(font, point, text, HORIZONTAL_ALIGNMENT_LEFT, width, size_px, color)
+
+
+static func fit_pixels(text: String, pixels: int, width: float) -> int:
+	# Largest size down to 12 px that fits; measured again only for new text or bounds.
+	var entry: Array = fitted.get(text, NO_FIT)
+	if not entry.is_empty() and entry[0] == pixels and entry[1] == width:
+		return entry[2]
+	var result := pixels
+	while result > 12 and StationUi.FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, result).x > width:
+		result -= 1
+	if fitted.size() >= 256:
+		fitted.clear()
+	fitted[text] = [pixels, width, result]
+	return result
+
+
+func bound(template: String, first: String, second: String = "") -> String:
+	# Each template names the same actions wherever it is used.
+	if phrases_revision != GameSettings.binding_revision:
+		phrases.clear()
+		phrases_revision = GameSettings.binding_revision
+	var text: String = phrases.get(template, "")
+	if text.is_empty():
+		text = template % GameSettings.binding_text(first) if second.is_empty() else template % [GameSettings.binding_text(first), GameSettings.binding_text(second)]
+		phrases[template] = text
+	return text
 
 
 func panel(rect: Rect2, accent: Color = AMBER) -> void:
@@ -311,29 +348,42 @@ func draw_objectives() -> void:
 			if row.y < rect.end.y:
 				draw_line(Vector2(rect.position.x + 18, row.y - 23), Vector2(rect.end.x - 18, row.y - 23), LINE)
 	else:
-		var objective: String = [
-			"Leave the outpost. %s to fly forward." % GameSettings.binding_text("forward"),
-			"Find an alien. %s or %s to select." % [GameSettings.binding_text("cycle_target"), GameSettings.binding_text("select_target")],
-			"%s to fire. Keep the alien ahead and in range." % GameSettings.binding_text("fire"),
-			"Return to Outpost 01. Slow down and press %s to repair." % GameSettings.binding_text("repair"),
-			"Encounter complete. Hunt another alien.",
-		][sector.objective_stage]
-		if sector.session.active:
-			objective = "No active hunts. Choose contracts at Outpost 01 [C]."
+		var objective := "No active hunts. Choose contracts at Outpost 01 [C]."
+		if not sector.session.active:
+			match sector.objective_stage:
+				0: objective = bound("Leave the outpost. %s to fly forward.", "forward")
+				1: objective = bound("Find an alien. %s or %s to select.", "cycle_target", "select_target")
+				2: objective = bound("%s to fire. Keep the alien ahead and in range.", "fire")
+				3: objective = bound("Return to Outpost 01. Slow down and press %s to repair.", "repair")
+				_: objective = "Encounter complete. Hunt another alien."
 		paragraph(rect.position + Vector2(18, 64), objective, rect.size.x - 36)
+
+
+func refresh_control_hints(pixels: int) -> void:
+	var state := Vector3i(GameSettings.binding_revision, int(sector.map_id == 0), pixels)
+	if state == control_hints_state:
+		return
+	# Keys and widths change only with bindings, the home map or text size.
+	control_hints_state = state
+	control_hints.clear()
+	for entry: Array in CONTROL_HINTS:
+		if entry[0] == "repair" and sector.map_id != 0:
+			entry = ["jump_gate", "Jump"]
+		var key := GameSettings.binding_text(entry[0])
+		control_hints.append([key, font.get_string_size(key, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x + 14, entry[1], font.get_string_size(entry[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x])
 
 
 func draw_controls() -> void:
 	var point := Vector2(SIDE_MARGIN, size.y - 28)
 	var pixels := 14 if size.x < 1200 else 16
-	for entry: Array in [["steer", "Steer"], ["cycle_target", "Target"], ["fire", "Fire"], ["boost", "Boost"], ["repair", "Repair"] if sector.map_id == 0 else ["jump_gate", "Jump"], ["sector_map", "Map"], ["pause_game", "Menu"]]:
-		var key := GameSettings.binding_text(entry[0])
-		var key_width := font.get_string_size(key, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x + 14
+	refresh_control_hints(pixels)
+	for hint: Array in control_hints:
+		var key_width: float = hint[1]
 		draw_style_box(background, Rect2(point - Vector2(0, 18), Vector2(key_width, 26)))
-		text_at(point + Vector2(7, 0), key, pixels)
+		text_at(point + Vector2(7, 0), hint[0], pixels)
 		point.x += key_width + 8
-		text_at(point, entry[1], pixels, MUTED)
-		point.x += font.get_string_size(entry[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pixels).x + 20
+		text_at(point, hint[2], pixels, MUTED)
+		point.x += hint[3] + 20
 
 
 func draw_context() -> void:
@@ -383,13 +433,13 @@ func draw_station_actions() -> void:
 	var rect := Rect2(target_rect().position - Vector2(0, 88 if sector.session.active else 66), Vector2(290, 78 if sector.session.active else 56))
 	draw_style_box(background, rect)
 	if away and not layout.editing:
-		text_at(rect.position + Vector2(12, 21), "%s  REPAIR ROBOT" % GameSettings.binding_text("repair"), 16, AMBER)
+		text_at(rect.position + Vector2(12, 21), bound("%s  REPAIR ROBOT", "repair"), 16, AMBER)
 		text_at(rect.position + Vector2(12, 43), "REPAIRING HULL" if player.robot_repairing else "Stay outside combat", 16, GREEN, 266)
 		layout.end_draw(self)
 		marker_labels.append(layout.rect_for("station"))
 		return
 	text_at(rect.position + Vector2(12, 21), "B  SHOP / CARGO     I  EQUIPMENT", 16, AMBER)
-	var label := "%s  REPAIR / %s CR" % [GameSettings.binding_text("repair"), number(sector.repair_cost())]
+	var label := "%s / %s CR" % [bound("%s  REPAIR", "repair"), number(sector.repair_cost())]
 	if player.velocity.length() > 8.0:
 		label = "SLOW DOWN TO REPAIR"
 	elif player.time_since_hit < 5.0:
@@ -407,7 +457,7 @@ func _draw() -> void:
 	if sector.preflight or (is_instance_valid(sector.main_menu) and sector.main_menu.visible) or not is_instance_valid(sector.player):
 		return
 	var player := sector.player
-	for id: String in ["objectives", "radar", "ship", "target", "guidance"]:
+	for id: String in CARDS:
 		if layout.shown(id):
 			marker_labels.append(layout.rect_for(id))
 	if ammo_bar.visible:
@@ -449,13 +499,15 @@ func _draw() -> void:
 		if sector.loot.is_presented(id):
 			var drop: Dictionary = sector.loot.drops[id]
 			marker(drop["position"], "LOOT %d UNITS / FLY CLOSE" % CargoResources.units(drop["resources"]), AMBER, false, null, false)
-	for enemy: Alien in sector.aliens.values():
+	for alien_id: int in sector.aliens:
+		var enemy := sector.aliens[alien_id]
 		if enemy != sector.target and enemy.alive and enemy.visible:
 			alien_marker(enemy)
 	if sector.session.active:
-		for ship: Pilot in sector.session.ships.values():
+		for id: int in sector.session.ships:
+			var ship := sector.session.ships[id]
 			if ship != player and ship.alive and ship.map_id == sector.map_id and not ship.get_meta("docked", false):
-				marker(ship.global_position, "FRIEND %s" % sector.session.ships.find_key(ship), CYAN, false, ship)
+				marker(ship.global_position, "FRIEND %s" % id, CYAN, false, ship)
 	if not player.alive:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.015, 0.025, 0.04, 0.65))
 		text_at(center + Vector2(-150, -20), "RESCUE INBOUND", 30, RED)
@@ -487,7 +539,7 @@ func draw_target_panel() -> void:
 	card_title(rect, "%s %d / %d m" % [enemy.kind.to_upper(), enemy.alien_id % 100 + 1, sector.player.global_position.distance_to(enemy.global_position)] if is_instance_valid(enemy) else "NO TARGET", RED if is_instance_valid(enemy) else MUTED)
 	var origin := rect.position + Vector2(18, 64)
 	if not is_instance_valid(sector.target) or not sector.target.alive:
-		paragraph(origin, "%s or %s to lock" % [GameSettings.binding_text("cycle_target"), GameSettings.binding_text("select_target")], 250)
+		paragraph(origin, bound("%s or %s to lock", "cycle_target", "select_target"), 250)
 		text_at(origin + Vector2(0, 42), "%d ALIENS DESTROYED" % sector.kills, 16, MUTED)
 		text_at(origin + Vector2(0, 86), "M / Choose a contact on the map", 16, MUTED, 250)
 		return
@@ -557,7 +609,7 @@ func marker(location: Vector3, label: String, color: Color, selected: bool, team
 		marker_caption(point + Vector2(0, 24), "%s / %d m" % [label, distance], color, true)
 		return
 	var radius := 25.0 if selected else 12.0
-	for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+	for corner: Vector2 in CORNERS:
 		var start: Vector2 = point + corner * radius
 		draw_line(start, start - Vector2(corner.x * 8, 0), color, 2.0)
 		draw_line(start, start - Vector2(0, corner.y * 8), color, 2.0)
@@ -573,9 +625,16 @@ func marker_caption(point: Vector2, caption: String, color: Color, priority: boo
 	for step in range(1 + ceili(bounds.size.y / 28) * 2 if priority else 1):
 		var offset := ceilf(step / 2.0) * 28 * (1 if step % 2 == 1 else -1)
 		var rect := Rect2(origin + Vector2(0, offset), text_size + Vector2(10, 6))
-		if not bounds.encloses(rect) or marker_labels.any(func(occupied: Rect2): return occupied.intersects(rect)):
+		if not bounds.encloses(rect) or occupied(rect):
 			continue
 		marker_labels.append(rect)
 		draw_style_box(background, rect)
 		text_at(rect.position + Vector2(5, 16), caption, 14, color)
 		return
+
+
+func occupied(rect: Rect2) -> bool:
+	for label: Rect2 in marker_labels:
+		if label.intersects(rect):
+			return true
+	return false
