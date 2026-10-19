@@ -37,9 +37,17 @@ and preview jobs have neither. Keep those permissions scoped to that job.
 
 ### One-time operator setup
 
-These are instructions for the operator, not steps already performed by this PR.
-They do not require a game restart. Keep the netcup console available while
-configuring access. Use `ssh dorbit-vps` as `dorbit-admin` for VPS administration.
+Production setup was completed on 2026-10-19. The `dorbit-production` environment
+is restricted to `main`, with its own forced-command SSH key and Tailscale OAuth
+credential. `tag:dorbit-ci` permits only TCP 22 to the VPS; policy tests also
+reject game-port and other-device access. The pre-CI rollback client is archived
+under `build-90650412c9027500f2e2e82d800a62e8af63b45c`, with its independently
+computed checksum pinned in that environment. Private recovery material stays
+outside Git and GitHub. Use the following steps for a new installation; inspect
+the existing setup before repeating them.
+
+These setup steps do not require a game restart. Keep the netcup console available
+while configuring access. Use `ssh dorbit-vps` as `dorbit-admin` for VPS administration.
 The local alias is not available inside GitHub Actions.
 
 1. Create an **age** recovery key on your own computer with `age-keygen -o dorbit-recovery.key`.
@@ -241,9 +249,13 @@ tar -tf backup.tar
 It contains `data/`, `dorbit.service`, `server.env` and `transaction.json`.
 Keep decrypted files private. Do not upload them to GitHub. A rollback requires a
 decision about save compatibility. Restoring the old application does not undo a
-save migration. For these current schema-v1 releases, use the old application with
-current valid saves only after confirming compatibility. Otherwise preserve the
-failed release's entire stopped data directory, inspect both copies and follow
+save migration. The current game uses save schema 8; the pre-CI production release
+uses schema 1. That old application cannot read the migrated saves, so rolling
+back to it requires the complete pre-migration backup and its matching client,
+with an explicit decision about progress earned since the update. For releases
+compatible with the current save schema, use current valid saves only after
+confirming compatibility. Otherwise preserve the failed release's entire stopped
+data directory, inspect both copies and follow
 README.md's recovery steps. Restoring an earlier ledger loses later progress and
 credential rotations; make that decision explicitly, not in a script.
 
@@ -853,3 +865,31 @@ disconnected and rejoined with the same 150-credit pilot wallet. The ledger stay
 byte-for-byte unchanged. The previous boot's journal recorded the cooperative
 shutdown and successful service stop. This verifies orderly reboot recovery;
 it does not establish recovery after a power cut, SIGKILL or interrupted write.
+
+On 2026-10-19, production was upgraded from `9065041` to
+`5a6387279aa67bad5cc330a4cd17efe13a12c8f7` through
+[Deploy server, attempt 2](https://github.com/Timerk/Dorbit/actions/runs/39264679558/attempts/2).
+Before setup, the old service had failed on an empty stale save lock. With the
+service stopped and no Dorbit processes running, the entire data directory and
+service configuration were encrypted, copied to the operator PC and successfully
+decrypted there. After ledger validation, the empty lock was moved into the
+preserved recovery directory. The old service then passed readiness with an
+unchanged ledger.
+
+The production environment, separate deployment key, restricted helper, pinned
+host key, Tailscale OAuth credential and TCP-22-only CI grant were configured.
+Policy tests preserve operator/preview access and reject production CI access to
+game ports and other devices. The matching pre-CI Windows client was rebuilt from
+its exact commit and archived with a trusted environment checksum. The first
+action attempt stopped before VPS access because its OAuth secret had not yet
+finished saving; after confirming both secrets, attempt 2 completed normally.
+
+The action's encrypted pre-migration backup and previous client were downloaded
+to the operator PC. Decryption, backup checksum, unchanged pre-migration ledger
+and rollback-client checksum were verified. The paired Windows pack, loaded with
+the pinned Godot editor runtime for automation, authenticated and reconnected to
+production, received snapshots/inventory, retained the existing credits and
+received the expected 10,000 x1 starter-ammunition migration. Production remained
+enabled and running with zero restarts and no pending deployment transaction.
+Keep the recovery private key in an additional secure location; scheduled
+off-machine backups and representative friend-group load testing remain pending.
