@@ -144,6 +144,7 @@ static func activate(parent: Node3D, map: int) -> void:
 	var sun := parent.get_node("Sun") as DirectionalLight3D
 	var fill := parent.get_node("Fill") as DirectionalLight3D
 	sun.light_color = Color("ffdfbd") if map == 0 else (theme["light"] as Color).lerp(Color.WHITE,0.45)
+	surface.set_shader_parameter("sun_color", sun.light_color)
 	fill.light_color = Color("6e9edb") if map == 0 else (theme["cool"] as Color).lerp(Color.WHITE,0.35)
 
 
