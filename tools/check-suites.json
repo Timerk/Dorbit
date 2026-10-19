@@ -1,5 +1,6 @@
 {
   "windows": [
+    {"name": "asset_budgets_test", "checks": [["asset_budgets_test.gd"]]},
     {"name": "encounter_test", "checks": [["encounter_test.gd"]]},
     {"name": "ammo_test", "checks": [["ammo_test.gd"]]},
     {"name": "quickslots_test", "checks": [["quickslots_test.gd"]]},
@@ -49,6 +50,7 @@
     {"name": "settings", "checks": [["connection_menu_test.gd"], ["connection_menu_test.gd", "--", "--restart"], ["display_test.gd"], ["display_test.gd", "--", "--restart"], ["graphics_test.gd"], ["graphics_test.gd", "--", "--restart"], ["graphics_test.gd", "--", "--filter-restart", "2"], ["graphics_test.gd", "--", "--filter-restart", "3"], ["graphics_test.gd", "--", "--filter-restart", "4"]]}
   ],
   "linux": [
+    {"name": "asset_budgets_test", "checks": [["asset_budgets_test.gd"]]},
     {"name": "benchmark_packet_accounting", "checks": [["tests/benchmark_server_test.py"]]},
     {"name": "dedicated_server_test", "checks": [["dedicated_server_test.gd"]]},
     {"name": "sector_visuals_test", "checks": [["sector_visuals_test.gd"]]},

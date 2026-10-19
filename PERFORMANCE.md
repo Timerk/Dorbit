@@ -1,4 +1,70 @@
-# Dedicated server performance workload
+# Performance and asset budgets
+
+## Client asset budgets
+
+Use these targets for new runtime assets; the existing detailed models are
+grandfathered until a separate art pass. Exceptions need a rendered comparison
+and a same-scene texture-memory / primitive-count measurement. Keep high-resolution
+authoring sources under `art/`, outside Godot imports.
+
+| Use | Imported size target (longest side) | Import policy |
+| --- | --- | --- |
+| Ship / alien PBR atlases | 2048 px per shared albedo, normal and ORM set | VRAM Compressed, mipmaps; share the set across surfaces |
+| Tiling station, gate, rock and repair-bot detail | 256–512 px; unique station AO up to 2048 px | VRAM Compressed, mipmaps |
+| Planet and panorama backgrounds | Up to 2048 px | VRAM Compressed, mipmaps; check smooth gradients before accepting |
+| Quickslot-only art at about 66 px | 128–256 px | Lossless; include the largest supported HUD scale |
+| Art shared by quickslots and shop/detail panels | Up to 512 px | Lossless, mipmaps; size for the largest actual use, not just the bar |
+| Equipment atlas (2 × 2 tiles) | 1024 px total / 512 px per tile | Lossless, mipmaps; region coordinates derive from imported dimensions |
+| Ship card / large menu ship render | 400 / 800 px | Lossless; retain larger sources for future layouts |
+| Full-page hangar and Skylab illustrations | Up to 2048 px | Lossless; preserve text, transparency and gradients |
+
+Set `compress/mode=2` and `mipmaps/generate=true` on external 3D textures.
+Normal maps additionally use `compress/normal_map=1` (Enabled / RGTC), rather
+than color compression. UI remains `compress/mode=0`; use `process/size_limit`
+to retain editable source pixels. Existing shared item pictures use 512 px
+because shop and refining panels display them larger than the flight bar.
+
+The current exports are native Windows and a stripped Linux dedicated server:
+both select `texture_format/s3tc_bptc=true`, with ETC2/ASTC disabled.
+Compatibility uses S3TC/RGTC for these SDR textures; its high-quality/BPTC option
+is not a quality upgrade in this renderer. Embedded ship and alien GLB images
+already use **Embed as Basis Universal** (`gltf/embedded_image_handling=2`),
+which transcodes to a supported compressed runtime format; preserve their shared
+atlases and mipmaps. Before adding mobile or web, explicitly enable the required
+ETC2/ASTC import/export variants and repeat native-browser/device visual checks.
+See Godot's [image import documentation](https://docs.godotengine.org/en/stable/tutorials/assets_pipeline/importing_images.html).
+
+| Geometry | New-asset target at full detail | Distant target | Materials / draw surfaces |
+| --- | ---: | ---: | ---: |
+| Player ship or alien | 30k triangles; hero exception up to 60k | 5k at typical combat distance; 1k at marker distance | 4 preferred, 6 maximum; share texture sets |
+| Transit gate | 50k triangles | 10k mid-distance, 2k far | 6 preferred, 8 maximum |
+| Station | 150k triangles | 30k mid-distance, 10k far | 8 preferred, 12 maximum |
+| Decorative rock / background prop | 5k triangles | 500–1k | 1–2 |
+
+These are authoring targets, not a measured ten-player performance guarantee.
+Keep imported automatic LOD generation enabled. Verify its effect with
+`Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME` at fixed near/far cameras and
+compare the far camera again with `Viewport.mesh_lod_threshold=0` (full detail).
+Count every gate, pilot and alien in view; changes from frustum culling alone do
+not prove LOD selection. If Compatibility does not reduce the same visible
+geometry, propose separately authored/decimated gate LODs with visibility ranges;
+do not silently replace accepted art. Godot describes the screen-space threshold
+in its [mesh LOD guide](https://docs.godotengine.org/en/stable/tutorials/3d/mesh_lod.html).
+
+`tools/asset_review.gd` captures repeatable 1440 × 900 native Compatibility views,
+texture/video/buffer memory monitors and a three-gate / ten-ship / five-alien
+LOD comparison. Run it before and after reimporting with the same isolated
+`APPDATA`, engine and graphics settings. Pass
+`--review-output=res://build/asset-review/before` (then `after`) after `--`.
+Run without `--headless`, with `--max-fps 60 --path . --script tools/asset_review.gd`.
+The monitor's video-memory value is Godot's accounting, not the driver's total
+physical VRAM allocation. The explicit all-PNG residency sample includes normally
+on-demand menu artwork and must be reported separately from flight residency.
+The [19 October measurements and paired screenshots](docs/asset-budgets-2026-10-19/README.md)
+record a 32.6% texture-memory reduction in the controlled busy scene and confirm
+that automatic LODs reduce submitted primitives in Compatibility.
+
+## Dedicated server performance workload
 
 The current workload measures one Linux dedicated server with ten independent headless clients, either spread over M1–M4 as 3/3/2/2 pilots or together on M1. Both simulate four maps and twenty aliens, with lasers, single rockets, Hellstorm, rewards, loot collection, extras automation, Skylab and the schema-8 combat journal. September results remain below as historical evidence and do not describe this content.
 

@@ -1,0 +1,25 @@
+{
+  "suite": "windows",
+  "first_run_commands": 57,
+  "first_run_passed": 55,
+  "first_run_failed": [
+    "equipment_test",
+    "hunting_contracts_test"
+  ],
+  "first_run_seconds": 432.72,
+  "workers": 2,
+  "isolated_retries": [
+    {
+      "group": "hunting_contracts_test",
+      "passed": true,
+      "seconds": 44.26
+    },
+    {
+      "group": "equipment_test",
+      "passed": true,
+      "seconds": 25.01
+    }
+  ],
+  "asset_budget_assertions": 357,
+  "note": "Two first-run early exits had no assertion report; both isolated fresh-profile/port retries passed. The cause of the initial exits was not established. Linux correctness suite and export builds were not run."
+}
