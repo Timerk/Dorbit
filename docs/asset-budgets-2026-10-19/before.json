@@ -1,0 +1,1386 @@
+{
+	"adapter": "AMD Radeon(TM) Graphics",
+	"engine": {
+		"build": "official",
+		"hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+		"hex": 263938,
+		"major": 4,
+		"minor": 7,
+		"patch": 2,
+		"status": "stable",
+		"string": "4.7.2-stable (official)",
+		"timestamp": 0
+	},
+	"mesh_inventory": [
+		{
+			"materials": 10,
+			"path": "res://assets/ships/aegis.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 4,
+					"compressed": true,
+					"format": 21,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 2,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				}
+			],
+			"triangles": 91376
+		},
+		{
+			"materials": 10,
+			"path": "res://assets/ships/bigboy.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 4,
+					"compressed": true,
+					"format": 21,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 2,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				}
+			],
+			"triangles": 76288
+		},
+		{
+			"materials": 9,
+			"path": "res://assets/ships/defcom.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 4,
+					"compressed": true,
+					"format": 21,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 2,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				}
+			],
+			"triangles": 83764
+		},
+		{
+			"materials": 10,
+			"path": "res://assets/ships/goliath.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 4,
+					"compressed": true,
+					"format": 21,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 2,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				}
+			],
+			"triangles": 48448
+		},
+		{
+			"materials": 9,
+			"path": "res://assets/ships/leonov.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 4,
+					"compressed": true,
+					"format": 21,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 2,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				}
+			],
+			"triangles": 52932
+		},
+		{
+			"materials": 10,
+			"path": "res://assets/ships/liberator.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 4,
+					"compressed": true,
+					"format": 21,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 2,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				}
+			],
+			"triangles": 98228
+		},
+		{
+			"materials": 10,
+			"path": "res://assets/ships/nostromo.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 4,
+					"compressed": true,
+					"format": 21,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 2,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				}
+			],
+			"triangles": 41056
+		},
+		{
+			"materials": 11,
+			"path": "res://assets/ships/phoenix.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 4,
+					"compressed": true,
+					"format": 21,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 2,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				}
+			],
+			"triangles": 52594
+		},
+		{
+			"materials": 10,
+			"path": "res://assets/ships/piranha.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 4,
+					"compressed": true,
+					"format": 21,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 2,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				}
+			],
+			"triangles": 40864
+		},
+		{
+			"materials": 12,
+			"path": "res://assets/ships/spearhead.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 4,
+					"compressed": true,
+					"format": 21,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 2,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				}
+			],
+			"triangles": 36556
+		},
+		{
+			"materials": 8,
+			"path": "res://assets/ships/vengeance.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 4,
+					"compressed": true,
+					"format": 21,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 2,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				}
+			],
+			"triangles": 69264
+		},
+		{
+			"materials": 12,
+			"path": "res://assets/ships/yamato.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 4,
+					"compressed": true,
+					"format": 21,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 2,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				}
+			],
+			"triangles": 70772
+		},
+		{
+			"materials": 5,
+			"path": "res://assets/sector/transit-gate.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": false,
+					"format": 5,
+					"height": 512,
+					"mipmaps": true,
+					"width": 512
+				},
+				{
+					"channel": 4,
+					"compressed": false,
+					"format": 5,
+					"height": 512,
+					"mipmaps": true,
+					"width": 512
+				}
+			],
+			"triangles": 174328
+		},
+		{
+			"materials": 7,
+			"path": "res://assets/aliens/skirmisher.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 4,
+					"compressed": true,
+					"format": 21,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 2,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				}
+			],
+			"triangles": 42504
+		},
+		{
+			"materials": 7,
+			"path": "res://assets/aliens/raider.glb",
+			"textures": [
+				{
+					"channel": 0,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 4,
+					"compressed": true,
+					"format": 21,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				},
+				{
+					"channel": 2,
+					"compressed": true,
+					"format": 22,
+					"height": 2048,
+					"mipmaps": true,
+					"width": 2048
+				}
+			],
+			"triangles": 38804
+		}
+	],
+	"msaa": 2,
+	"note": "Frozen offline sector and controlled busy lineup; not a multiplayer FPS benchmark. Monitor video memory is engine accounting, not total driver VRAM.",
+	"png_inventory": [
+		{
+			"data_bytes": 262143,
+			"format": 4,
+			"height": 256,
+			"mipmaps": true,
+			"path": "res://assets/extras/rep-1_Brushed metal grain.png",
+			"width": 256
+		},
+		{
+			"data_bytes": 262143,
+			"format": 4,
+			"height": 256,
+			"mipmaps": true,
+			"path": "res://assets/extras/rep-2_Brushed metal grain.png",
+			"width": 256
+		},
+		{
+			"data_bytes": 6288054,
+			"format": 4,
+			"height": 1254,
+			"mipmaps": true,
+			"path": "res://assets/sector/belt-rock.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 6290034,
+			"format": 4,
+			"height": 887,
+			"mipmaps": true,
+			"path": "res://assets/sector/colony-surface-war.png",
+			"width": 1774
+		},
+		{
+			"data_bytes": 6290034,
+			"format": 4,
+			"height": 887,
+			"mipmaps": true,
+			"path": "res://assets/sector/colony-surface.png",
+			"width": 1774
+		},
+		{
+			"data_bytes": 6290034,
+			"format": 4,
+			"height": 887,
+			"mipmaps": true,
+			"path": "res://assets/sector/mineral-surface.png",
+			"width": 1774
+		},
+		{
+			"data_bytes": 6290034,
+			"format": 4,
+			"height": 887,
+			"mipmaps": true,
+			"path": "res://assets/sector/nebula-panorama.png",
+			"width": 1774
+		},
+		{
+			"data_bytes": 1048576,
+			"format": 5,
+			"height": 512,
+			"mipmaps": false,
+			"path": "res://assets/sector/outpost-01_blue.png",
+			"width": 512
+		},
+		{
+			"data_bytes": 1048576,
+			"format": 5,
+			"height": 512,
+			"mipmaps": false,
+			"path": "res://assets/sector/outpost-01_cobalt.png",
+			"width": 512
+		},
+		{
+			"data_bytes": 1048576,
+			"format": 5,
+			"height": 512,
+			"mipmaps": false,
+			"path": "res://assets/sector/outpost-01_graphite.png",
+			"width": 512
+		},
+		{
+			"data_bytes": 1048576,
+			"format": 5,
+			"height": 512,
+			"mipmaps": false,
+			"path": "res://assets/sector/outpost-01_normal.png",
+			"width": 512
+		},
+		{
+			"data_bytes": 16777215,
+			"format": 4,
+			"height": 2048,
+			"mipmaps": true,
+			"path": "res://assets/sector/outpost-01_occlusion.png",
+			"width": 2048
+		},
+		{
+			"data_bytes": 1398100,
+			"format": 5,
+			"height": 512,
+			"mipmaps": true,
+			"path": "res://assets/sector/outpost-01_station-panels.png",
+			"width": 512
+		},
+		{
+			"data_bytes": 1048576,
+			"format": 5,
+			"height": 512,
+			"mipmaps": false,
+			"path": "res://assets/sector/outpost-01_titanium.png",
+			"width": 512
+		},
+		{
+			"data_bytes": 1398100,
+			"format": 5,
+			"height": 512,
+			"mipmaps": true,
+			"path": "res://assets/sector/rock-albedo.png",
+			"width": 512
+		},
+		{
+			"data_bytes": 1398100,
+			"format": 5,
+			"height": 512,
+			"mipmaps": true,
+			"path": "res://assets/sector/rock-normal.png",
+			"width": 512
+		},
+		{
+			"data_bytes": 1048576,
+			"format": 5,
+			"height": 512,
+			"mipmaps": false,
+			"path": "res://assets/sector/station-panels.png",
+			"width": 512
+		},
+		{
+			"data_bytes": 1398100,
+			"format": 5,
+			"height": 512,
+			"mipmaps": true,
+			"path": "res://assets/sector/transit-gate_gate-metal.png",
+			"width": 512
+		},
+		{
+			"data_bytes": 1398100,
+			"format": 5,
+			"height": 512,
+			"mipmaps": true,
+			"path": "res://assets/sector/transit-gate_gate-normal.png",
+			"width": 512
+		},
+		{
+			"data_bytes": 4717548,
+			"format": 4,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/equipment-atlas.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 6290064,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/ammo/x1.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 6290064,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/ammo/x2.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 6290064,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/ammo/x3.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 6290064,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/ammo/x4.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 4717548,
+			"format": 4,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/extras/ammo-cpu.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 4717548,
+			"format": 4,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/extras/cargo-expander.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 4717548,
+			"format": 4,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/extras/generator-cpu.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 4717548,
+			"format": 4,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/extras/rep-1.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 4717548,
+			"format": 4,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/extras/rep-2.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 4717548,
+			"format": 4,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/extras/repair-auto.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 4717548,
+			"format": 4,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/extras/slot-cpu-1.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 1727452,
+			"format": 5,
+			"height": 450,
+			"mipmaps": true,
+			"path": "res://assets/ui/maps/m1.png",
+			"width": 720
+		},
+		{
+			"data_bytes": 1727452,
+			"format": 5,
+			"height": 450,
+			"mipmaps": true,
+			"path": "res://assets/ui/maps/m2.png",
+			"width": 720
+		},
+		{
+			"data_bytes": 1727452,
+			"format": 5,
+			"height": 450,
+			"mipmaps": true,
+			"path": "res://assets/ui/maps/m3.png",
+			"width": 720
+		},
+		{
+			"data_bytes": 1727452,
+			"format": 5,
+			"height": 450,
+			"mipmaps": true,
+			"path": "res://assets/ui/maps/m4.png",
+			"width": 720
+		},
+		{
+			"data_bytes": 4720056,
+			"format": 4,
+			"height": 941,
+			"mipmaps": false,
+			"path": "res://assets/ui/menu/hangar-background.png",
+			"width": 1672
+		},
+		{
+			"data_bytes": 9216000,
+			"format": 5,
+			"height": 1440,
+			"mipmaps": false,
+			"path": "res://assets/ui/menu/ships/aegis.png",
+			"width": 1600
+		},
+		{
+			"data_bytes": 9216000,
+			"format": 5,
+			"height": 1440,
+			"mipmaps": false,
+			"path": "res://assets/ui/menu/ships/bigboy.png",
+			"width": 1600
+		},
+		{
+			"data_bytes": 9216000,
+			"format": 5,
+			"height": 1440,
+			"mipmaps": false,
+			"path": "res://assets/ui/menu/ships/defcom.png",
+			"width": 1600
+		},
+		{
+			"data_bytes": 9216000,
+			"format": 5,
+			"height": 1440,
+			"mipmaps": false,
+			"path": "res://assets/ui/menu/ships/goliath.png",
+			"width": 1600
+		},
+		{
+			"data_bytes": 9216000,
+			"format": 5,
+			"height": 1440,
+			"mipmaps": false,
+			"path": "res://assets/ui/menu/ships/leonov.png",
+			"width": 1600
+		},
+		{
+			"data_bytes": 9216000,
+			"format": 5,
+			"height": 1440,
+			"mipmaps": false,
+			"path": "res://assets/ui/menu/ships/liberator.png",
+			"width": 1600
+		},
+		{
+			"data_bytes": 9216000,
+			"format": 5,
+			"height": 1440,
+			"mipmaps": false,
+			"path": "res://assets/ui/menu/ships/nostromo.png",
+			"width": 1600
+		},
+		{
+			"data_bytes": 9216000,
+			"format": 5,
+			"height": 1440,
+			"mipmaps": false,
+			"path": "res://assets/ui/menu/ships/phoenix.png",
+			"width": 1600
+		},
+		{
+			"data_bytes": 9216000,
+			"format": 5,
+			"height": 1440,
+			"mipmaps": false,
+			"path": "res://assets/ui/menu/ships/piranha.png",
+			"width": 1600
+		},
+		{
+			"data_bytes": 9216000,
+			"format": 5,
+			"height": 1440,
+			"mipmaps": false,
+			"path": "res://assets/ui/menu/ships/spearhead.png",
+			"width": 1600
+		},
+		{
+			"data_bytes": 9216000,
+			"format": 5,
+			"height": 1440,
+			"mipmaps": false,
+			"path": "res://assets/ui/menu/ships/vengeance.png",
+			"width": 1600
+		},
+		{
+			"data_bytes": 9216000,
+			"format": 5,
+			"height": 1440,
+			"mipmaps": false,
+			"path": "res://assets/ui/menu/ships/yamato.png",
+			"width": 1600
+		},
+		{
+			"data_bytes": 8384072,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": true,
+			"path": "res://assets/ui/resources/duranium.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 8384072,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": true,
+			"path": "res://assets/ui/resources/endurium.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 8384072,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": true,
+			"path": "res://assets/ui/resources/promerium.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 8384072,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": true,
+			"path": "res://assets/ui/resources/prometid.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 8384072,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": true,
+			"path": "res://assets/ui/resources/prometium.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 8384072,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": true,
+			"path": "res://assets/ui/resources/seprom.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 8384072,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": true,
+			"path": "res://assets/ui/resources/terbium.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 8384072,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": true,
+			"path": "res://assets/ui/resources/xenomit.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 6290064,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/rockets/eco-10.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 6290064,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/rockets/hst-1.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 6290064,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/rockets/hst-2.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 6290064,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/rockets/hstrm-01.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 6290064,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/rockets/plt-2021.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 6290064,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/rockets/plt-2026.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 6290064,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/rockets/plt-3030.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 6290064,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": false,
+			"path": "res://assets/ui/rockets/r-310.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 576000,
+			"format": 5,
+			"height": 360,
+			"mipmaps": false,
+			"path": "res://assets/ui/ships/aegis.png",
+			"width": 400
+		},
+		{
+			"data_bytes": 576000,
+			"format": 5,
+			"height": 360,
+			"mipmaps": false,
+			"path": "res://assets/ui/ships/bigboy.png",
+			"width": 400
+		},
+		{
+			"data_bytes": 576000,
+			"format": 5,
+			"height": 360,
+			"mipmaps": false,
+			"path": "res://assets/ui/ships/defcom.png",
+			"width": 400
+		},
+		{
+			"data_bytes": 576000,
+			"format": 5,
+			"height": 360,
+			"mipmaps": false,
+			"path": "res://assets/ui/ships/goliath.png",
+			"width": 400
+		},
+		{
+			"data_bytes": 576000,
+			"format": 5,
+			"height": 360,
+			"mipmaps": false,
+			"path": "res://assets/ui/ships/leonov.png",
+			"width": 400
+		},
+		{
+			"data_bytes": 576000,
+			"format": 5,
+			"height": 360,
+			"mipmaps": false,
+			"path": "res://assets/ui/ships/liberator.png",
+			"width": 400
+		},
+		{
+			"data_bytes": 576000,
+			"format": 5,
+			"height": 360,
+			"mipmaps": false,
+			"path": "res://assets/ui/ships/nostromo.png",
+			"width": 400
+		},
+		{
+			"data_bytes": 576000,
+			"format": 5,
+			"height": 360,
+			"mipmaps": false,
+			"path": "res://assets/ui/ships/phoenix.png",
+			"width": 400
+		},
+		{
+			"data_bytes": 576000,
+			"format": 5,
+			"height": 360,
+			"mipmaps": false,
+			"path": "res://assets/ui/ships/piranha.png",
+			"width": 400
+		},
+		{
+			"data_bytes": 576000,
+			"format": 5,
+			"height": 360,
+			"mipmaps": false,
+			"path": "res://assets/ui/ships/spearhead.png",
+			"width": 400
+		},
+		{
+			"data_bytes": 576000,
+			"format": 5,
+			"height": 360,
+			"mipmaps": false,
+			"path": "res://assets/ui/ships/vengeance.png",
+			"width": 400
+		},
+		{
+			"data_bytes": 576000,
+			"format": 5,
+			"height": 360,
+			"mipmaps": false,
+			"path": "res://assets/ui/ships/yamato.png",
+			"width": 400
+		},
+		{
+			"data_bytes": 8384072,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": true,
+			"path": "res://assets/ui/skylab/robot-advanced.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 8384072,
+			"format": 5,
+			"height": 1254,
+			"mipmaps": true,
+			"path": "res://assets/ui/skylab/robot-standard.png",
+			"width": 1254
+		},
+		{
+			"data_bytes": 4720056,
+			"format": 4,
+			"height": 941,
+			"mipmaps": false,
+			"path": "res://assets/ui/skylab/station.png",
+			"width": 1672
+		}
+	],
+	"renderer": "gl_compatibility",
+	"resolution": "1440x900",
+	"samples": [
+		{
+			"buffer_bytes": 119009748.0,
+			"draw_calls": 232.0,
+			"eye": "(112.0, 102.0, 230.0)",
+			"focus": "(-38.0, 92.0, 0.0)",
+			"objects": 664.0,
+			"primitives": 356970.0,
+			"primitives_max": 356970.0,
+			"primitives_min": 356970.0,
+			"texture_bytes": 548779096.0,
+			"video_bytes": 667788844.0,
+			"view": "station-near"
+		},
+		{
+			"buffer_bytes": 119009748.0,
+			"draw_calls": 187.0,
+			"eye": "(362.0, 242.0, 800.0)",
+			"focus": "(-38.0, 92.0, 0.0)",
+			"objects": 571.0,
+			"primitives": 306562.0,
+			"primitives_max": 306562.0,
+			"primitives_min": 306562.0,
+			"texture_bytes": 548779096.0,
+			"video_bytes": 667788844.0,
+			"view": "station-far"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 304.0,
+			"eye": "(0.0, 18.0, 55.0)",
+			"focus": "(0.0, 0.0, 0.0)",
+			"objects": 688.0,
+			"primitives": 601032.0,
+			"primitives_max": 601032.0,
+			"primitives_min": 601032.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "ships-near"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 314.0,
+			"eye": "(0.0, 50.0, 180.0)",
+			"focus": "(0.0, 0.0, 0.0)",
+			"objects": 698.0,
+			"primitives": 515852.0,
+			"primitives_max": 515852.0,
+			"primitives_min": 515852.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "ships-far"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 110.0,
+			"eye": "(-494.5563, 273.3074, -884.9955)",
+			"focus": "(-1900.0, 1050.0, -3400.0)",
+			"objects": 494.0,
+			"primitives": 68588.0,
+			"primitives_max": 68588.0,
+			"primitives_min": 68588.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "planet-1-near"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 187.0,
+			"eye": "(235.503, -130.1464, 421.4265)",
+			"focus": "(-1900.0, 1050.0, -3400.0)",
+			"objects": 571.0,
+			"primitives": 340394.0,
+			"primitives_max": 340394.0,
+			"primitives_min": 340394.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "planet-1-far"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 115.0,
+			"eye": "(15499.96, 254.979, -887.4271)",
+			"focus": "(17000.0, 1020.0, -3550.0)",
+			"objects": 499.0,
+			"primitives": 54132.0,
+			"primitives_max": 54132.0,
+			"primitives_min": 54132.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "planet-2-near"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 175.0,
+			"eye": "(14761.92, -121.4186, 422.5843)",
+			"focus": "(17000.0, 1020.0, -3550.0)",
+			"objects": 559.0,
+			"primitives": 227518.0,
+			"primitives_max": 227518.0,
+			"primitives_min": 227518.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "planet-2-far"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 182.0,
+			"eye": "(15028.0, -71.0, 965.0)",
+			"focus": "(15000.0, -80.0, 900.0)",
+			"objects": 566.0,
+			"primitives": 315232.0,
+			"primitives_max": 315232.0,
+			"primitives_min": 315232.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "gate-near"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 202.0,
+			"eye": "(15100.0, -35.0, 1250.0)",
+			"focus": "(15000.0, -80.0, 900.0)",
+			"objects": 586.0,
+			"primitives": 285920.0,
+			"primitives_max": 285920.0,
+			"primitives_min": 285920.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "gate-far"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 114.0,
+			"eye": "(29496.78, 280.8682, -877.7131)",
+			"focus": "(27850.0, 1200.0, -3750.0)",
+			"objects": 498.0,
+			"primitives": 56068.0,
+			"primitives_max": 56068.0,
+			"primitives_min": 56068.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "planet-3-near"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 177.0,
+			"eye": "(30239.63, -133.7468, 417.9586)",
+			"focus": "(27850.0, 1200.0, -3750.0)",
+			"objects": 561.0,
+			"primitives": 359728.0,
+			"primitives_max": 359728.0,
+			"primitives_min": 359728.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "planet-3-far"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 142.0,
+			"eye": "(45512.17, 274.8248, -874.4424)",
+			"focus": "(47050.0, 1100.0, -3500.0)",
+			"objects": 526.0,
+			"primitives": 112660.0,
+			"primitives_max": 112660.0,
+			"primitives_min": 112660.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "planet-4-near"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 196.0,
+			"eye": "(44756.11, -130.8689, 416.4012)",
+			"focus": "(47050.0, 1100.0, -3500.0)",
+			"objects": 580.0,
+			"primitives": 365880.0,
+			"primitives_max": 365880.0,
+			"primitives_min": 365880.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "planet-4-far"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 150.0,
+			"eye": "(0.0, 20.0, 400.0)",
+			"focus": "(0.0, 20.0, 0.0)",
+			"objects": 150.0,
+			"primitives": 422454.0,
+			"primitives_max": 422454.0,
+			"primitives_min": 422454.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "busy-near-lod"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 150.0,
+			"eye": "(0.0, 20.0, 2000.0)",
+			"focus": "(0.0, 20.0, 0.0)",
+			"objects": 150.0,
+			"primitives": 150400.0,
+			"primitives_max": 150400.0,
+			"primitives_min": 150400.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "busy-far-lod"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 150.0,
+			"eye": "(0.0, 20.0, 2000.0)",
+			"focus": "(0.0, 20.0, 0.0)",
+			"objects": 150.0,
+			"primitives": 1461484.0,
+			"primitives_max": 1461484.0,
+			"primitives_min": 1461484.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "busy-far-base"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 15.0,
+			"eye": "(0.0, 0.0, 400.0)",
+			"focus": "(0.0, 0.0, 0.0)",
+			"objects": 15.0,
+			"primitives": 186018.0,
+			"primitives_max": 186018.0,
+			"primitives_min": 186018.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "three-gates-near-lod"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 15.0,
+			"eye": "(0.0, 0.0, 2000.0)",
+			"focus": "(0.0, 0.0, 0.0)",
+			"objects": 15.0,
+			"primitives": 96336.0,
+			"primitives_max": 96336.0,
+			"primitives_min": 96336.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "three-gates-far-lod"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 15.0,
+			"eye": "(0.0, 0.0, 2000.0)",
+			"focus": "(0.0, 0.0, 0.0)",
+			"objects": 15.0,
+			"primitives": 522984.0,
+			"primitives_max": 522984.0,
+			"primitives_min": 522984.0,
+			"texture_bytes": 733329352.0,
+			"video_bytes": 883040492.0,
+			"view": "three-gates-far-base"
+		},
+		{
+			"buffer_bytes": 149711140.0,
+			"draw_calls": 150.0,
+			"eye": "(0.0, 20.0, 2000.0)",
+			"focus": "(0.0, 20.0, 0.0)",
+			"objects": 150.0,
+			"primitives": 1461484.0,
+			"primitives_max": 1461484.0,
+			"primitives_min": 1461484.0,
+			"texture_bytes": 888996284.0,
+			"video_bytes": 1038707424.0,
+			"view": "all-pngs-resident"
+		}
+	]
+}

@@ -1,13 +1,25 @@
 extends SceneTree
 ## Run outside the exported pack to check menus and their dynamically loaded art.
 
+const ITEM_ART_SIZE := Vector2i(512, 512)
+
+
+func valid_item_art(texture: Texture2D) -> bool:
+	if texture == null:
+		return false
+	var image := texture.get_image()
+	return image != null and image.get_size() == ITEM_ART_SIZE \
+		and not image.is_compressed() and image.has_mipmaps() \
+		and image.get_used_rect().has_area() and image.get_used_rect().size != image.get_size() \
+		and image.get_pixel(0, 0).a == 0.0
+
 
 func _initialize() -> void:
 	call_deferred("run")
 
 
 func run() -> void:
-	for directory: String in ["res://docs/ammo-art", "res://docs/sector-art"]:
+	for directory: String in ["res://docs/ammo-art", "res://docs/sector-art", "res://docs/asset-budgets-2026-10-19"]:
 		if DirAccess.dir_exists_absolute(directory):
 			push_error("Documentation artwork must not enter the client pack: " + directory)
 			quit(1)
@@ -46,9 +58,8 @@ func run() -> void:
 		if page == "cargo":
 			for resource: String in CargoResources.TYPES:
 				var texture := load("res://assets/ui/resources/%s.png" % resource) as Texture2D
-				var image := texture.get_image() if texture != null else null
-				if image == null or image.get_width() < 1024 or image.get_height() < 1024 or image.get_used_rect().size == image.get_size() or image.get_pixel(0, 0).a != 0.0:
-					push_error("Packaged %s artwork must be high resolution with transparent padding." % resource)
+				if not valid_item_art(texture):
+					push_error("Packaged %s artwork must be lossless 512px art with mipmaps and transparent padding." % resource)
 					quit(1)
 					return
 		if page == "skylab":
@@ -60,16 +71,15 @@ func run() -> void:
 				quit(1)
 				return
 			for robot: Texture2D in [standard, advanced]:
-				if robot.get_width() < 1024 or robot.get_image().get_pixel(0, 0).a != 0.0:
-					push_error("Packaged collector robots must be detailed transparent artwork.")
+				if not valid_item_art(robot):
+					push_error("Packaged collector robots must be lossless 512px art with mipmaps and transparent padding.")
 					quit(1)
 					return
 	menu.show_home()
 	for model: String in ["r-310", "plt-2026", "plt-2021", "plt-3030", "eco-10", "hstrm-01", "hst-1", "hst-2"]:
 		var texture := StationUi.texture(model)
-		var image := texture.get_image() if texture != null else null
-		if image == null or image.get_width() < 1024 or image.get_height() < 1024 or image.get_used_rect().size == image.get_size() or image.get_pixel(0, 0).a != 0.0:
-			push_error("Packaged %s rocket artwork must be high resolution with transparent padding." % model)
+		if not valid_item_art(texture):
+			push_error("Packaged %s rocket artwork must be lossless 512px art with mipmaps and transparent padding." % model)
 			quit(1)
 			return
 	sector.session.launch()
