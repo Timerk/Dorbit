@@ -123,6 +123,24 @@ The starting combat proposal is:
 
 Weapon ranges, firing arcs, damage, shield recovery, and alien behavior need playtesting. Additional weapons and abilities can follow after basic laser combat is enjoyable.
 
+### Combat ranges and out-ranging
+
+After the enlarged alien models made fights feel cramped, the user requested longer attack ranges and a clearer, but not trivial, margin by which pilots out-range aliens. A first pass at least doubled the ranges, which playtesting found slightly too large, so every range was then reduced by 30%. Pilot lasers reach 310 m, up from the original 170 m. Alien weapon ranges stay 40–105 m shorter than pilot lasers: starter Scouts and Skirmishers leave the widest margin, and the gap narrows by tier to 40 m for Overlords. Originally Scouts trailed by 50 m, Sentinels by 15 m and Heavies by 5 m, while Wardens, Ravagers and Overlords out-ranged pilots.
+
+| Type | Weapon range | Gap to pilot lasers | Detection | Home leash |
+| --- | --- | --- | --- | --- |
+| Scout | 205 m | 105 m | 230 m | 210 m |
+| Skirmisher | 210 m | 100 m | 240 m | 225 m |
+| Sentinel | 235 m | 75 m | 250 m | 230 m |
+| Raider | 235 m | 75 m | 260 m | 240 m |
+| Heavy | 245 m | 65 m | 285 m | 210 m |
+| Marauder | 245 m | 65 m | 275 m | 250 m |
+| Warden | 255 m | 55 m | 285 m | 260 m |
+| Ravager | 260 m | 50 m | 295 m | 265 m |
+| Overlord | 270 m | 40 m | 310 m | 275 m |
+
+Detection stays beyond each alien's weapon range, so aliens engage pilots before those pilots reach their weapon range, and pilot lasers still reach every detection radius. Leashes let an alien hit from maximum laser range close to its own range before being forced home. Engaged aliens close to 75% of their own weapon range (`Alien.STANDOFF`) instead of a fixed 75 m, so large hulls no longer fight at point blank. They hold position rather than retreat when a pilot flies closer, so rushing in cannot drag an alien past its leash, which would send it home and clear the encounter's contributions. Rocket ranges are 1.4 times their original values to keep their relationship with lasers. Projectile speeds are unchanged, so long rocket shots take longer to land. The gaps, standoff and leashes need human playtesting.
+
 ### Laser ammunition
 
 The user requested four pilot-wide ammunition types, shared across owned ships:
@@ -235,9 +253,9 @@ Provisional tuning lives in `Alien.TYPES`, `Sector.ALIEN_KINDS` and `Sector.MAP_
 
 | Type | Count | Hull / shield | Speed | Laser damage / interval | Weapon range | Detection | Home leash | Credits | Respawn |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Scout | 2 | 1,000 / 500 | 29 m/s | 1,500 / 0.85 s | 120 m | 155 m | 170 m | 300 | 10 s |
-| Sentinel | 2 | 4,000 / 2,000 | 18 m/s | 5,000 / 0.75 s | 155 m | 180 m | 230 m | 1,500 | 12 s |
-| Heavy | 1 | 10,000 / 5,000 | 12 m/s | 12,000 / 0.9 s | 165 m | 220 m | 180 m | 10,000 | 18 s |
+| Scout | 2 | 1,000 / 500 | 29 m/s | 1,500 / 0.85 s | 205 m | 230 m | 210 m | 300 | 10 s |
+| Sentinel | 2 | 4,000 / 2,000 | 18 m/s | 5,000 / 0.75 s | 235 m | 250 m | 230 m | 1,500 | 12 s |
+| Heavy | 1 | 10,000 / 5,000 | 12 m/s | 12,000 / 0.9 s | 245 m | 285 m | 210 m | 10,000 | 18 s |
 
 Home coordinates are server-selected random points throughout the safe sphere, with clearance for the entire home leash plus 35 m, station detection/protection, asteroids and other homes. IDs 0 and 3 remain Sentinels, 1 and 2 Scouts, and 4 Heavy. Patrols stay within 18 m horizontally and 8 m vertically of home before engagement. Returning living aliens keep their current home; a death chooses a new home on respawn. Timers never create extra nodes. Clients and late joiners receive authoritative homes and transforms.
 
@@ -782,7 +800,7 @@ recorded in `docs/rocket-art/generation-prompts.md`.
 
 Single rockets are inherent to every hull and need no launcher. R-310,
 PLT-2026, PLT-2021 and PLT-3030 retain absolute maximum damages of 1,000,
-2,000, 4,000 and 6,000. Game defaults are respectively 120/170/240/240 m
+2,000, 4,000 and 6,000. Game defaults are respectively 170/240/335/335 m
 range, 70/80/90/65% hit probability and 150/170/190/190 m/s projectile speed.
 Every accepted shot consumes one round and starts a shared 2-second cooldown,
 including misses. Successful damage varies from 80 to 100% of maximum. These
@@ -793,7 +811,7 @@ Rockets use target tracking without a laser forward-arc requirement.
 Every hull has one dedicated launcher slot. HST-1 holds three rounds and
 HST-2 holds five. ECO-10 and HSTRM-01 are dedicated launcher ammunition,
 with fixed 2,000 and 4,000 damage respectively; configured variation defaults
-to 1.0–1.0 and accuracy to 100%. Both use 200 m range and 170 m/s speed.
+to 1.0–1.0 and accuracy to 100%. Both use 280 m range and 170 m/s speed.
 Loading reserves one unit per second; activating again fires all loaded units.
 After firing, loading is blocked for three seconds. These timings live in
 `RocketWeapons`. Single and launcher cooldowns survive ammo/ship changes.

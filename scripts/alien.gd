@@ -3,6 +3,8 @@ extends SpaceShip
 
 const RETURN_TIMEOUT: float = 30.0
 const HULL_RESET_DELAY: float = 30.0
+# Engaged aliens close only to this fraction of their weapon range, not to point blank.
+const STANDOFF: float = 0.75
 # Baked asset diameters, before presentation scaling; independent of colliders.
 const VISUAL_DIAMETERS := {
 	"Scout": 7.547966,
@@ -28,15 +30,15 @@ const VISUAL_SCALE := {
 	"Overlord": 3.5,
 }
 const TYPES := {
-	"Scout": {"hull": 1000.0, "shield": 500.0, "damage": 1500.0, "interval": 0.85, "range": 120.0, "speed": 29.0, "detection": 155.0, "leash": 170.0, "reward": 300, "respawn": 10.0, "scale": Vector3(0.7, 0.7, 0.85), "color": Color("ffc875")},
-	"Sentinel": {"hull": 4000.0, "shield": 2000.0, "damage": 5000.0, "interval": 0.75, "range": 155.0, "speed": 18.0, "detection": 180.0, "leash": 230.0, "reward": 1500, "respawn": 12.0, "scale": Vector3.ONE, "color": Color("ff8176")},
-	"Heavy": {"hull": 10000.0, "shield": 5000.0, "damage": 12000.0, "interval": 0.9, "range": 165.0, "speed": 12.0, "detection": 220.0, "leash": 180.0, "reward": 10000, "respawn": 18.0, "scale": Vector3(1.5, 1.6, 1.25), "color": Color("d2a0ff")},
-	"Skirmisher": {"hull": 2500.0, "shield": 1200.0, "damage": 2500.0, "interval": 0.9, "range": 130.0, "speed": 30.0, "detection": 170.0, "leash": 210.0, "reward": 900, "respawn": 12.0, "scale": Vector3(0.8, 0.8, 1.1), "color": Color("74e6b2")},
-	"Raider": {"hull": 6500.0, "shield": 3200.0, "damage": 6500.0, "interval": 0.85, "range": 150.0, "speed": 23.0, "detection": 190.0, "leash": 230.0, "reward": 3500, "respawn": 15.0, "scale": Vector3(1.2, 0.85, 1.0), "color": Color("37bdb8")},
-	"Marauder": {"hull": 14000.0, "shield": 7000.0, "damage": 14000.0, "interval": 0.85, "range": 160.0, "speed": 24.0, "detection": 205.0, "leash": 250.0, "reward": 14000, "respawn": 17.0, "scale": Vector3(1.3, 1.0, 1.3), "color": Color("ffc36e")},
-	"Warden": {"hull": 24000.0, "shield": 12000.0, "damage": 18000.0, "interval": 0.8, "range": 175.0, "speed": 17.0, "detection": 220.0, "leash": 260.0, "reward": 22000, "respawn": 20.0, "scale": Vector3(1.6, 1.4, 1.1), "color": Color("ee7954")},
-	"Ravager": {"hull": 36000.0, "shield": 18000.0, "damage": 24000.0, "interval": 0.8, "range": 180.0, "speed": 22.0, "detection": 230.0, "leash": 270.0, "reward": 32000, "respawn": 22.0, "scale": Vector3(1.4, 1.2, 1.7), "color": Color("b788fa")},
-	"Overlord": {"hull": 60000.0, "shield": 30000.0, "damage": 32000.0, "interval": 0.75, "range": 190.0, "speed": 14.0, "detection": 250.0, "leash": 280.0, "reward": 50000, "respawn": 26.0, "scale": Vector3(2.0, 1.8, 1.5), "color": Color("ed70c1")},
+	"Scout": {"hull": 1000.0, "shield": 500.0, "damage": 1500.0, "interval": 0.85, "range": 205.0, "speed": 29.0, "detection": 230.0, "leash": 210.0, "reward": 300, "respawn": 10.0, "scale": Vector3(0.7, 0.7, 0.85), "color": Color("ffc875")},
+	"Sentinel": {"hull": 4000.0, "shield": 2000.0, "damage": 5000.0, "interval": 0.75, "range": 235.0, "speed": 18.0, "detection": 250.0, "leash": 230.0, "reward": 1500, "respawn": 12.0, "scale": Vector3.ONE, "color": Color("ff8176")},
+	"Heavy": {"hull": 10000.0, "shield": 5000.0, "damage": 12000.0, "interval": 0.9, "range": 245.0, "speed": 12.0, "detection": 285.0, "leash": 210.0, "reward": 10000, "respawn": 18.0, "scale": Vector3(1.5, 1.6, 1.25), "color": Color("d2a0ff")},
+	"Skirmisher": {"hull": 2500.0, "shield": 1200.0, "damage": 2500.0, "interval": 0.9, "range": 210.0, "speed": 30.0, "detection": 240.0, "leash": 225.0, "reward": 900, "respawn": 12.0, "scale": Vector3(0.8, 0.8, 1.1), "color": Color("74e6b2")},
+	"Raider": {"hull": 6500.0, "shield": 3200.0, "damage": 6500.0, "interval": 0.85, "range": 235.0, "speed": 23.0, "detection": 260.0, "leash": 240.0, "reward": 3500, "respawn": 15.0, "scale": Vector3(1.2, 0.85, 1.0), "color": Color("37bdb8")},
+	"Marauder": {"hull": 14000.0, "shield": 7000.0, "damage": 14000.0, "interval": 0.85, "range": 245.0, "speed": 24.0, "detection": 275.0, "leash": 250.0, "reward": 14000, "respawn": 17.0, "scale": Vector3(1.3, 1.0, 1.3), "color": Color("ffc36e")},
+	"Warden": {"hull": 24000.0, "shield": 12000.0, "damage": 18000.0, "interval": 0.8, "range": 255.0, "speed": 17.0, "detection": 285.0, "leash": 260.0, "reward": 22000, "respawn": 20.0, "scale": Vector3(1.6, 1.4, 1.1), "color": Color("ee7954")},
+	"Ravager": {"hull": 36000.0, "shield": 18000.0, "damage": 24000.0, "interval": 0.8, "range": 260.0, "speed": 22.0, "detection": 295.0, "leash": 265.0, "reward": 32000, "respawn": 22.0, "scale": Vector3(1.4, 1.2, 1.7), "color": Color("b788fa")},
+	"Overlord": {"hull": 60000.0, "shield": 30000.0, "damage": 32000.0, "interval": 0.75, "range": 270.0, "speed": 14.0, "detection": 310.0, "leash": 275.0, "reward": 50000, "respawn": 26.0, "scale": Vector3(2.0, 1.8, 1.5), "color": Color("ed70c1")},
 }
 
 var alien_id: int = 0
@@ -191,7 +193,9 @@ func fly(delta: float, player: Pilot, station_position: Vector3) -> void:
 	if engaged:
 		var away := (global_position - player.global_position).normalized()
 		var lateral := away.cross(Vector3.UP).normalized()
-		destination = player.global_position + away * 75.0 + lateral * sin(patrol_time * 0.6) * 25.0
+		# Close to the standoff, but hold rather than retreat so rushing pilots cannot drag it past its leash.
+		var hold := minf(laser_range * STANDOFF, global_position.distance_to(player.global_position))
+		destination = player.global_position + away * hold + lateral * sin(patrol_time * 0.6) * 25.0
 	var offset := destination - global_position
 	velocity = velocity.move_toward(offset.limit_length(1.0) * minf(float(tuning()["speed"]), offset.length()), delta * 22.0)
 	var look_point := player.global_position if engaged else destination

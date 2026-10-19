@@ -60,7 +60,7 @@ func run() -> void:
 	check(is_equal_approx(client.alien.shield, alien.shield), "Alien damage is replicated exactly")
 	check(id in alien.contributors, "A valid hit records the contributing player")
 	# Server geometry, rather than client HUD/aim claims, determines whether a shot is legal.
-	remote.position = Vector3(0, 200, 300)
+	remote.position = Vector3(0, 200, 500)
 	remote.shot_cooldown = 0
 	await send_fire(client)
 	await physics_frame
@@ -118,6 +118,9 @@ func run() -> void:
 	remote.position = alien.position + Vector3(0, 0, 80)
 	host.player.position = Vector3(-100, 200, 0)
 	check(combat.choose_target(alien) == remote, "Alien chooses the nearest eligible player")
+	# The alien now reaches the remote throughout this test; measure one hit from full health.
+	remote.reset_health()
+	alien.shot_cooldown = 60.0
 	remote.take_damage(remote.max_shield + remote.max_hull / 12.0, alien)
 	await replicate(host)
 	check(client.player.shield == 0 and client.player.hull == remote.max_hull - remote.max_hull / 12.0, "Split damage and shield depletion replicate")

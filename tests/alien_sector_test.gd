@@ -177,7 +177,7 @@ func run() -> void:
 	blocked.take_damage(100.0, null)
 	var blocked_hull := blocked.hull
 	var blocked_shield := blocked.shield
-	blocked.position = blocked.home_position + Vector3(240, 0, 0)
+	blocked.position = blocked.home_position + Vector3(float(blocked.tuning()["leash"]) + 10.0, 0, 0)
 	blocked.check_retreat(null)
 	SectorVisuals.add_box_collider(server, blocked.position, Vector3(30, 30, 30))
 	await physics_frame
