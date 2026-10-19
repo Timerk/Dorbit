@@ -1337,6 +1337,38 @@ repairs in Map 3, and a hidden alien relay in Map 4. Optional story choices can
 initially affect personal dialogue and mission outcomes rather than imposing
 conflicting permanent changes on the shared world.
 
+#### Implemented prologue: Operation Foothold
+
+On 2026-10-19 the user approved this prologue script and chose onboarding in the
+live Home sector: the station is already present and Vance frames the operation
+as Outpost 01's first hours. There is no private pre-arrival instance. Progress
+is personal and sequential. Every pilot, including veterans, starts at step 1 and
+can skip the chapter at the Quests board, receiving all remaining step rewards.
+Kill steps use the hunting-contract contribution rules. The recorder pickup and
+the lit approach beacon are personal, so no pilot consumes another's objective.
+
+| # | Step | Contact | Objective | Reward |
+| --- | --- | --- | --- | --- |
+| 1 | Comms Check | Vance | Fly to the rendezvous ahead of the dock | 300 CR |
+| 2 | Survey Run | Vance | Reach the survey point past the asteroids (map and autopilot) | 500 CR |
+| 3 | Ring Scan | Sato | Stay 5 s within 45 m of the defense ring wreck | 800 CR |
+| 4 | First Contact | Vance | Destroy 2 Scouts | 1,200 CR |
+| 5 | Heavier Resistance | Vance | Destroy a Sentinel (rocket hint) | 2,500 CR |
+| 6 | Black Box | Sato | Recover the garrison flight recorder; its log tells of the invasion | 1,500 CR + 1 RP |
+| 7 | Field Salvage | Brell | Collect 10 units from fresh loot | 1,500 CR |
+| 8 | Beacon Parts | Brell | Deliver 5 Prometium at Outpost 01 | 2,000 CR |
+| 9 | Light the Beacon | Brell | Stay 6 s at the approach beacon | 2,000 CR |
+| 10 | Standing Orders | Vance | Hold any hunting contract | 5,000 CR + 3 RP |
+
+The chapter totals 17,300 CR and 4 research points. The server checks positions,
+kills, pickups and active contracts. It saves each step together with its reward;
+delivery and skipping are station transactions that use the existing request
+sequence. Clients present briefings and the contact's closing lines from the
+synchronized step, alongside a flight-card objective, a gold marker and a map
+contact. Sites, timings, quantities, rewards and dialogue remain provisional
+until playtested. Later chapters and
+shared construction stages are still to be designed.
+
 #### Shared station construction
 
 Outpost 01 development and sector reclamation are shared across the server.
