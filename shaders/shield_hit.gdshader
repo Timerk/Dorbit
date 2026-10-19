@@ -1,8 +1,9 @@
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, cull_back, shadows_disabled;
 
-uniform vec3 hit_direction = vec3(0.0, 0.0, 1.0);
-uniform float progress : hint_range(0.0, 1.0) = 0.0;
+// One shared material and unit sphere; each ripple sets its own direction and progress.
+instance uniform vec3 hit_direction = vec3(0.0, 0.0, 1.0);
+instance uniform float progress = 0.0;
 varying vec3 shell_direction;
 
 void vertex() {

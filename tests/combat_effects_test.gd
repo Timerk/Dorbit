@@ -19,13 +19,13 @@ func run() -> void:
 		SectorVisuals.laser(world, start, ship.global_position, false, kind)
 		var effect: Node = get_nodes_in_group("transient_feedback")[-1]
 		var mesh := effect.get_child(0) as MeshInstance3D
-		var surface := mesh.material_override as StandardMaterial3D
-		check(surface.albedo_color.is_equal_approx(Ammunition.TYPES[kind]["color"].lerp(Color.WHITE, 0.35)), kind + " beam uses its cartridge color")
+		var tint: Color = mesh.get_instance_shader_parameter("tint")
+		check(tint.is_equal_approx(Ammunition.TYPES[kind]["color"].lerp(Color.WHITE, 0.35)), kind + " beam uses its cartridge color")
 		effect.free()
 	SectorVisuals.laser(world, start, ship.global_position, true, "x4")
 	var hostile_effect: Node = get_nodes_in_group("transient_feedback")[-1]
-	var hostile_surface := (hostile_effect.get_child(0) as MeshInstance3D).material_override as StandardMaterial3D
-	check(hostile_surface.albedo_color.is_equal_approx(Color("ff6245").lerp(Color.WHITE, 0.35)), "Alien lasers retain hostile red")
+	var hostile_tint: Color = (hostile_effect.get_child(0) as MeshInstance3D).get_instance_shader_parameter("tint")
+	check(hostile_tint.is_equal_approx(Color("ff6245").lerp(Color.WHITE, 0.35)), "Alien lasers retain hostile red")
 	hostile_effect.free()
 	SectorVisuals.laser(world, start, ship.global_position, false)
 	check(ship.get_meta("visual_hit_direction") == Vector3.BACK, "Confirmed shot records the incoming surface direction")
@@ -47,6 +47,15 @@ func run() -> void:
 	check(Vector2(ship.shield, ship.hull) == health and ship.shot_cooldown == 0.0, "Presentation never changes health or weapon cooldown")
 	await create_timer(0.5).timeout
 	check(get_nodes_in_group("transient_feedback").is_empty(), "All hit and beam children are freed with their root")
+	# Each mesh owns its fade tween, so removing one mesh cannot call into a freed node.
+	SectorVisuals.impact(ship, ship.global_position, true, true)
+	var partial := get_nodes_in_group("transient_feedback")[0] as CombatEffect
+	var survivor := partial.get_child(0) as MeshInstance3D
+	partial.get_child(partial.get_child_count() - 1).free()
+	await process_frame
+	await process_frame
+	check(float(survivor.get_instance_shader_parameter("progress")) > 0.0, "Remaining hit meshes keep animating after a sibling is freed")
+	partial.free()
 	SectorVisuals.laser(world, start, start, true)
 	SectorVisuals.impact(ship, ship.global_position, false, false)
 	check(get_nodes_in_group("transient_feedback").is_empty(), "Empty hit and zero-length shot create no effects")
@@ -54,6 +63,7 @@ func run() -> void:
 		SectorVisuals.laser(world, start, start + Vector3.FORWARD * 50, index % 2 == 0)
 		SectorVisuals.impact(ship, ship.global_position, true, true)
 	check(get_nodes_in_group("transient_feedback").size() == SectorVisuals.EFFECT_LIMIT, "Mixed shield, hull and beam requests cannot exceed the ordinary effect cap")
+	shared_resource_checks()
 	for index in range(30):
 		SectorVisuals.explosion(world, ship.global_position)
 	check(get_nodes_in_group("transient_feedback").size() == SectorVisuals.DESTRUCTION_LIMIT, "Destruction has a bounded reserve when ordinary effects are saturated")
@@ -66,6 +76,26 @@ func run() -> void:
 	await destruction_checks()
 	print("Combat effect checks: %d passed, %d failed" % [checks - failures, failures])
 	quit(0 if failures == 0 else 1)
+
+
+func shared_resource_checks() -> void:
+	# Saturated hits and beams of every size reuse a fixed set of meshes and materials.
+	var meshes := {}
+	var materials := {}
+	var instances := 0
+	for effect: Node in get_nodes_in_group("transient_feedback"):
+		for visual: MeshInstance3D in effect.find_children("*", "MeshInstance3D", true, false):
+			meshes[visual.mesh] = true
+			materials[visual.material_override] = true
+			instances += 1
+	check(instances > 300, "Shared resource check inspects many live effect meshes")
+	check(meshes.size() == 4 and materials.size() == 3, "Repeated shots and hits reuse one beam, spark, glow and shell mesh with three materials")
+	var shell := SectorVisuals.effect_resource("shell_high")
+	check(meshes.has(shell) and materials.has(SectorVisuals.effect_resource("shield_material")), "Shield hits use the cached unit shell and material")
+	var objects := Performance.get_monitor(Performance.OBJECT_COUNT)
+	for index in range(20):
+		SectorVisuals.laser(get_nodes_in_group("transient_feedback")[0].get_parent(), Vector3.ZERO, Vector3.FORWARD * 50, false)
+	check(Performance.get_monitor(Performance.OBJECT_COUNT) == objects, "Capped effect requests allocate no nodes or resources")
 
 
 func destruction_checks() -> void:
@@ -112,6 +142,10 @@ func destruction_checks() -> void:
 	wide_hull.mesh = wide_box
 	wide_hull.scale = Vector3.ONE / overlord.model.scale
 	overlord.model.add_child(wide_hull)
+	check(not overlord.hull_visuals.is_empty(), "Hull contact caches the searched model meshes")
+	# Replacing or reassigning the model clears the cached mesh search.
+	overlord.model = overlord.model
+	check(overlord.hull_visuals.is_empty(), "Assigning a model clears cached hull meshes")
 	var wide_hit := SectorVisuals.hull_contact(overlord, direction)
 	check(is_equal_approx(wide_hit.x, 25.0 + direction.x * 0.08),
 		"Wide hull sparks reach the surface beyond the old 20 m ray")

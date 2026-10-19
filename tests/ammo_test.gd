@@ -224,8 +224,8 @@ func check_network_beam(client: Sector, kind: String) -> void:
 			if effect.get_parent() != client or not effect.get_meta("laser", false):
 				continue
 			var mesh := effect.get_child(0) as MeshInstance3D
-			var surface := mesh.material_override as StandardMaterial3D
-			check(surface.emission.is_equal_approx(Ammunition.TYPES[kind]["color"].lerp(Color.WHITE, 0.35)), "Network shot renders the firing color for " + kind)
+			var tint: Color = mesh.get_instance_shader_parameter("tint")
+			check(tint.is_equal_approx(Ammunition.TYPES[kind]["color"].lerp(Color.WHITE, 0.35)), "Network shot renders the firing color for " + kind)
 			return
 	check(false, "Receive the network beam for " + kind)
 
