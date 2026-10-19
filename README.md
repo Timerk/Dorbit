@@ -520,11 +520,12 @@ contracts on eleven skills in Defense, Economy and Offense rows.
 Each of the five levels per skill costs one point plus refined Skylab stock
 (Prometid, Duranium, Promerium and Seprom); a skill unlocks when the previous one in
 its row is complete. Pilots can hold 30 levels at once. Reset refunds points, not
-materials, for 100,000 credits, doubling each time. Learning and resetting follow
-station service rules and apply to the flying ship immediately. See
-[the agreed values](GAME_PLAN.md#research-skill-tree).
-`res://tests/research_test.gd` covers the rules, contract rewards and
-authenticated learn/reset transactions; the offline menu test captures the page.
+materials, for 100,000 credits, doubling each time up to the 2,000,000,000-credit
+wallet cap. Learning and resetting follow station service rules and apply to the
+flying ship immediately. See [the agreed values](GAME_PLAN.md#research-skill-tree).
+`res://tests/research_test.gd` covers the rules, contract rewards, authenticated
+learn/reset transactions and ledgers reopening after capped resets; the offline
+menu test captures the page.
 Review the [Research page at 1440 × 900](docs/feedback/research-menu.png).
 
 ## Dedicated server and connections
