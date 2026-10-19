@@ -157,6 +157,8 @@ func _ready() -> void:
 		main_menu = MainMenu.new()
 		main_menu.sector = self
 		menu_layer.add_child(main_menu)
+		main_menu.visibility_changed.connect(update_sector_rendering)
+		update_sector_rendering()
 	if dedicated_server:
 		var port := server_port
 		for argument in OS.get_cmdline_user_args():
@@ -428,6 +430,13 @@ func relocate_alien(enemy: Alien) -> void:
 			enemy.position = point
 			return
 	push_warning("No clear random home found; retaining alien %d home" % enemy.alien_id)
+
+
+func update_sector_rendering() -> void:
+	# Every console page shares an opaque full-screen backdrop. Skip only this
+	# viewport's 3D pass; simulation, networking and menu preview viewports continue.
+	# Visibility signals restore the sector before the next draw, without switching cameras.
+	get_viewport().disable_3d = main_menu.is_visible_in_tree()
 
 
 func set_paused(value: bool) -> void:

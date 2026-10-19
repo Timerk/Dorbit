@@ -262,6 +262,15 @@ reconnects. Run Godot with `--path . --script res://tests/main_menu_test.gd` in 
 rendered window to capture the overview and station pages at 960 x 600 and
 1440 x 900 under `build/validation/main-menu-*.png`.
 
+The opaque full-screen console disables the sector viewport's 3D rendering while
+any of its pages is visible. Closing it restores rendering before the next draw;
+the active camera, multiplayer simulation, physics and network session keep running. Isolated
+menu previews still render on demand. Partial flight menus and the sector map
+leave 3D enabled because the sector remains visible around them.
+`tests/menu_rendering_test.gd` covers offline and authenticated server transitions,
+page switching and background shield recovery/snapshots. Run it with a renderer
+to capture the first restored flight frames under `build/validation/menu-rendering-*.png`.
+
 [Overview](docs/menu-design/overview-implemented.png),
 [Shop](docs/menu-design/shop-implemented.png), and
 [Hangar](docs/menu-design/hangar-implemented.png) show the current layout.
