@@ -17,6 +17,21 @@ That is 7.5 times less traffic and about 18 instead of 318 datagrams per client 
 
 Run the comparison with `--headless --path . --script res://tests/snapshot_traffic_benchmark.gd`; copy the script into an older checkout to measure it with identical steps.
 
+## Flight HUD redraw caching, 19 October 2026
+
+The flight HUD and radar still redraw every frame, but they no longer rebuild their inputs each time. Navigation contacts are one shared list that is rebuilt only when a contact enters or leaves; moving contacts update their cached positions. Panel styles, fitted font sizes, radar/destination titles, key-binding labels and binding phrases are cached. Bindings invalidate through `GameSettings.binding_revision`, which every binding install advances. Overview header text and the waypoint colour override change only when their state changes, and the radar stops requesting redraws while it draws nothing.
+
+`tests/hud_redraw_benchmark.gd` holds a rendered 1440 x 900 flight scene with a locked target and three contracts, turning the ship each frame. It counts engine objects created per frame from ObjectDB IDs and times the shared navigation helpers. The same script runs on older builds. Three runs each on Windows:
+
+| Build | Objects created per frame, flight / overview | `contacts()` | `destination()` | `binding_text()` |
+|---|---|---|---|---|
+| `main` at `ac731dd` | 2.00 / 2.00 | 20–21 µs | 21–24 µs | 1.8–2.0 µs |
+| HUD caching | 1.00 / 1.00 | 5 µs | 6–8 µs | 0.6–1.2 µs |
+
+Each frame of the benchmark loop itself creates one object for its `await`; the HUD-hidden run also measures 1.00. The HUD therefore no longer creates objects in steady flight or with the overview open. Call timings include the benchmark's Callable overhead. Median whole-process frame time varied from 3 to 33 ms between identical runs on this desktop, so it does not resolve the HUD's share and is not reported as a result. Dictionaries and strings are not engine objects and are not counted. Dynamic text (distances, health values) is still formatted each frame.
+
+Run it with a visible window: `--path . --script res://tests/hud_redraw_benchmark.gd`.
+
 ## Current-content results, 14 October 2026
 
 The qualifying runs both completed with exit 0 at `9ece26e1738324ca8bc504fb99b670be13dfb1dd`. [Spread raw data](docs/performance-spread-2026-10-14.json) and [single-map raw data](docs/performance-single-map-2026-10-14.json) retain source SHA-256 hashes, exact invocation, process samples, persistence events, industry inventories and every over-budget callback. The captured dirty status consists of documentation/result archival work. No gameplay source changed between the two measurements.
