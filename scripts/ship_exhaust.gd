@@ -21,7 +21,6 @@ var nozzles: Array[Vector4] = [] # Model-space position and nozzle radius.
 var plumes: Array[MeshInstance3D] = []
 var flares: Array[MeshInstance3D] = []
 var plume_surface := ShaderMaterial.new()
-var flare_surface := ShaderMaterial.new()
 var tracking: bool = false
 var last_position: Vector3
 var last_energy: float
@@ -42,7 +41,6 @@ static func attach(model: Node3D, pilot: Pilot) -> ShipExhaust:
 
 func _ready() -> void:
 	plume_surface.shader = PLUME_SHADER
-	flare_surface.shader = SectorVisuals.GLOW_SHADER
 	var cone := CylinderMesh.new()
 	cone.top_radius = 1.0
 	cone.bottom_radius = 0.3
@@ -51,14 +49,13 @@ func _ready() -> void:
 	cone.rings = 1
 	cone.cap_top = false
 	cone.cap_bottom = false
-	var quad := QuadMesh.new()
 	for nozzle in nozzles:
 		var plume := SectorVisuals.mesh(self, cone, Vector3.ZERO, plume_surface)
 		plume.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		plume.rotation.x = -PI / 2.0 # The cone's wide +Y end sits on the nozzle; the tail extends aft (+Z).
 		plumes.append(plume)
-		var flare := SectorVisuals.mesh(self, quad, Vector3(nozzle.x, nozzle.y, nozzle.z + nozzle.w * 0.5), flare_surface)
-		flare.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		# Flares share the combat glow mesh and material; present() sets per-instance tint and fade.
+		var flare := SectorVisuals.effect_mesh(self, "glow", "glow_material", Vector3(nozzle.x, nozzle.y, nozzle.z + nozzle.w * 0.5), Vector3.ONE)
 		flares.append(flare)
 	present()
 
@@ -97,8 +94,8 @@ func track(delta: float) -> void:
 func present() -> void:
 	plume_surface.set_shader_parameter("throttle", throttle)
 	plume_surface.set_shader_parameter("boost", boost)
-	flare_surface.set_shader_parameter("tint", GLOW_TINT.lerp(BOOST_GLOW_TINT, boost))
-	flare_surface.set_shader_parameter("opacity", 0.35 + 0.65 * throttle)
+	var tint := GLOW_TINT.lerp(BOOST_GLOW_TINT, boost)
+	var opacity := 0.35 + 0.65 * throttle
 	for index in nozzles.size():
 		var nozzle := nozzles[index]
 		var length := nozzle.w * (4.0 + 22.0 * throttle) * (1.0 + 0.7 * boost)
@@ -106,3 +103,5 @@ func present() -> void:
 		plumes[index].position = Vector3(nozzle.x, nozzle.y, nozzle.z + length * 0.5)
 		plumes[index].scale = Vector3(width, length, width)
 		flares[index].scale = Vector3.ONE * nozzle.w * (3.0 + 5.0 * throttle) * (1.0 + 0.4 * boost)
+		flares[index].set_instance_shader_parameter("tint", tint)
+		flares[index].set_instance_shader_parameter("opacity", opacity)

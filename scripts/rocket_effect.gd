@@ -16,7 +16,7 @@ static func spawn(parent: Sector, event: Dictionary) -> void:
 	if SectorVisuals.effects_quality(parent) == 0:
 		return
 	var limit := 32 if SectorVisuals.effects_quality(parent) == 1 else SectorVisuals.EFFECT_LIMIT
-	if parent.get_tree().get_nodes_in_group("transient_feedback").size() >= limit:
+	if parent.get_tree().get_node_count_in_group("transient_feedback") >= limit:
 		return
 	var enemy: Alien = parent.aliens.get(event["target"])
 	if not is_instance_valid(enemy) or enemy.life != event["life"]:

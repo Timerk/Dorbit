@@ -20,7 +20,12 @@ var alive: bool = true
 var hostile: bool = false
 var shot_cooldown: float = 0.0
 var time_since_hit: float = 100.0
-var model: Node3D
+var model: Node3D:
+	set(value):
+		model = value
+		hull_visuals.clear()
+## Model meshes used for cosmetic hull contact; found on the first hull hit of each model.
+var hull_visuals: Array[MeshInstance3D] = []
 var simulation_authority: bool = true
 var render_enabled: bool = true
 var npc_laser_damage: float = 0.0

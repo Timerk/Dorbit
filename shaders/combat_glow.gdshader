@@ -1,9 +1,10 @@
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
 
-uniform vec4 tint : source_color = vec4(0.25, 0.8, 1.0, 1.0);
-uniform float opacity : hint_range(0.0, 1.0) = 1.0;
-uniform bool beam = false;
+// One shared material; each glow quad sets its own tint, fade and beam mode.
+instance uniform vec4 tint : source_color = vec4(0.25, 0.8, 1.0, 1.0);
+instance uniform float opacity = 1.0;
+instance uniform bool beam = false;
 
 void vertex() {
 	vec3 center = MODEL_MATRIX[3].xyz;

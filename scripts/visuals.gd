@@ -7,6 +7,12 @@ const DESTRUCTION_LIMIT: int = 80
 const EXPLOSION_DURATION: float = 1.2
 const GLOW_SHADER := preload("res://shaders/combat_glow.gdshader")
 const SHIELD_SHADER := preload("res://shaders/shield_hit.gdshader")
+const STREAK_SHADER := preload("res://shaders/combat_streak.gdshader")
+const SPARK_HOT := Color("ffe2ac")
+const SPARK_COOL := Color(1.0, 0.25, 0.03, 0.0)
+
+# Effects share unit meshes and materials; nodes scale them and set instance uniforms.
+static var _effect_resources: Dictionary[String, Resource] = {}
 
 
 static func material(color: Color, glow: bool = false) -> StandardMaterial3D:
@@ -255,6 +261,53 @@ static func distant_scenery(parent: Node3D) -> void:
 	SectorBackdrop.build(parent, 0)
 
 
+static func effect_resource(key: String) -> Resource:
+	var resource: Resource = _effect_resources.get(key)
+	if resource == null:
+		resource = _create_effect_resource(key)
+		_effect_resources[key] = resource
+	return resource
+
+
+static func _create_effect_resource(key: String) -> Resource:
+	match key:
+		"beam_low", "beam_high":
+			var beam := CylinderMesh.new()
+			beam.top_radius = 0.055
+			beam.bottom_radius = 0.055
+			beam.height = 1.0
+			beam.radial_segments = 4 if key == "beam_low" else 8
+			return beam
+		"spark":
+			var spark := CylinderMesh.new()
+			spark.top_radius = 0.015
+			spark.bottom_radius = 0.045
+			spark.height = 1.0
+			spark.radial_segments = 4
+			return spark
+		"glow":
+			var quad := QuadMesh.new()
+			quad.size = Vector2.ONE
+			return quad
+		"shell_low", "shell_high":
+			var shell := SphereMesh.new()
+			shell.radius = 1.0
+			shell.height = 2.0
+			shell.radial_segments = 16 if key == "shell_low" else 32
+			shell.rings = 8 if key == "shell_low" else 16
+			return shell
+	var surface := ShaderMaterial.new()
+	surface.shader = {"streak_material": STREAK_SHADER, "glow_material": GLOW_SHADER, "shield_material": SHIELD_SHADER}[key]
+	return surface
+
+
+static func effect_mesh(parent: Node3D, shape: String, surface: String, location: Vector3, size: Vector3) -> MeshInstance3D:
+	var instance := mesh(parent, effect_resource(shape), location, effect_resource(surface))
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	instance.scale = size
+	return instance
+
+
 static func laser(parent: Node3D, start: Vector3, finish: Vector3, hostile: bool, ammo_type: String = "x1") -> void:
 	sound(parent, "laser", start)
 	if start.distance_squared_to(finish) < 0.01:
@@ -272,26 +325,20 @@ static func laser(parent: Node3D, start: Vector3, finish: Vector3, hostile: bool
 	if effect == null:
 		return
 	effect.set_meta("laser", true)
+	var quality := effects_quality(parent)
 	var color: Color = Color("ff6245") if hostile else Ammunition.TYPES.get(ammo_type, Ammunition.TYPES["x1"])["color"]
 	var length := start.distance_to(endpoint)
-	var shape := CylinderMesh.new()
-	shape.top_radius = 0.055
-	shape.bottom_radius = 0.055
-	shape.height = length
-	shape.radial_segments = 4 if effects_quality(parent) == 1 else 8
-	var surface := material(color.lerp(Color.WHITE, 0.35), true)
-	surface.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	surface.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	var beam := mesh(effect, shape, (endpoint - start) * 0.5, surface)
+	var core := color.lerp(Color.WHITE, 0.35)
+	var beam := effect_mesh(effect, "beam_low" if quality == 1 else "beam_high", "streak_material", (endpoint - start) * 0.5, Vector3(1.0, length, 1.0))
 	beam.quaternion = Quaternion(Vector3.UP, direction)
-	beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	if effects_quality(parent) > 1:
-		var aura := glow(beam, Vector3.ZERO, Vector2(0.95, length), color, 0.18)
-		(aura.material_override as ShaderMaterial).set_shader_parameter("beam", true)
-	var tween := effect.create_tween().set_parallel(true)
-	tween.tween_property(beam, "scale", Vector3(0.2, 1.0, 0.2), 0.18)
-	tween.tween_property(surface, "albedo_color:a", 0.0, 0.18)
-	if effects_quality(parent) > 1:
+	beam.set_instance_shader_parameter("tint", core)
+	if quality > 1:
+		# The beam's length scale also stretches its child aura.
+		glow(beam, Vector3.ZERO, Vector2(0.95, 1.0), color, 0.18).set_instance_shader_parameter("beam", true)
+	var tween := beam.create_tween().set_parallel(true)
+	tween.tween_property(beam, "scale", Vector3(0.2, length, 0.2), 0.18)
+	tween.tween_method(func(alpha: float): beam.set_instance_shader_parameter("tint", Color(core, alpha)), core.a, 0.0, 0.18)
+	if quality > 1:
 		glow(effect, Vector3.ZERO, Vector2.ONE * 2.4, color, 0.09)
 		glow(effect, endpoint - start, Vector2.ONE * 2.0, color, 0.13)
 
@@ -305,7 +352,7 @@ static func explosion(parent: Node3D, location: Vector3, diameter: float = 9.7) 
 	var size := maxf(diameter, 1.0)
 	effect.set_meta("diameter", size)
 	var flash := glow(effect, Vector3.ZERO, Vector2.ONE * size * 2.6, Color("ffb453"), 0.85)
-	effect.create_tween().tween_property(flash, "scale", Vector3.ONE * 2.4, 0.85).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	effect.create_tween().tween_property(flash, "scale", flash.scale * 2.4, 0.85).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	if effects_quality(parent) > 1:
 		glow(effect, Vector3.ZERO, Vector2(size * 4.8, size * 0.24), Color("ffd598"), 0.65)
 	sparks(effect, Vector3.ZERO, Vector3.ZERO, 4 if effects_quality(parent) == 1 else 12, size * 0.55, 1.15)
@@ -349,24 +396,17 @@ static func impact(parent: Node3D, location: Vector3, shield_hit: bool, hull_hit
 	if Time.get_ticks_msec() - int(parent.get_meta("visual_hit_time", -1000)) < 500:
 		direction = parent.get_meta("visual_hit_direction", direction)
 	var radius := shield_radius(parent)
+	var quality := effects_quality(parent)
 	if shield_hit:
-		var shell := SphereMesh.new()
-		shell.radius = radius
-		shell.height = radius * 2.0
-		shell.radial_segments = 16 if effects_quality(parent) == 1 else 32
-		shell.rings = 8 if effects_quality(parent) == 1 else 16
-		var surface := ShaderMaterial.new()
-		surface.shader = SHIELD_SHADER
-		surface.set_shader_parameter("hit_direction", direction)
-		var pulse := mesh(effect, shell, Vector3.ZERO, surface)
-		pulse.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		effect.create_tween().tween_method(func(value: float): surface.set_shader_parameter("progress", value), 0.0, 1.0, 0.38)
-		if effects_quality(parent) > 1:
+		var pulse := effect_mesh(effect, "shell_low" if quality == 1 else "shell_high", "shield_material", Vector3.ZERO, Vector3.ONE * radius)
+		pulse.set_instance_shader_parameter("hit_direction", direction)
+		pulse.create_tween().tween_method(func(value: float): pulse.set_instance_shader_parameter("progress", value), 0.0, 1.0, 0.38)
+		if quality > 1:
 			glow(effect, direction * radius, Vector2.ONE * 2.8, Color("65dfff"), 0.14)
 	if hull_hit:
 		var contact := hull_contact(parent, direction)
 		glow(effect, contact, Vector2.ONE * 3.2, Color("ffaf50"), 0.18)
-		sparks(effect, contact, direction, 1 if effects_quality(parent) == 1 else 6, 1.0, 0.35)
+		sparks(effect, contact, direction, 1 if quality == 1 else 6, 1.0, 0.35)
 
 
 static func feedback_root(parent: Node3D, location: Vector3, duration: float, limit: int = EFFECT_LIMIT) -> CombatEffect:
@@ -375,7 +415,7 @@ static func feedback_root(parent: Node3D, location: Vector3, duration: float, li
 		return null
 	if quality == 1:
 		limit = mini(limit, 32)
-	if parent.get_tree().get_nodes_in_group("transient_feedback").size() >= limit:
+	if parent.get_tree().get_node_count_in_group("transient_feedback") >= limit:
 		return null
 	var effect := CombatEffect.new()
 	parent.add_child(effect)
@@ -387,38 +427,23 @@ static func feedback_root(parent: Node3D, location: Vector3, duration: float, li
 
 
 static func glow(parent: Node3D, location: Vector3, size: Vector2, color: Color, duration: float) -> MeshInstance3D:
-	var shape := QuadMesh.new()
-	shape.size = size
-	var surface := ShaderMaterial.new()
-	surface.shader = GLOW_SHADER
-	surface.set_shader_parameter("tint", color)
-	var flash := mesh(parent, shape, location, surface)
-	flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	parent.create_tween().tween_method(func(value: float): surface.set_shader_parameter("opacity", value), 1.0, 0.0, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	var flash := effect_mesh(parent, "glow", "glow_material", location, Vector3(size.x, size.y, 1.0))
+	flash.set_instance_shader_parameter("tint", color)
+	flash.create_tween().tween_method(func(value: float): flash.set_instance_shader_parameter("opacity", value), 1.0, 0.0, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	return flash
 
 
 static func sparks(parent: Node3D, location: Vector3, normal: Vector3, count: int, size: float, duration: float) -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.randomize()
 	for index in range(count):
-		var direction := (normal * 0.8 + Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), rng.randf_range(-1, 1))).normalized()
-		var travel := direction * rng.randf_range(2.0, 5.0) * size
-		var shape := CylinderMesh.new()
-		shape.top_radius = 0.015 * size
-		shape.bottom_radius = 0.045 * size
-		shape.height = rng.randf_range(0.35, 0.9) * size
-		shape.radial_segments = 4
-		var surface := material(Color("ffe2ac"), true)
-		surface.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		surface.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-		var spark := mesh(parent, shape, location, surface)
-		spark.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var direction := (normal * 0.8 + Vector3(randf_range(-1, 1), randf_range(-1, 1), randf_range(-1, 1))).normalized()
+		var travel := direction * randf_range(2.0, 5.0) * size
+		var spark := effect_mesh(parent, "spark", "streak_material", location, Vector3(size, randf_range(0.35, 0.9) * size, size))
 		spark.quaternion = Quaternion(Vector3.UP, direction)
-		var tween := parent.create_tween().set_parallel(true)
+		spark.set_instance_shader_parameter("tint", SPARK_HOT)
+		var tween := spark.create_tween().set_parallel(true)
 		tween.tween_property(spark, "position", location + travel, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		tween.tween_property(spark, "scale", Vector3.ONE * 0.1, duration)
-		tween.tween_property(surface, "albedo_color", Color(1.0, 0.25, 0.03, 0.0), duration)
+		tween.tween_property(spark, "scale", spark.scale * 0.1, duration)
+		tween.tween_method(func(tint: Color): spark.set_instance_shader_parameter("tint", tint), SPARK_HOT, SPARK_COOL, duration)
 
 
 static func shield_radius(ship: Node3D) -> float:
@@ -433,8 +458,12 @@ static func hull_contact(ship: Node3D, direction: Vector3) -> Vector3:
 	var distance := 0.0
 	if ship is SpaceShip and is_instance_valid(ship.model):
 		var start := ship.global_position + direction * maxf(20.0, destruction_size(ship))
-		for child in ship.model.find_children("*", "MeshInstance3D", true, false):
-			var visual := child as MeshInstance3D
+		if ship.hull_visuals.is_empty():
+			# Assigning a new model clears this cache; later hits skip the scene search.
+			ship.hull_visuals.assign(ship.model.find_children("*", "MeshInstance3D", true, false))
+		for visual in ship.hull_visuals:
+			if not is_instance_valid(visual):
+				continue
 			var hit: Variant = visual.get_aabb().intersects_segment(visual.to_local(start), visual.to_local(ship.global_position))
 			if hit is Vector3:
 				distance = maxf(distance, (visual.to_global(hit) - ship.global_position).dot(direction))
