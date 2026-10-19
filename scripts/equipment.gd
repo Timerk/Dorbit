@@ -97,6 +97,8 @@ static func valid(data: Variant) -> bool:
 		return false
 	if not data.get("active_ship") is String or not data["ships"].has(data["active_ship"]) or data["ships"].is_empty():
 		return false
+	if data.has("research") and not Research.valid(data["research"]):
+		return false
 	for id: Variant in data["ships"]:
 		if not id is String or not PilotStore.valid_id(id) or not data["ships"][id] is String or not ShipCatalog.MODELS.has(ShipCatalog.canonical(data["ships"][id])):
 			return false
@@ -219,6 +221,15 @@ static func stats(data: Dictionary, ship: String = "") -> Dictionary:
 		result["absorption"] += item_model["shield"] * item_model.get("absorption", 0.0)
 	if result["shield"] > 0.0:
 		result["absorption"] /= result["shield"]
+	var research := Research.bonuses(data)
+	result["hull"] += research["hull"]
+	result["shield"] *= 1.0 + research["shield"]
+	result["absorption"] = minf(1.0, result["absorption"] + research["absorption"]) if result["shield"] > 0.0 else 0.0
+	result["npc_damage"] += result["damage"] * research["alien_damage"]
+	for laser: Dictionary in result["lasers"]:
+		laser["npc_damage"] += laser["damage"] * research["alien_damage"]
+	result["rocket_accuracy"] = research["rocket_accuracy"]
+	result["rocket_damage"] = research["rocket_damage"]
 	return result
 
 
@@ -235,6 +246,9 @@ static func apply_stats(ship: Pilot, values: Dictionary) -> void:
 		ship.laser_count = values["laser_count"]
 	if values.has("lasers"):
 		ship.laser_loadout = values["lasers"].duplicate(true)
+	if values.has("rocket_accuracy"):
+		ship.rockets.accuracy_bonus = values["rocket_accuracy"]
+		ship.rockets.damage_bonus = values["rocket_damage"]
 	ship.npc_laser_damage = values["npc_damage"]
 	ship.max_shield = values["shield"]
 	ship.shield_absorption = values["absorption"]

@@ -26,11 +26,12 @@ func run() -> void:
 		await settle()
 		check(Rect2(Vector2.ZERO, Vector2(dimensions)).encloses(menu.home.get_global_rect()), "Offline overview fits at %s" % dimensions)
 		await capture(client, "offline-main-menu-%d" % dimensions.x)
-		for page: String in ["hangar", "shop", "cargo", "refining", "quests", "skylab", "gates"]:
+		for page: String in ["hangar", "shop", "cargo", "refining", "research", "quests", "skylab", "gates"]:
 			check(not menu.navigation[page].disabled, "Offline %s can be browsed" % page)
 			await click(client, menu.navigation[page])
 			var panel: Control = client.equipment_menu if page == "hangar" else (client.shop if page in ["shop", "cargo"] else (client.hud.contract_panel if page == "quests" else (client.skylab_menu if page == "skylab" else menu.placeholder)))
 			if page == "refining": panel = client.resource_workshop
+			if page == "research": panel = client.research_menu
 			check(panel.is_visible_in_tree() and not menu.start_button.is_visible_in_tree() and not menu.specifications.is_visible_in_tree(), "Offline %s stays open without Overview footer" % page)
 			check(Rect2(menu.content_rect().position - Vector2.ONE, menu.content_rect().size + Vector2.ONE * 2).encloses(panel.get_global_rect()), "Offline %s fits at %s" % [page, dimensions])
 			await capture(client, "offline-%s-%d" % [page, dimensions.x])
@@ -50,6 +51,13 @@ func run() -> void:
 				check(client.shop.cargo_page.visible and client.shop.sell_all.disabled, "Offline cargo is viewable and Sell all is disabled")
 				for resource: String in client.shop.sells:
 					check(client.shop.sells[resource].disabled, "Offline %s sale is disabled" % resource)
+			elif page == "research":
+				check(client.research_menu.learn_button.disabled and client.research_menu.reset_button.disabled and client.research_menu.levels["reinforced_plating"].text == "0 / 5", "Offline research tree is viewable and cannot be changed")
+				for id: String in Research.SKILLS:
+					await click(client, client.research_menu.nodes[id])
+					check(client.research_menu.selected == id and client.research_menu.detail_image.texture == client.research_menu.artwork[id] and client.research_menu.detail_image.texture != null, "Clicking illustrated %s selects its detail artwork" % id)
+					check(client.research_menu.nodes[id].get_global_rect().end.y <= panel.get_global_rect().end.y, "Illustrated %s fits inside Research" % id)
+				await click(client, client.research_menu.nodes["reinforced_plating"])
 			elif page == "refining":
 				check(client.resource_workshop.refine_button.disabled, "Offline refining cannot spend cargo")
 				client.resource_workshop.select_tab("update")

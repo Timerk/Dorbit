@@ -153,6 +153,7 @@ func check_flight_pages(client: Sector, prefix: String) -> void:
 				"hangar": panel = client.equipment_menu
 				"shop", "cargo": panel = client.shop
 				"refining": panel = client.resource_workshop
+				"research": panel = client.research_menu
 				"quests": panel = client.hud.contract_panel
 				"settings": panel = client.settings_menu.panel
 				"connection": panel = client.session.menu

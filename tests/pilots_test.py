@@ -269,6 +269,15 @@ class ProvisioningTest(unittest.TestCase):
         self.assertTrue(pilots.valid_skylab(lab, equipment))
         lab["shipment"]["manifest"]["prometium"] = 801
         self.assertFalse(pilots.valid_skylab(lab, equipment))
+        # Cargo Compression research expands holds and shipments by whole percentages.
+        equipment["research"] = {"points": 0, "skills": {"cargo_compression": 5}, "resets": 0}
+        self.assertTrue(pilots.valid_equipment(equipment))
+        self.assertTrue(pilots.valid_cargo({"starter": {"prometium": 2000}}, equipment))
+        self.assertFalse(pilots.valid_cargo({"starter": {"prometium": 2001}}, equipment))
+        self.assertTrue(pilots.valid_skylab(lab, equipment))
+        equipment["research"]["skills"]["cargo_compression"] = 6
+        self.assertFalse(pilots.valid_equipment(equipment))
+        del equipment["research"]
         equipment["items"]["ammo-cpu"]["ammo_type"] = "x4"
         self.assertFalse(pilots.valid_equipment(equipment))
         equipment["items"]["ammo-cpu"]["ammo_type"] = "x2"

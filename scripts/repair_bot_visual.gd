@@ -39,7 +39,7 @@ func part(parent: Node3D, mesh: Mesh, surface: Material, at: Vector3) -> MeshIns
 func update_model() -> void:
 	# Full-repair duration already replicates to every observer. Both fitted robot
 	# tiers have unique durations, so their art needs no extra network/save field.
-	var equipped := "rep-2" if is_equal_approx(ship.repair_seconds, float(Equipment.MODELS["rep-2"]["repair_seconds"])) else "rep-1"
+	var equipped := "rep-2" if ship.repair_seconds <= float(Equipment.MODELS["rep-2"]["repair_seconds"]) + 0.01 else "rep-1"
 	if model_id == equipped:
 		return
 	model_id = equipped

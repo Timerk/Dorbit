@@ -48,6 +48,7 @@ var session: FlightSession
 var shop: StationShop
 var equipment_menu: ShipEquipment
 var resource_workshop: ResourceWorkshop
+var research_menu: ResearchMenu
 var dedicated_server: bool = false
 var client_only: bool = true
 var offline: bool = false
@@ -142,6 +143,9 @@ func _ready() -> void:
 		resource_workshop = ResourceWorkshop.new()
 		resource_workshop.sector = self
 		shop_layer.add_child(resource_workshop)
+		research_menu = ResearchMenu.new()
+		research_menu.sector = self
+		shop_layer.add_child(research_menu)
 		skylab_menu = SkylabMenu.new()
 		skylab_menu.sector = self
 		shop_layer.add_child(skylab_menu)
@@ -255,6 +259,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if resource_workshop.visible:
 			resource_workshop.close()
+			return
+		if research_menu.visible:
+			research_menu.close()
 			return
 		session.menu.hide()
 		set_paused(not paused)

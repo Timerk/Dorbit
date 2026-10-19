@@ -373,7 +373,7 @@ preserves existing reserves. Both require a launched living ship.
 
 Removing Slot CPU 1 returns equipment from its added slots to inventory. Cargo
 capacity removal is blocked until excess cargo is sold. Items and settings persist
-with the pilot. Client and server must both use network schema 18. See
+with the pilot. Client and server must both use network schema 19. See
 [the agreed mechanics and prices](GAME_PLAN.md#extras-equipment) and
 [generated artwork and prompts](assets/ui/extras/README.md).
 
@@ -506,11 +506,25 @@ pending/offline actions and icon updates on depletion. Review the
 [active boosts and replacement warning](docs/feedback/resource-upgrades-menu.png).
 Human economy and balance playtesting remains necessary.
 
+### Research skill tree
+
+Open **Research** in the station console to spend research points from hunting
+contracts on eleven skills in Defense, Economy and Offense rows.
+Each of the five levels per skill costs one point plus refined Skylab stock
+(Prometid, Duranium, Promerium and Seprom); a skill unlocks when the previous one in
+its row is complete. Pilots can hold 30 levels at once. Reset refunds points, not
+materials, for 100,000 credits, doubling each time. Learning and resetting follow
+station service rules and apply to the flying ship immediately. See
+[the agreed values](GAME_PLAN.md#research-skill-tree).
+`res://tests/research_test.gd` covers the rules, contract rewards and
+authenticated learn/reset transactions; the offline menu test captures the page.
+Review the [Research page at 1440 × 900](docs/feedback/research-menu.png).
+
 ## Dedicated server and connections
 
 ### Current compatibility
 
-The current **network schema is 18** (`FlightSession.NETWORK_SCHEMA`), including
+The current **network schema is 19** (`FlightSession.NETWORK_SCHEMA`), including
 four-map membership, transfers, the shared collision layout, owner-only pilot
 progress and batched binary world snapshots. Clients and servers must use
 matching builds and protocol fingerprints; the connection handshake rejects
@@ -531,7 +545,7 @@ Credits survive disconnects and server restarts. Ship position, health, kills an
 
 ### Hunting contracts
 
-Press C at Outpost 01 to accept repeatable hunts: 3 Scouts for 900 credits, 2 Sentinels for 4,500, and 1 Heavy for 30,000. All three can run together, with one active run of each offer. The final qualifying kill automatically pays its reward in flight and clears that hunt. The board and flight HUD track all active hunts. C or Esc returns to flight.
+Press C at Outpost 01 to accept repeatable hunts: 3 Scouts for 900 credits, 2 Sentinels for 4,500, and 1 Heavy for 30,000. They also award 1, 2 and 4 research points. All three can run together, with one active run of each offer. The final qualifying kill automatically pays its reward in flight and clears that hunt. The board and flight HUD track all active hunts. C or Esc returns to flight.
 
 Accepting or abandoning a hunt requires the same position, speed and damage cooldown as repairs. Each eligible contributor earns a full kill of matching progress after acceptance, separately from split kill credits. Death preserves progress. Abandonment costs nothing and removes only the selected hunt. Completed or abandoned offers can be accepted again at the station. Counts and rewards need playtesting.
 
