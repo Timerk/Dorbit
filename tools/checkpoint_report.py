@@ -24,7 +24,7 @@ def summarize(result):
     if result["network"]["socket_dropped_frames"]: reasons.append("capture dropped frames")
     if server["minimum_roster"] != 10: reasons.append("ten-client roster missing")
     if server["elapsed_seconds"] < 60: reasons.append("window shorter than 60 seconds")
-    if not any(event.get("checkpoints", 0) > 1 for event in server.get("simultaneous_extras", [])):
+    if not any(event.get("pilots", event.get("checkpoints", 0)) > 1 for event in server.get("simultaneous_extras", [])):
         reasons.append("simultaneous resupply evidence missing")
     labs = server["skylab"]
     if len(labs) != 10 or any(lab["after_at"] <= lab["before_at"] or

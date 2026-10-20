@@ -218,6 +218,20 @@ class ValidationTest(unittest.TestCase):
             self.assertIn(str(root / 'profile'), results[0]['output'])
             self.assertIn('1500', results[0]['output'])
 
+    def test_group_ports_stay_disjoint_below_ephemeral_ranges(self):
+        # Client sockets take ephemeral ports (Linux 32768+, Windows 49152+), which
+        # can occupy a fixed server port and fail ENet host creation.
+        bases = [int(port) for script in (ROOT / 'tests').glob('*.gd')
+                 for port in re.findall(r'\b(24[6-9]\d\d)\b', script.read_text(encoding='utf-8'))]
+        low, high = min(bases), max(bases)
+        self.assertLess(high - low, runner.PORT_STRIDE)
+        for suite in json.loads((ROOT / 'tools/check-suites.json').read_text()).values():
+            blocks = [(low + runner.port_offset(index), high + runner.port_offset(index)) for index in range(len(suite))]
+            self.assertGreaterEqual(blocks[0][0], 1024)
+            self.assertLess(blocks[-1][1], 32768)
+            for previous, current in zip(blocks, blocks[1:]):
+                self.assertLess(previous[1], current[0])
+
 
 if __name__ == '__main__':
     unittest.main()

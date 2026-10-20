@@ -3,59 +3,13 @@ extends "res://tests/dedicated_server_test.gd"
 
 
 func fire_at(server: Sector, clients: Array[Sector], enemies: Array[Alien], life: int = -1, phase: String = "fire") -> void:
-	# Production clients resend unreliable flight packets. Wait for actual receipt,
-	# keeping simultaneous intents fresh together even when a frame exceeds their TTL.
-	var started := Time.get_ticks_msec()
-	var attempts := 0
-	var samples: Array[Dictionary] = []
-	while Time.get_ticks_msec() < started + 8000:
-		attempts += 1
-		await process_frame
-		var sent := Time.get_ticks_msec()
-		for index in range(clients.size()):
-			var client := clients[index]
-			var enemy := enemies[index]
-			client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false, true,
-				int(client.player.get_meta("life", 0)), enemy.life if life < 0 else life, enemy.alien_id)
-		# A frame signal is not a receipt barrier: SceneTree polls multiple APIs
-		# sequentially, and at 1 FPS an extra frame costs more than the 500 ms TTL.
-		# Send after yielding; service clients before the authority, then inspect
-		# all receipts in the same turn as combat consumes them. Keep real ENet
-		# and server timestamps, without aging this retry across another frame.
-		for client in clients:
-			client.multiplayer.poll()
-		var before_poll := Time.get_ticks_msec()
-		var prior_times: Array[int] = []
-		for client in clients:
-			prior_times.append(int(server.session.commands.get(client.multiplayer.get_unique_id(), {}).get("time", -1)))
-		server.multiplayer.poll()
-		var observed := Time.get_ticks_msec()
-		var complete := true
-		for index in range(clients.size()):
-			var command: Dictionary = server.session.commands.get(clients[index].multiplayer.get_unique_id(), {})
-			var encounter := enemies[index].life if life < 0 else life
-			var received := int(command.get("time", -1))
-			var fresh := received >= started and observed - received < FlightSession.COMMAND_TIMEOUT * 1000
-			var matches: bool = command.get("target", -1) == enemies[index].alien_id and command.get("encounter", -1) == encounter and command.get("fire", false)
-			if not fresh or not matches:
-				complete = false
-			samples.append({"phase": phase, "attempt": attempts, "started_ms": started,
-				"sent_ms": sent, "before_poll_ms": before_poll, "observed_ms": observed,
-				"prior_received_ms": prior_times[index], "received_ms": received, "age_ms": observed - received,
-				"client_peer": clients[index].multiplayer.get_unique_id(), "server_peer": server.multiplayer.get_unique_id(),
-				"pilot_life": int(clients[index].player.get_meta("life", 0)),
-				"server_life": server.session.combat.records.get(clients[index].multiplayer.get_unique_id(), {}).get("life", -1),
-				"target": enemies[index].alien_id, "encounter": encounter, "alien_life": enemies[index].life,
-				"command": command.duplicate(), "fresh": fresh, "matches": matches})
-		# Keep the last few attempts for each peer without flooding normal suite logs.
-		while samples.size() > clients.size() * 8:
-			samples.pop_front()
-		if complete:
-			if Engine.max_fps == 1:
-				print("Fire convergence: ", JSON.stringify(samples))
-			return
-	print("Fire convergence failure: ", JSON.stringify(samples))
-	check(false, "Server receives fresh fire intents for every requested encounter")
+	# All simultaneous intents must reach the server in the same turn, so combat
+	# can consume them together even when each frame exceeds COMMAND_TIMEOUT.
+	var intents: Array[Dictionary] = []
+	for index in range(clients.size()):
+		var enemy := enemies[index]
+		intents.append(intent(true, int(clients[index].player.get_meta("life", 0)), enemy.life if life < 0 else life, enemy.alien_id))
+	check(await deliver_intents(server, clients, intents, phase), "Server receives fresh fire intents for every requested encounter")
 
 
 func run() -> void:
@@ -172,7 +126,11 @@ func run() -> void:
 	late.session.snapshot({}, combat.pack_alien(scout), sequence - 1)
 	check(late.aliens[4].hull == 200 and not late.aliens[1].alive, "Reordered alien chunks converge independently")
 	server.session.snapshot_sequence = sequence
+	# This loop simulates up to 30 s of combat. Random alien homes can place
+	# another alien near the parked pilot, whose death would erase its command
+	# and reject the stale-encounter intent below. Keep both pilots protected.
 	p.position = Sector.STATION_POSITION
+	q.position = Sector.STATION_POSITION + Vector3(0, 120, 0)
 	for step in range(1800):
 		if not heavy.returning:
 			break

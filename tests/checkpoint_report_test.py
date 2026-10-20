@@ -42,6 +42,13 @@ class ReportTest(unittest.TestCase):
             mutation(fixture)
             self.assertFalse(report.summarize(fixture)["activity_and_capture_checks_passed"])
 
+    def test_batched_resupply_uses_pilots_not_checkpoint_count(self):
+        fixture = self.fixture()
+        fixture["server"]["simultaneous_extras"] = [{"checkpoints": 1, "pilots": 10}]
+        self.assertTrue(report.summarize(fixture)["activity_and_capture_checks_passed"])
+        fixture["server"]["simultaneous_extras"] = [{"checkpoints": 1, "pilots": 1}]
+        self.assertFalse(report.summarize(fixture)["activity_and_capture_checks_passed"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -4,6 +4,8 @@ extends SceneTree
 var failures: int = 0
 var checks: int = 0
 var worlds: Array[SubViewport] = []
+## Requested test ports, after DORBIT_TEST_PORT_OFFSET, mapped to the port bound.
+var bound_ports: Dictionary[int, int] = {}
 
 
 func _initialize() -> void:
@@ -37,7 +39,7 @@ func make_sector(label: String, dedicated: bool = false, port: int = 24683) -> S
 	set_multiplayer(SceneMultiplayer.new(), viewport.get_path())
 	var sector := instantiate_sector()
 	sector.dedicated_server = dedicated
-	sector.server_port = test_port(port)
+	sector.server_port = reserve_port(port) if dedicated else test_port(port)
 	sector.client_only = false
 	viewport.add_child(sector)
 	sector.set_physics_process(false)
@@ -49,7 +51,40 @@ func instantiate_sector() -> Sector:
 
 
 func test_port(port: int) -> int:
-	return port + int(OS.get_environment("DORBIT_TEST_PORT_OFFSET"))
+	var requested := port + int(OS.get_environment("DORBIT_TEST_PORT_OFFSET"))
+	return bound_ports.get(requested, requested)
+
+
+## Choose a bindable UDP port before ENet tries it. Another process's client
+## socket can hold a fixed test port, and a failed ENet bind logs an engine error
+## that fails the suite even if a retry succeeds. Clients joining through
+## test_port follow any replacement, which is reported for diagnosis.
+func reserve_port(port: int) -> int:
+	var requested := port + int(OS.get_environment("DORBIT_TEST_PORT_OFFSET"))
+	var previous: int = bound_ports.get(requested, requested)
+	var bound := free_udp_port(previous)
+	if bound != previous:
+		print("Test port %d unavailable; bound UDP %d instead" % [previous, bound])
+	bound_ports[requested] = bound
+	return bound
+
+
+func host_session(sector: Sector, port: int) -> Error:
+	return sector.session.host(reserve_port(port))
+
+
+## Returns preferred when it can be bound now, otherwise an OS-assigned free port.
+## PacketPeerUDP reports bind failures without logging an engine error.
+static func free_udp_port(preferred: int) -> int:
+	var probe := PacketPeerUDP.new()
+	if probe.bind(preferred) == OK:
+		probe.close()
+		return preferred
+	if probe.bind(0) != OK:
+		return preferred
+	var port := probe.get_local_port()
+	probe.close()
+	return port
 
 
 func test_token(index: int) -> String:
@@ -65,7 +100,7 @@ func run() -> void:
 	var client := make_sector("Client")
 	var late := make_sector("Late")
 	await settle()
-	check(host.session.host(test_port(24678)) == OK, "Host opens an ENet server")
+	check(host_session(host, 24678) == OK, "Host opens an ENet server")
 	check(client.session.join("127.0.0.1", test_port(24678)) == OK, "Client starts connecting")
 	await settle(0.5)
 	check(client.session.active, "Client connects to host")

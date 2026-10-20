@@ -109,7 +109,7 @@ func check_bulk_purchase(server: Sector, client: Sector) -> void:
 	client.session.disconnect_session("Bulk restart check")
 	await settle()
 	server.session.disconnect_session("Bulk restart check")
-	check(server.session.host(test_port(24735)) == OK, "Server reloads the bulk transaction")
+	check(host_session(server, 24735) == OK, "Server reloads the bulk transaction")
 	client.session.join("127.0.0.1", test_port(24735))
 	await settle(0.5)
 	await replicate(server)

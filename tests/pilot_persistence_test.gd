@@ -79,7 +79,7 @@ func run() -> void:
 	check(client.credits == 1500 and server.session.pilot_ids.size() == 1, "Reconnect restores wallet and releases old login reservation")
 	server.session.disconnect_session("Restart")
 	await settle(0.3)
-	check(server.session.host(test_port(24683)) == OK, "Restart opens saved ledger with a new store instance")
+	check(host_session(server, 24683) == OK, "Restart opens saved ledger with a new store instance")
 	client.session.join("127.0.0.1", test_port(24683))
 	await settle(0.5)
 	await replicate(server)

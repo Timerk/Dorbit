@@ -137,7 +137,7 @@ func run() -> void:
 	client.session.disconnect_session("Restart")
 	await settle()
 	server.session.disconnect_session("Restart")
-	check(server.session.host(test_port(24732)) == OK, "Server restarts with saved cargo")
+	check(host_session(server, 24732) == OK, "Server restarts with saved cargo")
 	client.session.join("127.0.0.1", test_port(24732))
 	await settle(0.5)
 	await replicate(server)

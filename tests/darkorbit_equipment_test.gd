@@ -155,7 +155,7 @@ func run() -> void:
 	client.session.disconnect_session("Reference restart")
 	await settle()
 	server.session.disconnect_session("Reference restart")
-	check(server.session.host(test_port(24743)) == OK, "Server restarts with the expanded catalog save")
+	check(host_session(server, 24743) == OK, "Server restarts with the expanded catalog save")
 	client.session.join("127.0.0.1", test_port(24743))
 	await settle(0.5)
 	await replicate(server)
