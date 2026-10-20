@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -10,6 +11,55 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 BASH = shutil.which("bash") or ("C:/Program Files/Git/bin/bash.exe" if os.name == "nt" else None)
+
+
+def checkout_patterns(job):
+    workflow = (ROOT / '.github/workflows/validate.yml').read_text()
+    block = re.split(r'\n  \S', workflow.split(f'\n  {job}:\n', 1)[1], maxsplit=1)[0]
+    # Read the literal checkout input without adding a YAML dependency to CI tests.
+    match = re.search(r'^          sparse-checkout: (.+)\n((?:            .+\n)*)', block, re.M)
+    if not match:
+        return None
+    assert '          sparse-checkout-cone-mode: false' in block
+    return [line.strip() for line in match[2].splitlines()] if match[1] == '|' else [match[1]]
+
+
+class SparseCheckoutTest(unittest.TestCase):
+    def test_workflow_patterns_preserve_job_inputs_and_archive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            def git(*args):
+                return subprocess.check_output(['git', *args], cwd=root, stderr=subprocess.PIPE)
+            files = ['project.godot', 'export_presets.cfg', 'README.md', 'docs/ci-performance.md',
+                     '.github/workflows/validate.yml', 'assets/runtime.svg', 'tools/ci-deploy.py',
+                     'tools/import-cache.py', 'tools/check-game.py', 'tools/check-suites.json',
+                     'tests/ci_performance_test.py', 'tests/ci_packaging_test.py', 'tests/network_test.gd']
+            files += ['docs/sector-art/.gdignore', 'docs/sector-art/reference.png']
+            for name in files:
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('fixture')
+            git('init', '-q')
+            git('add', '.')
+            git('-c', 'user.name=CI', '-c', 'user.email=ci@example.test', 'commit', '-qm', 'fixture')
+            for job in ('changes', 'linux-server', 'windows', 'release'):
+                with self.subTest(job=job):
+                    patterns = checkout_patterns(job)
+                    if patterns is None:
+                        git('sparse-checkout', 'disable')
+                    else:
+                        git('sparse-checkout', 'set', '--no-cone', *patterns)
+                    present = {name for name in files if (root / name).is_file()}
+                    if job == 'changes':
+                        expected = {name for name in files if name.startswith('tools/') or
+                                    name == 'tests/ci_performance_test.py' or name.endswith('.gd')}
+                    elif job == 'release':
+                        expected = {'tools/ci-deploy.py'}
+                    else:
+                        expected = set(files)
+                    self.assertEqual(present, expected)
+                    # Packaging archives the revision independently of the working checkout.
+                    self.assertIn(b'assets/runtime.svg', git('archive', '--format=tar', 'HEAD'))
 
 
 @unittest.skipUnless(BASH, "Bash is required to exercise Linux packaging")

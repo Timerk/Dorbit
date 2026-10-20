@@ -20,6 +20,13 @@ jobs:
       build: ${{ steps.changes.outputs.build }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # Network-fixture checks read the suite scripts and their parents.
+          sparse-checkout: |
+            /tools/
+            /tests/ci_performance_test.py
+            /tests/*.gd
+          sparse-checkout-cone-mode: false
       - name: Test CI helpers
         run: python3 -m unittest discover -s tests -p 'ci_performance_test.py' -v
       - id: changes
@@ -163,6 +170,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          sparse-checkout: tools/ci-deploy.py
+          sparse-checkout-cone-mode: false
       - name: Download packages without extracting artifact paths
         env:
           GH_TOKEN: ${{ github.token }}
