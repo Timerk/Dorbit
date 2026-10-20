@@ -395,6 +395,8 @@ static func explosion(parent: Node3D, location: Vector3, diameter: float = 9.7) 
 		tween.tween_method(func(value: float): puff.set_instance_shader_parameter("progress", value), 0.0, 1.0, lifetime)
 		tween.tween_property(puff, "scale", puff.scale * 2.1, lifetime).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tween.tween_property(puff, "position", offset * 2.2, lifetime).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		# Spent puffs are transparent but still shade their large quads; the root keeps loot timing.
+		tween.chain().tween_callback(puff.queue_free)
 	if high:
 		glow(effect, Vector3.ZERO, Vector2(size * 4.8, size * 0.24), Color("ffd598"), 0.5)
 		var shockwave := glow(effect, Vector3.ZERO, Vector2.ONE * size, Color(1.0, 0.78, 0.55, 0.45), 0.5)

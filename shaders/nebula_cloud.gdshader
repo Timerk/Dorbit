@@ -39,6 +39,10 @@ void vertex() {
 	POSITION = PROJECTION_MATRIX * VIEW_MATRIX * vec4(world, 1.0);
 	// Flat cards would be obvious up close, so each wisp dissolves as the camera enters it.
 	near_fade = smoothstep(size * 0.12, size * 0.55, distance(CAMERA_POSITION_WORLD, center));
+	if (near_fade <= 0.0) {
+		// A fully faded card can still cover the screen; collapse it so no fragments run.
+		POSITION = vec4(2.0, 2.0, 2.0, 1.0);
+	}
 }
 
 void fragment() {
