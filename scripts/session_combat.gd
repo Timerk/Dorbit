@@ -196,20 +196,50 @@ func apply_equipment(id: int) -> void:
 	ship.robot_repairing = false
 
 
-func tick_extras(id: int, delta: float) -> bool:
+func prepare_extras(id: int, delta: float) -> Dictionary:
 	var ship := session.ships[id]
 	ship.extras_clock += delta
 	if ship.extras_clock < 1.0 or not ship.alive or ship.get_meta("docked", false):
-		return true
+		return {}
 	ship.extras_clock = 0.0
 	var pilot_id: String = session.pilot_ids[id]
 	var pilot: Dictionary = session.store.pilots[pilot_id].duplicate(true)
 	var boosts := ship.resource_boosts.duplicate(true)
 	if not Extras.automatic_update(pilot, boosts):
+		return {}
+	return pilot
+
+
+func tick_extras(ids: Array, delta: float) -> bool:
+	var pending := {}
+	var balances := {}
+	var cargo := {}
+	var ammo := {}
+	var boosts := {}
+	for id: int in ids:
+		var pilot := prepare_extras(id, delta)
+		if pilot.is_empty():
+			continue
+		var pilot_id: String = session.pilot_ids[id]
+		pending[id] = pilot
+		balances[pilot_id] = pilot["credits"]
+		cargo[pilot_id] = pilot["cargo"]
+		ammo[pilot_id] = pilot["ammo"]
+		boosts[pilot_id] = pilot["boosts"]
+	if pending.is_empty():
 		return true
-	if not session.store.commit({pilot_id: pilot["credits"]}, {}, {pilot_id: pilot["cargo"]}, {pilot_id: pilot["ammo"]}, {pilot_id: pilot["boosts"]}):
+	# No supply, stats or owner notification is published until the whole batch is durable.
+	if not session.store.commit(balances, {}, cargo, ammo, boosts):
 		session.stop_for_save_failure()
 		return false
+	for id: int in pending:
+		apply_extras(id, pending[id])
+	return true
+
+
+func apply_extras(id: int, pilot: Dictionary) -> void:
+	var ship := session.ships[id]
+	var boosts: Dictionary = pilot["boosts"][pilot["equipment"]["active_ship"]]
 	records[id]["credits"] = pilot["credits"]
 	ship.ammo = pilot["ammo"].duplicate()
 	ship.resource_boosts = boosts
@@ -217,7 +247,6 @@ func tick_extras(id: int, delta: float) -> bool:
 	Equipment.apply_stats(ship, ResourceBoosts.stats(Equipment.stats(pilot["equipment"]), boosts))
 	cargo_result.rpc_id(id, pilot["cargo"][pilot["equipment"]["active_ship"]], CargoResources.capacity(pilot["equipment"]))
 	message(id, "Extras: automatic supplies applied.")
-	return true
 
 
 func flush_boosts(ids: Array = []) -> bool:
@@ -309,8 +338,11 @@ func tick(delta: float) -> void:
 				sector.auto_fire = false
 	if sector.dedicated_server: session.store.begin_combat_tick()
 	var phase_started := Time.get_ticks_usec() if session.benchmark_timing else 0
+	var combatants: Array[int] = []
+	var firing_targets: Dictionary[int, Alien] = {}
+	pay_pending_contracts_batch(records.keys())
+	if sector.dedicated_server and session.store.failed: return
 	for id: int in records:
-		pay_pending_contracts(id)
 		var ship := session.ships[id]
 		if sector.dedicated_server:
 			var expired := false
@@ -325,6 +357,7 @@ func tick(delta: float) -> void:
 				var pilot: Dictionary = session.store.pilots[session.pilot_ids[id]]
 				Equipment.apply_stats(ship, ResourceBoosts.stats(Equipment.stats(pilot["equipment"]), ship.resource_boosts))
 		ship.tick_combat(delta)
+		if sector.dedicated_server and session.store.failed: return
 		if not ship.alive:
 			records[id]["respawn"] = maxf(0.0, records[id]["respawn"] - delta)
 			if records[id]["respawn"] <= 0.0:
@@ -351,14 +384,24 @@ func tick(delta: float) -> void:
 			continue
 		if ship.position.distance_to(Sector.STATION_POSITION) > Sector.PROTECTION_RADIUS:
 			records[id]["stage"] = maxi(records[id]["stage"], 1)
-		var enemy: Alien = sector.target as Alien if id == 1 else remote_target(id)
 		var firing := sector.auto_fire and not sector.paused if id == 1 else remote_firing(id)
 		Extras.tick_repair(ship, delta, firing)
-		if sector.dedicated_server and not tick_extras(id, delta):
-			return
-		if firing and is_instance_valid(enemy) and enemy.available():
+		combatants.append(id)
+		# Validate intent before checkpoint I/O; recheck encounter availability before firing.
+		var enemy: Alien = sector.target as Alien if id == 1 else remote_target(id)
+		if firing and is_instance_valid(enemy):
+			firing_targets[id] = enemy
+	# Prepare after timer expiry/rescue, then checkpoint before any pilot can fire.
+	# Later journal debits and kill rewards cannot be overwritten by staged supplies.
+	if sector.dedicated_server and not tick_extras(combatants, delta):
+		return
+	for id: int in firing_targets:
+		var ship := session.ships[id]
+		var enemy := firing_targets[id]
+		if is_instance_valid(enemy) and enemy.available():
 			records[id]["stage"] = maxi(records[id]["stage"], 2)
 			ship.try_fire(enemy)
+			if sector.dedicated_server and session.store.failed: return
 	if sector.dedicated_server: session.store.end_combat_tick()
 	if sector.dedicated_server and session.store.failed: return
 	if session.benchmark_timing:
@@ -489,16 +532,31 @@ func request_repair() -> bool:
 
 
 func pay_pending_contracts(id: int) -> void:
-	var payout := HuntingContracts.settle(records[id]["contracts"], records[id]["credits"])
-	if payout["reward"] == 0:
+	pay_pending_contracts_batch([id])
+
+
+func pay_pending_contracts_batch(ids: Array) -> void:
+	var payouts := {}
+	var balances: Dictionary[int, int] = {}
+	var contracts: Dictionary[int, Dictionary] = {}
+	var research: Dictionary[int, int] = {}
+	for id: int in ids:
+		var payout := HuntingContracts.settle(records[id]["contracts"], records[id]["credits"])
+		if payout["reward"] == 0:
+			continue
+		payouts[id] = payout
+		balances[id] = payout["credits"]
+		contracts[id] = payout["contracts"]
+		research[id] = payout["research"]
+	if payouts.is_empty() or not session.save_balances(balances, contracts, research):
 		return
-	if not session.save_balances({id: payout["credits"]}, {id: payout["contracts"]}, {id: payout["research"]}):
-		return
-	records[id]["credits"] = payout["credits"]
-	records[id]["contracts"] = payout["contracts"]
-	message(id, HuntingContracts.paid_notice(payout))
-	if payout["research"] > 0:
-		publish_inventory(id)
+	for id: int in payouts:
+		var payout: Dictionary = payouts[id]
+		records[id]["credits"] = payout["credits"]
+		records[id]["contracts"] = payout["contracts"]
+		message(id, HuntingContracts.paid_notice(payout))
+		if payout["research"] > 0:
+			publish_inventory(id)
 
 
 func request_contract(action: String, offer: String = "") -> void:

@@ -271,7 +271,23 @@ An earlier 120-second four-map attempt at `56be979` failed the intended map-memb
 
 The callback exceeded the 16.7 ms budget by 6.2 times. The checkpoint occupied almost the entire callback; ordinary snapshot work did not run in that tick. Timings localize the delay to the backup replacement call, which includes write, flush, readback, close and rename. They do not distinguish slow storage from a scheduling pause during that call. No VPS conclusion follows from this WSL observation.
 
-The smallest candidate mitigation is to combine simultaneous extras supply changes into one verified full checkpoint per combat pass, preserving commit-before-effects. That reduces repeated backup/primary replacements when several pilots resupply together. It cannot eliminate a slow individual replacement. Before changing persistence threading or guarantees, trace replacement substeps and repeat on an isolated Linux filesystem or an explicitly approved isolated VPS workload. No persistence or replication optimization is implemented in this PR.
+The 20 October mitigation combines simultaneous extras supply changes into one
+verified full checkpoint per combat pass. Pilot timers, rescue and repair run
+first; all due supplies are prepared on copies, committed together, then applied
+before any pilot fires. Ammo, credits, cargo, boosts, stats and owner notifications
+remain behind that durability boundary. Full checkpoints invalidate the shared
+journal integrity check, so later ammo/boost debits verify the new snapshot/journal
+pair. Loot collection already batches and runs afterward against committed cargo.
+Pending contract payouts now also share one checkpoint before supplies and firing;
+kill rewards retain their immediate commit-before-publication ordering.
+
+This removes repeated extras backup/primary replacements within a pass, but cannot
+eliminate a slow individual replacement. No before/after Linux capture was measured:
+this Windows host has no installed WSL distribution. Historical timings above
+predate batching. Follow up with isolated Linux source and exported-runtime
+captures; any VPS measurement requires explicit operator approval. No live VPS or
+production saves were accessed. See the [checkpoint follow-up](docs/checkpoint-tail-latency.md)
+for reproduction and correctness coverage.
 
 The qualifying spread run also exceeded the tick budget without persistence. Its callback at Godot 129,023,480 µs took 28.443 ms, of which snapshot work took 27.531 ms; no timed save overlapped it. Snapshot p95 was 2.657 ms across all ticks, including ticks without a snapshot. Elapsed timing cannot separate snapshot CPU work, UDP-send delay and OS preemption. The smallest serialization change to test next is to build each alien's packed state once per snapshot and reuse it for viewers on that map. At 3/3/2/2, this would reduce `pack_alien` calls from 50 to 20 per snapshot while preserving the existing RPC format and owner packets. This is a candidate optimization, not a measured speedup or a guarantee that the outlier disappears. Profile construction and send time separately before pursuing broader packet batching.
 

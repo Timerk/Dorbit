@@ -290,7 +290,7 @@ func run() -> void:
 	await capture(client, "extras-repair-rep-2")
 	remote.extras_clock = 1.0
 	remote.resource_boosts.clear()
-	check(server.session.combat.tick_extras(id, 0.0), "Server commits automatic resource costs")
+	check(server.session.combat.tick_extras([id], 0.0), "Server commits automatic resource costs")
 	await replicate(server)
 	check(client.player.resource_boosts == remote.resource_boosts and client.cargo == store.pilots["pilot0"]["cargo"]["starter"], "Automatic boost and cargo updates replicate")
 	await replicate(server)
@@ -347,7 +347,7 @@ func run() -> void:
 	check(Extras.enabled(store.pilots["pilot0"]["equipment"]["items"][owned["generator-cpu"]]) and bar.tiles[7].amount.text == "ON" and generator_tile.amount.text == "ON", "Assigned Auto Boost slot enables the CPU and synchronizes ON")
 	remote.resource_boosts.clear()
 	remote.extras_clock = 1.0
-	check(server.session.combat.tick_extras(id, 0.0), "Enabled Auto Boost applies remaining compatible resources")
+	check(server.session.combat.tick_extras([id], 0.0), "Enabled Auto Boost applies remaining compatible resources")
 	await replicate(server)
 	check(remote.resource_boosts.has("shields") and remote.resource_boosts.has("engines") and bar.tiles[7].amount.text == "ON", "Auto Boost remains ON after resources are applied")
 	await capture(client, "extras-auto-boost-enabled")
@@ -369,7 +369,7 @@ func run() -> void:
 	remote.ammo = store.pilots["pilot0"]["ammo"].duplicate()
 	var selected: String = remote.ammo_type
 	remote.extras_clock = 1.0
-	check(server.session.combat.tick_extras(id, 0.0), "Automatic ammo refill commits on the server")
+	check(server.session.combat.tick_extras([id], 0.0), "Automatic ammo refill commits on the server")
 	await replicate(server)
 	check(store.pilots["pilot0"]["ammo"]["x3"] == 10000 and remote.ammo["x3"] == 10000 and client.player.ammo["x3"] == 10000 and client.credits == 90000 and remote.ammo_type == selected, "Automatic x3 purchase saves and replicates exact rounds and price without changing selected ammo")
 	var reloaded := PilotStore.new()
