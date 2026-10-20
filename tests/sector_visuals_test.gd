@@ -25,6 +25,11 @@ func run() -> void:
 	check(client.get_node_or_null("DistantScenery") != null, "Client has distant scenery")
 	check(server.get_node_or_null("DistantScenery") == null, "Server skips distant scenery")
 	space_dust_checks(client, server)
+	await sync_physics()
+	sun_flare_checks(client)
+	check(client.get_node_or_null("SunFlare") is SunFlare and server.get_node_or_null("SunFlare") == null, "Only rendering clients create the sun flare")
+	var clouds := client.get_node_or_null("DistantScenery/NebulaClouds") as MultiMeshInstance3D
+	check(clouds != null and clouds.multimesh.instance_count == SectorBackdrop.CLOUD_COUNT, "Nebula wisps share one instanced draw")
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7301
 	for index in range(24):
@@ -219,4 +224,23 @@ func space_dust_checks(client: Node3D, server: Node3D) -> void:
 		camera.position += Vector3(0, 0, -5.0)
 		dust._process(1.0 / 60.0)
 	check(dust.velocity.length() <= SpaceDust.MAX_STREAK_SPEED + 0.01, "Fast camera motion cannot stretch streaks beyond the cap")
+	camera.free()
+
+
+func sun_flare_checks(client: Node3D) -> void:
+	var flare := client.get_node("SunFlare") as SunFlare
+	var camera := Camera3D.new()
+	client.add_child(camera)
+	camera.make_current()
+	var sky := (client.get_node("WorldEnvironment") as WorldEnvironment).environment.sky.sky_material as ShaderMaterial
+	var sun := (sky.get_shader_parameter("sun_direction") as Vector3).normalized()
+	camera.global_position = Vector3(0, 0, 900)
+	camera.look_at(camera.global_position + sun)
+	check(flare.visibility() > 0.9, "Looking straight at an unobstructed sun shows the flare")
+	camera.look_at(camera.global_position - sun)
+	check(flare.visibility() == 0.0, "Facing away from the sun hides the flare")
+	var rock := client.get_node("Asteroid4") as Node3D
+	camera.global_position = rock.global_position - sun * 30.0
+	camera.look_at(camera.global_position + sun)
+	check(flare.visibility() == 0.0, "An asteroid between the camera and the sun blocks the flare")
 	camera.free()

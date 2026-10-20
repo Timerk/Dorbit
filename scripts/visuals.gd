@@ -5,6 +5,7 @@ extends RefCounted
 const EFFECT_LIMIT: int = 64
 const DESTRUCTION_LIMIT: int = 80
 const EXPLOSION_DURATION: float = 1.2
+const LASER_LIGHT_LIMIT: int = 12 # Keeps busy fights within the renderer's light budget.
 const GLOW_SHADER := preload("res://shaders/combat_glow.gdshader")
 const SHIELD_SHADER := preload("res://shaders/shield_hit.gdshader")
 const STREAK_SHADER := preload("res://shaders/combat_streak.gdshader")
@@ -167,6 +168,7 @@ static func environment(parent: Node3D, render: bool = true) -> void:
 		fill.light_specular = 0.15
 		parent.add_child(fill)
 		SpaceDust.attach(parent)
+		SunFlare.attach(parent)
 		# Distant scenery sits beyond the safe sector and has no colliders.
 		distant_scenery(parent)
 	var rng := RandomNumberGenerator.new()
@@ -359,6 +361,16 @@ static func laser(parent: Node3D, start: Vector3, finish: Vector3, hostile: bool
 	if quality > 1:
 		glow(effect, Vector3.ZERO, Vector2.ONE * 2.4, color, 0.09)
 		glow(effect, endpoint - start, Vector2.ONE * 2.0, color, 0.13)
+		# Hits briefly light the target hull in the beam colour.
+		if parent.get_tree().get_node_count_in_group("laser_lights") < LASER_LIGHT_LIMIT:
+			var light := OmniLight3D.new()
+			light.add_to_group("laser_lights")
+			light.position = endpoint - start
+			light.light_color = color
+			light.omni_range = 12.0
+			light.light_energy = 3.0
+			effect.add_child(light)
+			light.create_tween().tween_property(light, "light_energy", 0.0, 0.16)
 
 
 static func explosion(parent: Node3D, location: Vector3, diameter: float = 9.7) -> void:
