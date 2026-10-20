@@ -1,5 +1,6 @@
 {
   "windows": [
+    {"name": "pilots", "checks": [["tests/pilots_test.py"]]},
     {"name": "checkpoint_trace", "checks": [["checkpoint_trace_test.gd"], ["tests/checkpoint_report_test.py"]]},
     {"name": "asset_budgets_test", "checks": [["asset_budgets_test.gd"]]},
     {"name": "encounter_test", "checks": [["encounter_test.gd"]]},
