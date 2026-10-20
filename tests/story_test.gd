@@ -98,6 +98,10 @@ func run() -> void:
 	await settle(0.1)
 	check(pilot.story_state() == Story.empty(), "New and existing pilots start the prologue")
 	check(pilot.story_sites.comm.begins_with("VANCE: Pilot, this is Commander Vance"), "Joining shows the current briefing as a transmission")
+	check(pilot.story_sites.comm_lines.size() == 1 and pilot.story_sites.comm_lines[0][0] == "vance", "The briefing transmission is attributed to its contact")
+	for contact: String in Story.CONTACTS:
+		var picture := StorySites.portrait(contact)
+		check(picture != null and maxi(picture.get_width(), picture.get_height()) <= 512, "%s has a portrait within the UI budget" % contact)
 	await process_frame
 	check(pilot.story_sites.site.visible and pilot.hud.story_height() > 0.0, "The first site and flight card section are shown")
 	await capture(pilot, "story-comms-check")
@@ -124,6 +128,9 @@ func run() -> void:
 	await process_frame
 	check(pilot.story_state()["step"] == 1 and pilot.story_sites.comm.begins_with("VANCE: Clean flying."), "The owner receives progress and the contact's closing line")
 	check(sites.tips == Story.CONTROLS["survey_run"], "The next step opens its own controls pop-up")
+	check(sites.comm_lines.size() == 1 and sites.comm_lines[0][0] == "vance" and sites.comm_lines[0][1].ends_with(Story.STEPS[1]["briefing"]), "One speaker's closing line and next briefing share a portrait")
+	var handover := Story.completion_lines(Story.STEPS[1], {"step": 2, "progress": 0})
+	check(handover.size() == 2 and handover[0][0] == "vance" and handover[1] == ["sato", Story.STEPS[2]["briefing"]], "A new speaker gets their own portrait line")
 	await capture(pilot, "story-controls")
 	for pixels in [Vector2i(960, 600), Vector2i(1440, 900)]:
 		pilot.get_viewport().size = pixels
@@ -200,6 +207,7 @@ func run() -> void:
 	partner.hud.toggle_contracts()
 	partner.hud.show_story()
 	check(partner.hud.story_choices[0].visible and partner.hud.story_choices[1].disabled and partner.hud.story_skip.visible, "The Story tab lists current and locked steps")
+	check(partner.hud.story_portrait.texture == StorySites.portrait("vance") and partner.hud.story_speaker.visible, "The Story tab shows the briefing contact's portrait")
 	await process_frame
 	await capture(partner, "story-board")
 	partner.session.combat.request_station("story_deliver", "")

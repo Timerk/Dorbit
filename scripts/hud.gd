@@ -9,6 +9,7 @@ const CYAN := Color("66e2ee")
 const GREEN := Color("6ae9bb")
 const RED := Color("ff8176")
 const GOLD := StorySites.GOLD
+const PORTRAIT := 64.0
 const PANEL := Color(0.047, 0.071, 0.090, 0.92)
 const TOP_MARGIN := 24.0
 const SIDE_MARGIN := 32.0
@@ -45,6 +46,8 @@ var story_view := false
 var story_choices: Array[Button] = []
 var story_selected := 0
 var story_briefing: Label
+var story_speaker: HBoxContainer
+var story_portrait: TextureRect
 var story_tip: Label
 var story_deliver: Button
 var story_skip: Button
@@ -70,6 +73,8 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	theme = StationUi.menu_theme()
+	# Portraits shrink from 512 px sources; mipmaps keep the small faces smooth.
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	background = panel_style()
 	build_contract_panel()
 	navigation = FlightNavigation.new()
@@ -154,7 +159,17 @@ func build_contract_panel() -> void:
 	contract_progress.custom_minimum_size.y = 8
 	contract_progress.show_percentage = false
 	right.add_child(contract_progress)
-	story_briefing = StationUi.text(right, "", 17)
+	story_speaker = HBoxContainer.new()
+	story_speaker.add_theme_constant_override("separation", 16)
+	right.add_child(story_speaker)
+	story_portrait = TextureRect.new()
+	story_portrait.custom_minimum_size = Vector2(112, 112)
+	story_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	story_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	story_portrait.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	story_speaker.add_child(story_portrait)
+	story_briefing = StationUi.text(story_speaker, "", 17)
+	story_briefing.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	story_tip = StationUi.text(right, "", 15, StationUi.MUTED)
 	right.add_child(HSeparator.new())
 	contract_reward = StationUi.text(right, "", 26, StationUi.AMBER)
@@ -260,7 +275,7 @@ func update_contract_panel() -> void:
 	contract_tabs[1].set_pressed_no_signal(not story_view and contract_active_only)
 	for button: Button in story_choices:
 		button.visible = story_view
-	for control: Control in [story_briefing, story_tip, story_deliver, story_skip]:
+	for control: Control in [story_speaker, story_tip, story_deliver, story_skip]:
 		control.visible = story_view
 	if story_view:
 		update_story_panel(blocker)
@@ -339,6 +354,7 @@ func update_story_panel(blocker: String) -> void:
 		contract_objective.text = step["objective"] + "  /  COMPLETE"
 		contract_progress.value = step["required"]
 	story_briefing.text = "%s\n%s" % [Story.CONTACTS[step["contact"]]["name"].to_upper(), step["briefing"]]
+	story_portrait.texture = StorySites.portrait(step["contact"])
 	story_tip.text = "TIP: " + Story.hint(step) if current else step["done"]
 	contract_reward.text = "Reward    " + Story.reward_text(step["credits"], step["research"])
 	var pending := sector.session.combat.station_pending
@@ -548,12 +564,28 @@ func draw_context() -> void:
 	var width := minf(440, size.x - 2 * SIDE_MARGIN - 322)
 	if is_instance_valid(sector.story_sites) and sector.story_sites.comm_time > 0.0:
 		# Contact transmissions stay on screen independently of ordinary notices.
-		var comm := sector.story_sites.comm
-		var comm_size := font.get_multiline_string_size(comm, HORIZONTAL_ALIGNMENT_LEFT, width - 24, 15)
-		var comm_rect := Rect2(point, Vector2(width, comm_size.y + 34))
+		# Each speaker's line sits beside their portrait.
+		var lines: Array = sector.story_sites.comm_lines
+		var text_x := 12.0 + PORTRAIT + 12.0
+		var text_width := width - text_x - 12.0
+		var heights: Array[float] = []
+		var total := 32.0
+		for line: Array in lines:
+			var height := maxf(PORTRAIT, 22.0 + font.get_multiline_string_size(line[1], HORIZONTAL_ALIGNMENT_LEFT, text_width, 15).y)
+			heights.append(height)
+			total += height + 10.0
+		var comm_rect := Rect2(point, Vector2(width, total))
 		panel(comm_rect, CYAN)
 		text_at(point + Vector2(12, 18), "INCOMING TRANSMISSION", 12, CYAN)
-		paragraph(point + Vector2(12, 38), comm, width - 24, 15, INK)
+		var row := point.y + 30.0
+		for index in lines.size():
+			var contact: String = lines[index][0]
+			var frame := Rect2(point.x + 12, row, PORTRAIT, PORTRAIT)
+			draw_texture_rect(StorySites.portrait(contact), frame, false)
+			draw_rect(frame, Color(CYAN, 0.75), false, 1.0)
+			text_at(Vector2(point.x + text_x, row + 12), Story.CONTACTS[contact]["name"].to_upper(), 12, CYAN, text_width)
+			paragraph(Vector2(point.x + text_x, row + 32), lines[index][1], text_width, 15, INK)
+			row += heights[index] + 10.0
 		marker_labels.append(layout.transform_rect("context", comm_rect))
 		point.y = comm_rect.end.y + 8
 	var messages: Array[String] = []

@@ -245,11 +245,21 @@ static func reward_text(credits: int, research: int) -> String:
 
 ## Transmission after a completed step: its closing line, reward and the next briefing.
 static func completion_notice(finished: Dictionary, story: Dictionary) -> String:
-	var notice := "%s %s." % [transmission(finished, "done"), reward_text(finished["credits"], finished["research"])]
+	var parts: PackedStringArray = []
+	for line: Array in completion_lines(finished, story):
+		parts.append("%s: %s" % [CONTACTS[line[0]]["call"], line[1]])
+	return "\n".join(parts)
+
+
+## The same transmission as [contact, text] lines, one per speaker.
+static func completion_lines(finished: Dictionary, story: Dictionary) -> Array:
+	var closing := "%s %s." % [finished["done"], reward_text(finished["credits"], finished["research"])]
 	var next := current(story)
 	if next.is_empty():
-		return notice + " %s complete." % CHAPTER
-	return notice + "\n" + transmission(next)
+		return [[finished["contact"], closing + " %s complete." % CHAPTER]]
+	if next["contact"] == finished["contact"]:
+		return [[finished["contact"], closing + "\n" + next["briefing"]]]
+	return [[finished["contact"], closing], [next["contact"], next["briefing"]]]
 
 
 ## Replace {action} names with the player's current bindings.

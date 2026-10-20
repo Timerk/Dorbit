@@ -16,6 +16,13 @@ const BURST_SECONDS := 0.9
 const GATE_SCALE := 1.0 / 0.72
 const RECORDER_GATE_RADIUS := 7.0
 const BEAM_HALF_HEIGHT := 260.0
+# Contact portraits for the dialogue box and Story tab, loaded on first use.
+const PORTRAITS := {
+	"vance": "res://assets/ui/portraits/vance.png",
+	"brell": "res://assets/ui/portraits/brell.png",
+	"sato": "res://assets/ui/portraits/sato.png",
+}
+static var portraits: Dictionary[String, Texture2D] = {}
 # The controls pop-up lingers briefly after every row has been tried.
 const TIPS_LINGER := 1.5
 
@@ -34,6 +41,8 @@ var beacon_lit := false
 var seen_step := -1
 var scan_seconds := 0.0
 var comm := ""
+# The current transmission as [contact, text] lines for the portrait dialogue box.
+var comm_lines: Array = []
 var comm_time := 0.0
 # Rows of the current step's controls pop-up and whether each has been pressed.
 var tips: Array = []
@@ -122,6 +131,12 @@ func effect(shader: Shader, parent: Node3D = site) -> MeshInstance3D:
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(instance)
 	return instance
+
+
+static func portrait(contact: String) -> Texture2D:
+	if not portraits.has(contact):
+		portraits[contact] = load(PORTRAITS[contact])
+	return portraits[contact]
 
 
 static func glow(color: Color, alpha: float) -> StandardMaterial3D:
@@ -229,14 +244,18 @@ func observe(story: Dictionary) -> void:
 	if step == seen_step:
 		return
 	comm = ""
+	comm_lines = []
 	if seen_step >= 0 and step == seen_step + 1:
 		var finished: Dictionary = Story.STEPS[seen_step]
 		comm = Story.completion_notice(finished, story)
+		comm_lines = Story.completion_lines(finished, story)
 		if finished["type"] in Story.POSITIONAL and finished["map"] == sector.map_id:
 			burst(Story.site_position(finished), RECORDER_GATE_RADIUS if finished["type"] == "recover" else float(finished["radius"]))
 		SectorVisuals.sound(sector, "purchase", sector.player.position)
 	elif not Story.complete(story):
-		comm = Story.transmission(Story.current(story))
+		var next := Story.current(story)
+		comm = Story.transmission(next)
+		comm_lines = [[next["contact"], next["briefing"]]]
 	comm_time = COMM_SECONDS if not comm.is_empty() else 0.0
 	open_tips(story)
 	seen_step = step
