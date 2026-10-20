@@ -1,5 +1,9 @@
 # M2, M3 and M4 alien modeling references
 
+Art sources and review images use [Git LFS](https://git-lfs.com). Before editing
+art sources or running art tools, install Git LFS and run `git lfs install` and
+`git lfs pull` from the repository root.
+
 Generated with the built-in image generation tool on 12 October 2026.
 These six approved concept sheets cover the existing outer-sector roster.
 The user requested Blender models and renders from these references. The exact [prompts](prompts.json) are retained;

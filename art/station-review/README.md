@@ -1,5 +1,9 @@
 # Outpost 01 station study
 
+Art sources and review images use [Git LFS](https://git-lfs.com). Before editing
+art sources or running art tools, install Git LFS and run `git lfs install` and
+`git lfs pull` from the repository root.
+
 The generated [concept](concept.png) guides the editable [Blender study](outpost-01.blend)
 and the actual [Godot hero view](godot-hero.png). The concept was generated with
 the built-in ImageGen tool from the user's tall blue station reference. It is

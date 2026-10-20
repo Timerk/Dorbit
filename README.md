@@ -92,6 +92,12 @@ See [sector assets and regeneration](assets/sector/README.md) and
 [environment validation](docs/sector-art/README.md) for screenshots and checks.
 Blender is only required to regenerate assets, not to run, build or deploy the game.
 
+To edit art sources, install [Git LFS](https://git-lfs.com), then run
+`git lfs install` and `git lfs pull` from the checkout before opening Blender or
+running art generators. This also downloads art maps, concepts and review images.
+Runtime files under `assets/` remain in regular Git; game builds and tests do not
+need LFS downloads. See [art storage and quota](docs/art-storage.md) for details.
+
 ### Navigation and radiation
 
 The shared universe now has four maps: **M1 / Outpost 01** (the existing station),

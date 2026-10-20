@@ -1,5 +1,9 @@
 # Map background concepts
 
+Art sources and review images use [Git LFS](https://git-lfs.com). Before editing
+art sources or running art tools, install Git LFS and run `git lfs install` and
+`git lfs pull` from the repository root.
+
 Four original environment references for Dorbit's existing sectors, generated and revised with the built-in image generation tool on 2026-10-12. The v2 images below follow the reclamation story in [PR #76](https://github.com/Timerk/Dorbit/pull/76) and the user's request for evidence of former inhabitants, war damage and alien resource extraction. Each preserves the first pass's behind-the-ship camera, sector palette and darker central flight area.
 
 | Sector | Direction | Image |

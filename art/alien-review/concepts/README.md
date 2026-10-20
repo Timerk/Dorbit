@@ -1,5 +1,9 @@
 # Alien modeling references
 
+Art sources and review images use [Git LFS](https://git-lfs.com). Before editing
+art sources or running art tools, install Git LFS and run `git lfs install` and
+`git lfs pull` from the repository root.
+
 Proposed references for the six existing M2, M3 and M4 types are available in
 the [outer-sector concept gallery](outer-sectors/README.md). Those sheets await
 user art review; the approved M1 concepts below remain unchanged.

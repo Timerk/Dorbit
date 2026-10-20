@@ -1,5 +1,9 @@
 # Dorbit alien model review
 
+Art sources and review images use [Git LFS](https://git-lfs.com). Before editing
+art sources or running art tools, install Git LFS and run `git lfs install` and
+`git lfs pull` from the repository root.
+
 The six additional M2–M4 models, Blender sources, mesh renders and reference
 comparisons are in the [outer-sector model gallery](outer-sectors/README.md).
 

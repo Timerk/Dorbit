@@ -1,5 +1,9 @@
 # DarkOrbit ship model review
 
+Art sources and review images use [Git LFS](https://git-lfs.com). Before editing
+art sources or running art tools, install Git LFS and run `git lfs install` and
+`git lfs pull` from the repository root.
+
 Twelve editable base-ship Blender models, now refined using the user's Liberator hangar image as a shared finish reference. [Generated concept turnarounds](concepts/README.md) cover the whole roster. The models use brighter separated PBR materials, ship-specific fitted service panels and mechanical assemblies, rebuilt Liberator turbine pods and drives, and revised Goliath crowns and inner-arm bays. Six actual mesh renders provide consistent views, including the underside. Derived gameplay exports live under `assets/ships`; see [playable ships](../../docs/ships.md).
 
 The Nostromo now has a longer forebody and a narrower, tapered bow following user

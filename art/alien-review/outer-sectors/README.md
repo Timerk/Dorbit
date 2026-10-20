@@ -1,5 +1,9 @@
 # Outer-sector alien models
 
+Art sources and review images use [Git LFS](https://git-lfs.com). Before editing
+art sources or running art tools, install Git LFS and run `git lfs install` and
+`git lfs pull` from the repository root.
+
 Six editable Blender models built from the [approved M2–M4 references](../concepts/outer-sectors/README.md).
 The gallery below contains actual renders of the saved meshes.
 

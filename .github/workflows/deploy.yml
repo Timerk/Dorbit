@@ -36,6 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          lfs: false # Art sources are not needed for builds or checks.
           persist-credentials: false
           sparse-checkout: tools/ci-deploy.py
           sparse-checkout-cone-mode: false

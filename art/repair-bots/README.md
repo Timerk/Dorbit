@@ -1,5 +1,9 @@
 # Repair robot models
 
+Art sources and review images use [Git LFS](https://git-lfs.com). Before editing
+art sources or running art tools, install Git LFS and run `git lfs install` and
+`git lfs pull` from the repository root.
+
 The existing original `assets/ui/extras/rep-1.png` and `rep-2.png` illustrations
 guide these two flight models. REP-1 has a spherical silver shell, large cyan
 sensor, copper joints and two welding arms. REP-2 has a taller plated shell,

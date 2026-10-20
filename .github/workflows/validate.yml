@@ -20,6 +20,8 @@ jobs:
       build: ${{ steps.changes.outputs.build }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          lfs: false # Art sources are not needed for builds or checks.
       - name: Test CI helpers
         run: python3 -m unittest discover -s tests -p 'ci_performance_test.py' -v
       - id: changes
@@ -40,6 +42,8 @@ jobs:
         shell: bash
         run: echo "Documentation-only PR; game builds skipped." >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          lfs: false # Art sources are not needed for builds or checks.
         if: needs.changes.outputs.build == 'true'
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         if: needs.changes.outputs.build == 'true'
@@ -95,6 +99,8 @@ jobs:
         shell: bash
         run: echo "Documentation-only PR; game builds skipped." >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          lfs: false # Art sources are not needed for builds or checks.
         if: needs.changes.outputs.build == 'true'
       - name: Test local offline launcher
         if: needs.changes.outputs.build == 'true'
@@ -162,6 +168,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          lfs: false # Art sources are not needed for builds or checks.
           persist-credentials: false
       - name: Download packages without extracting artifact paths
         env:

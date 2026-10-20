@@ -1,5 +1,9 @@
 # Dorbit ship design references
 
+Art sources and review images use [Git LFS](https://git-lfs.com). Before editing
+art sources or running art tools, install Git LFS and run `git lfs install` and
+`git lfs pull` from the repository root.
+
 [Overview of all twelve concept turnarounds](overview.jpg)
 
 These twelve generated concept turnarounds use the user's Liberator main-menu

@@ -1,5 +1,9 @@
 # Transit gates and illustrated star system
 
+Art sources and review images use [Git LFS](https://git-lfs.com). Before editing
+art sources or running art tools, install Git LFS and run `git lfs install` and
+`git lfs pull` from the repository root.
+
 The user approved [this generated concept](concept.png) and requested its
 implementation, followed by a connected-maps screen using background pictures.
 This work depends on the campaign backgrounds in PR #85.

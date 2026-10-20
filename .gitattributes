@@ -1,3 +1,12 @@
 * text=auto eol=lf
 *.png binary
 *.ogg binary
+
+# Editable Blender sources and art-only exports/maps/review images.
+# Runtime assets/ and docs/ stay in regular Git so CI needs no LFS downloads.
+*.blend filter=lfs diff=lfs merge=lfs -text
+art/**/*.glb filter=lfs diff=lfs merge=lfs -text
+art/**/*.png filter=lfs diff=lfs merge=lfs -text
+art/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+art/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
+art/**/*.exr filter=lfs diff=lfs merge=lfs -text

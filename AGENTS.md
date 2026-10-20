@@ -17,6 +17,8 @@ Read [GAME_PLAN.md](GAME_PLAN.md) before implementing gameplay, choosing archite
 
 ## Implementation and validation
 
+- Before editing art sources or running art generators, install Git LFS and run `rtk proxy git lfs install` and `rtk proxy git lfs pull`. Keep runtime `assets/` in regular Git unless all consuming CI checkouts are updated to fetch LFS. See [art storage](docs/art-storage.md).
+
 - Keep changes within the current milestone. Update the game plan when the user agrees to a design change.
 - Prefer changes to existing files and simple implementations. Use type information where the language supports it.
 - Run checks appropriate to the change. For gameplay or visual changes, run the game and inspect the affected interaction when tools permit. Report checks that could not be completed.
