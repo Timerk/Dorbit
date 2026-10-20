@@ -28,6 +28,10 @@ materials are stripped to placeholders inside the pack. Raw project source,
 import caches, tests, editor binaries and downloads are excluded. Neither build
 contains real pilot credentials.
 
+The release publishing job checks out only `tools/ci-deploy.py`; it downloads the
+checked packages and builds the manifest from their hashes, without reading game
+source or artwork.
+
 Publishing does not contact the VPS. Only **Actions > Deploy server > Run workflow**
 deploys production. The separate preview actions below support PR playtesting.
 Release assets remain available

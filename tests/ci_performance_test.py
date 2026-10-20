@@ -135,6 +135,11 @@ class ValidationTest(unittest.TestCase):
             git('remote', 'add', 'origin', str(root))
             (root / 'README.md').write_text('updated docs')
             git('commit', '-qam', 'fixture docs')
+            # Match the changes job: neither side of this diff is checked out.
+            git('sparse-checkout', 'set', '--no-cone', '/tools/',
+                '/tests/ci_performance_test.py', '/tests/*.gd')
+            self.assertFalse((root / 'README.md').exists())
+            self.assertFalse((root / 'assets/runtime.svg').exists())
             output = root / 'output'
             env = dict(os.environ, GITHUB_EVENT_NAME='pull_request', PR_BASE_SHA=base, GITHUB_OUTPUT=str(output))
             def classify():
@@ -147,9 +152,13 @@ class ValidationTest(unittest.TestCase):
             self.assertEqual(classify(), 'build=true')
             env['GITHUB_EVENT_NAME'] = 'pull_request'
             # Both sides of a rename must be classified, even into an ignored tree.
+            git('sparse-checkout', 'disable')
             (root / 'art').mkdir()
             git('mv', 'assets/runtime.svg', 'art/reference.svg')
             git('commit', '-qm', 'fixture rename')
+            git('sparse-checkout', 'set', '--no-cone', '/tools/',
+                '/tests/ci_performance_test.py', '/tests/*.gd')
+            self.assertFalse((root / 'art/reference.svg').exists())
             self.assertEqual(classify(), 'build=true')
 
     def test_documentation_allowlist_requires_runtime_changes(self):

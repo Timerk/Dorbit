@@ -773,6 +773,13 @@ Use the current instructions above and the check commands in [Validation](#valid
 See the [CI performance investigation](docs/ci-performance.md) for measured cache
 effectiveness, remaining bottlenecks and ranked optimization options.
 
+Validation uses sparse checkouts: the change classifier gets only CI tools and
+its test inputs, and release publishing gets only `tools/ci-deploy.py`. Linux and
+Windows working checkouts omit `art/` and the explicitly listed `.gdignored` docs
+image trees; runtime assets and other documentation remain available. Linux
+packaging still archives the complete revision from Git, independently of these
+checkout exclusions.
+
 Validation checks the exact Linux release staged by `git archive` once. Packaging
 still runs the full server suite before publishing a release; it does not reuse a
 success result from the working checkout. Godot setup verifies the pinned archive

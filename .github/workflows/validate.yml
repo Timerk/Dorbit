@@ -20,6 +20,13 @@ jobs:
       build: ${{ steps.changes.outputs.build }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # Network-fixture checks read the suite scripts and their parents.
+          sparse-checkout: |
+            /tools/
+            /tests/ci_performance_test.py
+            /tests/*.gd
+          sparse-checkout-cone-mode: false
       - name: Test CI helpers
         run: python3 -m unittest discover -s tests -p 'ci_performance_test.py' -v
       - id: changes
@@ -41,6 +48,18 @@ jobs:
         run: echo "Documentation-only PR; game builds skipped." >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         if: needs.changes.outputs.build == 'true'
+        with:
+          # Authoring/review trees have tracked .gdignore import boundaries.
+          sparse-checkout: |
+            /*
+            !/art/
+            !/docs/hud-design/
+            !/docs/menu-design/
+            !/docs/feedback/
+            !/docs/ammo-art/
+            !/docs/sector-art/
+            !/docs/asset-budgets-2026-10-19/
+          sparse-checkout-cone-mode: false
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         if: needs.changes.outputs.build == 'true'
         with:
@@ -96,6 +115,18 @@ jobs:
         run: echo "Documentation-only PR; game builds skipped." >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         if: needs.changes.outputs.build == 'true'
+        with:
+          # Authoring/review trees have tracked .gdignore import boundaries.
+          sparse-checkout: |
+            /*
+            !/art/
+            !/docs/hud-design/
+            !/docs/menu-design/
+            !/docs/feedback/
+            !/docs/ammo-art/
+            !/docs/sector-art/
+            !/docs/asset-budgets-2026-10-19/
+          sparse-checkout-cone-mode: false
       - name: Test local offline launcher
         if: needs.changes.outputs.build == 'true'
         shell: pwsh
@@ -163,6 +194,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          sparse-checkout: tools/ci-deploy.py
+          sparse-checkout-cone-mode: false
       - name: Download packages without extracting artifact paths
         env:
           GH_TOKEN: ${{ github.token }}
