@@ -15,6 +15,14 @@ Read [GAME_PLAN.md](GAME_PLAN.md) before implementing gameplay, choosing archite
 - Push completed task branches and open or update a pull request. Describe the resulting behavior, relevant validation, and any remaining limitations. Use a draft PR when required work is incomplete.
 - Leave merging to the user unless they request it. Include the branch and PR link in the handoff.
 
+## Art sources
+
+- Keep authoring art out of the repository. Blender sources (`.blend`), art-only GLB exports, concept and review images, and the art generator scripts and prompts live in the local archive `C:\Users\timbe\Desktop\Dorbit art`, not in Git.
+- Never commit an `art/` directory or `.blend` files; `.gitignore` excludes both. Put new concepts, renders, model sources and review sheets in the archive instead, and describe them in the PR rather than attaching them to it.
+- The art tools in `tools/` (`build_gate.py`, `build_station.py`, `build_repair_bots.py`, `build_ship_material_review.py`, `export_aliens.py`, `export_ships.py`, `render_ship_preview.gd` and `render_station_preview.gd`) still read and write `art/`. To run them, copy the archive into the checkout's ignored `art/` directory, then copy any updated sources back to the archive afterwards.
+- Only runtime files the game loads belong in the repository, under `assets/`. Documentation screenshots go under `docs/`; keep them few and compressed.
+- In documentation, refer to archive files by their path in plain text (for example `art/ship-review/README.md` in the art archive), not as repository links.
+
 ## Implementation and validation
 
 - Keep changes within the current milestone. Update the game plan when the user agrees to a design change.
