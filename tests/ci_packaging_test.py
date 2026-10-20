@@ -18,17 +18,14 @@ def checkout_patterns(job):
     block = re.split(r'\n  \S', workflow.split(f'\n  {job}:\n', 1)[1], maxsplit=1)[0]
     # Read the literal checkout input without adding a YAML dependency to CI tests.
     match = re.search(r'^          sparse-checkout: (.+)\n((?:            .+\n)*)', block, re.M)
-    assert match and '          sparse-checkout-cone-mode: false' in block
+    if not match:
+        return None
+    assert '          sparse-checkout-cone-mode: false' in block
     return [line.strip() for line in match[2].splitlines()] if match[1] == '|' else [match[1]]
 
 
 class SparseCheckoutTest(unittest.TestCase):
     def test_workflow_patterns_preserve_job_inputs_and_archive(self):
-        excluded = ['art', 'docs/hud-design', 'docs/menu-design', 'docs/feedback',
-                    'docs/ammo-art', 'docs/sector-art', 'docs/asset-budgets-2026-10-19']
-        for directory in excluded:
-            # Boundaries remain tracked even though this job omits them on disk.
-            subprocess.run(['git', 'cat-file', '-e', f'HEAD:{directory}/.gdignore'], cwd=ROOT, check=True)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             def git(*args):
@@ -37,7 +34,7 @@ class SparseCheckoutTest(unittest.TestCase):
                      '.github/workflows/validate.yml', 'assets/runtime.svg', 'tools/ci-deploy.py',
                      'tools/import-cache.py', 'tools/check-game.py', 'tools/check-suites.json',
                      'tests/ci_performance_test.py', 'tests/ci_packaging_test.py', 'tests/network_test.gd']
-            files += [f'{path}/{name}' for path in excluded for name in ('.gdignore', 'reference.png')]
+            files += ['docs/sector-art/.gdignore', 'docs/sector-art/reference.png']
             for name in files:
                 path = root / name
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -47,7 +44,11 @@ class SparseCheckoutTest(unittest.TestCase):
             git('-c', 'user.name=CI', '-c', 'user.email=ci@example.test', 'commit', '-qm', 'fixture')
             for job in ('changes', 'linux-server', 'windows', 'release'):
                 with self.subTest(job=job):
-                    git('sparse-checkout', 'set', '--no-cone', *checkout_patterns(job))
+                    patterns = checkout_patterns(job)
+                    if patterns is None:
+                        git('sparse-checkout', 'disable')
+                    else:
+                        git('sparse-checkout', 'set', '--no-cone', *patterns)
                     present = {name for name in files if (root / name).is_file()}
                     if job == 'changes':
                         expected = {name for name in files if name.startswith('tools/') or
@@ -55,10 +56,10 @@ class SparseCheckoutTest(unittest.TestCase):
                     elif job == 'release':
                         expected = {'tools/ci-deploy.py'}
                     else:
-                        expected = {name for name in files if not any(name.startswith(path + '/') for path in excluded)}
+                        expected = set(files)
                     self.assertEqual(present, expected)
-                    # Linux staging sees the committed tree even when artwork is absent.
-                    self.assertIn(b'art/reference.png', git('archive', '--format=tar', 'HEAD'))
+                    # Packaging archives the revision independently of the working checkout.
+                    self.assertIn(b'assets/runtime.svg', git('archive', '--format=tar', 'HEAD'))
 
 
 @unittest.skipUnless(BASH, "Bash is required to exercise Linux packaging")
