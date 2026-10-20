@@ -55,9 +55,11 @@ func run() -> void:
 	check(exhaust.throttle > 0.2 and exhaust.throttle < 0.4, "Holding cruise speed sustains a short plume")
 	fly(pilot, 1.0, func(t: float) -> float: return maxf(0.0, 41.0 - 60.0 * t))
 	check(exhaust.throttle < 0.2, "Braking lets the plume die back")
+	check(exhaust.engine_light.light_energy < 1.0, "An idle drive keeps only a faint engine light")
 	pilot.boosting = true
 	fly(pilot, 0.5, func(_t: float) -> float: return 0.0)
 	check(exhaust.throttle > 0.9 and exhaust.boost > 0.9, "Boosting flares the plume and shifts its color")
+	check(exhaust.engine_light != null and exhaust.engine_light.light_energy > 2.5, "Boosting brightens the engine light on the aft hull")
 	pilot.boosting = false
 	fly(pilot, 2.0, func(_t: float) -> float: return 0.0)
 	pilot.global_position += Vector3(5000, 0, 0)

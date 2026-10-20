@@ -10,6 +10,8 @@ const THEMES := [
 ]
 
 
+const CLOUD_COUNT: int = 40
+
 # Merge repeated model parts by material, keeping each landmark to four draw calls.
 class Geometry:
 	extends RefCounted
@@ -102,6 +104,7 @@ static func build(parent: Node3D, map: int) -> Node3D:
 	planet(root, "DistantMoon", Vector3(-planet_position.x*0.45, 1250, -4600), 280.0, moon_theme, 13.0, 0.0)
 	asteroid_belt(root, map)
 	wreckage_field(root, map)
+	nebula_clouds(root, map)
 	if map == 0:
 		human_ring(root, planet_position, radius*1.22, Vector3(0.18, -0.18, -0.35), false)
 		derelict(root, Vector3(-1450, -240, -1600), Vector3(0.2, -0.45, 0.3), 2.2)
@@ -144,6 +147,7 @@ static func activate(parent: Node3D, map: int) -> void:
 	var sun := parent.get_node("Sun") as DirectionalLight3D
 	var fill := parent.get_node("Fill") as DirectionalLight3D
 	sun.light_color = Color("ffdfbd") if map == 0 else (theme["light"] as Color).lerp(Color.WHITE,0.45)
+	surface.set_shader_parameter("sun_color", sun.light_color)
 	fill.light_color = Color("6e9edb") if map == 0 else (theme["cool"] as Color).lerp(Color.WHITE,0.35)
 
 
@@ -391,6 +395,39 @@ static func asteroid_belt(parent: Node3D, map: int) -> void:
 		belt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		parent.add_child(belt)
 		source.free()
+
+
+static func nebula_clouds(parent: Node3D, map: int) -> void:
+	# Gas wisps inside and around the flight sphere give the painted sky parallax.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 9203+map*67
+	var theme: Dictionary = THEMES[map]
+	var surface := ShaderMaterial.new()
+	surface.shader = preload("res://shaders/nebula_cloud.gdshader")
+	surface.set_shader_parameter("gas_cool", theme["cool"])
+	surface.set_shader_parameter("gas_light", theme["light"])
+	var card := QuadMesh.new()
+	card.size = Vector2.ONE
+	var instances := MultiMesh.new()
+	instances.transform_format = MultiMesh.TRANSFORM_3D
+	instances.use_custom_data = true
+	instances.mesh = card
+	instances.instance_count = CLOUD_COUNT
+	var largest := 0.0
+	for index in range(CLOUD_COUNT):
+		var direction := Vector3(rng.randf_range(-1,1),rng.randf_range(-0.35,0.35),rng.randf_range(-1,1)).normalized()
+		var size := rng.randf_range(260,560)
+		largest = maxf(largest, size)
+		instances.set_instance_transform(index,Transform3D(Basis.IDENTITY.scaled(Vector3.ONE*size),direction*rng.randf_range(350,1500)))
+		instances.set_instance_custom_data(index,Color(rng.randf(),0,0,0))
+	var clouds := MultiMeshInstance3D.new()
+	clouds.name = "NebulaClouds"
+	clouds.multimesh = instances
+	clouds.material_override = surface
+	clouds.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# The shader billboards each card, so culling uses its full rotated extent.
+	clouds.extra_cull_margin = largest
+	parent.add_child(clouds)
 
 
 static func wreckage_field(parent: Node3D, map: int) -> void:

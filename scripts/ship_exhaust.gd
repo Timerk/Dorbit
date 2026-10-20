@@ -20,6 +20,7 @@ var boost: float = 0.0
 var nozzles: Array[Vector4] = [] # Model-space position and nozzle radius.
 var plumes: Array[MeshInstance3D] = []
 var flares: Array[MeshInstance3D] = []
+var engine_light: OmniLight3D # Lights the aft hull on High effects.
 var plume_surface := ShaderMaterial.new()
 var tracking: bool = false
 var last_position: Vector3
@@ -57,6 +58,18 @@ func _ready() -> void:
 		# Flares share the combat glow mesh and material; present() sets per-instance tint and fade.
 		var flare := SectorVisuals.effect_mesh(self, "glow", "glow_material", Vector3(nozzle.x, nozzle.y, nozzle.z + nozzle.w * 0.5), Vector3.ONE)
 		flares.append(flare)
+	if not nozzles.is_empty():
+		var center := Vector3.ZERO
+		var radius := 0.0
+		for nozzle in nozzles:
+			center += Vector3(nozzle.x, nozzle.y, nozzle.z)
+			radius = maxf(radius, nozzle.w)
+		engine_light = OmniLight3D.new()
+		engine_light.name = "EngineLight"
+		engine_light.position = center / nozzles.size() + Vector3(0, 0, radius * 2.0)
+		engine_light.omni_range = maxf(radius * 14.0, 6.0)
+		engine_light.omni_attenuation = 1.6
+		add_child(engine_light)
 	present()
 
 
@@ -96,6 +109,10 @@ func present() -> void:
 	plume_surface.set_shader_parameter("boost", boost)
 	var tint := GLOW_TINT.lerp(BOOST_GLOW_TINT, boost)
 	var opacity := 0.35 + 0.65 * throttle
+	if engine_light != null:
+		engine_light.visible = SectorVisuals.effects_quality(self) > 1
+		engine_light.light_color = tint
+		engine_light.light_energy = (0.4 + 2.2 * throttle) * (1.0 + 0.5 * boost)
 	for index in nozzles.size():
 		var nozzle := nozzles[index]
 		var length := nozzle.w * (4.0 + 22.0 * throttle) * (1.0 + 0.7 * boost)

@@ -1066,6 +1066,40 @@ The static sky radiance uses a brighter reflection exposure while the visible
 background compensates for that exposure; this affects other reflective sector
 materials as well. These material settings remain open to visual playtesting.
 
+### Realistic in-flight lighting and effects
+
+The user requested a more realistic in-flight look, leaving menus unchanged. This
+first pass stays within the Compatibility renderer and existing graphics settings:
+
+- Lighting uses filmic tonemapping, a stronger sun and a dimmer cool ambient, so
+  hulls, rock and station plating show distinct sunlit and shadowed sides.
+  Asteroids use a darker, fully rough rock albedo.
+- Every map's sky shows the star that casts its sunlight, with a disc and corona
+  aligned to the Sun light and tinted with that map's sunlight colour.
+- Client-only space dust wraps around the camera in one instanced draw. Motes
+  stretch into short streaks along the camera's motion, giving cruise and boost a
+  sense of speed. Rescues and jumps reset the streaks; dedicated servers create none.
+- Destruction effects add turbulent fireballs that cool into smoke on both effect
+  levels. High also adds a shockwave ring, glowing debris fragments and a brief
+  orange light that illuminates nearby hulls and rock. Loot timing and the
+  1.2-second effect lifetime are unchanged.
+
+The user then allowed more demanding effects, since the group's PCs are stronger
+than the development laptop:
+
+- Forty large gas wisps per map, in one instanced draw, float inside and around the
+  flight sphere in that map's nebula colours. They give the painted sky parallax and
+  dissolve as the camera flies into them. They add noticeable fill-rate cost.
+- A screen-space sun flare adds glare, a horizontal lens streak and ghosts. A physics
+  ray hides it when asteroids, the station or ships block the sun.
+- On High effects, each pilot's drive lights its aft hull in the plume colour,
+  brightening with thrust and boost. Laser hits briefly light the target in the beam
+  colour, capped at 12 simultaneous laser lights.
+
+Brightness, dust density, cloud density, streak length, flare strength and explosion
+intensity remain visual playtesting settings. `tests/visual_gallery.gd` renders a fixed set of in-flight
+review screenshots to `build/validation/gallery`.
+
 ## Development milestones
 
 ### Milestone 1: Flight and one complete combat encounter
