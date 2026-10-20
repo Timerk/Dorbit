@@ -280,7 +280,9 @@ func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary 
 
 # The persisted sequence rejects every old request, including after a reconnect or restart.
 # Only successful changes advance it; distinct station actions use the next sequence.
-func transact(id: String, sequence: int, action: String, subject: String, ship: String, slot: String, allow_preview_tools: bool = false, active_boosts: Variant = null) -> String:
+# StationActions owns the per-action economy rules and result messages.
+func transact(id: String, sequence: int, action: String, subject: String, ship: String, slot: String,
+		allow_preview_tools: bool = false, active_boosts: Variant = null) -> String:
 	if failed or not locked or not pilots.has(id):
 		return "Persistence unavailable."
 	if not advance_lab(id, Skylab.now()):
@@ -292,7 +294,7 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 	var next := pilots.duplicate(true)
 	var pilot: Dictionary = next[id]
 	var previous_credits: int = pilot["credits"]
-	var story_notice := ""
+	var previous_story := Story.state(pilot["equipment"]).duplicate()
 	var equipment: Dictionary = pilot["equipment"]
 	var previous_points := int(Research.state(equipment)["points"])
 	if active_boosts != null:
@@ -304,229 +306,19 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		return "Request already processed. Inventory refreshed."
 	if sequence != equipment["revision"] + 1 or sequence > MAX_CREDITS:
 		return "Inventory changed. Review it and try again."
-	if action == "buy_ammo":
-		var parts := subject.split(":")
-		if parts.size() != 2 or not ship.is_empty() or not slot.is_empty() or parts[1].length() > 5 or not parts[1].is_valid_int():
-			return "Invalid ammunition purchase."
-		var kind: String = parts[0]
-		var blocker := Ammunition.purchase_blocker(kind)
-		if not blocker.is_empty():
-			return blocker
-		var batches := parts[1].to_int()
-		if batches < 1 or batches > Ammunition.MAX_PURCHASE_BATCHES:
-			return "Invalid ammunition quantity."
-		var shots := batches * Ammunition.BATCH_SIZE
-		var price: int = Ammunition.types()[kind]["price"] * batches
-		if pilot["credits"] < price:
-			return "Insufficient credits. Need %d CR." % price
-		if shots > Ammunition.MAX_SHOTS - int(pilot["ammo"][kind]):
-			return "Ammunition limit reached."
-		pilot["ammo"][kind] += shots
-		pilot["credits"] -= price
-	elif action == "buy":
-		# Legacy model-only requests buy one; model:quantity buys one atomic batch.
-		var parts := subject.split(":")
-		var model: String = parts[0]
-		if parts.size() > 2 or not ship.is_empty() or not slot.is_empty():
-			return "Invalid equipment purchase."
-		var amount := 1
-		if parts.size() == 2:
-			if parts[1].length() > 3 or not parts[1].is_valid_int():
-				return "Invalid purchase quantity."
-			amount = parts[1].to_int()
-			if amount < 1 or amount > Equipment.MAX_PURCHASE_QUANTITY:
-				return "Invalid purchase quantity."
-		var blocker := Equipment.purchase_blocker(model)
-		if not blocker.is_empty():
-			return blocker
-		var price: int = Equipment.MODELS[model]["price"] * amount
-		if pilot["credits"] < price:
-			return "Insufficient credits. Need %d CR." % price
-		for index in range(amount):
-			var identifier := "purchase-%d" % sequence if index == 0 else "purchase-%d-%d" % [sequence, index + 1]
-			if equipment["items"].has(identifier):
-				fail("Equipment item ID conflicts with its transaction sequence.")
-				return "Persistence unavailable."
-			equipment["items"][identifier] = {"model": model, "ship": "", "slot": ""}
-		pilot["credits"] -= price
-	elif action == "buy_ship":
-		if not ShipCatalog.MODELS.has(subject) or not ship.is_empty() or not slot.is_empty():
-			return "Unknown ship model."
-		if not ShipCatalog.owned_id(equipment, subject).is_empty():
-			return "You already own this ship."
-		var price := ShipCatalog.price(subject)
-		if pilot["credits"] < price:
-			return "Insufficient credits. Need %d CR." % price
-		var identifier := "ship-%d" % sequence
-		if equipment["ships"].has(identifier):
-			return "Ship ID conflicts with its transaction sequence."
-		pilot["credits"] -= price
-		equipment["ships"][identifier] = subject
-		pilot["cargo"][identifier] = {}
-		pilot["boosts"][identifier] = {}
-	elif action == "switch_ship":
-		if not equipment["ships"].has(subject) or not ship.is_empty() or not slot.is_empty():
-			return "You do not own that ship."
-		if equipment["active_ship"] == subject:
-			return "Ship is already active."
-		equipment["active_ship"] = subject
-	elif action == "test_credits":
-		if not subject.is_empty() or not ship.is_empty() or not slot.is_empty():
-			return "Invalid test credit request."
-		if pilot["credits"] == MAX_CREDITS:
-			return "Credit limit reached."
-		pilot["credits"] = mini(MAX_CREDITS, pilot["credits"] + PREVIEW_CREDIT_GRANT)
-	elif action == "test_research":
-		if not subject.is_empty() or not ship.is_empty() or not slot.is_empty():
-			return "Invalid test research request."
-		if previous_points == Research.MAX_POINTS:
-			return "Research point limit reached."
-		Research.add_points(equipment, PREVIEW_RESEARCH_GRANT)
-	elif action == "sell":
-		# A resource:quantity subject sells a selection; legacy subjects sell the whole type.
-		var parts := subject.split(":")
-		var resource: String = parts[0]
-		if not ship.is_empty() or not slot.is_empty() or parts.size() > 2 or (resource != "all" and not CargoResources.TYPES.has(resource)):
-			return "Unknown resource sale."
-		var hold: Dictionary = pilot["cargo"][equipment["active_ship"]]
-		var sold := hold.duplicate() if resource == "all" else ({resource: hold[resource]} if hold.has(resource) else {})
-		if parts.size() == 2:
-			if resource == "all" or not parts[1].is_valid_int() or parts[1].length() > 10:
-				return "Invalid sale quantity."
-			var amount := parts[1].to_int()
-			if amount < 1 or amount > int(hold.get(resource, 0)):
-				return "Invalid sale quantity."
-			sold = {resource: amount}
-		if sold.is_empty():
-			return "No resources to sell."
-		var proceeds := CargoResources.value(sold)
-		if proceeds > MAX_CREDITS - pilot["credits"]:
-			return "Sale exceeds the credit limit. Free wallet space first."
-		pilot["credits"] += proceeds
-		for sold_resource: String in sold:
-			hold[sold_resource] -= sold[sold_resource]
-			if hold[sold_resource] == 0:
-				hold.erase(sold_resource)
-	elif action in ["refine", "boost", "replace_boost"]:
-		var parts := subject.split(":")
-		if parts.size() != 2 or not parts[1].is_valid_int() or parts[1].length() > 4 or not slot.is_empty():
-			return "Invalid resource quantity."
-		var amount := parts[1].to_int()
-		var hold: Dictionary = pilot["cargo"][equipment["active_ship"]]
-		var blocker: String
-		if action == "refine":
-			if not ship.is_empty():
-				return "Invalid refining request."
-			blocker = ResourceBoosts.refine(hold, parts[0], amount)
-		else:
-			blocker = ResourceBoosts.apply(hold, pilot["boosts"][equipment["active_ship"]], ship, parts[0], amount, action == "replace_boost")
-		if not blocker.is_empty():
-			return blocker
-	elif action == "fit":
-		var blocker := Equipment.fitting_blocker(equipment, subject, ship, slot)
-		if not blocker.is_empty():
-			return blocker
-		Equipment.move(equipment, subject, ship, slot)
-		if not CargoResources.valid(pilot["cargo"], equipment):
-			return "Sell excess cargo before removing cargo capacity. No items were moved."
-		for cargo_ship: String in equipment["ships"]:
-			var capacity := CargoResources.capacity(equipment, cargo_ship)
-			if capacity < CargoResources.capacity(pilots[id]["equipment"], cargo_ship) and CargoResources.units(pilot["cargo"][cargo_ship]) > capacity:
-				return "Sell excess cargo before removing cargo capacity. No items were moved."
-		if not Skylab.valid(pilot["skylab"], equipment):
-			return "Wait for the Skylab shipment before removing cargo capacity. No items were moved."
-	elif action == "research":
-		if not ship.is_empty() or not slot.is_empty():
-			return "Invalid research request."
-		var blocker := Research.learn(equipment, pilot["skylab"]["inventory"], subject)
-		if not blocker.is_empty():
-			return blocker
-	elif action == "research_reset":
-		if not subject.is_empty() or not ship.is_empty() or not slot.is_empty():
-			return "Invalid research reset."
-		var research := Research.state(equipment)
-		if Research.spent(research) == 0:
-			return "No skills to reset."
-		var price := Research.reset_price(research)
-		if pilot["credits"] < price:
-			return "Insufficient credits. Need %d CR." % price
-		Research.reset(equipment)
-		pilot["credits"] -= price
-		for cargo_ship: String in equipment["ships"]:
-			if CargoResources.units(pilot["cargo"][cargo_ship]) > CargoResources.capacity(equipment, cargo_ship):
-				return "Sell excess cargo before resetting Cargo Compression. Skills unchanged."
-		if not Skylab.valid(pilot["skylab"], equipment):
-			return "Wait for the Skylab shipment before resetting Cargo Compression. Skills unchanged."
-	elif action in ["story_deliver", "story_skip"]:
-		if not subject.is_empty() or not ship.is_empty() or not slot.is_empty():
-			return "Invalid story request."
-		var story := Story.state(equipment)
-		var step := Story.current(story)
-		var result := Story.skip(story)
-		if step.is_empty():
-			return "Prologue already complete."
-		if action == "story_deliver":
-			if step["type"] != "deliver":
-				return "Nothing to deliver for this step."
-			var hold: Dictionary = pilot["cargo"][equipment["active_ship"]]
-			var resource: String = step["resource"]
-			var amount: int = step["required"]
-			if int(hold.get(resource, 0)) < amount:
-				return "Need %s in your active ship's cargo." % CargoResources.describe({resource: amount})
-			hold[resource] -= amount
-			if hold[resource] == 0:
-				hold.erase(resource)
-			result = Story.advance(story, "deliver", amount)
-		if result["credits"] > MAX_CREDITS - pilot["credits"]:
-			return "Reward exceeds the credit limit. Free wallet space first."
-		pilot["credits"] += result["credits"]
-		Research.add_points(equipment, result["research"])
-		equipment["story"] = result["story"]
-		story_notice = "%s %s." % ["Delivered %s." % CargoResources.describe({step["resource"]: step["required"]}) if action == "story_deliver" else "Prologue skipped.", Story.reward_text(result["credits"], result["research"])]
-	elif action == "configure_extra":
-		var item: Dictionary = equipment["items"].get(subject, {})
-		if item.is_empty() or not Equipment.MODELS[item["model"]].get("family", "") in ["ammo", "generators", "repair-auto"] or not ship in ["on", "off"]:
-			return "Invalid extra configuration."
-		if (item["model"] == "ammo-cpu" and not slot in ["x1", "x2", "x3"]) or (item["model"] != "ammo-cpu" and not slot.is_empty()):
-			return "Invalid automatic ammunition type."
-		item["enabled"] = ship == "on"
-		if item["model"] == "ammo-cpu":
-			item["ammo_type"] = slot
-	else:
-		return "Unknown station action."
+	var blocker := StationActions.apply(pilot, pilots[id], sequence, action, subject, ship, slot)
+	if blocker == StationActions.ITEM_ID_CONFLICT:
+		fail(blocker)
+		return "Persistence unavailable."
+	if not blocker.is_empty():
+		return blocker
 	equipment["revision"] = sequence
 	if not valid_credits(pilot["credits"]):
 		push_error("Rejected %s: credits %s outside the wallet range." % [action, pilot["credits"]])
 		return "Transaction rejected. Credits unchanged."
 	if not persist(next):
 		return "Persistence unavailable."
-	if not story_notice.is_empty():
-		return story_notice
-	if action == "test_credits":
-		return "Preview: added %d test credits." % (pilot["credits"] - previous_credits)
-	if action == "test_research":
-		return "Preview: added %d research points." % (int(Research.state(equipment)["points"]) - previous_points)
-	if action == "configure_extra":
-		return "Extra settings saved."
-	if action == "research":
-		return "%s researched to level %d." % [Research.SKILLS[subject]["name"], Research.level(Research.state(equipment), subject)]
-	if action == "research_reset":
-		return "Skill tree reset. Research points refunded; %d available." % Research.state(equipment)["points"]
-	if action == "buy_ammo":
-		return "Purchased %d %s shots." % [subject.get_slice(":", 1).to_int() * Ammunition.BATCH_SIZE, subject.get_slice(":", 0)]
-	if action == "sell":
-		return "Resources sold. +%d credits." % (pilot["credits"] - previous_credits)
-	if action == "buy_ship":
-		return "Ship purchased with an empty fitting. Activate it in Ship equipment."
-	if action == "switch_ship":
-		return "Ship activated. Equipment and cargo stay with their ships."
-	if action == "refine":
-		return "Refining complete. Ingredients consumed and output added to cargo."
-	if action in ["boost", "replace_boost"]:
-		return "Resource boost applied."
-	if action == "buy" and subject.contains(":") and subject.get_slice(":", 1).to_int() > 1:
-		return "Purchased %d items. Items are in storage." % subject.get_slice(":", 1).to_int()
-	return "Purchased. Item is in storage." if action == "buy" else "Fitting saved."
+	return StationActions.result(pilot, action, subject, previous_credits, previous_points, previous_story)
 
 
 func advance_lab(id: String, at: int) -> bool:

@@ -22,6 +22,8 @@ var lab_snapshot: Dictionary = {}
 var rocket_request_sequence: int = 0
 var rocket_sequences: Dictionary[int, int] = {}
 var rocket_maps: Dictionary[String, int] = {}
+# Server-side station and Skylab request handling.
+var desk := StationDesk.new(self)
 
 
 func connect_rockets(ship: Pilot) -> void:
@@ -944,55 +946,11 @@ func station_request(sequence: int, action: String, subject: String, ship: Strin
 	var id := multiplayer.get_remote_sender_id()
 	if not records.has(id) or not session.pilot_ids.has(id):
 		return
-	var active_ship: Pilot = session.ships[id]
-	var blocker := ("" if active_ship.alive else "Wait for rescue.") if action == "refine" else session.sector.repair_blocker(active_ship)
-	var pilot_id := session.pilot_ids[id]
-	var fitting: Dictionary = session.store.pilots[pilot_id]["equipment"]
-	var item: Dictionary = fitting["items"].get(subject, {})
-	# Fitted automation settings are available in flight; fitting and purchases
-	# still use station rules. Ownership, life and settings remain authoritative.
-	if action == "configure_extra" and session.ships[id].alive and not item.is_empty() and item.get("ship", "") == fitting["active_ship"] and Equipment.MODELS[item["model"]].get("family", "") in ["repair-auto", "ammo", "generators"]:
-		blocker = ""
-	if records[id]["life"] != life:
-		blocker = "Ship changed. Review your fitting after rescue."
-	if not blocker.is_empty():
-		publish_inventory(id, blocker)
-		return
-	var previous_revision: int = session.store.pilots[pilot_id]["equipment"]["revision"]
-	var previous_ship: String = session.store.pilots[pilot_id]["equipment"]["active_ship"]
-	var result := session.store.transact(pilot_id, sequence, action, subject, ship, slot, session.can_grant_test_credits(id), session.ships[id].resource_boosts)
-	if session.store.failed:
-		session.stop_for_save_failure()
-		return
-	var pilot: Dictionary = session.store.pilots[pilot_id]
-	records[id]["credits"] = pilot["credits"]
-	session.ships[id].ammo = pilot["ammo"].duplicate()
-	cargo_holds[id] = pilot["cargo"].duplicate(true)
-	if pilot["equipment"]["revision"] > previous_revision:
-		if action == "configure_extra":
-			var remote: Pilot = session.ships[id]
-			remote.repair_auto = Extras.enabled(Equipment.extra(pilot["equipment"], "repair-auto"))
-			if not remote.repair_auto and not remote.repair_requested:
-				remote.robot_repairing = false
-		else:
-			apply_equipment(id)
-	if previous_ship != pilot["equipment"]["active_ship"]:
-		session.ships[id].rockets.unload()
-		# Switching is not a repair. Keep absolute hull/shield charge (clamped by
-		# the new fitting), boost energy, cooldowns and damage timer.
-		records[id]["life"] += 1
-		session.ships[id].set_meta("life", records[id]["life"])
-		session.commands.erase(id)
-		session.ships[id].velocity = Vector3.ZERO
-	publish_inventory(id, result)
-	if action in ["buy", "buy_ship", "buy_ammo", "sell", "refine", "boost", "replace_boost", "research", "research_reset"] and pilot["equipment"]["revision"] > previous_revision:
-		message(id, result, "purchase")
+	desk.station_request(id, sequence, action, subject, ship, slot, life)
 
 
 func publish_inventory(id: int, result: String = "") -> void:
-	if session.sector.dedicated_server:
-		var pilot: Dictionary = session.store.pilots[session.pilot_ids[id]]
-		station_result.rpc_id(id, pilot["equipment"], result, session.can_grant_test_credits(id), pilot["cargo"], pilot["credits"], pilot["ammo"], session.snapshot_sequence, session.ships[id].resource_boosts, Skylab.snapshot(pilot, int(pilot["skylab"]["lastSimulatedAt"])))
+	desk.publish_inventory(id, result)
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -1044,35 +1002,15 @@ func skylab_request(sequence: int, action: String, payload: Dictionary) -> void:
 	var id := multiplayer.get_remote_sender_id()
 	if not records.has(id) or not session.pilot_ids.has(id):
 		return
-	# Bound the RPC without trusting a client-selected account, recipient, clock or currency.
-	if payload.size() > 4 or JSON.stringify(payload).length() > 4096:
-		publish_inventory(id, "Invalid Skylab request.")
-		return
-	var result := session.store.transact_lab(session.pilot_ids[id], sequence, action, payload, Skylab.now(), session.can_grant_test_credits(id))
-	if session.store.failed:
-		session.stop_for_save_failure()
-		return
-	sync_lab_accounts()
-	publish_inventory(id, result)
+	desk.skylab_request(id, sequence, action, payload)
 
 
 func sync_lab_accounts() -> void:
-	for id: int in records:
-		var pilot: Dictionary = session.store.pilots[session.pilot_ids[id]]
-		records[id]["credits"] = pilot["credits"]
-		cargo_holds[id] = pilot["cargo"].duplicate(true)
+	desk.sync_lab_accounts()
 
 
 func advance_labs() -> void:
-	var at := Skylab.now()
-	if at < session.store.next_lab_due:
-		return
-	if not session.store.advance_labs(at):
-		session.stop_for_save_failure()
-		return
-	sync_lab_accounts()
-	for id: int in records:
-		publish_inventory(id)
+	desk.advance_labs()
 
 
 func boost_state(data: Dictionary, sequence: int, revision: int) -> void:
