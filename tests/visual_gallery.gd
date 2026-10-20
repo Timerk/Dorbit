@@ -78,6 +78,8 @@ func run() -> void:
 	await capture("03-field")
 	await pose(Vector3(0, 10, 40), Vector3(400, 30, 200))
 	await capture("04-backdrop")
+	await pose(Vector3(-300, 60, 300), Vector3(600, -40, -700))
+	await capture("04a-clouds")
 	var sun_direction := Basis.from_euler(SectorVisuals.SUN_ROTATION * PI / 180.0).z
 	await pose(Vector3(0, 10, 40), Vector3(0, 10, 40) + sun_direction * 100.0 + Vector3(0, -30, 0))
 	await capture("04b-sun")

@@ -1083,8 +1083,20 @@ first pass stays within the Compatibility renderer and existing graphics setting
   orange light that illuminates nearby hulls and rock. Loot timing and the
   1.2-second effect lifetime are unchanged.
 
-Brightness, dust density, streak length and explosion intensity remain visual
-playtesting settings. `tests/visual_gallery.gd` renders a fixed set of in-flight
+The user then allowed more demanding effects, since the group's PCs are stronger
+than the development laptop:
+
+- Forty large gas wisps per map, in one instanced draw, float inside and around the
+  flight sphere in that map's nebula colours. They give the painted sky parallax and
+  dissolve as the camera flies into them. They add noticeable fill-rate cost.
+- A screen-space sun flare adds glare, a horizontal lens streak and ghosts. A physics
+  ray hides it when asteroids, the station or ships block the sun.
+- On High effects, each pilot's drive lights its aft hull in the plume colour,
+  brightening with thrust and boost. Laser hits briefly light the target in the beam
+  colour, capped at 12 simultaneous laser lights.
+
+Brightness, dust density, cloud density, streak length, flare strength and explosion
+intensity remain visual playtesting settings. `tests/visual_gallery.gd` renders a fixed set of in-flight
 review screenshots to `build/validation/gallery`.
 
 ## Development milestones
