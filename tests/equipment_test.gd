@@ -383,7 +383,7 @@ func run() -> void:
 	client.session.disconnect_session("Restart test")
 	await settle()
 	server.session.disconnect_session("Restart test")
-	check(server.session.host(test_port(24731)) == OK, "Migrated inventory reloads on restart")
+	check(host_session(server, 24731) == OK, "Migrated inventory reloads on restart")
 	client.session.join("127.0.0.1", test_port(24731))
 	await settle(0.5)
 	await replicate(server)

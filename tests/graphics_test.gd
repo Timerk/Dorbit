@@ -153,7 +153,8 @@ func run() -> void:
 	check(low_hit.find_children("*", "MeshInstance3D", true, false).size() == 3, "Low simplifies the shield ripple and uses one hull spark")
 	SectorVisuals.explosion(sector, Vector3.ZERO, 14.0)
 	var low_blast := get_nodes_in_group("destruction_feedback")[0] as CombatEffect
-	check(low_blast.get_meta("diameter") == 14.0 and low_blast.find_children("*", "MeshInstance3D", true, false).size() == 5, "Low preserves ship-sized blasts with reduced debris")
+	check(low_blast.get_meta("diameter") == 14.0 and low_blast.find_children("*", "MeshInstance3D", true, false).size() == 7, "Low preserves ship-sized blasts with two fire puffs and reduced sparks")
+	check(low_blast.find_children("*", "OmniLight3D", true, false).is_empty(), "Low blasts add no dynamic light")
 	await create_timer(0.4).timeout
 	check(SectorVisuals.explosion_active(sector, Vector3.ZERO), "Low retains the destruction lifetime used to delay loot")
 	for index in range(50):
@@ -167,6 +168,14 @@ func run() -> void:
 	check(get_nodes_in_group("transient_feedback").size() == 1, "High groups shield and hull feedback under one lifetime root")
 	var high_hit := get_nodes_in_group("transient_feedback")[0] as CombatEffect
 	check(high_hit.find_children("*", "MeshInstance3D", true, false).size() == 9, "High preserves the new shield ripple, flashes and six hull sparks")
+	SectorVisuals.explosion(sector, Vector3.ZERO, 14.0)
+	var high_blast := get_nodes_in_group("destruction_feedback")[0] as CombatEffect
+	# Flash, six fire puffs, flare, shockwave, six debris fragments and twelve sparks.
+	check(high_blast.find_children("*", "MeshInstance3D", true, false).size() == 27, "High blasts add fireballs, a shockwave and debris")
+	check(high_blast.find_children("*", "OmniLight3D", true, false).size() == 1, "High blasts briefly light nearby surfaces")
+	await create_timer(1.12).timeout
+	var puffs := high_blast.find_children("*", "MeshInstance3D", true, false).filter(func(visual: MeshInstance3D): return visual.material_override == SectorVisuals.effect_resource("fireball_material"))
+	check(SectorVisuals.explosion_active(sector, Vector3.ZERO) and puffs.is_empty(), "Finished fire puffs stop rendering before the blast root expires")
 	select_option(menu, "effects_quality", 0)
 	await process_frame
 	var victim := sector.alien

@@ -1,0 +1,17 @@
+[Unit]
+Description=Pull Dorbit encrypted recovery onto this off-machine host
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=dorbit-backup
+Group=dorbit-backup
+UMask=0077
+ExecStart=/usr/bin/python3 -I /usr/local/lib/dorbit/recovery-backup.py /var/lib/dorbit-backup dorbit-recovery --keep 14
+TimeoutStartSec=35min
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/dorbit-backup

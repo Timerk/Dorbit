@@ -122,9 +122,21 @@ func run() -> void:
 	check(not sites.tips.is_empty() and not sites.tips_used.has(false), "The pop-up lingers once every control is tried")
 	await settle(StorySites.TIPS_LINGER + 0.2)
 	check(sites.tips.is_empty(), "The pop-up closes after its controls are tried")
-	var credits: int = store.pilots[pilot_id]["credits"]
+	# A supply checkpoint and story reward in the same tick must preserve both.
+	var next := store.pilots.duplicate(true)
+	next[pilot_id]["credits"] = 100000
+	next[pilot_id]["ammo"]["x1"] = 0
+	next[pilot_id]["equipment"]["items"]["buyer"] = {"model": "ammo-cpu", "ship": "starter", "slot": "extra1", "enabled": true, "ammo_type": "x1"}
+	check(store.persist(next), "Seed automatic supplies before reaching the story waypoint")
+	combat.records[id]["credits"] = 100000
+	var ship := server.session.ships[id]
+	ship.ammo = store.pilots[pilot_id]["ammo"].duplicate()
+	combat.apply_equipment(id)
+	ship.extras_clock = 1.0
+	var credits: int = 99000
 	await reach(server, pilot)
 	check(saved(server, pilot)["step"] == 1 and store.pilots[pilot_id]["credits"] == credits + 300, "Reaching the rendezvous saves the step and its reward")
+	check(ship.ammo["x1"] == 10000 and store.pilots[pilot_id]["ammo"]["x1"] == 10000 and combat.records[id]["credits"] == credits + 300, "Same-tick supplies and story completion retain purchased ammo, cost and reward")
 	await process_frame
 	check(pilot.story_state()["step"] == 1 and pilot.story_sites.comm.begins_with("VANCE: Clean flying."), "The owner receives progress and the contact's closing line")
 	check(sites.tips == Story.CONTROLS["survey_run"], "The next step opens its own controls pop-up")

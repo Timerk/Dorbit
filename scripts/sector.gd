@@ -78,7 +78,8 @@ func _ready() -> void:
 	if not dedicated_server:
 		map_scenery[0] = []
 		for child in get_children():
-			if child is Node3D and not child is Light3D:
+			# Camera-relative dust follows the pilot to every map.
+			if child is Node3D and not child is Light3D and not child is SpaceDust:
 				map_scenery[0].append(child)
 	build_maps()
 	if not dedicated_server:

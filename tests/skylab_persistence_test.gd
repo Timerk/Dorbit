@@ -55,7 +55,7 @@ func run() -> void:
 	server.session.combat.sync_lab_accounts()
 	server.session.disconnect_session("Restart delivery")
 	await settle(.3)
-	check(server.session.host(test_port(24744)) == OK, "Server restarts with a delivered shipment and overfull cargo")
+	check(host_session(server, 24744) == OK, "Server restarts with a delivered shipment and overfull cargo")
 	store = server.session.store
 	check(store.pilots["pilot0"]["cargo"]["starter"]["prometium"] == 100 and store.pilots["pilot0"]["skylab"]["shipment"] == null, "Restart does not deliver the manifest twice")
 	check(store.transact_lab("pilot0", 3, "ship", {"manifest": {"prometium": 100}}, Skylab.now()).contains("already"), "Persisted sequence rejects a retry after restart")

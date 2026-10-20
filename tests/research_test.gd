@@ -37,6 +37,13 @@ func run_rules() -> void:
 	check(Research.reset_price(Research.state(equipment)) == Research.RESET_BASE_CREDITS, "The first reset uses the base price")
 	Research.reset(equipment)
 	check(Research.state(equipment) == {"points": 7, "skills": {}, "resets": 1} and Research.reset_price(Research.state(equipment)) == Research.RESET_BASE_CREDITS * 2, "Reset refunds points and doubles the next price")
+	var prices_match := true
+	for resets in range(65):
+		var expected: int = PilotStore.MAX_CREDITS if resets >= 15 else Research.RESET_BASE_CREDITS << resets
+		prices_match = prices_match and Research.reset_price({"points": 0, "skills": {}, "resets": resets}) == expected
+	check(prices_match, "Reset prices double, then saturate at the wallet cap from reset 15 through 64")
+	check(Research.reset_price({"points": 0, "skills": {}, "resets": 14}) == 1_638_400_000, "The last uncapped reset costs 1,638,400,000 credits")
+	check(PilotStore.valid_credits(0) and PilotStore.valid_credits(PilotStore.MAX_CREDITS) and not PilotStore.valid_credits(-1) and not PilotStore.valid_credits(PilotStore.MAX_CREDITS + 1) and not PilotStore.valid_credits(1.0), "The wallet guard accepts only whole credits within the cap")
 	var legacy := {"type": "heavy", "required": 1, "reward": 30000, "progress": 1, "run": "a".repeat(64)}
 	check(HuntingContracts.valid(legacy), "Contracts accepted before research remain valid")
 	var payout := HuntingContracts.settle({"heavy": legacy, "scout": HuntingContracts.accept("scout")}, 0)
@@ -45,9 +52,45 @@ func run_rules() -> void:
 	check(CargoResources.collect_bonus(hold, {"prometium": 50}, 0.2, 400) == {"prometium": 10} and CargoResources.collect_bonus({"prometium": 400}, {"prometium": 50}, 0.2, 400).is_empty(), "Salvage Drones adds whole bonus units within free cargo")
 
 
+# Saturated resets must charge the cap and leave a ledger that reopens.
+func run_reset_ledger(template: Dictionary, directory: String) -> void:
+	DirAccess.make_dir_absolute(directory)
+	var path := directory.path_join("pilots.json")
+	for resets: int in [14, 15, 47, 48, 63, 64]:
+		var price: int = PilotStore.MAX_CREDITS if resets >= 15 else Research.RESET_BASE_CREDITS << resets
+		for credits: int in [price - 1, price, PilotStore.MAX_CREDITS]:
+			var pilots := template.duplicate(true)
+			pilots["pilot0"]["credits"] = credits
+			pilots["pilot0"]["equipment"]["research"] = {"points": 0, "skills": {"reinforced_plating": 1}, "resets": resets}
+			for suffix in [".bak", ".combat"]:
+				DirAccess.remove_absolute(path + suffix)
+			# A future simulation time makes lab advances no-ops, so a rejected
+			# reset can be compared byte for byte even across a clock second.
+			pilots["pilot0"]["skylab"]["lastSimulatedAt"] = Skylab.now() + 3600
+			var file := FileAccess.open(path, FileAccess.WRITE)
+			file.store_string(JSON.stringify({"version": 7, "pilots": pilots}))
+			file.close()
+			var store := PilotStore.new()
+			if not store.open(directory):
+				check(false, "Reset ledger with %d resets opens: %s" % [resets, store.error])
+				return
+			var saved := FileAccess.get_file_as_string(path)
+			var result := store.transact("pilot0", int(store.pilots["pilot0"]["equipment"]["revision"]) + 1, "research_reset", "", "", "")
+			var research := Research.state(store.pilots["pilot0"]["equipment"])
+			if credits < price:
+				check(result == "Insufficient credits. Need %d CR." % price and store.pilots["pilot0"]["credits"] == credits and research["resets"] == resets and FileAccess.get_file_as_string(path) == saved, "Reset %d without %d CR keeps the balance and files" % [resets, price])
+			else:
+				check(result.begins_with("Skill tree reset.") and store.pilots["pilot0"]["credits"] == credits - price and research["resets"] == mini(64, resets + 1), "Reset %d charges %d CR" % [resets, price])
+			check(store.close(), "Reset ledger with %d resets closes" % resets)
+			var reopened := PilotStore.new()
+			check(reopened.open(directory) and reopened.pilots["pilot0"]["credits"] == store.pilots["pilot0"]["credits"], "Ledger reopens after reset %d with %d CR: %s" % [resets, credits, reopened.error])
+			reopened.close()
+
+
 func run() -> void:
 	run_rules()
 	var server := make_sector("ResearchServer", true, CONTRACT_PORT)
+	run_reset_ledger(server.session.store.pilots, server.session.store.path.get_base_dir().path_join("reset-cases"))
 	var pilot := make_sector("ResearchPilot")
 	await connect_pilot(pilot, 0)
 	if server.session.ships.size() != 1:

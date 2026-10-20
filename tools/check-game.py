@@ -13,6 +13,8 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 ERROR = re.compile(r'SCRIPT ERROR:|Parse Error:|ERROR:')
+PORT_FLOOR = 10000
+PORT_STRIDE = 400
 
 
 def commands(suite: str, engine: str) -> list[tuple[str, list[list[str]]]]:
@@ -28,6 +30,12 @@ def commands(suite: str, engine: str) -> list[tuple[str, list[list[str]]]]:
                 checks.append([engine, '--headless', '--max-fps', '60', '--path', str(ROOT), '--script', 'res://tests/' + check[0], *check[1:]])
         result.append((group['name'], checks))
     return result
+
+
+def port_offset(index: int) -> int:
+    """Give each group its own block of the 24678-24967 test ports, below the
+    Linux (32768+) and Windows (49152+) ephemeral ranges that client sockets use."""
+    return PORT_FLOOR - 24678 + index * PORT_STRIDE
 
 
 def run_group(name: str, checks: list[list[str]], profile: Path, offset: int) -> list[dict]:
@@ -67,13 +75,14 @@ def main() -> int:
     if not 1 <= args.workers <= 4:
         parser.error('workers must be between 1 and 4')
     groups = commands(args.suite, str(args.engine.resolve()))
+    os.environ['DORBIT_TEST_GODOT'] = str(args.engine.resolve())
     started = time.perf_counter()
     results = []
     output_dir = ROOT / 'build/validation'
     output_dir.mkdir(parents=True, exist_ok=True)
     # Keep intentional restart sequences together, with a fresh profile per group.
     with tempfile.TemporaryDirectory(prefix='dorbit-checks-') as directory, ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futures = [pool.submit(run_group, name, checks, Path(directory) / name, (index + 1) * 500)
+        futures = [pool.submit(run_group, name, checks, Path(directory) / name, port_offset(index))
                    for index, (name, checks) in enumerate(groups)]
         for future in as_completed(futures):
             group_results = future.result()

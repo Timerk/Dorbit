@@ -24,6 +24,12 @@ func run() -> void:
 	check(render_nodes(server) == 0, "Dedicated server creates no meshes, lights or environment")
 	check(client.get_node_or_null("DistantScenery") != null, "Client has distant scenery")
 	check(server.get_node_or_null("DistantScenery") == null, "Server skips distant scenery")
+	space_dust_checks(client, server)
+	await sync_physics()
+	await sun_flare_checks(client)
+	check(client.get_node_or_null("SunFlare") is SunFlare and server.get_node_or_null("SunFlare") == null, "Only rendering clients create the sun flare")
+	var clouds := client.get_node_or_null("DistantScenery/NebulaClouds") as MultiMeshInstance3D
+	check(clouds != null and clouds.multimesh.instance_count == SectorBackdrop.CLOUD_COUNT, "Nebula wisps share one instanced draw")
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7301
 	for index in range(24):
@@ -58,7 +64,7 @@ func check_campaign_backdrops() -> void:
 	flight.set_physics_process(false)
 	var authority := preload("res://scenes/sector.tscn").instantiate() as Sector
 	authority.dedicated_server = true
-	authority.server_port = 24967 + int(OS.get_environment("DORBIT_TEST_PORT_OFFSET"))
+	authority.server_port = preload("res://tests/network_test.gd").free_udp_port(24967 + int(OS.get_environment("DORBIT_TEST_PORT_OFFSET")))
 	var previous_directory := OS.get_environment("DORBIT_DATA_DIR")
 	var directory := ProjectSettings.globalize_path("user://backdrop-server-%d" % OS.get_process_id())
 	DirAccess.make_dir_recursive_absolute(directory)
@@ -193,3 +199,62 @@ func render_nodes(node: Node) -> int:
 	for child in node.get_children():
 		count += render_nodes(child)
 	return count
+
+
+func space_dust_checks(client: Node3D, server: Node3D) -> void:
+	var dust := client.get_node_or_null("SpaceDust") as SpaceDust
+	check(dust != null and server.get_node_or_null("SpaceDust") == null, "Only rendering clients create space dust")
+	if dust == null:
+		return
+	check(dust.multimesh.instance_count == SpaceDust.COUNT and dust.multimesh.use_custom_data, "Dust motes share one instanced draw with per-mote seeds")
+	var camera := Camera3D.new()
+	client.add_child(camera)
+	camera.make_current()
+	# Drive the tracker directly so the result does not depend on frame timing.
+	dust._process(1.0 / 60.0)
+	for index in range(30):
+		camera.position += Vector3(0, 0, -41.0 / 60.0)
+		dust._process(1.0 / 60.0)
+	check(absf(dust.velocity.z + 41.0) < 1.0, "Dust streaks follow the camera's cruise velocity")
+	camera.position += Vector3(0, 0, -5000)
+	dust._process(1.0 / 60.0)
+	check(dust.velocity == Vector3.ZERO, "Jumps and rescues reset dust streaks instead of smearing them")
+	camera.position += Vector3(0, 0, -5.0)
+	for index in range(30):
+		camera.position += Vector3(0, 0, -5.0)
+		dust._process(1.0 / 60.0)
+	check(dust.velocity.length() <= SpaceDust.MAX_STREAK_SPEED + 0.01, "Fast camera motion cannot stretch streaks beyond the cap")
+	camera.free()
+
+
+func sun_flare_checks(client: Node3D) -> void:
+	var flare := client.get_node("SunFlare") as SunFlare
+	var camera := Camera3D.new()
+	client.add_child(camera)
+	camera.make_current()
+	var sky := (client.get_node("WorldEnvironment") as WorldEnvironment).environment.sky.sky_material as ShaderMaterial
+	var sun := (sky.get_shader_parameter("sun_direction") as Vector3).normalized()
+	camera.global_position = Vector3(0, 0, 900)
+	camera.look_at(camera.global_position + sun)
+	check(flare.visibility() > 0.9, "Looking straight at an unobstructed sun shows the flare")
+	camera.look_at(camera.global_position - sun)
+	check(flare.visibility() == 0.0, "Facing away from the sun hides the flare")
+	var rock := client.get_node("Asteroid4") as Node3D
+	camera.global_position = rock.global_position - sun * 30.0
+	camera.look_at(camera.global_position + sun)
+	check(flare.visibility() == 0.0, "An asteroid between the camera and the sun blocks the flare")
+	# Ships use collision layer 2, separate from obstacles.
+	var ship := StaticBody3D.new()
+	ship.collision_layer = 2
+	var hull := CollisionShape3D.new()
+	hull.shape = SphereShape3D.new()
+	(hull.shape as SphereShape3D).radius = 3.0
+	ship.add_child(hull)
+	client.add_child(ship)
+	camera.global_position = Vector3(0, 0, 900)
+	ship.global_position = camera.global_position + sun * 20.0
+	camera.look_at(camera.global_position + sun)
+	await sync_physics()
+	check(flare.visibility() == 0.0, "A ship between the camera and the sun blocks the flare")
+	ship.free()
+	camera.free()

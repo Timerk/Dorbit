@@ -5,6 +5,7 @@ render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabl
 instance uniform vec4 tint : source_color = vec4(0.25, 0.8, 1.0, 1.0);
 instance uniform float opacity = 1.0;
 instance uniform bool beam = false;
+instance uniform bool ring = false; // Expanding shockwave band instead of a soft disc.
 
 void vertex() {
 	vec3 center = MODEL_MATRIX[3].xyz;
@@ -25,6 +26,10 @@ void fragment() {
 	float radius = beam ? abs(p.x) : length(p);
 	float halo = pow(max(0.0, 1.0 - radius), 3.0);
 	float core = exp(-radius * radius * 110.0);
+	if (ring) {
+		halo = exp(-pow((radius - 0.85) * 14.0, 2.0)) * 0.6 + exp(-pow((radius - 0.88) * 40.0, 2.0)) * 0.4;
+		core = 0.0;
+	}
 	float ends = beam ? smoothstep(0.0, 0.07, UV.y) * smoothstep(0.0, 0.07, 1.0 - UV.y) : 1.0;
 	ALBEDO = mix(tint.rgb, vec3(1.0), core * 0.8);
 	ALPHA = (halo * 0.65 + core * 0.35) * ends * opacity * tint.a;

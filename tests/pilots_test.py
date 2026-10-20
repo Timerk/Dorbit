@@ -2,6 +2,7 @@
 
 import json
 import hashlib
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -10,6 +11,42 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import pilots
+
+
+class SchemaParityTest(unittest.TestCase):
+    maxDiff = None
+
+    def test_runtime_catalog_matches_provisioning(self):
+        """Run after Godot import; never silently skip the drift guard.
+
+        check-game.py supplies its engine, or use DORBIT_TEST_GODOT for a
+        standalone unittest run with an engine outside the repo tool cache.
+        """
+        root = Path(__file__).resolve().parents[1]
+        engine = os.environ.get("DORBIT_TEST_GODOT") or str(root / (
+            ".tools/godot/Godot_v4.7.2-stable_win64_console.exe" if sys.platform == "win32"
+            else ".tools/godot-linux/Godot_v4.7.2-stable_linux.x86_64"))
+        result = subprocess.run(
+            [engine, "--headless", "--path", str(root), "--script", "res://tests/provisioning_schema.gd"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
+        output = result.stdout + result.stderr
+        self.assertEqual(result.returncode, 0, output)
+        self.assertNotIn("ERROR:", output, output)
+        marker = "PROVISIONING_SCHEMA:"
+        exports = [line[len(marker):] for line in result.stdout.splitlines() if line.startswith(marker)]
+        self.assertEqual(len(exports), 1, output)
+        runtime = json.loads(exports[0])
+        models = {}
+        for kind, ids in [("laser", pilots.LASER_MODELS), ("launcher", pilots.LAUNCHER_MODELS),
+                          ("generator", pilots.GENERATOR_MODELS), ("extra", pilots.EXTRA_FAMILIES)]:
+            for model in ids:
+                self.assertNotIn(model, models, f"Model belongs to multiple kinds: {model}")
+                models[model] = {"kind": kind, "family": pilots.EXTRA_FAMILIES.get(model, "")}
+        self.assertEqual(models, runtime["models"], "Equipment kind/family drift in tools/pilots.py")
+        self.assertEqual(pilots.starter_ammo(), runtime["starter_ammo"], "Starter ammunition drift")
+        self.assertEqual(set(pilots.starter_ammo()), set(runtime["laser_ammo"] + runtime["rocket_ammo"]))
+        legacy = {kind: 0 for kind in runtime["laser_ammo"]}
+        self.assertTrue(pilots.valid_ammo(legacy, legacy=True), "Legacy laser ammunition types drifted")
 
 
 class ProvisioningTest(unittest.TestCase):

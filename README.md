@@ -429,7 +429,7 @@ Buy rocket batches under Shop > Ammo and HST-1/HST-2 under Weapons, then fit the
 launcher in Hangar's launcher slot. Uridium reference prices use **100 credits per
 Uridium**. Balance settings are in `scripts/ammunition.gd` and
 `scripts/rocket_weapons.gd`; see [the game plan](GAME_PLAN.md#manual-single-rockets-and-classic-hellstorm).
-Use matching network-schema-16 client/server builds and save schema 8. Back up server data before upgrading; older servers need the previous
+Use matching network-schema-19 client/server builds and save schema 8. Back up server data before upgrading; older servers need the previous
 ledger for rollback. New/migrated pilots receive 100 R-310 once.
 
 Run `tests/rocket_test.gd` with Godot (headless for authoritative checks, rendered
@@ -495,7 +495,7 @@ Weapon rounds commit before damage. Server writes validate ingredients,
 compatibility, quantities and duplicate protection. Refining requires a living
 ship and the current ship life; equipment boosts also require station restrictions.
 
-This requires matching network-schema-16 builds. Ledger schemas 1–7 migrate to
+This requires matching network-schema-19 builds. Ledger schemas 1–7 migrate to
 schema 8, preserving progression and adding any missing reserves and rocket ammo; keep a backup for
 rollback. The provisioning tool preserves and validates boosts during rotation.
 `res://tests/resource_upgrades_test.gd` exercises authenticated refining and
@@ -520,11 +520,12 @@ contracts on eleven skills in Defense, Economy and Offense rows.
 Each of the five levels per skill costs one point plus refined Skylab stock
 (Prometid, Duranium, Promerium and Seprom); a skill unlocks when the previous one in
 its row is complete. Pilots can hold 30 levels at once. Reset refunds points, not
-materials, for 100,000 credits, doubling each time. Learning and resetting follow
-station service rules and apply to the flying ship immediately. See
-[the agreed values](GAME_PLAN.md#research-skill-tree).
-`res://tests/research_test.gd` covers the rules, contract rewards and
-authenticated learn/reset transactions; the offline menu test captures the page.
+materials, for 100,000 credits, doubling each time up to the 2,000,000,000-credit
+wallet cap. Learning and resetting follow station service rules and apply to the
+flying ship immediately. See [the agreed values](GAME_PLAN.md#research-skill-tree).
+`res://tests/research_test.gd` covers the rules, contract rewards, authenticated
+learn/reset transactions and ledgers reopening after capped resets; the offline
+menu test captures the page.
 Review the [Research page at 1440 × 900](docs/feedback/research-menu.png).
 
 ## Dedicated server and connections
@@ -631,7 +632,7 @@ The regular Liberator has 116,000 hull. New pilots start with LF-1, SG3N-A01 and
 
 LF-3 adds 175 base damage and 15% more for that laser against aliens (201.25 total) per installed copy. Its bonus never multiplies other lasers. FS-01 adds 3,200 shield, 70% absorption and +6.25% regeneration; its regeneration bonuses add together and multiply normal shield recovery after the existing six-second delay. Shield capacity adds, while absorption is weighted by each generator's capacity. Current fitting and installation previews show these special bonuses. Fitting changes do not repair or refill your ship. Inventory and fittings survive rescue, reconnects and restart. Equipment purchases require the persistent dedicated server; the offline development fixture uses the same starter combat and flight values. Reference prices need human progression playtesting with the existing rewards.
 
-Client and server must use matching network-schema-16 builds; the compatibility handshake rejects older builds before gameplay. Save schema 8 adds the combat journal to schema 7's persistent industry, ammunition and combat boosts; Skylab uses credits exclusively. Update the operator provisioning tool with the server so credential rotation preserves pending combat debits, every equipment model and industry jobs.
+Client and server must use matching network-schema-19 builds; the compatibility handshake rejects older builds before gameplay. Save schema 8 adds the combat journal to schema 7's persistent industry, ammunition and combat boosts; Skylab uses credits exclusively. Update the operator provisioning tool with the server so credential rotation preserves pending combat debits, every equipment model and industry jobs.
 
 ### Credit income
 
@@ -668,6 +669,11 @@ Recovery is an operator action:
 4. Reconnect with an existing pilot and verify credits, ammunition and boosts. Restoring an older backup rolls back later transactions and credential rotations. Rotate exposed credentials again after a restore.
 
 Keep dated copies of the entire data directory on another disk or machine, especially before provisioning and server updates. Stop the server while taking a copy. The automatic `.bak` is one full checkpoint old, not one volley old, and does not protect against disk loss. Godot's runtime flush does not guarantee directory metadata reaches physical storage before sudden power loss; recovery may require a backup after a machine or storage failure. Process restarts replay complete combat transactions. Public accounts remain outside this slice; owned ships, fittings and cargo persist.
+
+[Periodic off-machine recovery](docs/periodic-recovery.md) provides an age-encrypted
+stopped-server pull operation, bounded receiver retention, timer templates and a
+disposable restore rehearsal. The destination, RPO, alert delivery and production
+schedule still require operator configuration; repository tests do not install it.
 
 ### Start a server in Ubuntu / WSL2
 

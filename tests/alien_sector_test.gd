@@ -2,29 +2,14 @@ extends "res://tests/dedicated_server_test.gd"
 ## Independent encounters over real ENet peers, including life changes and late joins.
 
 
-func fire_at(server: Sector, clients: Array[Sector], enemies: Array[Alien], life: int = -1) -> void:
-	# Production clients resend unreliable flight packets. Wait for actual receipt,
-	# keeping simultaneous intents fresh together even when a frame exceeds their TTL.
-	var started := Time.get_ticks_msec()
-	while Time.get_ticks_msec() < started + 8000:
-		for index in range(clients.size()):
-			var client := clients[index]
-			var enemy := enemies[index]
-			client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false, true,
-				int(client.player.get_meta("life", 0)), enemy.life if life < 0 else life, enemy.alien_id)
-		await process_frame
-		var complete := true
-		for index in range(clients.size()):
-			var command: Dictionary = server.session.commands.get(clients[index].multiplayer.get_unique_id(), {})
-			var encounter := enemies[index].life if life < 0 else life
-			var received := int(command.get("time", -1))
-			var fresh := received >= started and Time.get_ticks_msec() - received < FlightSession.COMMAND_TIMEOUT * 1000
-			var matches: bool = command.get("target", -1) == enemies[index].alien_id and command.get("encounter", -1) == encounter and command.get("fire", false)
-			if not fresh or not matches:
-				complete = false
-		if complete:
-			return
-	check(false, "Server receives fresh fire intents for every requested encounter")
+func fire_at(server: Sector, clients: Array[Sector], enemies: Array[Alien], life: int = -1, phase: String = "fire") -> void:
+	# All simultaneous intents must reach the server in the same turn, so combat
+	# can consume them together even when each frame exceeds COMMAND_TIMEOUT.
+	var intents: Array[Dictionary] = []
+	for index in range(clients.size()):
+		var enemy := enemies[index]
+		intents.append(intent(true, int(clients[index].player.get_meta("life", 0)), enemy.life if life < 0 else life, enemy.alien_id))
+	check(await deliver_intents(server, clients, intents, phase), "Server receives fresh fire intents for every requested encounter")
 
 
 func run() -> void:
@@ -66,8 +51,21 @@ func run() -> void:
 	# Regress CI stalls longer than COMMAND_TIMEOUT after settings have loaded.
 	var previous_max_fps := Engine.max_fps
 	Engine.max_fps = 1
-	await fire_at(server, [first, second], [scout, heavy])
+	await fire_at(server, [first, second], [scout, heavy], -1, "slow-frame simultaneous encounters")
 	combat.tick(0.01)
+	# Reproduce the scheduler condition explicitly: a received command goes stale
+	# across capped frames without client heartbeats, then actual ENet retries must
+	# converge again. The production timeout remains authoritative.
+	# Own polling during this regression so a convenient automatic poll cannot
+	# hide a missing receipt barrier in fire_at. Restore it before other fixtures.
+	var previous_multiplayer_poll := multiplayer_poll
+	multiplayer_poll = false
+	await process_frame
+	await process_frame
+	check(not combat.remote_firing(first_id) and not combat.remote_firing(second_id), "Slow frames expire both received fire intents at the production timeout")
+	await fire_at(server, [first, second], [scout, heavy], -1, "slow-frame retry after expiry")
+	check(combat.remote_firing(first_id) and combat.remote_firing(second_id), "ENet retries restore both fresh intents together after slow-frame expiry")
+	multiplayer_poll = previous_multiplayer_poll
 	Engine.max_fps = previous_max_fps
 	check(scout.shield < scout.max_shield and heavy.shield < heavy.max_shield, "Two simultaneous fire intents damage independent aliens")
 	check(scout.contributors == [first_id] and heavy.contributors == [second_id], "Contributions belong only to the damaged alien")
@@ -86,7 +84,7 @@ func run() -> void:
 	check(second.target == second.aliens[4] and second.auto_fire, "Returning to combat range preserves the same client lock")
 	var heavy_health := heavy.hull + heavy.shield
 	var heavy_life := heavy.life
-	await fire_at(server, [second], [heavy])
+	await fire_at(server, [second], [heavy], -1, "Heavy before Scout death")
 	check(combat.remote_firing(second_id), "Heavy fire command is fresh before another alien dies")
 	scout.take_damage(scout.max_hull + scout.max_shield + 1.0, p)
 	check(combat.remote_firing(second_id), "Scout death preserves the Heavy fire command before its timeout")
@@ -128,7 +126,11 @@ func run() -> void:
 	late.session.snapshot({}, combat.pack_alien(scout), sequence - 1)
 	check(late.aliens[4].hull == 200 and not late.aliens[1].alive, "Reordered alien chunks converge independently")
 	server.session.snapshot_sequence = sequence
+	# This loop simulates up to 30 s of combat. Random alien homes can place
+	# another alien near the parked pilot, whose death would erase its command
+	# and reject the stale-encounter intent below. Keep both pilots protected.
 	p.position = Sector.STATION_POSITION
+	q.position = Sector.STATION_POSITION + Vector3(0, 120, 0)
 	for step in range(1800):
 		if not heavy.returning:
 			break
@@ -137,7 +139,7 @@ func run() -> void:
 	check(heavy.position.distance_to(heavy.home_position) <= 3.0, "Returning alien actually flies back to its territory")
 	check(not heavy.returning and heavy.available(), "Alien becomes huntable again only at home")
 	check(heavy.hull == damaged_hull, "Returning home before the recovery delay preserves hull damage")
-	await fire_at(server, [second], [heavy], heavy_life)
+	await fire_at(server, [second], [heavy], heavy_life, "stale encounter after retreat")
 	check(not combat.remote_firing(second_id), "Old fire intent cannot cross a retreat reset")
 	# Abandoning an active fight for station protection also resets eligibility.
 	q.position = Sector.STATION_POSITION + Vector3(0, 120, 0)

@@ -40,6 +40,7 @@ func travel(server: Sector, client: Sector, destination: int) -> void:
 	await replicate(server)
 	for enemy: Alien in client.world_aliens.values():
 		check(enemy.visible == (enemy.map_id == destination and enemy.alive), "Only current-map aliens are rendered")
+	check((client.get_node("SpaceDust") as SpaceDust).visible, "Space dust stays visible after jumping to M%d" % [destination + 1])
 
 
 func run() -> void:

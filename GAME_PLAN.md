@@ -1,6 +1,6 @@
 # Dorbit game requirements and development plan
 
-Status: Milestones 1 and 2 accepted after user playtesting, including internet combat, rewards, death, repairs, health synchronization and good observed performance with five clients, including a laptop below the original reference hardware. Milestone 3 starts with a dedicated Linux server before persistent progression. Ten-player performance still needs representative measurement; combat balance remains provisional.
+Status: Milestones 1 and 2 accepted after user playtesting, including internet combat, rewards, death, repairs, health synchronization and good observed performance with five clients, including a laptop below the original reference hardware. Milestone 3 now includes the dedicated Linux server, persistent pilot progression, ship and equipment purchases, hunting contracts, Skylab industry and research; the first connected-map expansion is also implemented. Current saves use schema 8 with the combat journal, and the network uses schema 19. Repeat-session progression and ten-player performance still need representative playtesting; combat and economy balance remain provisional.
 
 This document records the planning discussion. Proposed values and open questions are marked separately so they can be adjusted through playtesting.
 
@@ -259,7 +259,7 @@ Provisional tuning lives in `Alien.TYPES`, `Sector.ALIEN_KINDS` and `Sector.MAP_
 
 Home coordinates are server-selected random points throughout the safe sphere, with clearance for the entire home leash plus 35 m, station detection/protection, asteroids and other homes. IDs 0 and 3 remain Sentinels, 1 and 2 Scouts, and 4 Heavy. Patrols stay within 18 m horizontally and 8 m vertically of home before engagement. Returning living aliens keep their current home; a death chooses a new home on respawn. Timers never create extra nodes. Clients and late joiners receive authoritative homes and transforms.
 
-Hunting contracts will stack on this work and use `Alien.kind` plus each kill's contribution eligibility. Merge alien variety first, hunting contracts second. The existing `SessionCombat.destroyed()` reward path holds the eligible contributor list until rewards are committed and applied.
+The historical implementation order was alien variety first, hunting contracts second. Implemented contracts use `Alien.kind` plus each kill's contribution eligibility. The existing `SessionCombat.destroyed()` reward path holds the eligible contributor list until rewards are committed and applied.
 
 ### Sector size, radiation and 3D navigation
 
@@ -304,7 +304,7 @@ gameplay tuning nor network rules.
 
 The sector overview supports direct clicks on contact markers, names and height lines, with hover feedback. A left click selects on release; holding left mouse and dragging at least six pixels rotates the view horizontally and vertically without selecting. Right-mouse drag also rotates. Mouse wheel zooms around the pointer from 0.6× to 3× without requiring a modifier key, with clipping inside the map panel. Reset view restores the original angle, zoom and center. These controls affect presentation only.
 
-M opens a larger sector overview with a rotatable height projection and contact list. Clicking a contact or its row sets the destination and returns to flight; alien destinations also use normal combat selection, while outpost/friendly destinations clear the combat target. M or Esc closes it. Opening releases steering and disables automatic fire. Solo simulation pauses; multiplayer and radiation continue on the server. Rescue and disconnect close the overview, and missing contacts fall back to the outpost. This adds navigation controls within the current sector, with no fog of war or arbitrary-coordinate waypoints. Network schema 6 adds exposure and random home state and deliberately rejects older builds, including PR 34's schema 4.
+M opens a larger sector overview with a rotatable height projection and contact list. Clicking a contact or its row sets the destination and returns to flight; alien destinations also use normal combat selection, while outpost/friendly destinations clear the combat target. M or Esc closes it. Opening releases steering and disables automatic fire. Solo simulation pauses; multiplayer and radiation continue on the server. Rescue and disconnect close the overview, and missing contacts fall back to the outpost. This adds navigation controls within the current sector, with no fog of war or arbitrary-coordinate waypoints. Network schema 6 introduced exposure and random home state and deliberately rejected older builds, including PR 34's schema 4 (current is 19).
 
 ### Death and recovery
 
@@ -394,7 +394,7 @@ unavailable until the ship is alive. Start can then launch the prepared ship aga
 
 The console fits 960 x 600 through 1440 x 900 and larger windows; station panels
 scale inside the content area to leave the top bar and left navigation accessible. Client and
-server builds must match (network schema 7 adds docked state and launch RPCs).
+server builds must match (docked state and launch RPCs were introduced in network schema 7; current is 19).
 
 ### Menu visual direction
 
@@ -441,7 +441,7 @@ The first Milestone 3 equipment slice added fittings for the Liberator starter. 
 - Current and proposed damage, shield capacity, absorption, cruise and boost speeds remain visible. Unavailable purchases and fitting actions explain why. B, I and C switch station screens; Esc returns to flight. Generated item art and a temporary ship preview do not depend on the final ship models.
 - Fitting changes never repair hull, refill shields or boost energy, or reset weapon cooldowns. Added shield capacity starts empty and recovers through the normal shield regeneration rules. Removing capacity discards excess charge.
 - The server commits a purchase's credit deduction, new item and request sequence together. Successful requests cannot run again, even after restart. A new intentional purchase uses the next sequence. Inventory and fittings survive death, reconnects and server restarts.
-- Equipment purchases have an editable quantity with minus/plus buttons that change it by one, defaulting to one when selecting another model. The shop shows the batch total and remaining balance. Each request buys 1–999 items into storage as one saved transaction; insufficient funds reject the entire batch. Ships remain limited to one owned hull per model. Network schema 10 requires matching clients and servers; save schema 5 also preserves resource boosts.
+- Equipment purchases have an editable quantity with minus/plus buttons that change it by one, defaulting to one when selecting another model. The shop shows the batch total and remaining balance. Each request buys 1–999 items into storage as one saved transaction; insufficient funds reject the entire batch. Ships remain limited to one owned hull per model. Batch purchases were introduced in network schema 10 (current is 19), requiring matching clients and servers; save schema 5 introduced resource boosts (current is 8).
 - No equipment selling, trading, rarity, equipment leveling, loot acquisition or assembly are included. Resource cargo and sales are described below.
 
 ### Extras equipment
@@ -518,7 +518,7 @@ Fitting never repairs or refills hull, shield or boost energy.
 
 Items and per-item automation settings survive death, reconnect and server restart
 in the current save schema 8 without an extras starter grant or extra-specific migration. Older binaries cannot read
-new extra model IDs: back up before introducing these items. Network schema 16
+new extra model IDs: back up before introducing these items. These extras were introduced in network schema 16; current schema 19
 requires matching clients and servers. Original generated images and their exact
 prompts are under `assets/ui/extras`; prices, repair gates and automation behavior
 still need user playtesting.
@@ -554,7 +554,7 @@ The starter uses the regular Liberator's 116,000 hull and 4 laser / 6 generator 
 
 Empty Liberator fittings have no laser damage or shield capacity, 33 m/s cruise and 75 m/s boost (330 DarkOrbit units converted at 0.1 m/s per unit). New pilots retain the agreed starter fitting: one LF-1, one SG3N-A01 and one original Ion engine, for 65 damage, 1,000 shield with 40% absorption, 41 m/s cruise and 83 m/s boost. Persisted `laser` and `shield` IDs now display LF-1 and SG3N-A01; the original `engine` ID remains valid with its +8 m/s bonus. Original Ion engines stay owned and transferable but are hidden from the shop and cannot be purchased. Existing purchases and assignments are preserved without a save migration. Four starter lasers deal 260 per shot. Six starter shields provide 6,000 capacity with 40% absorption. New G3N models use the screenshot bonuses in m/s for both cruise and boost. Acceleration remains 40 m/s² and laser interval remains 0.42 seconds. Extra-slot utilities are described above.
 
-Installed LF-3 bonuses add 26.25 damage per copy (15% of 175) only when shooting an alien, on top of additive base laser damage; they never multiply other installed lasers. Each installed FS-01 adds 6.25 percentage points to the regeneration bonus (two give +12.5%); the multiplier applies to the normal capacity-based recovery rate, retains Dorbit's existing six-second recovery delay, and caps at maximum shield. Removing or storing either model removes its special bonus. Fitting never grants charge. Current fitting and proposed changes display both bonuses. Equipment remains server-authoritative, with both additional stats replicated to clients. Network schema 6 includes hull model, maximum hull and both equipment bonuses, and requires matching client/server builds; save schema 3 is unchanged. Updated provisioning tools accept every reference model and preserve them during credential rotation.
+Installed LF-3 bonuses add 26.25 damage per copy (15% of 175) only when shooting an alien, on top of additive base laser damage; they never multiply other installed lasers. Each installed FS-01 adds 6.25 percentage points to the regeneration bonus (two give +12.5%); the multiplier applies to the normal capacity-based recovery rate, retains Dorbit's existing six-second recovery delay, and caps at maximum shield. Removing or storing either model removes its special bonus. Fitting never grants charge. Current fitting and proposed changes display both bonuses. Equipment remains server-authoritative, with both additional stats replicated to clients. Network schema 6 introduced hull model, maximum hull and both equipment bonuses (current is 19), requiring matching client/server builds; that change retained save schema 3 (current is 8). Updated provisioning tools accept every reference model and preserve them during credential rotation.
 
 For 80% absorption, a 100-damage hit takes 80 shield and 20 hull. With only 30 shield remaining it takes 30 shield and 70 hull. No shield means the entire hit damages hull. Starter shields use 40%; all current aliens use 80%. Hull can reach zero while shield remains. Shield recovery waits six seconds without damage, then restores one twelfth of maximum capacity per second. Station fitting never refills charge. Repairs cost `ceil(missing hull fraction × 14.4)` credits, capped at the wallet, preserving the old full-hull price of 15 CR at the new scale; rescue still costs up to 10 CR.
 
@@ -667,7 +667,7 @@ The same resource adds rounds or duration without changing its percentage. A dif
 
 The user chose timers that count only while online. They count with that hull active, including station menus and rescue; inactive hulls and disconnected pilots retain their time. The server checkpoints durations every five seconds and flushes them on disconnect, shutdown and successful station actions. Abrupt termination can restore up to five seconds of unused duration. Weapon-round consumption saves before damage, so consumed rounds cannot return after restart.
 
-The user requested ship refining anywhere because its ingredients come from the active ship's cargo. Refining is available outside outpost range, while moving and immediately after damage. It still requires a connected living ship, the current ship life, sufficient ingredients, successful persistence and sequence protection. The Update tab retains station service checks for equipment boosts. Save schema 5 adds validated per-ship boost reserves and migrates schemas 1–4 while preserving progression; provisioning and credential rotation preserve boosts. Rollback needs a pre-migration backup. Network schema 10 requires matching clients and servers. Offline preview exposes both tabs with resource actions disabled. Balance and timer feel need human playtesting; Rocket weapons and Skylab are implemented below.
+The user requested ship refining anywhere because its ingredients come from the active ship's cargo. Refining is available outside outpost range, while moving and immediately after damage. It still requires a connected living ship, the current ship life, sufficient ingredients, successful persistence and sequence protection. The Update tab retains station service checks for equipment boosts. Save schema 5 adds validated per-ship boost reserves and migrates schemas 1–4 while preserving progression; provisioning and credential rotation preserve boosts. Rollback needs a pre-migration backup. These resource actions were introduced in network schema 10; current schema 19 requires matching clients and servers. Offline preview exposes both tabs with resource actions disabled. Balance and timer feel need human playtesting; Rocket weapons and Skylab are implemented below.
 
 ### Persistent Skylab industry
 
@@ -720,10 +720,10 @@ Premium off. Skylab uses credits exclusively: legacy wallets convert at 100:1;
 instant send costs a flat 125,000 credits for any valid manifest. Xenomit artwork, sale price and Heavy drops are custom
 Drobit choices requiring playtesting. Premium is an optional operator-set duration flag; no real-money purchase flow is introduced.
 
-Save schema 7 migrates versions 1–6 before admission, preserving both earlier
+The historical save-schema-7 migration preserved versions 1–6 before admission, including both earlier
 ammunition/boost and industry layouts. Legacy industry wallets convert once at
 100 credits per unit; active/queued robots retain their lifetime.
-Network schema 16 requires matching client/server builds. See [implementation policies,
+These changes were introduced in network schema 16; current schema 19 requires matching client/server builds. See [implementation policies,
 rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot's
 454/870 power budget and exact inventories/capacities remain a separate debug fixture.
 
@@ -767,7 +767,8 @@ Each level takes Skylab stock: 50 Prometid + 50 Duranium; 100 Prometid +
 100 Duranium + 10 Promerium; 25 Promerium; 50 Promerium + 2 Seprom; 80 Promerium
 + 5 Seprom. Pilots can hold at most 30 of the 55 levels, so they must specialize.
 A reset refunds all points but not materials. It costs 100,000 credits and doubles
-each time. Resets that would leave cargo or a Skylab shipment above the reduced
+each time, capped at the 2,000,000,000-credit wallet maximum from the 16th reset
+onward. Resets that would leave cargo or a Skylab shipment above the reduced
 Cargo Compression capacity are refused.
 
 Learning and resetting use station service rules and the economy request
@@ -842,11 +843,11 @@ PLT-2021 500 CR (5 U), PLT-3030 700 CR (7 U), ECO-10 1,500 CR,
 HSTRM-01 2,500 CR (25 U). Orders are batches of 100. HST-1 costs 500,000 CR;
 HST-2 costs 1,500,000 CR (15,000 U). Rocket economy needs playtesting.
 
-Save schema 7 migrates schema 1–6 while preserving progression and grants
+The historical save-schema-7 migration preserved schemas 1–6 and granted
 100 R-310 once, with zero other rocket ammo. New pilots receive the same grant.
 The provisioning tool supports the same migration and launcher fittings.
 Back up the ledger before upgrading; rollback needs a pre-migration backup.
-Network schema 16 requires matching client/server builds. Resource rocket
+These changes were introduced in network schema 16; current schema 19 requires matching client/server builds. Resource rocket
 boosts use the existing per-ship reserve and combat journal formats; no new save
 or network schema is required. Laser/timed reserve behavior is unchanged.
 
@@ -856,9 +857,9 @@ or network schema is required. Laser/timed reserve behavior is unchanged.
 
 The user chose a dedicated Linux server at the start of Milestone 3. Everyone connects to the same server; playing alone means being the only connected pilot. The server runs independently of any player's game client and controls movement, alien behavior, damage, rewards and action validation. The normal client has a connection menu and does not fall back to a playable offline world.
 
-Clients predict their own facing and send it with each flight command. The server does not adopt it directly. It turns each remote ship toward the requested angles at no more than 720°/s, plus one 50 ms command interval of allowance for network jitter. Firing arcs, rocket launch points and snapshots use this server-limited facing. That rate lets a 180° mouse flick complete in the 0.2 seconds normal steering already takes, so local steering and prediction are unchanged; a modified client can no longer snap onto a target behind it. The rate remains a playtesting setting, and the limit is required before any PvP work. Network schema 15 is unchanged.
+Clients predict their own facing and send it with each flight command. The server does not adopt it directly. It turns each remote ship toward the requested angles at no more than 720°/s, plus one 50 ms command interval of allowance for network jitter. Firing arcs, rocket launch points and snapshots use this server-limited facing. That rate lets a 180° mouse flick complete in the 0.2 seconds normal steering already takes, so local steering and prediction are unchanged; a modified client can no longer snap onto a target behind it. The rate remains a playtesting setting, and the limit is required before any PvP work. This facing limit did not change the then-current network schema 15 (current is 19).
 
-World snapshots (network schema 18) send each viewer one batched, unreliable binary packet per 20 Hz tick, containing every pilot and alien on its map. Each entity is packed once per tick. Owner-only velocity, progress, ammunition, rocket and boost state ride in the owner's own entry. Model, stats, fitting, contracts, alien kind and home position travel reliably only when they change, and are resent when a viewer starts a new map visit. Each entry names the profile revision it was packed with, and clients skip an entity until that revision arrives, so fresh state is never combined with an outdated model or fitting. With ten pilots and five aliens on one map this cut measured traffic from about 6.9 KB and 16 datagrams to 0.9 KB and one datagram per client per tick. Interpolation, reconciliation, per-entity sequence checks and map-visit rejection are unchanged.
+World snapshots (introduced in network schema 18; current is 19) send each viewer one batched, unreliable binary packet per 20 Hz tick, containing every pilot and alien on its map. Each entity is packed once per tick. Owner-only velocity, progress, ammunition, rocket and boost state ride in the owner's own entry. Model, stats, fitting, contracts, alien kind and home position travel reliably only when they change, and are resent when a viewer starts a new map visit. Each entry names the profile revision it was packed with, and clients skip an entity until that revision arrives, so fresh state is never combined with an outdated model or fitting. With ten pilots and five aliens on one map this cut measured traffic from about 6.9 KB and 16 datagrams to 0.9 KB and one datagram per client per tick. Interpolation, reconciliation, per-entity sequence checks and map-visit rejection are unchanged.
 
 The first implementation runs headlessly from source with Godot 4.7.2 on Linux x86-64, initially in Ubuntu on WSL2. It supports ten client pilots without a host ship and keeps simulating when everyone disconnects. The original solo/listen-host modes remain development fixtures behind `--offline`, not a separate progression path for normal play. Offline startup includes the main menu with explicit START and return from the Esc flight menu. All menu pages are viewable offline for visual review, using the solo starter fitting without creating a server inventory. Catalog and quest selection remain available; purchases, sales, fitting, hull activation and contract actions are disabled until connected to the dedicated server.
 
@@ -867,9 +868,9 @@ Quit to main menu also stops a temporary development host and opens the offline
 Overview directly. Connected clients retain their session and use server docking,
 including clients launched with `--offline` that subsequently joined a server.
 
-The persistence slice adds operator-provisioned stable pilot IDs and private credentials, with one login per pilot. The server saves credits after each reward or charge and restores them on reconnect or restart. Invalid saves and write failures stop progression for operator recovery; each successful write retains the previous ledger as a backup. Save ownership belongs to the server; there is no client-owned wallet to transfer between worlds. Position, health and encounter objectives remain session state. Equipment purchases follow this slice.
+The persistence slice adds operator-provisioned stable pilot IDs and private credentials, with one login per pilot. The server saves credits after each reward or charge and restores them on reconnect or restart. Invalid saves and write failures stop progression for operator recovery; each successful write retains the previous ledger as a backup. Save ownership belongs to the server; there is no client-owned wallet to transfer between worlds. Position, health and encounter objectives remain session state. Equipment purchases were implemented after this slice, as described above.
 
-A netcup Linux VPS has passed initial two-client internet testing. The graceful shutdown fix is deployed and has passed a live stop/start and full VPS reboot with unchanged saved credits. A separate VPS systemd service passed a two-release update/rollback rehearsal. Abrupt crashes and power loss still require operator recovery. Scheduled off-machine backups remain hosting work. Pilot provisioning, token rotation and save recovery are documented in README.md. ENet traffic remains unencrypted; the user chose Tailscale for private friend-group access. The VPS and both operator PCs are enrolled, with key-only OpenSSH and game access over Tailscale; restricted friend-group grants remain to be configured as described in DEPLOYMENT.md. No public account service or automatic matchmaking is included in the initial server.
+A netcup Linux VPS has passed initial two-client internet testing. The graceful shutdown fix is deployed and has passed a live stop/start and full VPS reboot with unchanged saved credits. A separate VPS systemd service passed a two-release update/rollback rehearsal. Abrupt crashes and power loss still require operator recovery. Repository-owned periodic off-machine recovery tooling now provides encrypted stopped-server copies, bounded retention, failure status and a disposable restore rehearsal; see [periodic recovery](docs/periodic-recovery.md). Destination, RPO, alert delivery and production schedule installation remain hosting work; this does not establish whether an external routine already exists. Pilot provisioning, token rotation and save recovery are documented in README.md. ENet traffic remains unencrypted; the user chose Tailscale for private friend-group access. The VPS and both operator PCs are enrolled, with key-only OpenSSH and game access over Tailscale; restricted friend-group grants remain to be configured as described in DEPLOYMENT.md. No public account service or automatic matchmaking is included in the initial server.
 
 ### PR playtesting on the existing VPS
 
@@ -1032,8 +1033,8 @@ obstacle physics. The original 24 asteroid positions/radii, station colliders an
 station services remain unchanged; sector size, radiation and random alien homes
 are described above.
 
-This is a visual pass on the current huntable sector. Connected maps, jump gates,
-new ships and encounters remain separate work. Visual density and performance on
+This visual pass covered the home sector. Connected maps, jump gates,
+new ships and encounters were implemented separately, as described in this plan. Visual density and performance on
 the group's devices still need human playtesting.
 
 ### Larger Outpost 01 station
@@ -1053,8 +1054,8 @@ protection is around the service point, not the entire station. The larger upper
 hangars and outer docking arms do not extend station services or protection.
 Clients and dedicated servers load the same 53 simple collision boxes, with
 open hangar entrances. Autopilot chooses a clear service approach when the tower
-or reactor occupies its usual radial stopping point. Network schema 16 requires
-matching builds because the physical station layout changed; saves are unchanged.
+or reactor occupies its usual radial stopping point. The physical station layout change was introduced in network schema 16; current
+schema 19 requires matching builds. This layout change did not change saves.
 Final visual acceptance, scale, approach comfort and group performance remain
 playtesting decisions within Milestone 3.
 
@@ -1064,6 +1065,40 @@ coat, titanium trim is smoother, and machinery retains its rougher finish.
 The static sky radiance uses a brighter reflection exposure while the visible
 background compensates for that exposure; this affects other reflective sector
 materials as well. These material settings remain open to visual playtesting.
+
+### Realistic in-flight lighting and effects
+
+The user requested a more realistic in-flight look, leaving menus unchanged. This
+first pass stays within the Compatibility renderer and existing graphics settings:
+
+- Lighting uses filmic tonemapping, a stronger sun and a dimmer cool ambient, so
+  hulls, rock and station plating show distinct sunlit and shadowed sides.
+  Asteroids use a darker, fully rough rock albedo.
+- Every map's sky shows the star that casts its sunlight, with a disc and corona
+  aligned to the Sun light and tinted with that map's sunlight colour.
+- Client-only space dust wraps around the camera in one instanced draw. Motes
+  stretch into short streaks along the camera's motion, giving cruise and boost a
+  sense of speed. Rescues and jumps reset the streaks; dedicated servers create none.
+- Destruction effects add turbulent fireballs that cool into smoke on both effect
+  levels. High also adds a shockwave ring, glowing debris fragments and a brief
+  orange light that illuminates nearby hulls and rock. Loot timing and the
+  1.2-second effect lifetime are unchanged.
+
+The user then allowed more demanding effects, since the group's PCs are stronger
+than the development laptop:
+
+- Forty large gas wisps per map, in one instanced draw, float inside and around the
+  flight sphere in that map's nebula colours. They give the painted sky parallax and
+  dissolve as the camera flies into them. They add noticeable fill-rate cost.
+- A screen-space sun flare adds glare, a horizontal lens streak and ghosts. A physics
+  ray hides it when asteroids, the station or ships block the sun.
+- On High effects, each pilot's drive lights its aft hull in the plume colour,
+  brightening with thrust and boost. Laser hits briefly light the target in the beam
+  colour, capped at 12 simultaneous laser lights.
+
+Brightness, dust density, cloud density, streak length, flare strength and explosion
+intensity remain visual playtesting settings. `tests/visual_gallery.gd` renders a fixed set of in-flight
+review screenshots to `build/validation/gallery`.
 
 ## Development milestones
 
@@ -1113,9 +1148,9 @@ Completion criteria:
 
 ### Milestone 3: Repeatable progression
 
-Add saved progression, equipment purchases, a second ship, a few alien types, and simple missions.
+The original scope was saved progression, equipment purchases, a second ship, a few alien types, and simple missions. These systems are implemented, with twelve purchasable hulls, hunting contracts, persistent Skylab and research. The connected-map foundation described below is also implemented. Completion still depends on repeat-session progression and representative group playtesting against the criteria below.
 
-Implementation order after the agreed server architecture change:
+Historical implementation order after the agreed server architecture change:
 
 1. Dedicated Linux server, normal Windows clients, WSL2 connection and shared-encounter validation.
    Deployment uses a dedicated-server export with visual resources stripped to
@@ -1149,7 +1184,7 @@ Only qualifying kills after acceptance count. The existing encounter contributio
 
 A full wallet keeps the completed contract until it can receive the entire reward, then pays automatically when there is room. Abandonment clears only the selected run without charging credits. A cleared offer can be accepted again at the station. The server saves kill progress, kill-credit shares, automatic rewards and cleared runs together before publishing them. Contracts and pending rewards survive reconnects and server restarts. Stale abandonment requests identify their original accepted run. Existing single-contract saves migrate with their accepted terms and progress intact; completed legacy hunts pay automatically.
 
-Hunting quests do not require returning to the station for payment. Future resource-collection or special-item quests may require station delivery; those quest types are outside this slice. This slice depends on persistent pilots and the multiple-alien sector. It adds no timers, daily limits, chains, party missions or mission scripting framework. Equipment and ship purchases remain separate feature work.
+Hunting quests do not require returning to the station for payment. Future resource-collection or special-item quests may require station delivery; those quest types are outside this slice. This slice depends on persistent pilots and the multiple-alien sector. It adds no timers, daily limits, chains, party missions or mission scripting framework. Equipment and ship purchases are implemented separately, as described above.
 
 ### Milestone 4: Expansion and polish
 
@@ -1249,10 +1284,10 @@ snapshots, effects, loot collection, targeting and damage are scoped to map
 membership; owner ammunition and inventory remain private. Player snapshots give
 other pilots only public ship state (movement, health, fitting stats, effects and
 repair state); credits, kills, objective stage, rescue countdown and contracts go
-only to their owner (network schema 16). Each transfer
+only to their owner (introduced in network schema 16; current is 19). Each transfer
 increments the flight life and map-visit epoch, so delayed commands, world state
 and effects cannot revive an earlier visit, including returning to the same map.
-Network schema 16 requires matching client/server builds; save schema 8 is unchanged
+Map transfers were introduced in network schema 16; current schema 19 requires matching client/server builds. Save schema 8 is unchanged
 because flight locations are temporary. Ordinary travel gates are separate from
 the future Galaxy Gates alien-wave challenges.
 
@@ -1478,7 +1513,7 @@ rewards, boss design and station defenses remain provisional until playtested.
 
 ## Open decisions
 
-The following do not prevent beginning the first prototype:
+The following remain tuning, acceptance or future-design work:
 
 - Exact movement, camera, weapon, and alien tuning.
 - Repair costs and whether destruction loses unbanked loot.
@@ -1487,12 +1522,17 @@ The following do not prevent beginning the first prototype:
 - Detailed art direction and asset selection.
 - Final performance budgets for aliens and effects.
 
-Before deploying progression, configure the private network, dated off-machine backups and independent hosting operations.
+The dedicated VPS and operator PCs use Tailscale, and repository-owned encrypted off-machine backup and restore-rehearsal tooling is implemented. Restricted friend-group grants, the backup destination, RPO, alert delivery and production schedule installation remain hosting work; see [dedicated server direction](#dedicated-server-direction) and [periodic recovery](docs/periodic-recovery.md).
 
-Local and LAN dedicated-server play have passed manual testing. Cross-network dedicated-server testing remains pending and does not block pilot identity and persistence work. Full Milestone 3 completion still requires purchases, additional content and repeat-session playtesting.
+Local and LAN dedicated-server play and initial two-client internet testing on the VPS have passed manual testing. Purchases, hunting contracts, Skylab industry, research and connected maps are implemented. Milestone 3 acceptance still requires repeat-session progression and representative friend-group playtesting, including ten-player performance, group rewards, death penalties and provisional combat/economy balance. The future reclamation campaign remains separate expansion work.
 
-Save schema 7 retains schema 5's combined laser/rocket ammunition inventory and per-ship
-resource boost reserves alongside persistent Skylab industry.
+Current save schema 8 pairs the full pilot snapshot with the combat journal,
+preserving schema 7's combined laser/rocket ammunition inventory, per-ship
+resource boost reserves and persistent Skylab industry. Versions 1–7 migrate
+before admission; provisioning replays pending combat debits before checkpointing.
+Back up the entire data directory, including both snapshot and journal, before upgrading.
+The historical migrations remain relevant:
+
 Schema 4 ammunition saves retain their rounds and receive empty boosts; schema 4
 boost saves retain their reserves and receive the one-time starter ammunition.
 Each fired laser volley commits ammunition and boost debits together before applying damage.

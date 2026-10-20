@@ -134,6 +134,6 @@ func run() -> void:
 	client.session.disconnect_session("Restart expanded fitting")
 	await settle()
 	server.session.disconnect_session("Restart expanded fitting")
-	check(server.session.host(test_port(24741)) == OK, "Expanded fittings load after restart")
+	check(host_session(server, 24741) == OK, "Expanded fittings load after restart")
 	check(server.session.store.pilots["pilot0"]["equipment"]["items"]["purchase-3"]["slot"] == "laser4", "Restart preserves the fourth laser slot and existing items")
 	finish()

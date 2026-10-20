@@ -36,6 +36,7 @@ var rocket_clock := 0.0
 var launcher_clock := 0.0
 var rocket_sequence := 0
 var phase_us: Dictionary = {}
+var simultaneous_extras: Array[Dictionary] = []
 
 
 func run() -> void:
@@ -86,6 +87,7 @@ func run() -> void:
 	var initial_ammo := {}
 	var ammo_type := "x3" if frontier_fitting() else "x1"
 	for id: int in sector.session.ships:
+		sector.session.ships[id].extras_clock = 1.0 # All ten CPUs become due on the first measured pass.
 		sector.session.ships[id].ammo[ammo_type] = 990
 		initial_ammo[sector.session.pilot_ids[id]] = sector.session.ships[id].ammo.duplicate()
 	check(benchmark_store.commit_combat(initial_ammo), "Set measurement starting ammunition")
@@ -122,6 +124,7 @@ func run() -> void:
 	check(pickup_units.values().any(func(value: int): return value > 0), "Ordinary loot collection commits cargo")
 	check(int(benchmark_store.counts.get("checkpoint_industry", 0)) > 0, "Skylab advances and checkpoints")
 	check(int(benchmark_store.counts.get("checkpoint_extras", 0)) > 0, "Extras automation commits supplies")
+	check(not simultaneous_extras.is_empty(), "Multiple pilots resupply in one physics callback")
 	var save_timings := {}
 	for kind: String in benchmark_store.samples:
 		var values: Array[float] = []
@@ -161,7 +164,7 @@ func run() -> void:
 		"lasers_by_peer": lasers, "rocket_launches": rocket_launches, "rocket_hits": rocket_hits,
 		"pickup_units_by_peer": pickup_units, "map_pilot_ticks": map_tick_counts, "pilot_maps": maps,
 		"peer_ports": peer_ports, "skylab": lab_after, "persistence_us": save_timings,
-		"persistence_events": benchmark_store.events, "over_budget_ticks": over_budget_ticks,
+		"persistence_events": benchmark_store.events, "simultaneous_extras": simultaneous_extras, "over_budget_ticks": over_budget_ticks,
 		"snapshot_bytes_end": benchmark_store.saved_bytes, "journal_bytes_end": benchmark_store.journal_bytes,
 		"phase_us": phase_timings,
 	})
@@ -183,10 +186,16 @@ func step() -> void:
 		return
 	var before := Time.get_ticks_usec()
 	var alien_was_alive := sector.world_aliens.values().any(func(enemy: Alien): return enemy.alive)
+	var extras_before: int = int(benchmark_store.counts.get("checkpoint_extras", 0)) if benchmark_store != null else 0
+	var pilots_before: int = benchmark_store.extras_pilots if benchmark_store != null else 0
 	sector._physics_process(delta)
 	var elapsed := Time.get_ticks_usec() - before
 	if not measuring:
 		return
+	var extras_count: int = int(benchmark_store.counts.get("checkpoint_extras", 0)) - extras_before
+	var extras_pilots: int = benchmark_store.extras_pilots - pilots_before
+	if extras_pilots > 1:
+		simultaneous_extras.append({"started_us": before, "duration_us": elapsed, "checkpoints": extras_count, "pilots": extras_pilots})
 	if elapsed > 16667:
 		over_budget_ticks.append({"started_us": before, "duration_us": elapsed, "phases": sector.session.benchmark_phases.duplicate()})
 	for kind: String in sector.session.benchmark_phases:

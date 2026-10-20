@@ -188,7 +188,7 @@ func run() -> void:
 	late.session.disconnect_session("Restart")
 	await settle()
 	server.session.disconnect_session("Restart")
-	check(server.session.host(test_port(24736)) == OK, "Server restarts with all purchased hulls")
+	check(host_session(server, 24736) == OK, "Server restarts with all purchased hulls")
 	client.session.join("127.0.0.1", test_port(24736))
 	await settle(0.5)
 	await replicate(server)
