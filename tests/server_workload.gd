@@ -124,7 +124,7 @@ func run() -> void:
 	check(pickup_units.values().any(func(value: int): return value > 0), "Ordinary loot collection commits cargo")
 	check(int(benchmark_store.counts.get("checkpoint_industry", 0)) > 0, "Skylab advances and checkpoints")
 	check(int(benchmark_store.counts.get("checkpoint_extras", 0)) > 0, "Extras automation commits supplies")
-	check(not simultaneous_extras.is_empty(), "Multiple extras checkpoints occur in one physics callback")
+	check(not simultaneous_extras.is_empty(), "Multiple pilots resupply in one physics callback")
 	var save_timings := {}
 	for kind: String in benchmark_store.samples:
 		var values: Array[float] = []
@@ -187,13 +187,15 @@ func step() -> void:
 	var before := Time.get_ticks_usec()
 	var alien_was_alive := sector.world_aliens.values().any(func(enemy: Alien): return enemy.alive)
 	var extras_before: int = int(benchmark_store.counts.get("checkpoint_extras", 0)) if benchmark_store != null else 0
+	var pilots_before: int = benchmark_store.extras_pilots if benchmark_store != null else 0
 	sector._physics_process(delta)
 	var elapsed := Time.get_ticks_usec() - before
 	if not measuring:
 		return
 	var extras_count: int = int(benchmark_store.counts.get("checkpoint_extras", 0)) - extras_before
-	if extras_count > 1:
-		simultaneous_extras.append({"started_us": before, "duration_us": elapsed, "checkpoints": extras_count})
+	var extras_pilots: int = benchmark_store.extras_pilots - pilots_before
+	if extras_pilots > 1:
+		simultaneous_extras.append({"started_us": before, "duration_us": elapsed, "checkpoints": extras_count, "pilots": extras_pilots})
 	if elapsed > 16667:
 		over_budget_ticks.append({"started_us": before, "duration_us": elapsed, "phases": sector.session.benchmark_phases.duplicate()})
 	for kind: String in sector.session.benchmark_phases:

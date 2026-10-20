@@ -1,15 +1,15 @@
 # Checkpoint tail latency follow-up, 19 October 2026
 
-Status: measurement blocked; synchronous checkpoint risk remains open. No durability,
-transaction ordering, gameplay tuning or persistence batching change is justified by
-new measurements in this follow-up. The historical 101.604 ms checkpoint and
+Status (updated 20 October): extras resupply batching implemented; measurement
+blocked and synchronous checkpoint risk remains open. No new latency improvement
+has been measured. The historical 101.604 ms checkpoint and
 99.535 ms backup replacement in PERFORMANCE.md are observations of an older WSL
 source run, not current exported-server or VPS results.
 
 ## Environment blocker and scope
 
-This worktree is on Windows. `wsl -l -v` exits 1 and reports that Windows Subsystem
-for Linux is not installed. No disposable Linux execution/storage environment is
+This worktree is on Windows. `wsl -l -v` reports no installed Linux distributions.
+No disposable Linux execution/storage environment is
 available here. The parent's pinned Windows Godot 4.7.2 console executable is used
 read-only with this worktree's own imports for correctness checks. No Linux
 capture, p95/p99/max performance result, exported runtime, VPS capacity conclusion,
@@ -37,11 +37,14 @@ Elapsed timing includes preemption and cannot identify storage CPU cost alone.
 
 Before measurement, all ten fixture CPUs are made due together and selected
 ammo is set below the existing resupply threshold. The measured window must
-actually contain multiple extras checkpoints in one callback; their count,
-start and callback duration are retained. Industry still uses real UTC time,
+actually contain multiple pilots resupplying in one callback; the pilot count,
+checkpoint count, start and callback duration are retained. Before batching this
+required multiple checkpoints; after batching the same pass needs just one.
+The report accepts historical artifacts without the new pilot count. Industry
+still uses real UTC time,
 with every lab required to advance and change inventory. No clock acceleration
 or measured-window teleport/damage injection is added. A single slow replacement
-can still block the simulation even if future evidence supports batching extras.
+can still block the simulation after batching extras.
 
 On an available disposable Linux host, first inspect both host and guest process
 lists for competing Godot imports, games, tests and builds. Coordinate a quiet
@@ -69,10 +72,54 @@ isolation, logs, clock accuracy or exported-runtime coverage.
 
 Remaining work is an isolated Linux source capture, an explicitly identified
 exported benchmark harness/capture for both scenarios, and evaluation of any
-reproduced outlier before choosing a mitigation. None requires live service or
-VPS modification. No production operational change is part of this PR.
+reproduced outlier. None requires live service or VPS modification. No production
+operational change is part of this PR.
 
-## Correctness validation
+## Batched supplies and ordering
+
+`SessionCombat.tick` prepares pilots' timers, rescue and repair, then gathers due
+extras updates on copies and issues one `PilotStore.commit` for the pass. Only
+after success does it apply credits, ammo, cargo, boosts and fitting stats or send
+owner RPCs. Failure uses the existing immediate simulation stop and exit path.
+Pilot firing follows this boundary, so journal debits cannot be overwritten by
+staged supplies; checkpoint invalidation forces the next debit to verify the new
+pair. Loot already batches separately and sees the resulting cargo. Pending
+contract payouts also batch before supplies. Individual kill rewards remain
+synchronous because later pilots can observe the kill and its new encounter state.
+Scheduled industry already batches all labs. Station requests retain their
+individual revision-protected transaction boundaries.
+No `PilotStore` implementation change is needed.
+
+`tests/extras_batch_test.gd` observes live state inside real checkpoint I/O with
+three authenticated pilots, checks one checkpoint and post-commit effects, replays
+subsequent journal debits, and forces a backup-write failure in a child server
+process to verify exit before effects. It also checks batched pending payouts and
+loot preserving automatic cargo costs. The benchmark counts resupplied pilots
+separately from checkpoints. These are correctness checks, not latency results.
+
+Before/after Linux measurements were not collected. Follow up on disposable Linux
+storage using the commands above, retaining separate baseline and batched revisions.
+An isolated VPS capture needs explicit operator approval; no live VPS or production
+saves are part of this work.
+
+## Batching correctness validation, 20 October
+
+After importing with the pinned Windows Godot 4.7.2, the full
+`python tools/check-game.py <engine> --suite windows --workers 3` run completed
+64 commands in 301 seconds: 62 passed, while RPC compatibility and dedicated-server
+checks failed to bind UDP ports during concurrent suites in other worktrees.
+Both passed when rerun with disposable profiles and separate port offsets (16 and
+44 assertions). No other processes were stopped. The original run passed pilot
+persistence (37), combat journal (50), extras (130) and extras batching (29),
+including the child-process failure-stop assertion. All 64 commands therefore
+have passing results, with the two environmental retries recorded separately in
+`build/validation/checks-windows-retry.json` alongside `checks-windows.json`.
+
+The workload's `--check-only` parse, four checkpoint-report tests, fourteen
+CI-performance tests and `git diff --check` also pass. These checks do not measure
+Linux tail latency, exported runtime performance or VPS capacity.
+
+## Historical correctness validation, 19 October
 
 The pinned Windows engine passes `tests/checkpoint_trace_test.gd` (real successful
 and failed replacements, disabled observer, substep boundaries, full adapter

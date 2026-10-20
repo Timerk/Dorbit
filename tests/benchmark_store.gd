@@ -6,6 +6,7 @@ var reason := "other"
 var samples: Dictionary = {}
 var events: Array[Dictionary] = []
 var counts: Dictionary = {}
+var extras_pilots: int = 0
 
 
 func _init() -> void:
@@ -71,6 +72,8 @@ func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary 
 	var previous := reason
 	reason = "extras" if not ammo.is_empty() else ("loot" if balances.is_empty() and not cargo.is_empty() else "economy")
 	var result := super.commit(balances, contracts, cargo, ammo, boosts, research)
+	if measuring and reason == "extras" and result:
+		extras_pilots += ammo.size()
 	reason = previous
 	return result
 
