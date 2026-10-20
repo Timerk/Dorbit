@@ -1,5 +1,9 @@
 # Linux dedicated server deployment
 
+For the separately installed periodic stopped-server backup operation, receiver
+retention and restore rehearsal, see [periodic off-machine recovery](docs/periodic-recovery.md).
+Its timer templates are not evidence of a production schedule installation.
+
 Use Ubuntu 24.04 LTS on x86-64 with systemd. Releases run a dedicated-server export
 using the checksum-pinned Godot release template. CI imports and exports the project;
 the VPS starts the finished pack without importing assets. Use matching client and server

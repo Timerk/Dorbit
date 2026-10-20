@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Dorbit off-machine recovery (operator must approve interval)
+
+[Timer]
+OnCalendar=*-*-* 05:00:00 UTC
+Persistent=true
+RandomizedDelaySec=5min
+Unit=dorbit-recovery.service
+
+[Install]
+WantedBy=timers.target
