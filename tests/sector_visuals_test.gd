@@ -64,7 +64,7 @@ func check_campaign_backdrops() -> void:
 	flight.set_physics_process(false)
 	var authority := preload("res://scenes/sector.tscn").instantiate() as Sector
 	authority.dedicated_server = true
-	authority.server_port = 24967 + int(OS.get_environment("DORBIT_TEST_PORT_OFFSET"))
+	authority.server_port = preload("res://tests/network_test.gd").free_udp_port(24967 + int(OS.get_environment("DORBIT_TEST_PORT_OFFSET")))
 	var previous_directory := OS.get_environment("DORBIT_DATA_DIR")
 	var directory := ProjectSettings.globalize_path("user://backdrop-server-%d" % OS.get_process_id())
 	DirAccess.make_dir_recursive_absolute(directory)

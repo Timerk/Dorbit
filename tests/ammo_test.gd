@@ -173,7 +173,7 @@ func run() -> void:
 	client.session.disconnect_session("Ammo restart")
 	server.session.disconnect_session("Ammo restart")
 	await settle()
-	check(server.session.host(test_port(24836)) == OK, "Restart loads the ammo ledger")
+	check(host_session(server, 24836) == OK, "Restart loads the ammo ledger")
 	client.session.join("127.0.0.1", test_port(24836))
 	await settle(0.5)
 	await replicate(server)
