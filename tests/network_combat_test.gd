@@ -21,7 +21,7 @@ func run() -> void:
 	var late := make_sector("LateCombat")
 	host.credits = 123
 	client.credits = 456
-	host.session.host(test_port(24681))
+	host_session(host, 24681)
 	client.session.join("127.0.0.1", test_port(24681))
 	await settle(0.5)
 	check(host.session.ships.size() == 2, "Combat client joins")

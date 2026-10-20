@@ -15,7 +15,7 @@ func connect_pilot(client: Sector, index: int) -> void:
 		# These fixtures disable simulation ticks, so request the initial snapshot.
 		for viewport in worlds:
 			var server: Sector = viewport.get_child(0)
-			if server.dedicated_server and server.session.active and server.server_port == test_port(CONTRACT_PORT):
+			if server.dedicated_server and server.session.active and server.session.host_port == test_port(CONTRACT_PORT):
 				await replicate(server)
 				break
 		check(client.session.received_snapshot, "Pilot receives initial state within the convergence timeout")
@@ -163,7 +163,7 @@ func run() -> void:
 	var remaining := pilot.active_contracts.duplicate(true)
 	server.session.disconnect_session("Restart")
 	await settle(0.3)
-	check(server.session.host(test_port(CONTRACT_PORT)) == OK, "Server reopens ledger")
+	check(host_session(server, CONTRACT_PORT) == OK, "Server reopens ledger")
 	await connect_pilot(pilot, 0)
 	await replicate(server)
 	check(pilot.credits == paid_balance and pilot.active_contracts == remaining, "Restart retains payout, cleared run and other hunts atomically")
@@ -186,7 +186,7 @@ func run() -> void:
 	check(HuntingContracts.ready(pilot.active_contracts["sentinel"]) and pilot.credits == PilotStore.MAX_CREDITS, "Full wallet retains the whole completed reward")
 	server.session.disconnect_session("Pending restart")
 	await settle(0.3)
-	server.session.host(test_port(CONTRACT_PORT))
+	host_session(server, CONTRACT_PORT)
 	await connect_pilot(pilot, 0)
 	await replicate(server)
 	id = pilot.multiplayer.get_unique_id()
@@ -218,7 +218,7 @@ func run() -> void:
 	legacy["progress"] = 3
 	ledger["pilots"]["pilot0"]["credits"] = 100
 	write_ledger(path, ledger)
-	server.session.host(test_port(CONTRACT_PORT))
+	host_session(server, CONTRACT_PORT)
 	await connect_pilot(pilot, 0)
 	combat.tick(0.01)
 	await replicate(server)
