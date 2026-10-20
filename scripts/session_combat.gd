@@ -14,6 +14,7 @@ var station_pending: bool = false
 var station_action: String = ""
 var station_message: String = ""
 var preview_tools_available: bool = false
+var wallet_sequence: int = -1
 var ammo_sequence: int = -1
 var boost_save_clock: float = 0.0
 var boost_sequence: int = -1
@@ -134,6 +135,7 @@ func begin() -> void:
 	cargo_holds.clear()
 	records.clear()
 	boost_save_clock = 0.0
+	wallet_sequence = -1
 	boost_sequence = -1
 	sector.credits = 0
 	sector.kills = 0
@@ -668,7 +670,7 @@ func apply_health(ship: SpaceShip, data: Dictionary) -> void:
 		ship.velocity = Vector3.ZERO
 
 
-func apply_player(id: int, data: Dictionary) -> bool:
+func apply_player(id: int, data: Dictionary, sequence: int = -1) -> bool:
 	var ship := session.ships[id]
 	var systems: PackedFloat32Array = data["systems"]
 	ship.repair_seconds = systems[1]
@@ -690,7 +692,7 @@ func apply_player(id: int, data: Dictionary) -> bool:
 	if ship == session.sector.player:
 		# Only owner packets carry private progress; a public packet must not reset it.
 		if data.has("credits"):
-			update_local(data)
+			update_local(data, sequence)
 		else:
 			push_error("Owner state for peer %d arrived without private progress." % id)
 		if reset:
@@ -700,9 +702,13 @@ func apply_player(id: int, data: Dictionary) -> bool:
 	return reset
 
 
-func update_local(data: Dictionary) -> void:
+func update_local(data: Dictionary, sequence: int = -1) -> void:
 	session.sector.active_contracts = data["contracts"].duplicate(true)
-	session.sector.credits = data["credits"]
+	# Local authority calls have no sequence. Remote snapshots must be newer than
+	# both the last wallet snapshot and any same-tick station transaction.
+	if sequence < 0 or sequence > wallet_sequence:
+		session.sector.credits = data["credits"]
+		wallet_sequence = maxi(wallet_sequence, sequence)
 	session.sector.kills = data["kills"]
 	session.sector.objective_stage = maxi(session.sector.objective_stage, data["stage"])
 	session.sector.player_respawn = data["respawn"]
@@ -786,6 +792,7 @@ func finish() -> void:
 	station_pending = false
 	station_action = ""
 	station_message = ""
+	wallet_sequence = -1
 	ammo_sequence = -1
 	boost_sequence = -1
 	if not solo.is_empty():
@@ -893,8 +900,10 @@ func station_result(data: Dictionary, result: String, test_credits_allowed: bool
 		if not holds.is_empty():
 			session.sector.cargo = holds[data["active_ship"]].duplicate()
 			session.sector.cargo_capacity = CargoResources.capacity(data)
-		if credits >= 0:
+		# A reply can include a transaction after the snapshot at this same tick.
+		if credits >= 0 and sequence >= wallet_sequence:
 			session.sector.credits = credits
+			wallet_sequence = sequence
 		preview_tools_available = test_credits_allowed
 		if station_action == "configure_extra" and not result.is_empty():
 			session.sector.notify(result)
