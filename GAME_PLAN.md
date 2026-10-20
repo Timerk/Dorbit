@@ -1365,7 +1365,10 @@ kills, pickups and active contracts. It saves each step together with its reward
 delivery and skipping are station transactions that use the existing request
 sequence. Clients present briefings and the contact's closing lines from the
 synchronized step, alongside a flight-card objective, a gold marker and a map
-contact. Sites, timings, quantities, rewards and dialogue remain provisional
+contact. On 2026-10-20 the user asked for each prologue step to also teach its
+controls: a small HUD pop-up lists that step's key bindings, ticks each one as
+the pilot presses it and closes once all have been tried. Sites, timings,
+quantities, rewards and dialogue remain provisional
 until playtested. Later chapters and
 shared construction stages are still to be designed.
 
