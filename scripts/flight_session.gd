@@ -598,7 +598,7 @@ func flight_docked(id: int, data: Dictionary, sequence: int) -> void:
 		sector.preflight = true
 		sector.select_target(null)
 		sector.player.set_meta("docked", true)
-		combat.apply_player(id, data)
+		combat.apply_player(id, data, sequence)
 		sector.player.position = data["position"]
 		sector.player.rotation = data["rotation"]
 		sector.player.velocity = Vector3.ZERO
@@ -931,7 +931,7 @@ func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int, visit: 
 		player_sequences[id] = sequence
 		goals[id] = data
 		var ship := ships[id]
-		var reset := combat.apply_player(id, data)
+		var reset := combat.apply_player(id, data, sequence)
 		if reset:
 			ship.position = data["position"]
 			ship.rotation = data["rotation"]
@@ -1161,7 +1161,7 @@ func map_changed(id: int, data: Dictionary, sequence: int) -> void:
 		return
 	var ship := ships[id]
 	if not multiplayer.is_server():
-		combat.apply_player(id, data)
+		combat.apply_player(id, data, sequence)
 		ship.position = data["position"]
 		ship.rotation = data["rotation"]
 		ship.energy = data["energy"]
