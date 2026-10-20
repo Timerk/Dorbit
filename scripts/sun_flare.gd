@@ -60,7 +60,8 @@ func visibility() -> float:
 	var framing := clampf(edge / 0.08 + 1.0, 0.0, 1.0)
 	if framing <= 0.0:
 		return 0.0
-	var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * OCCLUSION_DISTANCE, 1)
+	# Obstacles use layer 1 and live ships layer 2; destroyed ships leave layer 2.
+	var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * OCCLUSION_DISTANCE, 3)
 	if not sector.get_world_3d().direct_space_state.intersect_ray(query).is_empty():
 		return 0.0
 	return framing

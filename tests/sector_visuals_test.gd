@@ -26,7 +26,7 @@ func run() -> void:
 	check(server.get_node_or_null("DistantScenery") == null, "Server skips distant scenery")
 	space_dust_checks(client, server)
 	await sync_physics()
-	sun_flare_checks(client)
+	await sun_flare_checks(client)
 	check(client.get_node_or_null("SunFlare") is SunFlare and server.get_node_or_null("SunFlare") == null, "Only rendering clients create the sun flare")
 	var clouds := client.get_node_or_null("DistantScenery/NebulaClouds") as MultiMeshInstance3D
 	check(clouds != null and clouds.multimesh.instance_count == SectorBackdrop.CLOUD_COUNT, "Nebula wisps share one instanced draw")
@@ -243,4 +243,18 @@ func sun_flare_checks(client: Node3D) -> void:
 	camera.global_position = rock.global_position - sun * 30.0
 	camera.look_at(camera.global_position + sun)
 	check(flare.visibility() == 0.0, "An asteroid between the camera and the sun blocks the flare")
+	# Ships use collision layer 2, separate from obstacles.
+	var ship := StaticBody3D.new()
+	ship.collision_layer = 2
+	var hull := CollisionShape3D.new()
+	hull.shape = SphereShape3D.new()
+	(hull.shape as SphereShape3D).radius = 3.0
+	ship.add_child(hull)
+	client.add_child(ship)
+	camera.global_position = Vector3(0, 0, 900)
+	ship.global_position = camera.global_position + sun * 20.0
+	camera.look_at(camera.global_position + sun)
+	await sync_physics()
+	check(flare.visibility() == 0.0, "A ship between the camera and the sun blocks the flare")
+	ship.free()
 	camera.free()
