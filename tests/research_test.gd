@@ -64,9 +64,9 @@ func run_reset_ledger(template: Dictionary, directory: String) -> void:
 			pilots["pilot0"]["equipment"]["research"] = {"points": 0, "skills": {"reinforced_plating": 1}, "resets": resets}
 			for suffix in [".bak", ".combat"]:
 				DirAccess.remove_absolute(path + suffix)
-			# Paused refineries keep the rejected-reset file comparison exact.
-			for module: String in Skylab.RECIPES:
-				pilots["pilot0"]["skylab"]["modules"][module]["enabled"] = false
+			# A future simulation time makes lab advances no-ops, so a rejected
+			# reset can be compared byte for byte even across a clock second.
+			pilots["pilot0"]["skylab"]["lastSimulatedAt"] = Skylab.now() + 3600
 			var file := FileAccess.open(path, FileAccess.WRITE)
 			file.store_string(JSON.stringify({"version": 7, "pilots": pilots}))
 			file.close()
@@ -74,7 +74,6 @@ func run_reset_ledger(template: Dictionary, directory: String) -> void:
 			if not store.open(directory):
 				check(false, "Reset ledger with %d resets opens: %s" % [resets, store.error])
 				return
-			store.advance_lab("pilot0", Skylab.now())
 			var saved := FileAccess.get_file_as_string(path)
 			var result := store.transact("pilot0", int(store.pilots["pilot0"]["equipment"]["revision"]) + 1, "research_reset", "", "", "")
 			var research := Research.state(store.pilots["pilot0"]["equipment"])
