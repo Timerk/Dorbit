@@ -135,8 +135,13 @@ static func learn(equipment: Dictionary, stock: Dictionary, id: String) -> Strin
 	return ""
 
 
+# Doubles per reset and saturates at the wallet cap once 15 resets are recorded.
+# Saturating each step keeps every supported count (0-64) inside 64-bit integers.
 static func reset_price(research: Dictionary) -> int:
-	return mini(PilotStore.MAX_CREDITS, RESET_BASE_CREDITS * int(pow(2, int(research["resets"]))))
+	var price := mini(PilotStore.MAX_CREDITS, RESET_BASE_CREDITS)
+	for _reset in clampi(int(research["resets"]), 0, 64):
+		price = mini(PilotStore.MAX_CREDITS, price * 2)
+	return price
 
 
 # Refund every point. Consumed lab stock is not returned.

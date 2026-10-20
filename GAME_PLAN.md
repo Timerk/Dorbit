@@ -767,7 +767,8 @@ Each level takes Skylab stock: 50 Prometid + 50 Duranium; 100 Prometid +
 100 Duranium + 10 Promerium; 25 Promerium; 50 Promerium + 2 Seprom; 80 Promerium
 + 5 Seprom. Pilots can hold at most 30 of the 55 levels, so they must specialize.
 A reset refunds all points but not materials. It costs 100,000 credits and doubles
-each time. Resets that would leave cargo or a Skylab shipment above the reduced
+each time, capped at the 2,000,000,000-credit wallet maximum from the 16th reset
+onward. Resets that would leave cargo or a Skylab shipment above the reduced
 Cargo Compression capacity are refused.
 
 Learning and resetting use station service rules and the economy request
