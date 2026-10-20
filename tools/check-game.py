@@ -67,6 +67,7 @@ def main() -> int:
     if not 1 <= args.workers <= 4:
         parser.error('workers must be between 1 and 4')
     groups = commands(args.suite, str(args.engine.resolve()))
+    os.environ['DORBIT_TEST_GODOT'] = str(args.engine.resolve())
     started = time.perf_counter()
     results = []
     output_dir = ROOT / 'build/validation'
