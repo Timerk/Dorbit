@@ -2,9 +2,88 @@ extends "res://tests/network_test.gd"
 ## Authoritative combat exercised through actual client RPCs and host snapshots.
 
 
+## Turns allowed for loopback ENet to deliver a resent intent. Bounded by
+## attempts rather than elapsed time, so slow CI frames cannot exhaust it.
+## A server that will reject the intent ends the wait early with its reason.
+const RECEIPT_ATTEMPTS := 60
+
+
+func intent(fire: bool, life: int, encounter: int, target: int = 0, movement := Vector3.ZERO, boost := false, angles := Vector3.ZERO) -> Dictionary:
+	return {"movement": movement, "angles": angles, "boost": boost, "fire": fire, "life": life, "encounter": encounter, "target": target}
+
+
+## Resend each client's unreliable flight intent, as production clients do every
+## frame, until the server stores all of them in the same turn. command_flight
+## stores a new Dictionary per accepted packet, so a changed reference across this
+## turn's server poll marks a receipt of a packet sent after the request, without
+## judging freshness by wall-clock age. Callers assert or tick combat before
+## another frame can age the receipt past COMMAND_TIMEOUT. Returns false and
+## prints per-peer samples if the server never stores the intents.
+func deliver_intents(server: Sector, clients: Array[Sector], intents: Array[Dictionary], phase: String = "intent") -> bool:
+	var samples: Array[Dictionary] = []
+	for attempt in range(1, RECEIPT_ATTEMPTS + 1):
+		await process_frame
+		for index in range(clients.size()):
+			var sent := intents[index]
+			clients[index].session.command_flight.rpc_id(1, sent["movement"], sent["angles"], sent["boost"], sent["fire"], sent["life"], sent["encounter"], sent["target"])
+		# Flush clients before the authority so this turn's packets reach its poll.
+		for client in clients:
+			client.multiplayer.poll()
+		var prior: Array = []
+		for client in clients:
+			prior.append(server.session.commands.get(client.multiplayer.get_unique_id()))
+		server.multiplayer.poll()
+		var complete := true
+		var rejected := false
+		for index in range(clients.size()):
+			var id := clients[index].multiplayer.get_unique_id()
+			var sent := intents[index]
+			var command: Dictionary = server.session.commands.get(id, {})
+			var received := not command.is_empty() and not is_same(command, prior[index])
+			var facing := Vector3(clampf(sent["angles"].x, -1.48, 1.48), wrapf(sent["angles"].y, -PI, PI), 0)
+			var matches: bool = command.get("movement") == sent["movement"].limit_length() and command.get("rotation", Vector3.INF).is_equal_approx(facing) and command.get("boost") == sent["boost"] and command.get("fire") == sent["fire"] and command.get("encounter") == sent["encounter"] and command.get("target") == sent["target"]
+			# command_flight drops packets from missing, docked or dead ships and other lives.
+			var ship: SpaceShip = server.session.ships.get(id)
+			var blocker := ""
+			if ship == null:
+				blocker = "no server ship"
+			elif ship.get_meta("docked", false):
+				blocker = "docked"
+			elif not ship.alive:
+				blocker = "server ship destroyed"
+			elif server.session.combat.records[id]["life"] != sent["life"]:
+				blocker = "life %d, server life %d" % [sent["life"], server.session.combat.records[id]["life"]]
+			complete = complete and received and matches
+			rejected = rejected or blocker != ""
+			samples.append({"phase": phase, "attempt": attempt, "peer": id, "sent": str(sent),
+				"command": str(command), "received": received, "matches": matches, "blocker": blocker})
+		while samples.size() > clients.size() * 8:
+			samples.pop_front()
+		if complete:
+			return true
+		if rejected:
+			break
+	print("Intent convergence failure: ", JSON.stringify(samples))
+	return false
+
+
+## Waits for receipt when the server accepts the command. Commands from another
+## pilot life are never stored, so those negative checks keep a short settle.
 func send_fire(client: Sector, fire: bool = true, life: int = 0, encounter_id: int = 0) -> void:
-	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false, fire, life, encounter_id, 0)
-	await settle(0.06)
+	var server := authority_for(client)
+	if server == null or server.session.combat.records.get(client.multiplayer.get_unique_id(), {}).get("life", -1) != life:
+		client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false, fire, life, encounter_id, 0)
+		await settle(0.06)
+		return
+	check(await deliver_intents(server, [client], [intent(fire, life, encounter_id)], "send_fire"), "Server receives the client's fire intent")
+
+
+func authority_for(client: Sector) -> Sector:
+	for viewport in worlds:
+		var sector := viewport.get_child(0) as Sector
+		if sector != null and sector != client and sector.session.active and sector.multiplayer.is_server() and sector.session.ships.has(client.multiplayer.get_unique_id()):
+			return sector
+	return null
 
 
 func replicate(host: Sector) -> void:
@@ -69,18 +148,15 @@ func run() -> void:
 	check(alien.shield == before_blocked, "Host rejects out-of-range fire intent")
 	remote.position = Vector3(12, 200, 0)
 	# Turn away without fire first: the ship still faces the alien early in a limited turn.
-	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3(0, PI, 0), false, false, 0, 0, 0)
-	await settle(0.06)
+	check(await deliver_intents(host, [client], [intent(false, 0, 0, 0, Vector3.ZERO, false, Vector3(0, PI, 0))], "turn away"), "Host receives the turn-away command")
 	for frame in range(20):
 		host.session.tick(1.0 / 60.0)
 	check(remote.firing_blocker(alien) == "TURN TOWARD TARGET", "Server-limited rotation reaches the requested facing")
-	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3(0, PI, 0), false, true, 0, 0, 0)
-	await settle(0.06)
+	check(await deliver_intents(host, [client], [intent(true, 0, 0, 0, Vector3.ZERO, false, Vector3(0, PI, 0))], "fire facing away"), "Host receives fire while facing away")
 	host.session.tick(1.0 / 60.0)
 	check(alien.shield == before_blocked, "Host rejects shots facing away from the alien")
 	# A modified client cannot snap back onto the target: the arc uses the server's limited turn.
-	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false, true, 0, 0, 0)
-	await settle(0.06)
+	check(await deliver_intents(host, [client], [intent(true, 0, 0)], "instant turn back"), "Host receives the instant turn back")
 	host.session.tick(1.0 / 60.0)
 	check(absf(remote.rotation.y) > 2.0 and remote.firing_blocker(alien) == "TURN TOWARD TARGET", "Firing arc uses the server-limited rotation")
 	check(alien.shield == before_blocked, "Host rejects fire after an instant client turn")

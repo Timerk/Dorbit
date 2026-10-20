@@ -39,19 +39,10 @@ func replicate(host: Sector) -> void:
 
 
 func deliver_command(server: Sector, client: Sector, movement: Vector3, boost: bool, fire: bool, encounter: int) -> void:
-	# Flight packets are unreliable and production clients continually resend them.
-	# Wait for server receipt instead of assuming a fixed delay survives ten worlds
-	# competing with another CI check. Tick combat while the received intent is fresh.
-	var id := client.multiplayer.get_unique_id()
-	var deadline := Time.get_ticks_msec() + 8000
-	while Time.get_ticks_msec() < deadline:
-		client.session.command_flight.rpc_id(1, movement, Vector3.ZERO, boost, fire, 0, encounter, 0)
-		await process_frame
-		var command: Dictionary = server.session.commands.get(id, {})
-		if command.get("movement") == movement and command.get("boost") == boost and command.get("fire") == fire and command.get("encounter") == encounter and server.session.combat.remote_firing(id) == fire:
-			if Time.get_ticks_msec() - command["time"] < FlightSession.COMMAND_TIMEOUT * 1000:
-				return
-	check(false, "Dedicated server receives fresh flight intent within the convergence timeout")
+	# Ten worlds compete with other CI checks; wait for receipt rather than a delay
+	# or a wall-clock age. Combat sees the receipt in the same turn.
+	var received := await deliver_intents(server, [client], [intent(fire, 0, encounter, 0, movement, boost)], "dedicated")
+	check(received and server.session.combat.remote_firing(client.multiplayer.get_unique_id()) == fire, "Dedicated server receives fresh flight intent within the convergence timeout")
 
 
 func run() -> void:
