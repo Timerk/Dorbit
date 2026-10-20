@@ -36,7 +36,8 @@ void fragment() {
 		float wave = band(r, mix(0.35, 0.98, burst), 0.035) * (1.0 - burst);
 		float flash = exp(-r * r * 14.0) * pow(1.0 - burst, 3.0);
 		ALBEDO = mix(tint.rgb, hot, flash);
-		ALPHA = wave * 1.4 + flash * 1.2;
+		// Stay readable but restrained for the pilot completing the objective at its center.
+		ALPHA = (wave * 1.4 + flash * 1.2) * mix(0.3, 1.0, proximity);
 	} else {
 		float hoop = band(r, 0.72, 0.010);
 		float halo = band(r, 0.72, 0.075);

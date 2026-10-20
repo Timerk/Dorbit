@@ -106,6 +106,55 @@ const STEPS: Array[Dictionary] = [
 		"done": "Welcome to the reclamation, pilot. Vance out.",
 	},
 ]
+# Controls taught by each step's pop-up: input actions shown as key caps, then the
+# explanation. A row is ticked when the pilot presses any of its actions.
+const CONTROLS := {
+	"comms_check": [
+		[["steer"], "Hold and move mouse to steer"],
+		[["forward", "backward"], "Thrust forward / reverse"],
+		[["strafe_left", "strafe_right"], "Strafe sideways"],
+	],
+	"survey_run": [
+		[["sector_map"], "Map: click the survey point"],
+		[["autopilot"], "Autopilot to your selection"],
+		[["boost"], "Boost while energy lasts"],
+	],
+	"ring_scan": [
+		[["move_up", "move_down"], "Climb / descend"],
+		[["backward"], "Reverse to stop in the field"],
+	],
+	"first_contact": [
+		[["cycle_target"], "Lock the alien nearest your aim"],
+		[["select_target"], "Or click a ship to lock it"],
+		[["fire"], "Toggle automatic lasers"],
+	],
+	"heavier_resistance": [
+		[["rocket"], "Fire a single rocket"],
+		[["launcher"], "Load, then fire Hellstorm"],
+		[["quickslot_1", "quickslot_2"], "Switch laser ammunition"],
+	],
+	"black_box": [
+		[["sector_map"], "Find the recorder on the map"],
+		[["autopilot"], "Autopilot stops right at it"],
+	],
+	"field_salvage": [
+		[["cycle_target"], "Lock an alien"],
+		[["fire"], "Destroy it, fly into its loot"],
+	],
+	"beacon_parts": [
+		[["repair"], "Repair at the outpost"],
+		[["station_shop"], "Shop and sell spare cargo"],
+		[["contracts"], "Quests: deliver Prometium"],
+	],
+	"light_beacon": [
+		[["ship_equipment"], "Fit equipment at the station"],
+		[["move_up", "move_down"], "Climb / descend to the mast"],
+	],
+	"standing_orders": [
+		[["contracts"], "Open Quests and accept a hunt"],
+		[["jump_gate"], "Jump through a gate (later)"],
+	],
+}
 const POSITIONAL := ["reach", "scan", "recover"]
 const BEACON_STEP := 8
 

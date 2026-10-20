@@ -53,6 +53,9 @@ var story_skip_armed := false
 var story_hint := ""
 var story_hint_key := Vector2i(-2, -1)
 var story_hint_height := 0.0
+# Key-cap labels and widths for the controls pop-up, rebuilt after rebinding.
+var tip_keys: Array[Array] = []
+var tip_keys_key := Vector2i(-1, -1)
 var navigation: FlightNavigation
 var ammo_bar: AmmoBar
 var layout: HudLayout
@@ -575,6 +578,48 @@ func draw_context() -> void:
 	layout.end_draw(self)
 
 
+# Centered under the destination card, clear of the side cards and the reticle.
+func tutorial_rect() -> Rect2:
+	return Rect2((size.x - 300) * 0.5, navigation.guidance_rect().end.y + 12, 300, 130)
+
+
+func draw_tutorial() -> void:
+	var sites := sector.story_sites
+	var live := is_instance_valid(sites) and not sites.tips.is_empty()
+	if not live and not layout.editing:
+		return
+	# The editor previews the first step's rows when no pop-up is open.
+	var tips: Array = sites.tips if live else Story.CONTROLS["comms_check"]
+	if not layout.begin_draw(self, "tutorial"):
+		return
+	var rect := tutorial_rect()
+	card_title(rect, "CONTROLS", CYAN)
+	var key := Vector2i(sites.seen_step if live else -1, GameSettings.binding_revision)
+	if key != tip_keys_key:
+		tip_keys_key = key
+		tip_keys.clear()
+		for row: Array in tips:
+			var labels: PackedStringArray = []
+			for action: String in row[0]:
+				labels.append(GameSettings.binding_text(action))
+			var caption := " / ".join(labels)
+			tip_keys.append([caption, font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 14])
+	var point := rect.position + Vector2(18, 64)
+	for index in tips.size():
+		var done: bool = live and sites.tips_used[index]
+		var key_width: float = tip_keys[index][1]
+		draw_style_box(background, Rect2(point - Vector2(0, 17), Vector2(key_width, 24)))
+		text_at(point + Vector2(7, 0), tip_keys[index][0], 14, GREEN if done else INK)
+		var label_x := key_width + 10
+		text_at(point + Vector2(label_x, 0), tips[index][1], 14, GREEN if done else MUTED, rect.size.x - 36 - label_x - 20)
+		if done:
+			var mark := Vector2(rect.end.x - 30, point.y - 6)
+			draw_polyline(PackedVector2Array([mark, mark + Vector2(4, 4), mark + Vector2(11, -5)]), GREEN, 2.0)
+		point.y += 26
+	layout.end_draw(self)
+	marker_labels.append(layout.rect_for("tutorial"))
+
+
 func draw_performance() -> void:
 	if (sector.show_performance or layout.editing) and layout.begin_draw(self, "performance"):
 		var point := layout.default_rect("performance").position
@@ -630,6 +675,7 @@ func _draw() -> void:
 		draw_objectives()
 		layout.end_draw(self)
 	draw_context()
+	draw_tutorial()
 	draw_performance()
 	if layout.begin_draw(self, "ship"):
 		draw_ship_panel()

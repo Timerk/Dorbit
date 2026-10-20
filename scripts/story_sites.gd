@@ -16,6 +16,8 @@ const BURST_SECONDS := 0.9
 const GATE_SCALE := 1.0 / 0.72
 const RECORDER_GATE_RADIUS := 7.0
 const BEAM_HALF_HEIGHT := 260.0
+# The controls pop-up lingers briefly after every row has been tried.
+const TIPS_LINGER := 1.5
 
 var sector: Sector
 # The current objective: a waypoint gate or scan field, plus a locator beam.
@@ -33,6 +35,10 @@ var seen_step := -1
 var scan_seconds := 0.0
 var comm := ""
 var comm_time := 0.0
+# Rows of the current step's controls pop-up and whether each has been pressed.
+var tips: Array = []
+var tips_used: Array[bool] = []
+var tips_linger := -1.0
 
 
 func _ready() -> void:
@@ -158,9 +164,11 @@ func _process(delta: float) -> void:
 	if story.is_empty():
 		seen_step = -1
 		scan_seconds = 0.0
+		tips = []
 		hide_sites()
 		return
 	observe(story)
+	track_tips(delta)
 	var step := Story.site(story, sector.map_id)
 	beacon.visible = sector.map_id == 0
 	if beacon_lit != (int(story["step"]) > Story.BEACON_STEP):
@@ -189,6 +197,33 @@ func _process(delta: float) -> void:
 		recorder.rotate_y(delta * 1.2)
 
 
+func track_tips(delta: float) -> void:
+	if not tips.is_empty() and tips_linger >= 0.0:
+		tips_linger -= delta
+		if tips_linger < 0.0:
+			tips = []
+
+
+# Events rather than polled state, so a quick tap between frames still counts.
+func _input(event: InputEvent) -> void:
+	if tips.is_empty() or tips_linger >= 0.0 or event.is_echo():
+		return
+	for index in tips.size():
+		for action: String in tips[index][0]:
+			if not tips_used[index] and event.is_action_pressed(action):
+				tips_used[index] = true
+	if not tips_used.has(false):
+		tips_linger = TIPS_LINGER
+
+
+func open_tips(story: Dictionary) -> void:
+	tips = Story.CONTROLS.get(Story.current(story).get("id", ""), [])
+	tips_used.clear()
+	tips_used.resize(tips.size())
+	tips_used.fill(false)
+	tips_linger = -1.0
+
+
 func observe(story: Dictionary) -> void:
 	var step := int(story["step"])
 	if step == seen_step:
@@ -203,5 +238,6 @@ func observe(story: Dictionary) -> void:
 	elif not Story.complete(story):
 		comm = Story.transmission(Story.current(story))
 	comm_time = COMM_SECONDS if not comm.is_empty() else 0.0
+	open_tips(story)
 	seen_step = step
 	scan_seconds = 0.0

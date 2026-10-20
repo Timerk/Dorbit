@@ -44,6 +44,13 @@ func capture(client: Sector, label: String) -> void:
 	check(client.get_viewport().get_texture().get_image().save_png("res://build/validation/" + label + ".png") == OK, "Save rendered " + label)
 
 
+func press(client: Sector, input: String) -> void:
+	var event := InputEventAction.new()
+	event.action = input
+	event.pressed = true
+	client.get_viewport().push_input(event)
+
+
 func site_clear(server: Sector, location: Vector3) -> bool:
 	if location.distance_to(SectorMaps.origin(0)) > Sector.MAP_RADIUS - 100.0:
 		return false
@@ -94,11 +101,37 @@ func run() -> void:
 	await process_frame
 	check(pilot.story_sites.site.visible and pilot.hud.story_height() > 0.0, "The first site and flight card section are shown")
 	await capture(pilot, "story-comms-check")
+	for step: Dictionary in Story.STEPS:
+		var rows: Array = Story.CONTROLS.get(step["id"], [])
+		check(rows.size() >= 2 and rows.size() <= 3, "%s teaches two or three controls" % step["title"])
+		for row: Array in rows:
+			for input: String in row[0]:
+				check(InputMap.has_action(input), "%s control %s is a bound input action" % [step["title"], input])
+	var sites := pilot.story_sites
+	check(sites.tips == Story.CONTROLS["comms_check"] and not sites.tips_used.has(true), "The first step opens its controls pop-up")
+	press(pilot, "backward")
+	await process_frame
+	check(sites.tips_used == [false, true, false], "Pressing a taught control ticks its row")
+	for input: String in ["steer", "strafe_right"]:
+		press(pilot, input)
+	await process_frame
+	check(not sites.tips.is_empty() and not sites.tips_used.has(false), "The pop-up lingers once every control is tried")
+	await settle(StorySites.TIPS_LINGER + 0.2)
+	check(sites.tips.is_empty(), "The pop-up closes after its controls are tried")
 	var credits: int = store.pilots[pilot_id]["credits"]
 	await reach(server, pilot)
 	check(saved(server, pilot)["step"] == 1 and store.pilots[pilot_id]["credits"] == credits + 300, "Reaching the rendezvous saves the step and its reward")
 	await process_frame
 	check(pilot.story_state()["step"] == 1 and pilot.story_sites.comm.begins_with("VANCE: Clean flying."), "The owner receives progress and the contact's closing line")
+	check(sites.tips == Story.CONTROLS["survey_run"], "The next step opens its own controls pop-up")
+	await capture(pilot, "story-controls")
+	for pixels in [Vector2i(960, 600), Vector2i(1440, 900)]:
+		pilot.get_viewport().size = pixels
+		await process_frame
+		var hud := pilot.hud
+		var tips := hud.tutorial_rect()
+		var clear := [hud.objectives_rect(), hud.navigation.radar_rect(), hud.navigation.guidance_rect(), hud.layout.default_rect("reticle")].all(func(card: Rect2) -> bool: return not card.intersects(tips))
+		check(clear and Rect2(Vector2.ZERO, hud.size).encloses(tips), "The controls pop-up stays clear of flight cards at %d" % pixels.x)
 	check(pilot.credits == credits + 300, "The owner's wallet includes the step reward")
 	await reach(server, pilot)
 	check(saved(server, pilot)["step"] == 2, "The survey run completes at its waypoint")
