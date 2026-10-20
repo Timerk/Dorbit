@@ -898,7 +898,7 @@ their game exports. Keep each base ship's recognizable silhouette and colors.
 The shared finish uses fitted armor, recessed machinery, machined trim and
 restrained copper markings. The concepts are design guidance; one mesh supplies
 consistent final angles where generated views disagree. See
-[ship concepts](art/ship-review/concepts/README.md).
+ship concepts (`art/ship-review/concepts/README.md` in the art archive).
 
 Following model review, the Nostromo has a longer forward hull and a sharper,
 tapered bow, retaining its paired rear turbines and swept wings.
@@ -942,7 +942,7 @@ violet identities guide fitted armor, machined trim, exposed wing mounts,
 recessed drives and sensor slits. Scout retains a narrow hull and long crescent
 wings; Sentinel has a broader wedge and angular talons; Heavy adds reinforced
 shoulders and a thicker ventral armor block. See the
-[alien model review](art/alien-review/README.md) for Blender sources, portable
+alien model review (`art/alien-review/README.md` in the art archive) for Blender sources, portable
 textured GLBs, surface maps and six consistent views rendered from each mesh.
 
 The user requested a more detailed match to the approved concepts after reviewing
@@ -1044,7 +1044,7 @@ model and integrating its GLB into the existing sector. The design has a tall
 cobalt armored spine, six recessed hangars, exposed structural trusses, long side
 buttresses, a sloping command crown and four broad cyan-tipped docking blades.
 The rear and underside follow the same design in the single source model. See
-[station study and Godot review views](art/station-review/README.md).
+station study and Godot review views (`art/station-review/README.md` in the art archive).
 
 The provisional model is approximately 294 m tall and 170 m across. Its origin
 is the lowest main hangar's service point. The station location, launch/rescue
@@ -1237,10 +1237,10 @@ The first implementation uses the following provisional names and populations:
 
 The six outer-sector types now use reference-based Blender models with distinct
 silhouettes, fitted colored armor, exposed hydraulic mounts and recessed drives.
-The user approved the [modeling references](art/alien-review/concepts/outer-sectors/README.md)
+The user approved the modeling references (`art/alien-review/concepts/outer-sectors/README.md` in the art archive)
 and requested models and renders that follow them closely. Editable packed
 sources, six construction views, three detail renders per model and comparisons
-are in the [model gallery](art/alien-review/outer-sectors/README.md). Derived game
+are in the model gallery (`art/alien-review/outer-sectors/README.md` in the art archive). Derived game
 GLBs retain the previous bounding diameters and existing visual scale multipliers,
 with shared 2K PBR maps and generated distance LODs. Gameplay collision and combat
 tuning retain their settings. Servers record the visual bounds for effects
@@ -1276,7 +1276,7 @@ actual campaign background, thin routed bidirectional links, a current-sector
 marker and hover route previews. Mouse selection and arrow keys with Enter set
 the same next-gate waypoint. The four-map topology and unrestricted access remain
 unchanged. Authoring files and visual review are in
-[art/gate-review](art/gate-review/README.md).
+`art/gate-review/README.md` in the art archive.
 
 One persistent authoritative session simulates all four populations. Maps have
 separate membership and distant origins in the existing physics world. Rendering,
@@ -1293,7 +1293,7 @@ the future Galaxy Gates alien-wave challenges.
 
 ### Reclamation campaign background art
 
-The user approved the campaign map concepts in [art/map-background-concepts](art/map-background-concepts/README.md) for implementation. Their history follows the reclamation story proposed in [PR #76](https://github.com/Timerk/Dorbit/pull/76): these were human sectors lost to an alien invasion, with Outpost 01 now supporting the return.
+The user approved the campaign map concepts (`art/map-background-concepts/README.md` in the art archive) for implementation. Their history follows the reclamation story proposed in [PR #76](https://github.com/Timerk/Dorbit/pull/76): these were human sectors lost to an alien invasion, with Outpost 01 now supporting the return.
 
 The first visual implementation gives M1 an inhabited planet with bombardment scars, a shattered orbital defense ring and distant human supply staging. M2 has an occupied desert planet with alien orbital collectors and a damaged human receiver. M3 has alien salvage machinery attached to a human carrier wreck, plus a scarred colony moon and abandoned communications infrastructure. M4 has a larger extraction complex attached to a captured human orbital ring and alien relay structures. Blue, amber, rust-red and violet nebula palettes distinguish the maps.
 

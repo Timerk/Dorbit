@@ -1,6 +1,6 @@
 # DarkOrbit map background references
 
-Research date: 2026-10-12. This note supports original Dorbit concept images. It does not approve a gameplay change or alter the four-map network in [GAME_PLAN.md](../../GAME_PLAN.md). The second image pass also follows the reclamation story in [campaign PR #76](https://github.com/Timerk/Dorbit/pull/76), with the user's additions of visible war damage and alien extraction machinery. See the [campaign art direction](../../art/map-background-concepts/campaign-direction.md). The proposals below describe the initial visual pass; the campaign gallery contains the revised directions.
+Research date: 2026-10-12. This note supports original Dorbit concept images. It does not approve a gameplay change or alter the four-map network in [GAME_PLAN.md](../../GAME_PLAN.md). The second image pass also follows the reclamation story in [campaign PR #76](https://github.com/Timerk/Dorbit/pull/76), with the user's additions of visible war damage and alien extraction machinery. See the campaign art direction (`art/map-background-concepts/campaign-direction.md` in the art archive). The proposals below describe the initial visual pass; the campaign gallery contains the revised directions.
 
 ## What the official images show
 
