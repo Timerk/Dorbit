@@ -1,6 +1,6 @@
 # Reclamation campaign backgrounds
 
-The four maps implement the [approved campaign concepts](../../art/map-background-concepts/README.md) as 3D scenery. This quality pass replaces the first implementation's coarse planetary noise and soft nebula with dedicated surface textures, larger planetary compositions, layered metal structures and denser debris belts. M1 shows the aftermath of the invasion and returning human supply staging. The outer sectors show alien resource extraction and salvage among former human infrastructure. Planets, moons, ruined rings, collectors, receivers, wrecks and belts have real spatial depth; the nebula surrounds the pilot in every direction.
+The four maps implement the approved campaign concepts (`art/map-background-concepts/README.md` in the art archive) as 3D scenery. This quality pass replaces the first implementation's coarse planetary noise and soft nebula with dedicated surface textures, larger planetary compositions, layered metal structures and denser debris belts. M1 shows the aftermath of the invasion and returning human supply staging. The outer sectors show alien resource extraction and salvage among former human infrastructure. Planets, moons, ruined rings, collectors, receivers, wrecks and belts have real spatial depth; the nebula surrounds the pilot in every direction.
 
 ## In-game views
 

@@ -14,20 +14,22 @@ contain no painted lighting or reflections.
 
 [Actual Godot roster overview](feedback/ship-materials-overview.jpg)
 
+Each ship's review files are in `art/ship-review/materials/<ship>/` in the art archive.
+
 | Ship | Godot hangar | Six consistent game views | Surface settings |
 | --- | --- | --- | --- |
-| Aegis | [Hangar](../art/ship-review/materials/aegis/hangar.png) | [Views](../art/ship-review/materials/aegis/views.jpg) | [Manifest](../art/ship-review/materials/aegis/manifest.json) |
-| Goliath | [Hangar](../art/ship-review/materials/goliath/hangar.png) | [Views](../art/ship-review/materials/goliath/views.jpg) | [Manifest](../art/ship-review/materials/goliath/manifest.json) |
-| Bigboy | [Hangar](../art/ship-review/materials/bigboy/hangar.png) | [Views](../art/ship-review/materials/bigboy/views.jpg) | [Manifest](../art/ship-review/materials/bigboy/manifest.json) |
-| Defcom | [Hangar](../art/ship-review/materials/defcom/hangar.png) | [Views](../art/ship-review/materials/defcom/views.jpg) | [Manifest](../art/ship-review/materials/defcom/manifest.json) |
-| Leonov | [Hangar](../art/ship-review/materials/leonov/hangar.png) | [Views](../art/ship-review/materials/leonov/views.jpg) | [Manifest](../art/ship-review/materials/leonov/manifest.json) |
-| Liberator | [Hangar](../art/ship-review/materials/liberator/hangar.png) | [Views](../art/ship-review/materials/liberator/views.jpg) | [Manifest](../art/ship-review/materials/liberator/manifest.json) |
-| Nostromo | [Hangar](../art/ship-review/materials/nostromo/hangar.png) | [Views](../art/ship-review/materials/nostromo/views.jpg) | [Manifest](../art/ship-review/materials/nostromo/manifest.json) |
-| Phoenix | [Hangar](../art/ship-review/materials/phoenix/hangar.png) | [Views](../art/ship-review/materials/phoenix/views.jpg) | [Manifest](../art/ship-review/materials/phoenix/manifest.json) |
-| Piranha | [Hangar](../art/ship-review/materials/piranha/hangar.png) | [Views](../art/ship-review/materials/piranha/views.jpg) | [Manifest](../art/ship-review/materials/piranha/manifest.json) |
-| Spearhead | [Hangar](../art/ship-review/materials/spearhead/hangar.png) | [Views](../art/ship-review/materials/spearhead/views.jpg) | [Manifest](../art/ship-review/materials/spearhead/manifest.json) |
-| Vengeance | [Hangar](../art/ship-review/materials/vengeance/hangar.png) | [Views](../art/ship-review/materials/vengeance/views.jpg) | [Manifest](../art/ship-review/materials/vengeance/manifest.json) |
-| Yamato | [Hangar](../art/ship-review/materials/yamato/hangar.png) | [Views](../art/ship-review/materials/yamato/views.jpg) | [Manifest](../art/ship-review/materials/yamato/manifest.json) |
+| Aegis | `hangar.png` | `views.jpg` | `manifest.json` |
+| Goliath | `hangar.png` | `views.jpg` | `manifest.json` |
+| Bigboy | `hangar.png` | `views.jpg` | `manifest.json` |
+| Defcom | `hangar.png` | `views.jpg` | `manifest.json` |
+| Leonov | `hangar.png` | `views.jpg` | `manifest.json` |
+| Liberator | `hangar.png` | `views.jpg` | `manifest.json` |
+| Nostromo | `hangar.png` | `views.jpg` | `manifest.json` |
+| Phoenix | `hangar.png` | `views.jpg` | `manifest.json` |
+| Piranha | `hangar.png` | `views.jpg` | `manifest.json` |
+| Spearhead | `hangar.png` | `views.jpg` | `manifest.json` |
+| Vengeance | `hangar.png` | `views.jpg` | `manifest.json` |
+| Yamato | `hangar.png` | `views.jpg` | `manifest.json` |
 
 The six views come from one actual game mesh, including its underside, with
 studio fill lighting to reveal lower surfaces. Hangar views use the same camera,
@@ -48,7 +50,8 @@ so its highlights differ.
 [ship_surface_atlas.py](../tools/ship_surface_atlas.py) deterministically generates
 three 2048 × 2048 maps per ship from its saved Blender components: albedo, ORM
 and tangent-space normal. Source maps and per-part settings live under
-`art/ship-review/materials/<ship>/`. Each manifest records the material role,
+`art/ship-review/materials/<ship>/` in the art archive, outside the repository
+(see [Art sources](../AGENTS.md#art-sources)). Each manifest records the material role,
 tint, roughness and metallic response. ORM stores roughness in green and metallic
 in blue; red is 1 because no ambient-occlusion bake is supplied.
 
@@ -56,7 +59,7 @@ Maps are embedded in each `assets/ships/<ship>.glb`. The exporter shares three
 image/sampler entries; the [Godot import hook](../tools/import_ship_materials.gd)
 shares three compressed texture resources across all of that hull's material
 surfaces and restores clearcoat for colored paints. Source maps and review
-pictures are excluded from the game pack by `art/.gdignore`.
+pictures stay in the art archive, so they never enter the game pack.
 Individual angle PNGs are intermediate renders and are ignored by Git; the
 hangar images, six-view sheets and surface maps are retained.
 

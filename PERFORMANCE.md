@@ -5,7 +5,7 @@
 Use these targets for new runtime assets; the existing detailed models are
 grandfathered until a separate art pass. Exceptions need a rendered comparison
 and a same-scene texture-memory / primitive-count measurement. Keep high-resolution
-authoring sources under `art/`, outside Godot imports.
+authoring sources in the art archive, outside the repository (see AGENTS.md).
 
 | Use | Imported size target (longest side) | Import policy |
 | --- | --- | --- |

@@ -12,7 +12,7 @@ artwork, fonts or DarkOrbit game assets are included in the runtime models.
   buttresses, command crown and four docking blades; eight material surfaces.
   Built by [tools/build_station.py](../../tools/build_station.py), also called by
   the sector generator. Editable source and engine renders live in
-  [art/station-review](../../art/station-review/README.md).
+  `art/station-review/README.md` in the art archive.
 - `outpost-01-collision.json`: 53 simple physics boxes exported with the model;
   loaded identically by clients and dedicated servers, included in both packs.
 - `outpost-01_cobalt/blue/graphite/titanium/normal.png`: portable surface textures
@@ -59,7 +59,7 @@ These landmarks are outside the flight boundary and have no colliders or
 navigation contacts. Only the current map's backdrop is visible; dedicated
 servers create none of it. The outer maps reuse the original textured asteroid
 meshes inside their unchanged spherical physics envelopes. See the
-[approved concepts](../../art/map-background-concepts/README.md) and
+approved concepts (`art/map-background-concepts/README.md` in the art archive) and
 [rendered campaign review](../../docs/sector-art/campaign-backgrounds.md).
 
 Composition references: [DarkOrbit X-8 installations](https://darkorbitwiki.com/maps/x-8-map/)

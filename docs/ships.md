@@ -78,7 +78,7 @@ and provisioning tools, and back up the ledger before upgrading. Network schema
 4 adds model identity and maximum hull to every player snapshot; older clients
 are rejected by the existing compatibility handshake.
 
-The [Dorbit concept refinement](../art/ship-review/concepts/README.md) supplies
+The Dorbit concept refinement (`art/ship-review/concepts/README.md` in the art archive) supplies
 new multi-angle design references and updated editable models, guided by the
 user's Liberator hangar image. Six actual mesh renders per ship provide consistent
 angles; generated sheets are design guidance and can disagree in small details.
@@ -86,8 +86,8 @@ angles; generated sheets are design guidance and can disagree in small details.
 Following user review, Nostromo's forebody is longer and tapers to a sharper bow.
 Its length relative to wing span increases by about 30%. Armor, cockpit and
 cheek fittings follow the hull, while the paired rear turbines retain their
-round shape. See the [revised model views](../art/ship-review/previews/nostromo-views.jpg)
-and [Nostromo game-material views](../art/ship-review/materials/nostromo/views.jpg).
+round shape. See the revised model views (`art/ship-review/previews/nostromo-views.jpg` in the art archive)
+and Nostromo game-material views (`art/ship-review/materials/nostromo/views.jpg` in the art archive).
 
 `tools/export_ships.py` exports the saved `.blend` files without changing
 them. Run Blender in background mode with `--python tools/export_ships.py`.

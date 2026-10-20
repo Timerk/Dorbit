@@ -7,8 +7,7 @@ Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated ser
 - [Game requirements and development plan](GAME_PLAN.md)
 - [Development workflow](AGENTS.md)
 - [Linux deployment, systemd, updates and rollback](DEPLOYMENT.md)
-- [Blender ship review collection](art/ship-review/README.md)
-- [Detailed alien models, materials and renders](art/alien-review/README.md)
+- Blender sources, model reviews and concept art are kept outside the repository; see [Art sources](AGENTS.md#art-sources)
 
 Scout, Sentinel and Heavy use the approved detailed textured models in flight
 and contract previews. The game exports have centered, correctly oriented hulls,
