@@ -2,7 +2,7 @@
 
 Generated with the built-in image generation tool for the three story contacts introduced in [PR #118](https://github.com/Timerk/Dorbit/pull/118).
 
-These are proposed visual designs. Roles and names come from `scripts/story.gd`; age, appearance, clothing and facial details are art direction proposed for this set rather than established story facts. The images are review assets outside Godot's runtime imports; this change does not add portraits to the HUD.
+These are proposed visual designs. Roles and names come from `scripts/story.gd`; age, appearance, clothing and facial details are art direction proposed for this set rather than established story facts. These originals stay outside Godot's runtime imports. Downscaled runtime copies in [assets/ui/portraits](../../assets/ui/portraits/README.md) appear in the flight transmission box and the Quests Story tab.
 
 | Character | Portrait |
 | --- | --- |
