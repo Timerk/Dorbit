@@ -738,10 +738,6 @@ func _draw() -> void:
 		marker(SectorMaps.gate_position(sector.map_id, destination), "GATE TO " + SectorMaps.code(destination), SectorMaps.MAPS[destination]["color"], false, null, false)
 	if is_instance_valid(sector.target):
 		alien_marker(sector.target as Alien)
-	for id: int in sector.loot.drops:
-		if sector.loot.is_presented(id):
-			var drop: Dictionary = sector.loot.drops[id]
-			marker(drop["position"], "LOOT %d UNITS / FLY CLOSE" % CargoResources.units(drop["resources"]), AMBER, false, null, false)
 	for alien_id: int in sector.aliens:
 		var enemy := sector.aliens[alien_id]
 		if enemy != sector.target and enemy.alive and enemy.visible:
