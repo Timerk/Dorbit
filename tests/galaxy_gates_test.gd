@@ -172,12 +172,27 @@ func run() -> void:
 	var second: String = await enter(server, partner)
 	check(first.is_empty() and second.is_empty(), "Pilots fly through the open gate")
 	check(server.session.ships[id].map_id == GalaxyGates.MAP and gate.lives[pilot_id] == GalaxyGates.LIVES, "Entering joins the run with full lives")
-	gate.tick(GalaxyGates.FIRST_WAVE_DELAY + 0.1)
+	gate.tick(1.0)
+	await settle(0.1)
+	var countdown: float = pilot.hud.gate_countdown()
+	check(countdown > 0.0 and countdown <= GalaxyGates.FIRST_WAVE_DELAY, "Entering shows the countdown to the first wave")
+	check(pilot.hud.gate_status().contains("WAVE 1 IN"), "The status line names the next wave and its countdown")
+	gate.tick(GalaxyGates.FIRST_WAVE_DELAY)
 	var alive := gate.wave_aliens.filter(func(alien: Alien): return alien.alive).size()
 	check(gate.phase == "fighting" and gate.wave == 0 and alive == GalaxyGates.wave_counts(0, 2)["Shardling"], "The first wave scales to the pilots inside")
 	await sync(server)
 	check(pilot.map_id == GalaxyGates.MAP and pilot.session.combat.gate_summary["wave"] == 1, "The pilot's client shows the arena and wave")
-	check(pilot.hud.gate_status().begins_with("VASHAR GATE / WAVE 1 OF"), "The HUD reports the wave and lives")
+	check(pilot.hud.gate_status().begins_with("VASHAR GATE / WAVE 1 OF") and pilot.hud.gate_countdown() < 0.0, "The HUD reports the active wave once the countdown ends")
+	# No safe zone in the rift: aliens pursue a pilot waiting at the exit, which stays sealed.
+	var holder := server.session.ships[id]
+	holder.position = SectorMaps.gate_position(GalaxyGates.MAP, 0)
+	server.session.ships[partner_id].position = holder.position + Vector3(8, 0, 0)
+	check(not SectorMaps.protected(holder), "The rift exit has no protected zone")
+	var hunter: Alien = gate.wave_aliens.filter(func(alien: Alien): return alien.alive)[0]
+	check(combat.choose_target(hunter) in [holder, server.session.ships[partner_id]], "Wave aliens pursue pilots waiting at the rift exit")
+	server.session.jump_until.erase(id)
+	check(server.session.jump(id, combat.records[id]["life"], 0).contains("sealed") and holder.map_id == GalaxyGates.MAP, "The rift exit is sealed while a wave is alive")
+	holder.position = SectorMaps.origin(GalaxyGates.MAP) + Vector3(0, 0, 200)
 	var ship := server.session.ships[partner_id]
 	ship.take_damage(ship.max_hull + ship.max_shield + 1.0, null)
 	check(gate.lives[server.session.pilot_ids[partner_id]] == GalaxyGates.LIVES - 1, "Dying in the arena costs one life")
@@ -243,6 +258,14 @@ func run() -> void:
 	pilot.main_menu.select_page("gates")
 	await process_frame
 	check(pilot.gate_menu.visible and pilot.gate_menu.preview_button.visible and pilot.gate_menu.run_label.text.contains("GATE OPEN"), "The Galaxy Gates page shows the open gate and preview tool")
+	# Quitting to the station mid-wave costs a life instead of a free repair.
+	var retreating: String = await enter(server, partner)
+	gate.tick(GalaxyGates.FIRST_WAVE_DELAY + 0.1)
+	var partner_pilot_id: String = server.session.pilot_ids[partner_id]
+	check(retreating.is_empty() and gate.phase == "fighting" and gate.lives[partner_pilot_id] == GalaxyGates.LIVES, "A pilot joins the preview wave")
+	partner.session.quit_to_menu()
+	await settle(0.15)
+	check(server.session.ships[partner_id].get_meta("docked", false) and gate.lives[partner_pilot_id] == GalaxyGates.LIVES - 1, "Quitting to the station mid-wave costs a life")
 	gate.tick(GalaxyGates.ABANDON_TIME + 0.1)
 	check(not gate.active and not SectorMaps.rift_open, "A gate nobody holds collapses")
 	finish()

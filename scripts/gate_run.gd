@@ -16,6 +16,8 @@ var wave := -1
 var clock := 0.0
 var empty_clock := 0.0
 var escort_clock := 0.0
+# Pilots inside at the last tick; the countdown pauses while the rift is empty.
+var last_inside := 0
 # Remaining lives and participation, keyed by persistent pilot identity.
 var lives: Dictionary[String, int] = {}
 var wave_aliens: Array[Alien] = []
@@ -101,6 +103,19 @@ func entry_blocker(id: int) -> String:
 	return ""
 
 
+## Pilots cannot slip out mid-wave to repair; the exit opens between waves.
+func exit_blocker() -> String:
+	return "The rift exit is sealed until this wave is cleared." if active and phase == "fighting" else ""
+
+
+## Quitting to the station during a wave counts as a lost life.
+func retreated(id: int) -> void:
+	if active and phase == "fighting" and lives.has(key(id)):
+		lives[key(id)] = maxi(0, lives[key(id)] - 1)
+		combat.message(id, "You abandoned the wave. %d lives left in this %s run." % [lives[key(id)], GalaxyGates.NAME])
+		publish()
+
+
 func entered(id: int) -> void:
 	if not lives.has(key(id)):
 		lives[key(id)] = GalaxyGates.LIVES
@@ -124,6 +139,10 @@ func tick(delta: float) -> void:
 	if not active:
 		return
 	var pilots := inside()
+	if (pilots.size() > 0) != (last_inside > 0):
+		last_inside = pilots.size()
+		publish()
+	last_inside = pilots.size()
 	if phase == "victory":
 		clock -= delta
 		if clock <= 0.0:
@@ -273,8 +292,12 @@ func broadcast(text: String) -> void:
 func state_for(id: int) -> Dictionary:
 	if not active:
 		return {"active": false}
+	# Seconds until the next wave; clients count down locally from receipt and
+	# stop while the rift is empty, matching the paused server clock.
+	var countdown := clock if phase in ["waiting", "interval"] else -1.0
 	return {"active": true, "open": SectorMaps.rift_open, "phase": phase, "wave": wave + 1, "waves": GalaxyGates.WAVES.size(),
-		"lives": lives.get(key(id), GalaxyGates.LIVES), "entered": lives.has(key(id)), "builder": builder, "pilots": inside().size()}
+		"lives": lives.get(key(id), GalaxyGates.LIVES), "entered": lives.has(key(id)), "builder": builder, "pilots": inside().size(),
+		"countdown": countdown, "paused": inside().is_empty()}
 
 
 func publish() -> void:

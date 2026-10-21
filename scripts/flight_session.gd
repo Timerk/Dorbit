@@ -574,6 +574,8 @@ func dock_request() -> void:
 	if not ships.has(id) or ships[id].get_meta("docked", false):
 		return
 	var ship := ships[id]
+	if ship.map_id == GalaxyGates.MAP:
+		combat.gate.retreated(id)
 	ship.set_meta("docked", true)
 	if ship.map_id != 0:
 		ship.map_visit += 1
@@ -1141,6 +1143,10 @@ func jump(id: int, life: int, destination: int) -> String:
 		var blocker := combat.gate.entry_blocker(id)
 		if not blocker.is_empty():
 			return blocker
+	if ship.map_id == GalaxyGates.MAP:
+		var sealed := combat.gate.exit_blocker()
+		if not sealed.is_empty():
+			return sealed
 	jump_until[id] = Time.get_ticks_msec() + int(SectorMaps.JUMP_COOLDOWN * 1000)
 	transfer(id, destination)
 	if destination == GalaxyGates.MAP:

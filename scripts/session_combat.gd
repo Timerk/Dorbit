@@ -1147,6 +1147,7 @@ func roll_gate_parts(alien: Alien) -> int:
 @rpc("authority", "call_remote", "reliable")
 func gate_state(data: Dictionary) -> void:
 	gate_summary = data
+	gate_summary["received"] = Time.get_ticks_msec()
 	if not multiplayer.is_server():
 		SectorMaps.rift_open = data.get("open", false)
 	if not session.sector.dedicated_server:

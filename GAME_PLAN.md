@@ -1541,7 +1541,11 @@ network, with a protected return gate to M1. Seven waves follow:
 | 7 | Vashar mothership, 4 Shardlings, 2 Spireguards |
 
 The first wave starts 12 s after a pilot arrives, and later waves 8 s after the
-previous one is cleared. Each additional pilot inside (up to four) adds half the
+previous one is cleared. A large centered countdown shows the time to the next
+wave inside the rift and pauses while nobody is inside. The rift has no protected
+zone: wave aliens always pursue the pilots, including at the return gate, which is
+sealed while a wave is alive. Quitting to the station mid-wave costs a life, so
+pilots cannot slip out to repair and return. Each additional pilot inside (up to four) adds half the
 base count, capped by the arena pool of 8 Shardlings and 4 Spireguards; the size
 locks when the wave starts. The mothership is fixed-strength and launches two
 Shardlings from its hangar every 25 s while it survives.

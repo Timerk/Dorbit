@@ -72,6 +72,9 @@ static func arrival(map: int, source: int, slot: int = 0) -> Vector3:
 	return origin(map) + gate + inward * 30.0 + side * ((slot % 5) - 2) * 6.0 + Vector3.UP * (slot / 5) * 6.0
 
 static func protected(ship: SpaceShip) -> bool:
+	# The gate arena has no safe zone: aliens may pursue pilots to the exit.
+	if ship.map_id == GalaxyGates.MAP:
+		return false
 	if ship.map_id == 0 and ship.position.distance_to(Sector.STATION_POSITION) <= Sector.PROTECTION_RADIUS:
 		return true
 	if ship.get_parent() is Sector:
