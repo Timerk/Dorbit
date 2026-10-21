@@ -245,8 +245,9 @@ map. Visit **Shop** to buy ships and equipment, **Hangar** to activate a hull an
 equip it, **Quests** to accept hunting contracts, or **Cargo trade** to sell saved
 resources. **Skylab** manages persistent collectors, refining, upgrades, robots
 and shipments to ship cargo; see [Skylab rules and balance](docs/skylab.md).
-**Settings** and **Connection** are also available. **Galaxy Gates** opens a
-coming-soon page. Choose the amber **START** button on Overview
+**Settings** and **Connection** are also available. **Galaxy Gates** shows your
+gate parts, the Signal Anomaly operation and the Vashar Gate; see
+[Galaxy gates](GAME_PLAN.md#galaxy-gates-the-vashar-gate). Choose the amber **START** button on Overview
 to spawn at Outpost 01 with your selected ship and fitting. Esc or Back returns to
 the overview; these actions do not launch. Docked ships are hidden from other
 pilots and cannot move, fight or collect loot. Each reconnect returns to this menu
