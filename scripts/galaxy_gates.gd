@@ -7,6 +7,8 @@ extends RefCounted
 ## Part counts, chances, waves, lives and rewards are provisional playtesting values.
 
 const NAME := "Vashar Gate"
+# Faction violet for gate UI, loot and labels.
+const GLOW := Color("c86bff")
 const FACTION := "Vashar"
 const MAP := 4
 const PARTS_REQUIRED := 20

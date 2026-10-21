@@ -56,7 +56,7 @@ func apply_drop(id: int, data: Dictionary) -> void:
 		if data["resources"].has(resource):
 			richest = resource
 	var material := StandardMaterial3D.new()
-	material.albedo_color = VasharModels.GLOW if int(data.get("parts", 0)) > 0 else CargoResources.TYPES[richest]["color"]
+	material.albedo_color = GalaxyGates.GLOW if int(data.get("parts", 0)) > 0 else CargoResources.TYPES[richest]["color"]
 	meshes[id].scale = Vector3.ONE * (1.5 if int(data.get("parts", 0)) > 0 else 1.0)
 	material.emission_enabled = true
 	material.emission = material.albedo_color

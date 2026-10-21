@@ -16,6 +16,9 @@ const VISUAL_DIAMETERS := {
 	"Warden": 13.199097,
 	"Ravager": 14.993888,
 	"Overlord": 17.013710,
+	"Shardling": 9.5,
+	"Spireguard": 9.5,
+	"Mothership": 16.0,
 }
 # Stronger encounters should remain easy to track among cooperating pilots.
 const VISUAL_SCALE := {
@@ -28,9 +31,9 @@ const VISUAL_SCALE := {
 	"Warden": 2.4,
 	"Ravager": 3.2,
 	"Overlord": 3.5,
-	"Shardling": 1.4,
-	"Spireguard": 2.2,
-	"Mothership": 9.0,
+	"Shardling": 1.0,
+	"Spireguard": 2.0,
+	"Mothership": 4.0,
 }
 const TYPES := {
 	"Scout": {"hull": 1000.0, "shield": 500.0, "damage": 1500.0, "interval": 0.85, "range": 205.0, "speed": 29.0, "detection": 230.0, "leash": 210.0, "reward": 300, "respawn": 10.0, "scale": Vector3(0.7, 0.7, 0.85), "color": Color("ffc875")},
@@ -69,10 +72,6 @@ func tuning() -> Dictionary:
 
 
 static func model_scene(alien_kind: String) -> Node3D:
-	if VasharModels.KINDS.has(alien_kind):
-		var vashar := VasharModels.build(alien_kind)
-		vashar.scale = TYPES[alien_kind]["scale"] * float(VISUAL_SCALE[alien_kind])
-		return vashar
 	if not VISUAL_DIAMETERS.has(alien_kind):
 		var root := SectorVisuals.ship_model(true)
 		root.scale = TYPES[alien_kind]["scale"] * float(VISUAL_SCALE[alien_kind])

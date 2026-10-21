@@ -33,7 +33,7 @@ func _ready() -> void:
 	gate.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var gate_rows := StationUi.rows(gate, 16)
 	gate_rows.add_theme_constant_override("separation", 10)
-	StationUi.heading(gate_rows, "VASHAR FACTION", 13, VasharModels.GLOW).add_theme_font_override("font", StationUi.tracked(true, 3))
+	StationUi.heading(gate_rows, "VASHAR FACTION", 13, GalaxyGates.GLOW).add_theme_font_override("font", StationUi.tracked(true, 3))
 	StationUi.heading(gate_rows, GalaxyGates.NAME.to_upper(), 30)
 	var lore := StationUi.text(gate_rows, "The occupying aliens are smuggling gate parts through our sectors to summon their Vashar allies. Capture enough parts and assemble the gate ourselves: it opens near Outpost 01 and leads straight into the Vashar staging fleet. Destroy the mothership to set back their invasion.", 16)
 	lore.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -44,7 +44,7 @@ func _ready() -> void:
 	parts_bar.max_value = GalaxyGates.PARTS_REQUIRED
 	gate_rows.add_child(parts_bar)
 	StationUi.text(gate_rows, "%d waves, ending with the Vashar mothership  /  %d lives per pilot  /  any pilot may join\nVictory pays every participant %s, with a %d%% chance of an LF-4 laser." % [GalaxyGates.WAVES.size(), GalaxyGates.LIVES, GalaxyGates.reward_text(false), roundi(GalaxyGates.REWARD["item_chance"] * 100)], 15, StationUi.MUTED)
-	run_label = StationUi.text(gate_rows, "", 16, VasharModels.GLOW)
+	run_label = StationUi.text(gate_rows, "", 16, GalaxyGates.GLOW)
 	assemble_button = StationUi.button(gate_rows, "ASSEMBLE AND OPEN GATE", func(): act("gate_assemble"))
 	StationUi.primary(assemble_button)
 	preview_button = StationUi.button(gate_rows, "Preview: open gate without parts", func(): act("gate_preview"))

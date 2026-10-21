@@ -746,7 +746,7 @@ func _draw() -> void:
 		if sector.loot.is_presented(id):
 			var drop: Dictionary = sector.loot.drops[id]
 			var parts := int(drop.get("parts", 0))
-			marker(drop["position"], "LOOT %d UNITS%s / FLY CLOSE" % [CargoResources.units(drop["resources"]), " + %d GATE PART%s" % [parts, "" if parts == 1 else "S"] if parts > 0 else ""], VasharModels.GLOW if parts > 0 else AMBER, false, null, false)
+			marker(drop["position"], "LOOT %d UNITS%s / FLY CLOSE" % [CargoResources.units(drop["resources"]), " + %d GATE PART%s" % [parts, "" if parts == 1 else "S"] if parts > 0 else ""], GalaxyGates.GLOW if parts > 0 else AMBER, false, null, false)
 	for alien_id: int in sector.aliens:
 		var enemy := sector.aliens[alien_id]
 		if enemy != sector.target and enemy.alive and enemy.visible:
