@@ -137,7 +137,7 @@
   "Shardling": {
     "triangles": 14390,
     "materials": 6,
-    "bytes": 10457672,
+    "bytes": 9755076,
     "omitted_degenerate_triangles": 0,
     "visual_diameter": 9.5,
     "bounds_godot": [
@@ -152,7 +152,7 @@
   "Spireguard": {
     "triangles": 26308,
     "materials": 7,
-    "bytes": 10910020,
+    "bytes": 10285980,
     "omitted_degenerate_triangles": 0,
     "visual_diameter": 9.5,
     "bounds_godot": [
@@ -167,7 +167,7 @@
   "Mothership": {
     "triangles": 35698,
     "materials": 7,
-    "bytes": 11806760,
+    "bytes": 11116116,
     "omitted_degenerate_triangles": 0,
     "visual_diameter": 16.0,
     "bounds_godot": [

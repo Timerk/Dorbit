@@ -150,7 +150,8 @@ func check_finish(kind: String, mesh: ArrayMesh) -> void:
 			kind + " shares metallic and roughness maps")
 		if material.resource_name.ends_with("coated armor"):
 			painted = material.clearcoat_enabled
-			var minimum_lift := 2.0 if kind in ["Scout", "Sentinel", "Heavy"] else 0.3
+			# Vashar armor keeps a low lift so near-black crystal contrasts with its violet seams.
+			var minimum_lift := 2.0 if kind in ["Scout", "Sentinel", "Heavy"] else (0.1 if GalaxyGates.POOL.has(kind) else 0.3)
 			check(material.emission_enabled and material.emission == Color.WHITE
 				and material.emission_operator == BaseMaterial3D.EMISSION_OP_MULTIPLY
 				and material.emission_energy_multiplier >= minimum_lift

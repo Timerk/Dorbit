@@ -93,7 +93,8 @@ static func model_scene(alien_kind: String) -> Node3D:
 				material.emission = Color.WHITE
 				material.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY
 				material.emission_texture = material.albedo_texture
-				material.emission_energy_multiplier = 2.0 if alien_kind in ["Scout", "Sentinel", "Heavy"] else 0.35
+				# Vashar armor stays dark so its violet seams carry the contrast.
+				material.emission_energy_multiplier = 2.0 if alien_kind in ["Scout", "Sentinel", "Heavy"] else (0.12 if GalaxyGates.POOL.has(alien_kind) else 0.35)
 	return instance
 
 
