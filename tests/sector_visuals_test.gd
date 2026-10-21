@@ -94,7 +94,8 @@ func check_campaign_backdrops() -> void:
 		flight.player.map_id = map
 		for destination: int in SectorMaps.links(map):
 			flight.player.position = SectorMaps.gate_position(map, destination)
-			check(SectorMaps.protected(flight.player), "Unvisited gate protection is available at startup")
+			# The gate arena deliberately has no safe zone; every other gate protects pilots.
+			check(SectorMaps.protected(flight.player) != (map == GalaxyGates.MAP), "Unvisited gate protection is available at startup")
 			check(SectorMaps.arrival(map, destination).distance_to(flight.player.position) <= SectorMaps.JUMP_RADIUS, "Unvisited reciprocal spawn stays inside the gate trigger range")
 	flight.player.map_id = 0
 	flight.player.position = Sector.SPAWN_POSITION
