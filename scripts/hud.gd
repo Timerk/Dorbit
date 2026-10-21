@@ -735,7 +735,7 @@ func _draw() -> void:
 	if not site.is_empty():
 		marker(Story.site_position(site), "OBJECTIVE / " + str(site["site"]).to_upper(), GOLD, false)
 	for destination: int in SectorMaps.GATES[sector.map_id]:
-		marker(SectorMaps.gate_position(sector.map_id, destination), "GATE TO " + SectorMaps.MAPS[destination]["name"], SectorMaps.MAPS[destination]["color"], false, null, false)
+		marker(SectorMaps.gate_position(sector.map_id, destination), "GATE TO " + SectorMaps.MAPS[destination]["name"].get_slice(" / ", 0), SectorMaps.MAPS[destination]["color"], false, null, false)
 	if is_instance_valid(sector.target):
 		alien_marker(sector.target as Alien)
 	for id: int in sector.loot.drops:
