@@ -19,6 +19,10 @@ const GATES := {
 	3: {1: Vector3(-760, 80, 300), 2: Vector3(730, -160, -400)},
 }
 
+# Short map label such as "M2", used where a gate names its destination.
+static func code(map: int) -> String:
+	return MAPS[map]["name"].get_slice(" / ", 0)
+
 static func origin(map: int) -> Vector3:
 	return Vector3(map * 15000.0, 0, 0)
 
@@ -97,7 +101,7 @@ static func gate_model(parent: Node3D, map: int, destination: int) -> void:
 		light.light_cull_mask = 2
 		root.add_child(light)
 	var label := Label3D.new()
-	label.text = "GATE TO " + MAPS[destination]["name"]
+	label.text = "GATE TO " + code(destination)
 	label.position = Vector3(0, 27, 0)
 	label.font_size = 40
 	label.pixel_size = 0.08

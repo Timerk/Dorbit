@@ -308,7 +308,7 @@ func build_contacts() -> Array[Dictionary]:
 	if sector.map_id == 0:
 		result.append({"key": "station", "name": "Outpost 01", "position": Sector.STATION_POSITION, "color": FlightHud.GREEN, "ship": null})
 	for map: int in SectorMaps.GATES[sector.map_id]:
-		result.append({"key": "gate%d" % map, "name": "Gate to " + SectorMaps.MAPS[map]["name"], "position": SectorMaps.gate_position(sector.map_id, map), "color": SectorMaps.MAPS[map]["color"], "ship": null})
+		result.append({"key": "gate%d" % map, "name": "Gate to " + SectorMaps.code(map), "position": SectorMaps.gate_position(sector.map_id, map), "color": SectorMaps.MAPS[map]["color"], "ship": null})
 	var site := Story.site(sector.story_state(), sector.map_id)
 	if not site.is_empty():
 		result.append({"key": "story_" + site["id"], "name": "Objective: " + site["site"], "position": Story.site_position(site), "color": StorySites.GOLD, "ship": null})
