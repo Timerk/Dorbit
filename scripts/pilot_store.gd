@@ -321,6 +321,49 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 	return StationActions.result(pilot, action, subject, previous_credits, previous_points, previous_story)
 
 
+# Both inventories and wallets share one checkpoint. Expected revisions are the
+# ones both pilots reviewed; replaying a completed exchange cannot move it again.
+func complete_trade(left: String, right: String, offers: Array, revisions: Array) -> String:
+	if failed or not locked or not pilots.has(left) or not pilots.has(right):
+		return "Persistence unavailable."
+	if left == right or offers.size() != 2 or revisions.size() != 2:
+		return "Invalid trade."
+	var ids := [left, right]
+	for index in range(2):
+		var pilot: Dictionary = pilots[ids[index]]
+		if pilot["equipment"]["revision"] != revisions[index] or revisions[index] >= MAX_CREDITS:
+			return "Inventory changed. Start a new trade."
+		var blocker := PlayerTrading.offer_blocker(pilot, offers[index])
+		if not blocker.is_empty(): return blocker
+	if offers[0]["items"].is_empty() and offers[1]["items"].is_empty() and offers[0]["credits"] == 0 and offers[1]["credits"] == 0:
+		return "Add an item or credits before confirming."
+	var next := pilots.duplicate(true)
+	for index in range(2):
+		var pilot: Dictionary = next[ids[index]]
+		pilot["credits"] = pilot["credits"] - offers[index]["credits"] + offers[1 - index]["credits"]
+		if not valid_credits(pilot["credits"]):
+			return "Trade exceeds a pilot's credit limit."
+		pilot["equipment"]["revision"] += 1
+		for item_id: String in offers[index]["items"]:
+			pilot["equipment"]["items"].erase(item_id)
+	for index in range(2):
+		var receiver: Dictionary = next[ids[1 - index]]["equipment"]
+		var count := 0
+		for item_id: String in offers[index]["items"]:
+			count += 1
+			# Purchase IDs are local to each pilot. Re-key incoming items so two
+			# pilots' purchase-1 items can coexist without replacing anything.
+			var identifier := "trade-%d-%d" % [receiver["revision"], count]
+			if receiver["items"].has(identifier):
+				return "Trade item ID conflict. Items unchanged."
+			receiver["items"][identifier] = pilots[ids[index]]["equipment"]["items"][item_id].duplicate(true)
+	for id: String in ids:
+		if not Equipment.valid(next[id]["equipment"]):
+			return "Invalid trade inventory. Items unchanged."
+	if not persist(next): return "Persistence unavailable."
+	return "Trade completed. Items and credits saved."
+
+
 func advance_lab(id: String, at: int) -> bool:
 	if failed or not locked or not pilots.has(id):
 		return false
