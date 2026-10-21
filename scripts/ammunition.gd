@@ -14,12 +14,12 @@ const TYPES := {
 # Absolute damage, in Dorbit metres. These are game balancing defaults, not exact
 # DarkOrbit mechanics. Launcher damage is fixed average damage unless varied.
 const ROCKETS := {
-	"r-310": {"name": "R-310", "damage": 1000.0, "range": 170.0, "accuracy": 0.70, "speed": 150.0, "cooldown": 2.0, "minimum": 0.80, "maximum": 1.0, "price": 100 * BATCH_SIZE, "launcher": false},
-	"plt-2026": {"name": "PLT-2026", "damage": 2000.0, "range": 240.0, "accuracy": 0.80, "speed": 170.0, "cooldown": 2.0, "minimum": 0.80, "maximum": 1.0, "price": 500 * BATCH_SIZE, "launcher": false},
+	"r-310": {"name": "R-310", "damage": 1000.0, "range": 310.0, "accuracy": 0.70, "speed": 150.0, "cooldown": 2.0, "minimum": 0.80, "maximum": 1.0, "price": 100 * BATCH_SIZE, "launcher": false},
+	"plt-2026": {"name": "PLT-2026", "damage": 2000.0, "range": 310.0, "accuracy": 0.80, "speed": 170.0, "cooldown": 2.0, "minimum": 0.80, "maximum": 1.0, "price": 500 * BATCH_SIZE, "launcher": false},
 	"plt-2021": {"name": "PLT-2021", "damage": 4000.0, "range": 335.0, "accuracy": 0.90, "speed": 190.0, "cooldown": 2.0, "minimum": 0.80, "maximum": 1.0, "price": 5 * Equipment.URIDIUM_TO_CREDITS * BATCH_SIZE, "launcher": false},
 	"plt-3030": {"name": "PLT-3030", "damage": 6000.0, "range": 335.0, "accuracy": 0.65, "speed": 190.0, "cooldown": 2.0, "minimum": 0.80, "maximum": 1.0, "price": 7 * Equipment.URIDIUM_TO_CREDITS * BATCH_SIZE, "launcher": false},
-	"eco-10": {"name": "ECO-10", "damage": 2000.0, "range": 280.0, "accuracy": 1.0, "speed": 170.0, "minimum": 1.0, "maximum": 1.0, "price": 1500 * BATCH_SIZE, "launcher": true},
-	"hstrm-01": {"name": "HSTRM-01", "damage": 4000.0, "range": 280.0, "accuracy": 1.0, "speed": 170.0, "minimum": 1.0, "maximum": 1.0, "price": 25 * Equipment.URIDIUM_TO_CREDITS * BATCH_SIZE, "launcher": true},
+	"eco-10": {"name": "ECO-10", "damage": 2000.0, "range": 310.0, "accuracy": 1.0, "speed": 170.0, "minimum": 1.0, "maximum": 1.0, "price": 1500 * BATCH_SIZE, "launcher": true},
+	"hstrm-01": {"name": "HSTRM-01", "damage": 4000.0, "range": 310.0, "accuracy": 1.0, "speed": 170.0, "minimum": 1.0, "maximum": 1.0, "price": 25 * Equipment.URIDIUM_TO_CREDITS * BATCH_SIZE, "launcher": true},
 }
 
 
