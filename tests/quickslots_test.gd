@@ -88,7 +88,18 @@ func run() -> void:
 	check(bar.tiles.size() == 10 and bar.config.slots == Quickslots.DEFAULT_SLOTS, "First bar contains ten mixed default slots")
 	check(GameSettings.binding_text("quickslot_10") == "0", "Tenth slot defaults to zero")
 	await tap_key(KEY_3)
-	check(sector.player.ammo_type == "x3" and not sector.auto_fire, "Quickslot selects ammunition without starting laser fire")
+	check(sector.player.ammo_type == "x3" and not sector.auto_fire, "Quickslot without a target selects ammunition without starting laser fire")
+	sector.select_target(sector.alien)
+	await tap_key(KEY_1)
+	check(sector.player.ammo_type == "x1" and sector.auto_fire, "Laser ammo quickslot with a locked alien starts laser fire")
+	await tap_key(KEY_2)
+	check(sector.player.ammo_type == "x2" and sector.auto_fire, "Switching laser ammo during an attack keeps firing")
+	sector.alien.returning = true
+	sector.auto_fire = false
+	await tap_key(KEY_3)
+	check(sector.player.ammo_type == "x3" and not sector.auto_fire, "Returning alien is not attacked by ammo quickslots")
+	sector.alien.returning = false
+	sector.select_target(null)
 	bar.config.swap(0, 2)
 	await tap_key(KEY_1)
 	check(sector.player.ammo_type == "x3", "Rearranging contents keeps the key attached to the slot")

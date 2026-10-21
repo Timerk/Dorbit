@@ -352,7 +352,15 @@ func activate(action: String) -> void:
 			sector.notify(state["blocker"])
 		return
 	if action.begins_with("ammo:"):
-		sector.session.combat.request_ammo(action.trim_prefix("ammo:"))
+		var kind := action.trim_prefix("ammo:")
+		sector.session.combat.request_ammo(kind)
+		# With an attackable alien locked, laser ammo starts fire and single rockets launch.
+		var enemy := sector.target as Alien
+		if is_instance_valid(enemy) and enemy.available():
+			if Ammunition.TYPES.has(kind):
+				sector.auto_fire = true
+			elif Ammunition.ROCKETS.has(kind) and not Ammunition.ROCKETS[kind]["launcher"]:
+				sector.session.combat.request_rocket("single")
 	elif action.begins_with("rocket:"):
 		sector.session.combat.request_rocket(action.trim_prefix("rocket:"))
 	elif extras.has(action) and extras[action]["command"].is_valid():

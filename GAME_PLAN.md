@@ -182,8 +182,13 @@ x1, x2, x3, x4, R-310, ECO-10, single-rocket fire, Hellstorm load/fire, unload a
 one empty slot. Keys belong to slot positions and are rebindable in Controls,
 using the existing conflict-swap behavior. Migrating older device preferences
 preserves previously customized flight bindings, swapping a conflicting new slot
-to the flight action's former default key. Ammo slots select ammo without starting
-fire; Space retains laser auto-fire and F/G retain their rebindable rocket actions.
+to the flight action's former default key. Ammo slots select ammo. The user
+requested DarkOrbit-style attacks from the bar: with an attackable alien locked,
+a laser ammo slot also starts automatic laser fire and a single-rocket slot also
+fires one rocket of that type. Without a target, or with a returning alien, they
+only select ammo. Hellstorm ammo slots stay select-only because switching
+launcher ammo unloads the launcher. Space retains its laser auto-fire toggle and
+F/G retain their rebindable rocket actions.
 
 A collapsible picker provides Lasers, Rockets, Hellstorm and Extras categories.
 Its `+` button opens customization directly during flight without entering HUD
