@@ -591,7 +591,7 @@ func draw_context() -> void:
 	var messages: Array[String] = []
 	for destination: int in SectorMaps.GATES[sector.map_id]:
 		if sector.player.position.distance_to(SectorMaps.gate_position(sector.map_id, destination)) <= SectorMaps.JUMP_RADIUS:
-			messages.append("%s / JUMP TO %s / GATE PROTECTED" % [GameSettings.binding_text("jump_gate"), SectorMaps.MAPS[destination]["name"]])
+			messages.append("%s / JUMP TO %s / GATE PROTECTED" % [GameSettings.binding_text("jump_gate"), SectorMaps.code(destination)])
 	if CargoResources.units(sector.cargo) >= sector.cargo_capacity:
 		messages.append("CARGO FULL / SELL AT OUTPOST 01 [B]")
 	if sector.toast_time > 0:
@@ -735,7 +735,7 @@ func _draw() -> void:
 	if not site.is_empty():
 		marker(Story.site_position(site), "OBJECTIVE / " + str(site["site"]).to_upper(), GOLD, false)
 	for destination: int in SectorMaps.GATES[sector.map_id]:
-		marker(SectorMaps.gate_position(sector.map_id, destination), "GATE TO " + SectorMaps.MAPS[destination]["name"], SectorMaps.MAPS[destination]["color"], false, null, false)
+		marker(SectorMaps.gate_position(sector.map_id, destination), "GATE TO " + SectorMaps.code(destination), SectorMaps.MAPS[destination]["color"], false, null, false)
 	if is_instance_valid(sector.target):
 		alien_marker(sector.target as Alien)
 	for id: int in sector.loot.drops:
