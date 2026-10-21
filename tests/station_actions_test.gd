@@ -72,7 +72,7 @@ func run_store(directory: String) -> void:
 	check(delivery == "Delivered Prometium x5. +2,000 CR." and store.pilots["pilot0"]["cargo"]["starter"].is_empty() and store.pilots["pilot0"]["credits"] == 3000 and Story.state(store.pilots["pilot0"]["equipment"])["step"] == 8, "Delivery saves cargo consumption, progress and reward with its confirmation")
 	check(store.transact("pilot0", 2, "story_deliver", "", "", "") == "Request already processed. Inventory refreshed.", "Delivery replay uses the shared transaction sequence")
 	var skipped := store.transact("pilot0", 3, "story_skip", "", "", "")
-	check(skipped == "Prologue skipped. +7,000 CR and +3 research points." and Story.complete(Story.state(store.pilots["pilot0"]["equipment"])) and store.pilots["pilot0"]["credits"] == 10000, "Skip confirms and saves only the remaining step rewards")
+	check(skipped == "Prologue skipped. +7,000 CR and +3 research points." and Story.state(store.pilots["pilot0"]["equipment"]) == {"step": 10, "progress": 0} and store.pilots["pilot0"]["credits"] == 10000, "Skip confirms and saves only the remaining prologue rewards")
 	store.pilots["pilot0"]["equipment"]["items"]["purchase-4"] = {"model": "laser", "ship": "", "slot": ""}
 	check(store.transact("pilot0", 4, "buy", "laser", "", "") == "Persistence unavailable." and store.failed and store.error == StationActions.ITEM_ID_CONFLICT, "An item ID collision fails the store")
 	store.close()
