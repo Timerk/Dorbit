@@ -53,7 +53,10 @@ func _initialize() -> void:
 	verify(adapter.counts.get("checkpoint_economy", 0) == 1, "Full commit is timed")
 	verify(adapter.close(), "Adapter closes cleanly")
 	var reopened := PilotStore.new()
-	verify(reopened.open(ledger) and reopened.pilots == committed, "Traced commit survives reopen without changing state")
+	verify(reopened.open(ledger), "Reopened ledger opens")
+	# Reopening catches the lab up to the wall clock; replay that on the expected state.
+	Skylab.advance(committed["pilot0"], reopened.pilots["pilot0"]["skylab"]["lastSimulatedAt"])
+	verify(reopened.pilots == committed, "Traced commit survives reopen without changing state")
 	verify(reopened.close(), "Reopened ledger closes")
 	for name in DirAccess.get_files_at(ledger): DirAccess.remove_absolute(ledger.path_join(name))
 	DirAccess.remove_absolute(ledger)
