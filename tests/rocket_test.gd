@@ -112,6 +112,13 @@ func run() -> void:
 	combat.rocket_request.rpc_id(1, request_sequence, 0, "single", "", 0, enemy.life)
 	await settle()
 	check(remote.ammo["r-310"] == single_before - 1 and weapons.pending.is_empty(), "Repeated request cannot launch again even after cooldown expires")
+	combat.request_ammo("plt-2021")
+	await settle()
+	single_before = remote.ammo["r-310"]
+	await press(client, KEY_5)
+	await settle()
+	check(weapons.single_type == "r-310" and remote.ammo["r-310"] == single_before - 1 and weapons.pending.size() == 1 and not client.auto_fire, "Rocket ammo quickslot with a locked alien selects and fires that rocket")
+	weapons.tick(2.1)
 	before = remote.ammo.duplicate()
 	for target: SpaceShip in [null, remote]:
 		check(not weapons.fire_single(target).is_empty(), "Missing or friendly target is rejected")
