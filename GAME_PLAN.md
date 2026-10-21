@@ -801,18 +801,20 @@ recorded in `docs/rocket-art/generation-prompts.md`.
 
 Single rockets are inherent to every hull and need no launcher. R-310,
 PLT-2026, PLT-2021 and PLT-3030 retain absolute maximum damages of 1,000,
-2,000, 4,000 and 6,000. Game defaults are respectively 170/240/335/335 m
+2,000, 4,000 and 6,000. Game defaults are respectively 310/310/335/335 m
 range, 70/80/90/65% hit probability and 150/170/190/190 m/s projectile speed.
 Every accepted shot consumes one round and starts a shared 2-second cooldown,
 including misses. Successful damage varies from 80 to 100% of maximum. These
 probabilities, variation, distances and timings are playtesting defaults rather
 than claims about exact DarkOrbit rules. Settings live in `Ammunition.ROCKETS`.
-Rockets use target tracking without a laser forward-arc requirement.
+Rockets use target tracking without a laser forward-arc requirement. No rocket
+reaches less far than the 310 m player laser range, so any target the lasers
+can hit is also a valid rocket target.
 
 Every hull has one dedicated launcher slot. HST-1 holds three rounds and
 HST-2 holds five. ECO-10 and HSTRM-01 are dedicated launcher ammunition,
 with fixed 2,000 and 4,000 damage respectively; configured variation defaults
-to 1.0–1.0 and accuracy to 100%. Both use 280 m range and 170 m/s speed.
+to 1.0–1.0 and accuracy to 100%. Both use 310 m range and 170 m/s speed.
 Loading reserves one unit per second; activating again fires all loaded units.
 After firing, loading is blocked for three seconds. These timings live in
 `RocketWeapons`. Single and launcher cooldowns survive ammo/ship changes.
