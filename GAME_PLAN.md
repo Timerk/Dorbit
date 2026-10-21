@@ -1569,9 +1569,11 @@ pilots and production servers cannot use it.
 schema 8 is unchanged. Older builds reject saves that contain it, so rollback
 needs a backup taken before the first gate parts are collected. The run itself is
 session state: a server restart ends an open run and its parts are lost. Network
-schema 21 adds the run summary. The three Vashar models are procedural playtest
-models built in Godot (obsidian crystal hulls with violet seams); authored models
-should replace them once concepts are approved. All counts, chances, stats, lives,
+schema 21 adds the run summary. The user supplied concepts for the three Vashar
+aliens; Blender models built from them (faceted obsidian crystal hulls, purple
+armor, violet seams and hot-pink weapon and hangar glow) ship as 2K-textured GLBs.
+Sources, renders and the build script are in `vashar-review/README.md` in the art
+archive. All counts, chances, stats, lives,
 timings and rewards above are provisional until playtested. Further gates,
 other equipment rewards, personal gate instances and the on-map invasion event are future work.
 
