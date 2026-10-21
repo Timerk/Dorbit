@@ -16,6 +16,8 @@ var storage_filter: OptionButton
 var filter_category: String = "all"
 var empty_storage: Label
 var remove_button: Button
+var trade_button: Button
+var trade_menu: PlayerTradeMenu
 var slots: Dictionary[String, EquipmentTile] = {}
 var stored: Dictionary[String, EquipmentTile] = {}
 var selected_item: String = ""
@@ -74,6 +76,17 @@ func _ready() -> void:
 	remove_button = StationUi.button(fitting_rows, "REMOVE", func(): move_item(selected_item, ""))
 	remove_button.mouse_entered.connect(preview_removal)
 	remove_button.focus_entered.connect(preview_removal)
+	trade_button = StationUi.button(fitting_rows, "PLAYER TRADE", func(): trade_menu.open())
+	var trade_layer := CanvasLayer.new()
+	trade_layer.layer = 9
+	add_child(trade_layer)
+	trade_menu = PlayerTradeMenu.new()
+	trade_menu.sector = sector
+	trade_menu.shade = ColorRect.new()
+	trade_menu.shade.color = Color(0, 0, 0, .8)
+	trade_menu.shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	trade_layer.add_child(trade_menu.shade)
+	trade_layer.add_child(trade_menu)
 	storage_panel = StationUi.card(body)
 	storage_panel.custom_minimum_size.x = 260
 	storage_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -458,6 +471,9 @@ func _process(_delta: float) -> void:
 	update_stats()
 	var blocked := StationUi.blocker(sector)
 	activate_button.disabled = not blocked.is_empty() or ship_choice.selected < 0 or owned_ships[ship_choice.selected] == inventory()["active_ship"]
+	trade_button.disabled = not blocked.is_empty()
+	trade_button.text = "TRADE INVITATION" if not combat.trade_state.is_empty() and not combat.trade_state["joined"] and not combat.trade_state["inviter"] else "PLAYER TRADE"
+	trade_button.tooltip_text = blocked if not blocked.is_empty() else "Exchange stored equipment and credits with another pilot at Outpost 01."
 	activate_button.tooltip_text = blocked if not blocked.is_empty() else "Switch for free. Fittings and cargo stay with each ship; switching does not repair hull or recharge shields."
 	activate_button.text = "ACTIVE" if ship_choice.selected >= 0 and owned_ships[ship_choice.selected] == inventory()["active_ship"] else "ACTIVATE"
 	remove_button.visible = not selected_item.is_empty() and not inventory()["items"].get(selected_item, {}).get("ship", "").is_empty()

@@ -24,6 +24,12 @@ var rocket_sequences: Dictionary[int, int] = {}
 var rocket_maps: Dictionary[String, int] = {}
 # Server-side station and Skylab request handling.
 var desk := StationDesk.new(self)
+var trading := PlayerTrading.new(self)
+# Client-only private trade state, received independently of world snapshots.
+var trade_state: Dictionary = {}
+var trade_candidates: Array = []
+var trade_pending := false
+var trade_message := ""
 
 
 func connect_rockets(ship: Pilot) -> void:
@@ -269,6 +275,7 @@ func flush_boosts(ids: Array = []) -> bool:
 
 
 func remove_player(id: int) -> void:
+	trading.cancel(id, "Trade cancelled: a pilot disconnected.")
 	rocket_sequences.erase(id)
 	records.erase(id)
 	cargo_holds.erase(id)
@@ -330,6 +337,7 @@ func record_damage(ship: SpaceShip, attacker: SpaceShip) -> void:
 
 func tick(delta: float) -> void:
 	var sector := session.sector
+	if sector.dedicated_server: trading.tick()
 	boost_save_clock += delta
 	for alien: Alien in sector.world_aliens.values():
 		alien.check_retreat(choose_target(alien))
@@ -889,6 +897,11 @@ func show_explosion(location: Vector3, diameter: float, visit: int = -1) -> void
 
 
 func finish() -> void:
+	trading.trades.clear()
+	trade_state = {}
+	trade_candidates = []
+	trade_pending = false
+	trade_message = ""
 	rocket_maps.clear()
 	rocket_request_sequence = 0
 	rocket_sequences.clear()
@@ -928,6 +941,32 @@ func finish() -> void:
 		session.sector.player.simulation_authority = true
 		session.sector.player.resource_boosts.clear()
 		Equipment.apply_stats(session.sector.player, Equipment.stats(Equipment.starter()))
+
+
+func request_trade(action: String, payload: Dictionary = {}) -> void:
+	if not session.active or multiplayer.is_server() or inventory.is_empty() or trade_pending:
+		return
+	trade_pending = true
+	trade_message = "Waiting for server..."
+	trade_request.rpc_id(1, action, trade_state.get("token", ""), int(trade_state.get("version", -1)), payload, int(session.sector.player.get_meta("life", 0)))
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func trade_request(action: String, token: String, version: int, payload: Dictionary, life: int) -> void:
+	if not session.active or not multiplayer.is_server() or not session.sector.dedicated_server:
+		return
+	var id := multiplayer.get_remote_sender_id()
+	if records.has(id) and session.pilot_ids.has(id):
+		trading.request(id, action, token, version, payload, life)
+
+
+@rpc("authority", "call_remote", "reliable")
+func trade_result(state: Dictionary, candidates: Array, result: String) -> void:
+	if not session.active: return
+	trade_state = state
+	trade_candidates = candidates
+	trade_message = result
+	trade_pending = false
 
 
 func request_station(action: String, subject: String, ship: String = "", slot: String = "") -> void:
