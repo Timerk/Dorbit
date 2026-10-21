@@ -55,7 +55,8 @@ def valid_equipment(data: object) -> bool:
             or not isinstance(data.get("items"), dict)
             or not isinstance(data.get("active_ship"), str) or data["active_ship"] not in data["ships"]
             or ("research" in data and not valid_research(data["research"]))
-            or ("story" in data and not valid_story(data["story"]))):
+            or ("story" in data and not valid_story(data["story"]))
+            or ("gates" in data and not valid_gates(data["gates"]))):
         return False
     for ship, model in data["ships"].items():
         if (not isinstance(ship, str) or not re.fullmatch(r"[a-z0-9_-]{1,32}", ship)
@@ -120,6 +121,15 @@ def valid_story(data: object) -> bool:
     return (isinstance(data, dict) and data.keys() == {"step", "progress"}
             and type(data["step"]) is int and 0 <= data["step"] <= STORY_STEPS
             and type(data["progress"]) is int and 0 <= data["progress"] <= 1000)
+
+
+# Mirrors GalaxyGates in scripts/galaxy_gates.gd: at most 99 parts, signal progress below 8.
+def valid_gates(data: object) -> bool:
+    return (isinstance(data, dict) and data.keys() == {"parts", "signal", "progress"}
+            and type(data["parts"]) is int and 0 <= data["parts"] <= 99
+            and data["signal"] in ("available", "active", "done")
+            and type(data["progress"]) is int
+            and 0 <= data["progress"] <= (7 if data["signal"] == "active" else 0))
 
 
 def valid_cargo(data: object, equipment: dict) -> bool:

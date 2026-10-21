@@ -101,6 +101,8 @@ static func valid(data: Variant) -> bool:
 		return false
 	if data.has("story") and not Story.valid(data["story"]):
 		return false
+	if data.has("gates") and not GalaxyGates.valid(data["gates"]):
+		return false
 	for id: Variant in data["ships"]:
 		if not id is String or not PilotStore.valid_id(id) or not data["ships"][id] is String or not ShipCatalog.MODELS.has(ShipCatalog.canonical(data["ships"][id])):
 			return false

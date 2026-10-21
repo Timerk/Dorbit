@@ -25,6 +25,7 @@ static func apply(pilot: Dictionary, previous: Dictionary, sequence: int, action
 		"research_reset": return research_reset(pilot, subject, ship, slot)
 		"story_deliver", "story_skip": return story(pilot, action, subject, ship, slot)
 		"configure_extra": return configure_extra(pilot, subject, ship, slot)
+		"gate_signal", "gate_assemble": return gate(pilot, action, subject, ship, slot)
 	return "Unknown station action."
 
 
@@ -43,6 +44,10 @@ static func result(pilot: Dictionary, action: String, subject: String, previous_
 		return "Preview: added %d research points." % (int(Research.state(equipment)["points"]) - previous_points)
 	if action == "configure_extra":
 		return "Extra settings saved."
+	if action == "gate_signal":
+		return "Signal Anomaly accepted. " + GalaxyGates.SIGNAL["objective"] + "."
+	if action == "gate_assemble":
+		return "%s assembled. It is opening near Outpost 01." % GalaxyGates.NAME
 	if action == "research":
 		return "%s researched to level %d." % [Research.SKILLS[subject]["name"], Research.level(Research.state(equipment), subject)]
 	if action == "research_reset":
@@ -280,6 +285,28 @@ static func story(pilot: Dictionary, action: String, subject: String, ship: Stri
 	Research.add_points(equipment, reward["research"])
 	equipment["story"] = reward["story"]
 	return ""
+
+static func gate(pilot: Dictionary, action: String, subject: String, ship: String, slot: String) -> String:
+	if not subject.is_empty() or not ship.is_empty() or not slot.is_empty():
+		return "Invalid gate request."
+	var equipment: Dictionary = pilot["equipment"]
+	var state := GalaxyGates.state(equipment)
+	var blocker := ""
+	match action:
+		"gate_signal":
+			blocker = GalaxyGates.accept_blocker(state)
+			state = state.duplicate()
+			state["signal"] = "active"
+			state["progress"] = 0
+		"gate_assemble":
+			blocker = GalaxyGates.assemble_blocker(state)
+			if blocker.is_empty():
+				state = GalaxyGates.assemble(state)
+	if not blocker.is_empty():
+		return blocker
+	equipment["gates"] = state
+	return ""
+
 
 static func configure_extra(pilot: Dictionary, subject: String, ship: String, slot: String) -> String:
 	var item: Dictionary = pilot["equipment"]["items"].get(subject, {})

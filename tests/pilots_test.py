@@ -321,6 +321,12 @@ class ProvisioningTest(unittest.TestCase):
         equipment["story"] = {"step": 11, "progress": 0}
         self.assertFalse(pilots.valid_equipment(equipment))
         del equipment["story"]
+        # Galaxy gate parts are optional; signal progress exists only while active.
+        equipment["gates"] = {"parts": 20, "signal": "active", "progress": 7}
+        self.assertTrue(pilots.valid_equipment(equipment))
+        equipment["gates"] = {"parts": 20, "signal": "done", "progress": 1}
+        self.assertFalse(pilots.valid_equipment(equipment))
+        del equipment["gates"]
         equipment["items"]["ammo-cpu"]["ammo_type"] = "x4"
         self.assertFalse(pilots.valid_equipment(equipment))
         equipment["items"]["ammo-cpu"]["ammo_type"] = "x2"

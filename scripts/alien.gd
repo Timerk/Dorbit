@@ -28,6 +28,9 @@ const VISUAL_SCALE := {
 	"Warden": 2.4,
 	"Ravager": 3.2,
 	"Overlord": 3.5,
+	"Shardling": 1.4,
+	"Spireguard": 2.2,
+	"Mothership": 9.0,
 }
 const TYPES := {
 	"Scout": {"hull": 1000.0, "shield": 500.0, "damage": 1500.0, "interval": 0.85, "range": 205.0, "speed": 29.0, "detection": 230.0, "leash": 210.0, "reward": 300, "respawn": 10.0, "scale": Vector3(0.7, 0.7, 0.85), "color": Color("ffc875")},
@@ -39,6 +42,10 @@ const TYPES := {
 	"Warden": {"hull": 24000.0, "shield": 12000.0, "damage": 18000.0, "interval": 0.8, "range": 255.0, "speed": 17.0, "detection": 285.0, "leash": 260.0, "reward": 22000, "respawn": 20.0, "scale": Vector3(1.6, 1.4, 1.1), "color": Color("ee7954")},
 	"Ravager": {"hull": 36000.0, "shield": 18000.0, "damage": 24000.0, "interval": 0.8, "range": 260.0, "speed": 22.0, "detection": 295.0, "leash": 265.0, "reward": 32000, "respawn": 22.0, "scale": Vector3(1.4, 1.2, 1.7), "color": Color("b788fa")},
 	"Overlord": {"hull": 60000.0, "shield": 30000.0, "damage": 32000.0, "interval": 0.75, "range": 270.0, "speed": 14.0, "detection": 310.0, "leash": 275.0, "reward": 50000, "respawn": 26.0, "scale": Vector3(2.0, 1.8, 1.5), "color": Color("ed70c1")},
+	# Vashar Gate arena only. The run director spawns them; detection covers the arena and they never leash.
+	"Shardling": {"hull": 4000.0, "shield": 2000.0, "damage": 2200.0, "interval": 0.85, "range": 220.0, "speed": 30.0, "detection": 2400.0, "leash": 5000.0, "reward": 1500, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("c86bff")},
+	"Spireguard": {"hull": 16000.0, "shield": 8000.0, "damage": 7500.0, "interval": 0.8, "range": 250.0, "speed": 17.0, "detection": 2400.0, "leash": 5000.0, "reward": 7000, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("ff5fa8")},
+	"Mothership": {"hull": 200000.0, "shield": 100000.0, "damage": 18000.0, "interval": 0.55, "range": 320.0, "speed": 5.0, "detection": 2400.0, "leash": 5000.0, "reward": 120000, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("9b5cff"), "radius": 16.0},
 }
 
 var alien_id: int = 0
@@ -62,6 +69,10 @@ func tuning() -> Dictionary:
 
 
 static func model_scene(alien_kind: String) -> Node3D:
+	if VasharModels.KINDS.has(alien_kind):
+		var vashar := VasharModels.build(alien_kind)
+		vashar.scale = TYPES[alien_kind]["scale"] * float(VISUAL_SCALE[alien_kind])
+		return vashar
 	if not VISUAL_DIAMETERS.has(alien_kind):
 		var root := SectorVisuals.ship_model(true)
 		root.scale = TYPES[alien_kind]["scale"] * float(VISUAL_SCALE[alien_kind])
@@ -96,6 +107,10 @@ func _ready() -> void:
 	laser_interval = stats["interval"]
 	laser_range = stats["range"]
 	super._ready()
+	if stats.has("radius"):
+		for child in get_children():
+			if child is CollisionShape3D:
+				(child.shape as SphereShape3D).radius = stats["radius"]
 	if render_enabled:
 		remove_child(model)
 		model.queue_free()

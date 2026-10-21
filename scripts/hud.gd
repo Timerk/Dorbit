@@ -589,9 +589,13 @@ func draw_context() -> void:
 		marker_labels.append(layout.transform_rect("context", comm_rect))
 		point.y = comm_rect.end.y + 8
 	var messages: Array[String] = []
-	for destination: int in SectorMaps.GATES[sector.map_id]:
+	for destination: int in SectorMaps.links(sector.map_id):
 		if sector.player.position.distance_to(SectorMaps.gate_position(sector.map_id, destination)) <= SectorMaps.JUMP_RADIUS:
-			messages.append("%s / JUMP TO %s / GATE PROTECTED" % [GameSettings.binding_text("jump_gate"), SectorMaps.code(destination)])
+			var place := "THE VASHAR RIFT" if destination == GalaxyGates.MAP else SectorMaps.code(destination)
+			messages.append("%s / JUMP TO %s / GATE PROTECTED" % [GameSettings.binding_text("jump_gate"), place])
+	var run := gate_status()
+	if not run.is_empty():
+		messages.append(run)
 	if CargoResources.units(sector.cargo) >= sector.cargo_capacity:
 		messages.append("CARGO FULL / SELL AT OUTPOST 01 [B]")
 	if sector.toast_time > 0:
@@ -734,14 +738,15 @@ func _draw() -> void:
 	var site := Story.site(sector.story_state(), sector.map_id)
 	if not site.is_empty():
 		marker(Story.site_position(site), "OBJECTIVE / " + str(site["site"]).to_upper(), GOLD, false)
-	for destination: int in SectorMaps.GATES[sector.map_id]:
-		marker(SectorMaps.gate_position(sector.map_id, destination), "GATE TO " + SectorMaps.code(destination), SectorMaps.MAPS[destination]["color"], false, null, false)
+	for destination: int in SectorMaps.links(sector.map_id):
+		marker(SectorMaps.gate_position(sector.map_id, destination), SectorMaps.gate_label(destination), SectorMaps.MAPS[destination]["color"], false, null, false)
 	if is_instance_valid(sector.target):
 		alien_marker(sector.target as Alien)
 	for id: int in sector.loot.drops:
 		if sector.loot.is_presented(id):
 			var drop: Dictionary = sector.loot.drops[id]
-			marker(drop["position"], "LOOT %d UNITS / FLY CLOSE" % CargoResources.units(drop["resources"]), AMBER, false, null, false)
+			var parts := int(drop.get("parts", 0))
+			marker(drop["position"], "LOOT %d UNITS%s / FLY CLOSE" % [CargoResources.units(drop["resources"]), " + %d GATE PART%s" % [parts, "" if parts == 1 else "S"] if parts > 0 else ""], VasharModels.GLOW if parts > 0 else AMBER, false, null, false)
 	for alien_id: int in sector.aliens:
 		var enemy := sector.aliens[alien_id]
 		if enemy != sector.target and enemy.alive and enemy.visible:
@@ -881,3 +886,18 @@ func occupied(rect: Rect2) -> bool:
 		if label.intersects(rect):
 			return true
 	return false
+
+
+# One-line Vashar Gate run status: wave and lives inside the rift, an invitation at M1.
+func gate_status() -> String:
+	var run: Dictionary = sector.session.combat.gate_summary if is_instance_valid(sector.session) else {}
+	if not run.get("active", false):
+		return ""
+	if sector.map_id == GalaxyGates.MAP:
+		if run["phase"] == "victory":
+			return "VASHAR GATE CLEARED / RETURN THROUGH THE GATE"
+		var wave := "FIRST WAVE INCOMING" if run["phase"] == "waiting" else "WAVE %d OF %d" % [run["wave"], run["waves"]]
+		return "VASHAR GATE / %s / %d LIVES" % [wave, run["lives"]]
+	if sector.map_id == 0 and run.get("open", false):
+		return "VASHAR GATE OPEN NEAR OUTPOST 01 / %d LIVES" % run["lives"] if run["lives"] > 0 else "VASHAR GATE OPEN / NO LIVES LEFT"
+	return ""

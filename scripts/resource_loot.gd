@@ -16,13 +16,17 @@ func clear() -> void:
 		apply_drop(id, {})
 	collect_clock = 0.0
 
-func spawn_drop(alien: Alien) -> void:
+# `parts` are galaxy gate parts carried in the box; they need no cargo space.
+func spawn_drop(alien: Alien, parts: int = 0) -> void:
 	if sector.session.active and not multiplayer.is_server():
 		return
 	if drops.size() >= MAX_DROPS:
 		change(drops.keys()[0], {})
 	next_id += 1
-	change(next_id, {"map": alien.map_id, "position": alien.position, "resources": CargoResources.roll(alien.kind), "ttl": LIFETIME})
+	var data := {"map": alien.map_id, "position": alien.position, "resources": CargoResources.roll(alien.kind), "ttl": LIFETIME}
+	if parts > 0:
+		data["parts"] = parts
+	change(next_id, data)
 
 func change(id: int, data: Dictionary) -> void:
 	var map: int = data.get("map", drops.get(id, {}).get("map", 0))
@@ -52,7 +56,8 @@ func apply_drop(id: int, data: Dictionary) -> void:
 		if data["resources"].has(resource):
 			richest = resource
 	var material := StandardMaterial3D.new()
-	material.albedo_color = CargoResources.TYPES[richest]["color"]
+	material.albedo_color = VasharModels.GLOW if int(data.get("parts", 0)) > 0 else CargoResources.TYPES[richest]["color"]
+	meshes[id].scale = Vector3.ONE * (1.5 if int(data.get("parts", 0)) > 0 else 1.0)
 	material.emission_enabled = true
 	material.emission = material.albedo_color
 	material.emission_energy_multiplier = 1.8

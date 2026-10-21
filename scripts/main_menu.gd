@@ -20,9 +20,6 @@ var home: Control
 var ship_art: ShipHangarPreview
 var ship_title: Label
 var notice: Label
-var placeholder: PanelContainer
-var placeholder_title: Label
-var placeholder_icon: TextureRect
 var selected_page := "overview"
 var last_model := ""
 var canvas: Control
@@ -45,7 +42,6 @@ var opening_page := false
 var page_scrim: TextureRect
 var hints: HBoxContainer
 var hint_action: Label
-var placeholder_heading: Label
 var brand_slash: Label
 var page_name: Label
 var header_accent: ColorRect
@@ -130,23 +126,6 @@ func _ready() -> void:
 			compact.content_margin_left = 16
 			button.add_theme_stylebox_override(state, compact)
 	build_home()
-	placeholder = PanelContainer.new()
-	placeholder.theme = StationUi.page_theme()
-	placeholder.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-	add_child(placeholder)
-	var future := StationUi.rows(placeholder, 16)
-	placeholder_heading = StationUi.header(future, "GALAXY GATES", "OPERATIONS")
-	var upper := Control.new()
-	upper.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	future.add_child(upper)
-	placeholder_icon = StationUi.art(future, "ship", Vector2(96, 96))
-	placeholder_icon.modulate = Color("60717e")
-	placeholder_title = StationUi.heading(future, "COMING SOON", 24, MUTED)
-	placeholder_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var lower := Control.new()
-	lower.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	future.add_child(lower)
-	placeholder.hide()
 	hide()
 
 
@@ -270,16 +249,6 @@ func build_navigation() -> void:
 		var page: String = entry[0]
 		var button := rail_button(entry[1], page, func(): select_page(page))
 		button.toggle_mode = true
-		if page == "gates":
-			button.add_theme_color_override("font_color", Color("60717e"))
-			button.add_theme_color_override("font_hover_color", Color("60717e"))
-			button.add_theme_color_override("icon_normal_color", Color("60717e"))
-			button.add_theme_color_override("icon_hover_color", Color("60717e"))
-			button.add_theme_stylebox_override("hover", button.get_theme_stylebox("normal"))
-			button.tooltip_text = "Coming soon"
-			var soon := label(button, "COMING SOON", 11, Color("60717e"), true)
-			soon.add_theme_font_override("font", StationUi.tracked(true, 3))
-			soon.position = Vector2(82, 48)
 		navigation[page] = button
 
 
@@ -446,7 +415,7 @@ func hide_pages() -> void:
 	sector.research_menu.hide()
 	sector.hud.contract_panel.hide()
 	sector.settings_menu.dismiss()
-	placeholder.hide()
+	sector.gate_menu.hide()
 	sector.skylab_menu.hide()
 	home.hide()
 
@@ -507,10 +476,7 @@ func select_page(page: String) -> void:
 		"quests": sector.hud.toggle_contracts()
 		"settings": sector.settings_menu.open()
 		"connection": sector.session.open_menu()
-		"gates":
-			placeholder_heading.text = "GALAXY GATES"
-			placeholder_icon.texture = load("res://assets/ui/menu/%s.svg" % page)
-			placeholder.show()
+		"gates": sector.gate_menu.open()
 	opening_page = false
 	if not home.visible:
 		navigation[page].grab_focus()
@@ -630,6 +596,8 @@ func _process(_delta: float) -> void:
 		selected_page = "refining"
 	elif sector.research_menu.visible:
 		selected_page = "research"
+	elif sector.gate_menu.visible:
+		selected_page = "gates"
 	elif sector.hud.contract_panel.visible:
 		selected_page = "quests"
 	elif sector.settings_menu.panel.visible:
@@ -674,6 +642,6 @@ func _process(_delta: float) -> void:
 		StationUi.set_text(stat_values["damage"], str(int(stats["damage"])))
 		StationUi.set_text(stat_values["speed"], "%d m/s" % stats["speed"])
 		StationUi.set_text(stat_values["cargo"], "%d / %d" % [CargoResources.units(sector.cargo), sector.cargo_capacity])
-	for panel: Control in [placeholder, sector.shop, sector.equipment_menu, sector.resource_workshop, sector.research_menu, sector.hud.contract_panel]:
+	for panel: Control in [sector.gate_menu, sector.shop, sector.equipment_menu, sector.resource_workshop, sector.research_menu, sector.hud.contract_panel]:
 		if panel.visible:
 			fit_panel(panel, Vector2(1150, 690))
