@@ -59,8 +59,22 @@ func run_store(directory: String) -> void:
 		return
 	check(store.transact("pilot0", 1, "sell", "all", "", "") == "No resources to sell." and store.pilots["pilot0"]["equipment"]["revision"] == 0, "A blocker keeps the request sequence")
 	check(store.transact("pilot0", 1, "buy", "laser", "", "") == "Purchased. Item is in storage." and store.pilots["pilot0"]["credits"] == 5_000_000 - Equipment.MODELS["laser"]["price"], "An accepted action saves and confirms")
-	store.pilots["pilot0"]["equipment"]["items"]["purchase-2"] = {"model": "laser", "ship": "", "slot": ""}
-	check(store.transact("pilot0", 2, "buy", "laser", "", "") == "Persistence unavailable." and store.failed and store.error == StationActions.ITEM_ID_CONFLICT, "An item ID collision fails the store")
+	var next := store.pilots.duplicate(true)
+	next["pilot0"]["equipment"]["story"] = {"step": 7, "progress": 0}
+	next["pilot0"]["cargo"]["starter"] = {"prometium": 5}
+	next["pilot0"]["credits"] = PilotStore.MAX_CREDITS
+	check(store.persist(next), "Seed a story delivery at the wallet cap")
+	check(store.transact("pilot0", 2, "story_deliver", "", "", "") == "Reward exceeds the credit limit. Free wallet space first." and store.pilots == next, "Blocked delivery preserves cargo, story, wallet and sequence")
+	next = store.pilots.duplicate(true)
+	next["pilot0"]["credits"] = 1000
+	check(store.persist(next), "Make wallet space for the delivery reward")
+	var delivery := store.transact("pilot0", 2, "story_deliver", "", "", "")
+	check(delivery == "Delivered Prometium x5. +2,000 CR." and store.pilots["pilot0"]["cargo"]["starter"].is_empty() and store.pilots["pilot0"]["credits"] == 3000 and Story.state(store.pilots["pilot0"]["equipment"])["step"] == 8, "Delivery saves cargo consumption, progress and reward with its confirmation")
+	check(store.transact("pilot0", 2, "story_deliver", "", "", "") == "Request already processed. Inventory refreshed.", "Delivery replay uses the shared transaction sequence")
+	var skipped := store.transact("pilot0", 3, "story_skip", "", "", "")
+	check(skipped == "Prologue skipped. +7,000 CR and +3 research points." and Story.complete(Story.state(store.pilots["pilot0"]["equipment"])) and store.pilots["pilot0"]["credits"] == 10000, "Skip confirms and saves only the remaining step rewards")
+	store.pilots["pilot0"]["equipment"]["items"]["purchase-4"] = {"model": "laser", "ship": "", "slot": ""}
+	check(store.transact("pilot0", 4, "buy", "laser", "", "") == "Persistence unavailable." and store.failed and store.error == StationActions.ITEM_ID_CONFLICT, "An item ID collision fails the store")
 	store.close()
 
 

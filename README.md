@@ -550,6 +550,23 @@ Each alien kill splits its credit pool among connected pilots who damaged that a
 
 Credits survive disconnects and server restarts. Ship position, health, kills and encounter objectives reset on a new connection. The former solo/listen-host modes are development fixtures with temporary wallets, accessible by launching with `--offline` after Godot's `--` separator or `Dorbit.exe -- --offline`. Offline mode opens the main menu: START enters the solo encounter, and the Esc menu's Quit to main menu returns to it. Every page can be browsed offline before and after launch, including all three Settings tabs. During flight, use **Esc > Ship menus**, or **B** (Shop), **I** (Hangar), **C** (Quests) and **F7** (Connection). These open the same header and sidebar without docking. **Resume flight** or **Esc** closes the menus; START is shown only on the preflight Overview. Hangar shows the solo starter fitting; catalog and quest selections are local previews. Buying, selling, fitting, hull activation and accepting or abandoning quests stay disabled until connected to a dedicated server. Offline fixtures cannot read or transfer the dedicated server's wallets.
 
+### Story prologue: Operation Foothold
+
+Every pilot, including existing ones, starts a personal ten-step prologue that teaches the game through Outpost 01's first operations. Commander Vance, Chief Engineer Brell and Dr. Sato brief each step in an incoming-transmission box below the flight card, with each speaker's portrait beside their lines, which shows the current step, objective and a hint using your bindings. Positional steps show a holographic objective in space: waypoints and the recorder use a camera-facing gate that fades as you fly through it, scans use a gridded field that fills as the scan progresses, and every site has a tall locator beam. A short burst marks each completed site. Each step also opens a **Controls** pop-up below the destination card with two or three key caps for that step, such as steering and thrust, map and autopilot, targeting and lasers, rockets, or the station shortcuts. Rows tick off as you press them, and the pop-up closes shortly after you have tried each one. Move or hide it like any other panel in the HUD editor (Ctrl + Alt). Each site is also a selectable contact on the sector map, so **M** and **P** fly you there.
+
+| Step | Objective | Reward |
+| --- | --- | --- |
+| Comms Check / Survey Run | Fly to two waypoints | 300 / 500 CR |
+| Ring Scan | Stay inside the scan field for 5 s | 800 CR |
+| First Contact / Heavier Resistance | Destroy 2 Scouts, then a Sentinel | 1,200 / 2,500 CR |
+| Black Box | Fly into the garrison flight recorder | 1,500 CR + 1 RP |
+| Field Salvage | Collect 10 resource units from fresh loot | 1,500 CR |
+| Beacon Parts | Deliver 5 Prometium at the Quests board | 2,000 CR |
+| Light the Beacon | Stay at the approach beacon for 6 s | 2,000 CR |
+| Standing Orders | Hold any hunting contract | 5,000 CR + 3 RP |
+
+Press **C** and choose **Story** to read briefings, review completed steps, deliver cargo or skip the chapter. Skipping asks for a second press and pays every remaining step reward. Kills count with the hunting-contract contribution rules; scans restart when you leave the field; the recorder and the lit beacon are personal. Delivery and skipping use station service rules. The server saves each step and its reward together in the equipment record, so save schema 8 is unchanged; network schema 20 requires matching builds. Run `res://tests/story_test.gd` for the full authenticated playthrough, and run it with a renderer to capture `build/validation/story-*.png`. Review the [flight card and transmission](docs/feedback/story-flight.png), the [waypoint gate](docs/feedback/story-objective-gate.png), the [scan field](docs/feedback/story-objective-field.png), the [controls pop-up](docs/feedback/story-controls.png) and the [Story tab](docs/feedback/story-board.png). Run `res://tests/objective_art_preview.gd` with a renderer to capture every objective visual under `build/validation/objective-review`. Sites, quantities and rewards need playtesting.
+
 ### Hunting contracts
 
 Press C at Outpost 01 to accept repeatable hunts: 3 Scouts for 900 credits, 2 Sentinels for 4,500, and 1 Heavy for 30,000. They also award 1, 2 and 4 research points. All three can run together, with one active run of each offer. The final qualifying kill automatically pays its reward in flight and clears that hunt. The board and flight HUD track all active hunts. C or Esc returns to flight.

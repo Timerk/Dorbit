@@ -23,14 +23,20 @@ static func apply(pilot: Dictionary, previous: Dictionary, sequence: int, action
 		"fit": return fit(pilot, previous, subject, ship, slot)
 		"research": return research(pilot, subject, ship, slot)
 		"research_reset": return research_reset(pilot, subject, ship, slot)
+		"story_deliver", "story_skip": return story(pilot, action, subject, ship, slot)
 		"configure_extra": return configure_extra(pilot, subject, ship, slot)
 	return "Unknown station action."
 
 
 # The confirmation for an action that `apply` accepted and the store saved.
 static func result(pilot: Dictionary, action: String, subject: String, previous_credits: int,
-		previous_points: int) -> String:
+		previous_points: int, previous_story: Dictionary = {}) -> String:
 	var equipment: Dictionary = pilot["equipment"]
+	if action in ["story_deliver", "story_skip"]:
+		var step := Story.current(previous_story)
+		var reward := Story.advance(previous_story, "deliver", step["required"]) if action == "story_deliver" else Story.skip(previous_story)
+		var notice := "Delivered %s." % CargoResources.describe({step["resource"]: step["required"]}) if action == "story_deliver" else "Prologue skipped."
+		return "%s %s." % [notice, Story.reward_text(reward["credits"], reward["research"])]
 	if action == "test_credits":
 		return "Preview: added %d test credits." % (pilot["credits"] - previous_credits)
 	if action == "test_research":
@@ -246,6 +252,34 @@ static func research_reset(pilot: Dictionary, subject: String, ship: String, slo
 		return "Wait for the Skylab shipment before resetting Cargo Compression. Skills unchanged."
 	return ""
 
+
+static func story(pilot: Dictionary, action: String, subject: String, ship: String, slot: String) -> String:
+	if not subject.is_empty() or not ship.is_empty() or not slot.is_empty():
+		return "Invalid story request."
+	var equipment: Dictionary = pilot["equipment"]
+	var state := Story.state(equipment)
+	var step := Story.current(state)
+	var reward := Story.skip(state)
+	if step.is_empty():
+		return "Prologue already complete."
+	if action == "story_deliver":
+		if step["type"] != "deliver":
+			return "Nothing to deliver for this step."
+		var hold: Dictionary = pilot["cargo"][equipment["active_ship"]]
+		var resource: String = step["resource"]
+		var amount: int = step["required"]
+		if int(hold.get(resource, 0)) < amount:
+			return "Need %s in your active ship's cargo." % CargoResources.describe({resource: amount})
+		hold[resource] -= amount
+		if hold[resource] == 0:
+			hold.erase(resource)
+		reward = Story.advance(state, "deliver", amount)
+	if reward["credits"] > PilotStore.MAX_CREDITS - pilot["credits"]:
+		return "Reward exceeds the credit limit. Free wallet space first."
+	pilot["credits"] += reward["credits"]
+	Research.add_points(equipment, reward["research"])
+	equipment["story"] = reward["story"]
+	return ""
 
 static func configure_extra(pilot: Dictionary, subject: String, ship: String, slot: String) -> String:
 	var item: Dictionary = pilot["equipment"]["items"].get(subject, {})

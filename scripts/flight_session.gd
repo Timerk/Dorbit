@@ -7,7 +7,7 @@ const MAX_PLAYERS: int = 10
 const COMMAND_TIMEOUT: float = 0.5
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when packet contents or shared physics change without an RPC signature change.
-const NETWORK_SCHEMA: int = 19
+const NETWORK_SCHEMA: int = 20
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
@@ -380,7 +380,7 @@ func authentication_failed(id: int) -> void:
 
 
 # Called only by server combat, before applying any visible reward or charge.
-func save_balances(balances: Dictionary[int, int], contracts: Dictionary[int, Dictionary] = {}, research: Dictionary[int, int] = {}) -> bool:
+func save_balances(balances: Dictionary[int, int], contracts: Dictionary[int, Dictionary] = {}, research: Dictionary[int, int] = {}, stories: Dictionary[int, Dictionary] = {}) -> bool:
 	if not sector.dedicated_server:
 		return true
 	if store.failed:
@@ -401,7 +401,13 @@ func save_balances(balances: Dictionary[int, int], contracts: Dictionary[int, Di
 	for id: int in research:
 		if research[id] > 0 and pilot_ids.has(id):
 			earned[pilot_ids[id]] = research[id]
-	if not store.failed and store.commit(wallets, saved_contracts, {}, {}, {}, earned):
+	var saved_stories: Dictionary = {}
+	for id: int in stories:
+		if not pilot_ids.has(id):
+			store.fail("Story update without an authenticated pilot.")
+			break
+		saved_stories[pilot_ids[id]] = stories[id]
+	if not store.failed and store.commit(wallets, saved_contracts, {}, {}, {}, earned, saved_stories):
 		return true
 	stop_for_save_failure()
 	return false

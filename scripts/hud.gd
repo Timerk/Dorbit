@@ -8,6 +8,8 @@ const LINE := Color("34434b")
 const CYAN := Color("66e2ee")
 const GREEN := Color("6ae9bb")
 const RED := Color("ff8176")
+const GOLD := StorySites.GOLD
+const PORTRAIT := 64.0
 const PANEL := Color(0.047, 0.071, 0.090, 0.92)
 const TOP_MARGIN := 24.0
 const SIDE_MARGIN := 32.0
@@ -39,6 +41,24 @@ var contract_accept: Button
 var contract_abandon: Button
 var contract_preview: ContractPreview
 var contract_back: Button
+var story_tab: Button
+var story_view := false
+var story_choices: Array[Button] = []
+var story_selected := 0
+var story_briefing: Label
+var story_speaker: HBoxContainer
+var story_portrait: TextureRect
+var story_tip: Label
+var story_deliver: Button
+var story_skip: Button
+var story_skip_armed := false
+# The flight card's hint height changes only with the step or the bindings.
+var story_hint := ""
+var story_hint_key := Vector2i(-2, -1)
+var story_hint_height := 0.0
+# Key-cap labels and widths for the controls pop-up, rebuilt after rebinding.
+var tip_keys: Array[Array] = []
+var tip_keys_key := Vector2i(-1, -1)
 var navigation: FlightNavigation
 var ammo_bar: AmmoBar
 var layout: HudLayout
@@ -53,6 +73,8 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	theme = StationUi.menu_theme()
+	# Portraits shrink from 512 px sources; mipmaps keep the small faces smooth.
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	background = panel_style()
 	build_contract_panel()
 	navigation = FlightNavigation.new()
@@ -94,6 +116,10 @@ func build_contract_panel() -> void:
 	var left := StationUi.rows(sidebar, 14)
 	var tabs := HBoxContainer.new()
 	left.add_child(tabs)
+	story_tab = StationUi.button(tabs, "Story", show_story)
+	story_tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	story_tab.toggle_mode = true
+	StationUi.tab(story_tab)
 	for active_only: bool in [false, true]:
 		var tab := StationUi.button(tabs, "Active" if active_only else "Hunting", func(): filter_contracts(active_only))
 		tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -116,6 +142,12 @@ func build_contract_panel() -> void:
 		button.add_theme_font_size_override("font_size", 22)
 		contract_choices[offer] = button
 	contract_empty = StationUi.text(offers, "No active quests", 20, StationUi.MUTED)
+	for index in Story.STEPS.size():
+		var button := StationUi.button(offers, "", func(): select_story(index))
+		button.custom_minimum_size.y = 64
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.toggle_mode = true
+		story_choices.append(button)
 	var detail := StationUi.card(body)
 	detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var right := StationUi.rows(detail, 18)
@@ -127,6 +159,18 @@ func build_contract_panel() -> void:
 	contract_progress.custom_minimum_size.y = 8
 	contract_progress.show_percentage = false
 	right.add_child(contract_progress)
+	story_speaker = HBoxContainer.new()
+	story_speaker.add_theme_constant_override("separation", 16)
+	right.add_child(story_speaker)
+	story_portrait = TextureRect.new()
+	story_portrait.custom_minimum_size = Vector2(112, 112)
+	story_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	story_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	story_portrait.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	story_speaker.add_child(story_portrait)
+	story_briefing = StationUi.text(story_speaker, "", 17)
+	story_briefing.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	story_tip = StationUi.text(right, "", 15, StationUi.MUTED)
 	right.add_child(HSeparator.new())
 	contract_reward = StationUi.text(right, "", 26, StationUi.AMBER)
 	contract_reward.add_theme_font_override("font", StationUi.BOLD)
@@ -136,6 +180,11 @@ func build_contract_panel() -> void:
 	StationUi.primary(contract_accept)
 	contract_abandon = StationUi.button(right, "ABANDON", func(): act_on_contract("abandon"))
 	contract_abandon.custom_minimum_size.y = 48
+	story_deliver = StationUi.button(right, "DELIVER", func(): act_on_story("story_deliver"))
+	StationUi.primary(story_deliver)
+	story_skip = StationUi.button(right, "SKIP PROLOGUE", func(): act_on_story("story_skip"))
+	story_skip.custom_minimum_size.y = 48
+	story_skip.tooltip_text = "Completes the chapter and pays every remaining step reward."
 	contract_status = StationUi.text(rows, "", 16, RED)
 	contract_panel.hide()
 
@@ -146,8 +195,35 @@ func select_contract(offer: String) -> void:
 
 
 func filter_contracts(active_only: bool) -> void:
+	story_view = false
 	contract_active_only = active_only
 	update_contract_panel()
+
+
+func show_story() -> void:
+	story_view = true
+	story_skip_armed = false
+	story_selected = mini(int(sector.story_state().get("step", 0)), Story.STEPS.size() - 1)
+	update_contract_panel()
+
+
+func select_story(index: int) -> void:
+	story_selected = index
+	story_skip_armed = false
+	update_contract_panel()
+
+
+# Skipping needs a second press; both actions use the station transaction rules.
+func act_on_story(action: String) -> void:
+	var button := story_deliver if action == "story_deliver" else story_skip
+	if not contract_panel.visible or not story_view or not button.visible or button.disabled:
+		return
+	if action == "story_skip" and not story_skip_armed:
+		story_skip_armed = true
+		update_contract_panel()
+		return
+	story_skip_armed = false
+	sector.session.combat.request_station(action, "")
 
 
 func act_on_contract(action: String) -> void:
@@ -171,6 +247,10 @@ func toggle_contracts() -> void:
 	sector.shop.hide()
 	sector.equipment_menu.hide()
 	sector.set_paused(true)
+	# Open on the story when the current step is handed in at this board.
+	if Story.current(sector.story_state()).get("type", "") == "deliver":
+		show_story()
+	story_skip_armed = false
 	contract_panel.scale = Vector2.ONE
 	StationUi.frame(contract_panel, Vector2(1150, 690))
 	contract_panel.show()
@@ -190,8 +270,16 @@ func update_contract_panel() -> void:
 	contract_status.text = blocker.replace("to repair.", "to manage contracts.").replace("Repairs available", "Contract actions available")
 	contract_status.visible = not blocker.is_empty()
 	contract_slots.text = "%d / %d active" % [sector.active_contracts.size(), HuntingContracts.OFFERS.size()]
-	contract_tabs[0].set_pressed_no_signal(not contract_active_only)
-	contract_tabs[1].set_pressed_no_signal(contract_active_only)
+	story_tab.set_pressed_no_signal(story_view)
+	contract_tabs[0].set_pressed_no_signal(not story_view and not contract_active_only)
+	contract_tabs[1].set_pressed_no_signal(not story_view and contract_active_only)
+	for button: Button in story_choices:
+		button.visible = story_view
+	for control: Control in [story_speaker, story_tip, story_deliver, story_skip]:
+		control.visible = story_view
+	if story_view:
+		update_story_panel(blocker)
+		return
 	var visible_offers: Array[String] = []
 	for offer: String in HuntingContracts.OFFERS:
 		var current: Dictionary = sector.active_contracts.get(offer, {})
@@ -232,6 +320,58 @@ func update_contract_panel() -> void:
 	contract_abandon.disabled = not blocker.is_empty()
 	contract_accept.tooltip_text = contract_status.text
 	contract_abandon.tooltip_text = contract_status.text
+
+
+func update_story_panel(blocker: String) -> void:
+	var live := sector.story_state()
+	var story := Story.empty() if live.is_empty() else live
+	var reached := int(story["step"])
+	contract_slots.text = "%s / %d of %d complete" % [Story.CHAPTER, reached, Story.STEPS.size()]
+	for offer: String in contract_choices:
+		contract_choices[offer].hide()
+	contract_empty.hide()
+	contract_accept.hide()
+	contract_abandon.hide()
+	story_selected = clampi(story_selected, 0, mini(reached, Story.STEPS.size() - 1))
+	for index in story_choices.size():
+		var state := "Complete" if index < reached else ("Current" if index == reached else "Locked")
+		story_choices[index].text = "%d. %s\n%s" % [index + 1, Story.STEPS[index]["title"], state]
+		story_choices[index].disabled = index > reached
+		story_choices[index].set_pressed_no_signal(index == story_selected)
+	var step: Dictionary = Story.STEPS[story_selected]
+	var current := story_selected == reached
+	contract_title.text = step["title"]
+	contract_preview.visible = step.has("kind")
+	if step.has("kind"):
+		contract_preview.show_kind(step["kind"])
+	contract_progress.visible = true
+	contract_progress.max_value = step["required"]
+	if current:
+		var scan := sector.story_sites.scan_seconds if is_instance_valid(sector.story_sites) else 0.0
+		contract_objective.text = Story.objective(story, scan)
+		contract_progress.value = minf(scan, step["required"]) if step["type"] == "scan" else story["progress"]
+	else:
+		contract_objective.text = step["objective"] + "  /  COMPLETE"
+		contract_progress.value = step["required"]
+	story_briefing.text = "%s\n%s" % [Story.CONTACTS[step["contact"]]["name"].to_upper(), step["briefing"]]
+	story_portrait.texture = StorySites.portrait(step["contact"])
+	story_tip.text = "TIP: " + Story.hint(step) if current else step["done"]
+	contract_reward.text = "Reward    " + Story.reward_text(step["credits"], step["research"])
+	var pending := sector.session.combat.station_pending
+	story_deliver.visible = current and step["type"] == "deliver"
+	var status := blocker
+	if story_deliver.visible:
+		var needed := CargoResources.describe({step["resource"]: step["required"]})
+		story_deliver.text = "DELIVER " + needed.to_upper()
+		if status.is_empty() and int(sector.cargo.get(step["resource"], 0)) < int(step["required"]):
+			status = "Need %s in your active ship's cargo." % needed
+	story_deliver.disabled = not status.is_empty() or pending
+	story_skip.visible = not Story.complete(story)
+	story_skip.text = "CONFIRM SKIP / PAY REMAINING REWARDS" if story_skip_armed else "SKIP PROLOGUE"
+	story_skip.disabled = not blocker.is_empty() or pending
+	contract_status.text = status.replace("to repair.", "to manage quests.").replace("Repairs available", "Quest actions available")
+	contract_status.visible = not status.is_empty()
+	story_deliver.tooltip_text = contract_status.text
 
 
 func text_at(point: Vector2, text: String, size_px: int = 16, color: Color = INK, width: float = -1.0) -> void:
@@ -298,7 +438,31 @@ func target_rect() -> Rect2:
 func objectives_rect() -> Rect2:
 	var shared := sector.session.active
 	var rows := sector.active_contracts.size() if shared else 0
+	var story := story_height()
+	if story > 0.0:
+		return Rect2(SIDE_MARGIN, TOP_MARGIN, 280, 48 + story + (rows * 34 if rows > 0 else 14))
 	return Rect2(SIDE_MARGIN, TOP_MARGIN, 280, 48 + rows * 34 if rows > 0 else 110)
+
+
+# Height of the flight card's story section, or zero without a current step.
+func story_height() -> float:
+	var story := sector.story_state()
+	if story.is_empty() or Story.complete(story):
+		return 0.0
+	var key := Vector2i(int(story["step"]), GameSettings.binding_revision)
+	if key != story_hint_key:
+		story_hint_key = key
+		story_hint = Story.hint(Story.current(story))
+		story_hint_height = font.get_multiline_string_size(story_hint, HORIZONTAL_ALIGNMENT_LEFT, 244, 14).y
+	return 58.0 + story_hint_height
+
+
+func draw_story(rect: Rect2) -> void:
+	var story := sector.story_state()
+	var step := Story.current(story)
+	text_at(rect.position + Vector2(18, 66), "%d / %d  %s" % [int(story["step"]) + 1, Story.STEPS.size(), str(step["title"]).to_upper()], 16, GOLD, 244)
+	text_at(rect.position + Vector2(18, 90), Story.objective(story, sector.story_sites.scan_seconds), 15, INK, 244)
+	paragraph(rect.position + Vector2(18, 112), story_hint, 244, 14, MUTED)
 
 
 func paragraph(point: Vector2, content: String, width: float, pixels: int = 16, color: Color = INK) -> Vector2:
@@ -329,9 +493,16 @@ func meter(point: Vector2, title: String, value: float, maximum: float, color: C
 
 func draw_objectives() -> void:
 	var rect := objectives_rect()
-	card_title(rect, "HUNTING CONTRACTS" if sector.session.active else "OBJECTIVE")
+	var story := story_height()
+	card_title(rect, "OPERATIONS" if story > 0.0 else ("HUNTING CONTRACTS" if sector.session.active else "OBJECTIVE"))
+	if story > 0.0:
+		draw_story(rect)
+		if sector.active_contracts.is_empty():
+			return
 	if sector.session.active and not sector.active_contracts.is_empty():
-		var row := rect.position + Vector2(18, 66)
+		var row := rect.position + Vector2(18, 66 + story)
+		if story > 0.0:
+			draw_line(Vector2(rect.position.x + 18, row.y - 23), Vector2(rect.end.x - 18, row.y - 23), LINE)
 		for kind: String in HuntingContracts.OFFERS:
 			if not sector.active_contracts.has(kind):
 				continue
@@ -390,6 +561,33 @@ func draw_context() -> void:
 	if not layout.begin_draw(self, "context"):
 		return
 	var point := Vector2(SIDE_MARGIN, objectives_rect().end.y + 12)
+	var width := minf(440, size.x - 2 * SIDE_MARGIN - 322)
+	if is_instance_valid(sector.story_sites) and sector.story_sites.comm_time > 0.0:
+		# Contact transmissions stay on screen independently of ordinary notices.
+		# Each speaker's line sits beside their portrait.
+		var lines: Array = sector.story_sites.comm_lines
+		var text_x := 12.0 + PORTRAIT + 12.0
+		var text_width := width - text_x - 12.0
+		var heights: Array[float] = []
+		var total := 32.0
+		for line: Array in lines:
+			var height := maxf(PORTRAIT, 22.0 + font.get_multiline_string_size(line[1], HORIZONTAL_ALIGNMENT_LEFT, text_width, 15).y)
+			heights.append(height)
+			total += height + 10.0
+		var comm_rect := Rect2(point, Vector2(width, total))
+		panel(comm_rect, CYAN)
+		text_at(point + Vector2(12, 18), "INCOMING TRANSMISSION", 12, CYAN)
+		var row := point.y + 30.0
+		for index in lines.size():
+			var contact: String = lines[index][0]
+			var frame := Rect2(point.x + 12, row, PORTRAIT, PORTRAIT)
+			draw_texture_rect(StorySites.portrait(contact), frame, false)
+			draw_rect(frame, Color(CYAN, 0.75), false, 1.0)
+			text_at(Vector2(point.x + text_x, row + 12), Story.CONTACTS[contact]["name"].to_upper(), 12, CYAN, text_width)
+			paragraph(Vector2(point.x + text_x, row + 32), lines[index][1], text_width, 15, INK)
+			row += heights[index] + 10.0
+		marker_labels.append(layout.transform_rect("context", comm_rect))
+		point.y = comm_rect.end.y + 8
 	var messages: Array[String] = []
 	for destination: int in SectorMaps.GATES[sector.map_id]:
 		if sector.player.position.distance_to(SectorMaps.gate_position(sector.map_id, destination)) <= SectorMaps.JUMP_RADIUS:
@@ -403,7 +601,6 @@ func draw_context() -> void:
 	if layout.editing and messages.is_empty():
 		messages.append("Notifications appear here.")
 	for message: String in messages:
-		var width := minf(440, size.x - 2 * SIDE_MARGIN - 322)
 		var dimensions := font.get_multiline_string_size(message, HORIZONTAL_ALIGNMENT_LEFT, width - 24, 16)
 		var rect := Rect2(point, Vector2(width, dimensions.y + 16))
 		draw_style_box(background, rect)
@@ -411,6 +608,48 @@ func draw_context() -> void:
 		marker_labels.append(layout.transform_rect("context", rect))
 		point.y = rect.end.y + 8
 	layout.end_draw(self)
+
+
+# Centered under the destination card, clear of the side cards and the reticle.
+func tutorial_rect() -> Rect2:
+	return Rect2((size.x - 300) * 0.5, navigation.guidance_rect().end.y + 12, 300, 130)
+
+
+func draw_tutorial() -> void:
+	var sites := sector.story_sites
+	var live := is_instance_valid(sites) and not sites.tips.is_empty()
+	if not live and not layout.editing:
+		return
+	# The editor previews the first step's rows when no pop-up is open.
+	var tips: Array = sites.tips if live else Story.CONTROLS["comms_check"]
+	if not layout.begin_draw(self, "tutorial"):
+		return
+	var rect := tutorial_rect()
+	card_title(rect, "CONTROLS", CYAN)
+	var key := Vector2i(sites.seen_step if live else -1, GameSettings.binding_revision)
+	if key != tip_keys_key:
+		tip_keys_key = key
+		tip_keys.clear()
+		for row: Array in tips:
+			var labels: PackedStringArray = []
+			for action: String in row[0]:
+				labels.append(GameSettings.binding_text(action))
+			var caption := " / ".join(labels)
+			tip_keys.append([caption, font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 14])
+	var point := rect.position + Vector2(18, 64)
+	for index in tips.size():
+		var done: bool = live and sites.tips_used[index]
+		var key_width: float = tip_keys[index][1]
+		draw_style_box(background, Rect2(point - Vector2(0, 17), Vector2(key_width, 24)))
+		text_at(point + Vector2(7, 0), tip_keys[index][0], 14, GREEN if done else INK)
+		var label_x := key_width + 10
+		text_at(point + Vector2(label_x, 0), tips[index][1], 14, GREEN if done else MUTED, rect.size.x - 36 - label_x - 20)
+		if done:
+			var mark := Vector2(rect.end.x - 30, point.y - 6)
+			draw_polyline(PackedVector2Array([mark, mark + Vector2(4, 4), mark + Vector2(11, -5)]), GREEN, 2.0)
+		point.y += 26
+	layout.end_draw(self)
+	marker_labels.append(layout.rect_for("tutorial"))
 
 
 func draw_performance() -> void:
@@ -468,6 +707,7 @@ func _draw() -> void:
 		draw_objectives()
 		layout.end_draw(self)
 	draw_context()
+	draw_tutorial()
 	draw_performance()
 	if layout.begin_draw(self, "ship"):
 		draw_ship_panel()
@@ -491,6 +731,9 @@ func _draw() -> void:
 		layout.end_draw(self)
 	if sector.map_id == 0:
 		marker(Sector.STATION_POSITION, "OUTPOST 01", GREEN, false)
+	var site := Story.site(sector.story_state(), sector.map_id)
+	if not site.is_empty():
+		marker(Story.site_position(site), "OBJECTIVE / " + str(site["site"]).to_upper(), GOLD, false)
 	for destination: int in SectorMaps.GATES[sector.map_id]:
 		marker(SectorMaps.gate_position(sector.map_id, destination), "GATE TO " + SectorMaps.MAPS[destination]["name"], SectorMaps.MAPS[destination]["color"], false, null, false)
 	if is_instance_valid(sector.target):

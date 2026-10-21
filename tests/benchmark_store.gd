@@ -68,10 +68,10 @@ func replace_file(destination: String, text: String) -> bool:
 	return result
 
 
-func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}, ammo: Dictionary = {}, boosts: Dictionary = {}, research: Dictionary = {}) -> bool:
+func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}, ammo: Dictionary = {}, boosts: Dictionary = {}, research: Dictionary = {}, stories: Dictionary = {}) -> bool:
 	var previous := reason
 	reason = "extras" if not ammo.is_empty() else ("loot" if balances.is_empty() and not cargo.is_empty() else "economy")
-	var result := super.commit(balances, contracts, cargo, ammo, boosts, research)
+	var result := super.commit(balances, contracts, cargo, ammo, boosts, research, stories)
 	if measuring and reason == "extras" and result:
 		extras_pilots += ammo.size()
 	reason = previous

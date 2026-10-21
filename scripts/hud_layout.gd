@@ -12,7 +12,8 @@ const ITEMS := {
 	"controls": ["Control hints", "settings"], "context": ["Notifications", "connection"],
 	"station": ["Station actions", "shop"], "radiation": ["Radiation", "shield"],
 	"reticle": ["Reticle", "damage"], "autopilot": ["Autopilot status", "speed"],
-	"performance": ["Performance", "settings"], "ammo": ["Quickslots", "damage"]
+	"performance": ["Performance", "settings"], "ammo": ["Quickslots", "damage"],
+	"tutorial": ["Control tips", "settings"]
 }
 # Read-only default, so per-frame layout lookups do not allocate a Dictionary.
 const NO_ENTRY := {}
@@ -106,6 +107,7 @@ func default_rect(id: String) -> Rect2:
 		"reticle": return Rect2(size * 0.5 - Vector2(48, 20), Vector2(96, 40))
 		"autopilot": return Rect2(hud.navigation.radar_rect().position + Vector2(14, 190), Vector2(170, 26))
 		"performance": return Rect2(FlightHud.SIDE_MARGIN, hud.objectives_rect().end.y + 192, 350, 26)
+		"tutorial": return hud.tutorial_rect()
 	return Rect2()
 
 

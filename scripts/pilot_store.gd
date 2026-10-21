@@ -118,6 +118,8 @@ func open(directory: String) -> bool:
 		pilot["equipment"]["revision"] = int(pilot["equipment"]["revision"])
 		if pilot["equipment"].has("research"):
 			Research.normalize(pilot["equipment"]["research"])
+		if pilot["equipment"].has("story"):
+			Story.normalize(pilot["equipment"]["story"])
 		if data["version"] < 3:
 			if pilot.has("cargo"):
 				return fail("Unexpected cargo in legacy save. Original file preserved.")
@@ -237,8 +239,9 @@ func verifies(id: String, nonce: PackedByteArray, proof: PackedByteArray) -> boo
 
 
 # Commit all shares of a kill together, before combat publishes the new balances.
-# Research holds points earned by each pilot in this transaction.
-func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}, ammo: Dictionary = {}, boosts: Dictionary = {}, research: Dictionary = {}) -> bool:
+# Research holds points earned by each pilot in this transaction; stories hold
+# each pilot's next chapter position.
+func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}, ammo: Dictionary = {}, boosts: Dictionary = {}, research: Dictionary = {}, stories: Dictionary = {}) -> bool:
 	if failed or not locked:
 		return false
 	var next := pilots.duplicate(true)
@@ -268,6 +271,10 @@ func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary 
 		if not next.has(id) or not earned is int or earned < 0 or earned > 1000:
 			return fail("Invalid server research update.")
 		Research.add_points(next[id]["equipment"], earned)
+	for id: String in stories:
+		if not next.has(id) or not Story.valid(stories[id]):
+			return fail("Invalid server story update.")
+		next[id]["equipment"]["story"] = stories[id].duplicate()
 	return persist(next)
 
 
@@ -287,6 +294,7 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 	var next := pilots.duplicate(true)
 	var pilot: Dictionary = next[id]
 	var previous_credits: int = pilot["credits"]
+	var previous_story := Story.state(pilot["equipment"]).duplicate()
 	var equipment: Dictionary = pilot["equipment"]
 	var previous_points := int(Research.state(equipment)["points"])
 	if active_boosts != null:
@@ -310,7 +318,7 @@ func transact(id: String, sequence: int, action: String, subject: String, ship: 
 		return "Transaction rejected. Credits unchanged."
 	if not persist(next):
 		return "Persistence unavailable."
-	return StationActions.result(pilot, action, subject, previous_credits, previous_points)
+	return StationActions.result(pilot, action, subject, previous_credits, previous_points, previous_story)
 
 
 func advance_lab(id: String, at: int) -> bool:
