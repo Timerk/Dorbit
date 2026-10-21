@@ -43,7 +43,7 @@ func _ready() -> void:
 	parts_bar.show_percentage = false
 	parts_bar.max_value = GalaxyGates.PARTS_REQUIRED
 	gate_rows.add_child(parts_bar)
-	StationUi.text(gate_rows, "%d waves, ending with the Vashar mothership  /  %d lives per pilot  /  any pilot may join\nVictory pays every participant %s." % [GalaxyGates.WAVES.size(), GalaxyGates.LIVES, Story.reward_text(GalaxyGates.REWARD["credits"], GalaxyGates.REWARD["research"])], 15, StationUi.MUTED)
+	StationUi.text(gate_rows, "%d waves, ending with the Vashar mothership  /  %d lives per pilot  /  any pilot may join\nVictory pays every participant %s, with a %d%% chance of an LF-4 laser." % [GalaxyGates.WAVES.size(), GalaxyGates.LIVES, GalaxyGates.reward_text(false), roundi(GalaxyGates.REWARD["item_chance"] * 100)], 15, StationUi.MUTED)
 	run_label = StationUi.text(gate_rows, "", 16, VasharModels.GLOW)
 	assemble_button = StationUi.button(gate_rows, "ASSEMBLE AND OPEN GATE", func(): act("gate_assemble"))
 	StationUi.primary(assemble_button)

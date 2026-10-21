@@ -534,7 +534,7 @@ The user requested the models in four supplied screenshots, with their damage, s
 | MP-1 | 40,000 CR | +70 damage per shot |
 | LF-2 | 500,000 CR (5,000 U) | +140 damage per shot |
 | LF-3 | 1,000,000 CR (10,000 U) | +175 damage per shot; +15% for this laser against aliens (201.25 total) |
-| LF-4 | Unavailable: future loot/assembly | +200 damage per shot |
+| LF-4 | Not sold: 20% Vashar Gate victory reward | +200 damage per shot |
 | SG3N-A01 | 8,000 CR | +1,000 shield / 40% absorption |
 | SG3N-A02 | 16,000 CR | +2,000 shield / 50% absorption |
 | FS-01 | 256,000 CR | +3,200 shield / 70% absorption; +6.25% shield regeneration |
@@ -1555,8 +1555,9 @@ Shardlings from its hangar every 25 s while it survives.
 Kills share credit pools and leave resource boxes as usual. Each pilot has three
 lives per run. Dying in the rift costs one, and the normal rescue returns the
 pilot to Outpost 01; pilots with lives left can fly back in while the gate is open.
-Destroying the final wave pays every participant still connected 150,000 CR and
-6 research points, closes the entrance, and returns anyone still inside to M1
+Destroying the final wave pays every participant still connected 150,000 CR,
+6 research points and 15,000 x4 shots; each also has a 20% chance of an LF-4
+laser, delivered to storage. Victory closes the entrance and returns anyone still inside to M1
 after 90 s. A run collapses, without refunding parts, when no pilot has been inside
 for 120 s or every participant has used all their lives.
 
@@ -1572,8 +1573,7 @@ schema 21 adds the run summary. The three Vashar models are procedural playtest
 models built in Godot (obsidian crystal hulls with violet seams); authored models
 should replace them once concepts are approved. All counts, chances, stats, lives,
 timings and rewards above are provisional until playtested. Further gates,
-equipment rewards (for example the unavailable LF-4 laser), personal gate
-instances and the on-map invasion event are future work.
+other equipment rewards, personal gate instances and the on-map invasion event are future work.
 
 #### First campaign implementation scope
 

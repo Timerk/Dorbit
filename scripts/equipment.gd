@@ -11,7 +11,7 @@ const MODELS := {
 	"mp-1": {"name": "MP-1", "kind": "laser", "price": 40000, "damage": 70.0, "shield": 0.0, "speed": 0.0},
 	"lf-2": {"name": "LF-2", "kind": "laser", "price": 5000 * URIDIUM_TO_CREDITS, "damage": 140.0, "shield": 0.0, "speed": 0.0},
 	"lf-3": {"name": "LF-3", "kind": "laser", "price": 10000 * URIDIUM_TO_CREDITS, "damage": 175.0, "npc_bonus": 0.15, "shield": 0.0, "speed": 0.0},
-	"lf-4": {"name": "LF-4", "kind": "laser", "price": 0, "unavailable": "Unavailable until loot or assembly is added.", "damage": 200.0, "shield": 0.0, "speed": 0.0},
+	"lf-4": {"name": "LF-4", "kind": "laser", "price": 0, "unavailable": "Unavailable in the shop. Vashar Gate victories have a 20% chance to award one.", "damage": 200.0, "shield": 0.0, "speed": 0.0},
 	"shield": {"name": "SG3N-A01", "kind": "generator", "price": 8000, "damage": 0.0, "shield": 1000.0, "absorption": 0.4, "speed": 0.0},
 	"sg3n-a02": {"name": "SG3N-A02", "kind": "generator", "price": 16000, "damage": 0.0, "shield": 2000.0, "absorption": 0.5, "speed": 0.0},
 	"fs-01": {"name": "FS-01", "kind": "generator", "price": 256000, "damage": 0.0, "shield": 3200.0, "absorption": 0.7, "regen_bonus": 0.0625, "speed": 0.0},

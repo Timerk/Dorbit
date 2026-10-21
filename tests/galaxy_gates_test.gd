@@ -188,6 +188,16 @@ func run() -> void:
 
 	# Clear every wave; the mothership launches escorts.
 	var pilot_credits: int = store.pilots[pilot_id]["credits"]
+	var partner_pilot: String = server.session.pilot_ids[partner_id]
+	var x4 := {pilot_id: int(store.pilots[pilot_id]["ammo"]["x4"]), partner_pilot: int(store.pilots[partner_pilot]["ammo"]["x4"])}
+	# Fix the LF-4 roll: this seed awards the pilot and not the partner.
+	var seed := 0
+	while true:
+		var probe := RandomNumberGenerator.new()
+		probe.seed = seed
+		if probe.randf() < GalaxyGates.REWARD["item_chance"] and probe.randf() >= GalaxyGates.REWARD["item_chance"]:
+			break
+		seed += 1
 	var research := int(Research.state(store.pilots[pilot_id]["equipment"])["points"])
 	for wave in range(GalaxyGates.WAVES.size()):
 		if wave > 0:
@@ -198,12 +208,21 @@ func run() -> void:
 			check(boss.size() == 1 and boss[0].alive, "The final wave brings the mothership")
 			var before := gate.wave_aliens.filter(func(alien: Alien): return alien.alive).size()
 			gate.tick(GalaxyGates.ESCORT_INTERVAL + 0.1)
+			gate.rng.seed = seed
 			check(gate.wave_aliens.filter(func(alien: Alien): return alien.alive).size() > before, "The mothership launches escorts")
 		clear_wave(server, pilot)
 		gate.tick(0.1)
 	check(gate.phase == "victory" and not SectorMaps.rift_open, "Destroying the last wave wins and closes the entrance")
 	check(store.pilots[pilot_id]["credits"] >= pilot_credits + GalaxyGates.REWARD["credits"]
 		and int(Research.state(store.pilots[pilot_id]["equipment"])["points"]) == research + GalaxyGates.REWARD["research"], "Victory pays participants credits and research")
+	for winner: String in x4:
+		check(int(store.pilots[winner]["ammo"]["x4"]) == x4[winner] + GalaxyGates.REWARD["x4"], "Victory adds 15,000 x4 shots to each participant")
+	check(server.session.ships[id].ammo["x4"] == store.pilots[pilot_id]["ammo"]["x4"], "The live ship can fire the rewarded x4 shots")
+	var lasers := func(pilot: String) -> Array: return store.pilots[pilot]["equipment"]["items"].values().filter(func(item: Dictionary): return item["model"] == "lf-4")
+	check(lasers.call(pilot_id).size() == 1 and lasers.call(pilot_id)[0]["ship"] == "" and lasers.call(partner_pilot).is_empty(), "A won LF-4 roll places one LF-4 in storage")
+	check(Equipment.fitting_blocker(store.pilots[pilot_id]["equipment"], store.pilots[pilot_id]["equipment"]["items"].find_key(lasers.call(pilot_id)[0]), "starter", "laser2").is_empty(), "The rewarded LF-4 can be fitted")
+	await settle(0.1)
+	check(pilot.session.combat.inventory["items"].values().any(func(item: Dictionary): return item["model"] == "lf-4"), "The pilot's client receives the LF-4")
 	var closed: String = await enter(server, pilot)
 	check(not closed.is_empty(), "A won gate cannot be re-entered")
 	gate.tick(GalaxyGates.VICTORY_TIME + 0.1)

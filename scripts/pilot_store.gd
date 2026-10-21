@@ -284,6 +284,30 @@ func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary 
 	return persist(next)
 
 
+# Victory rewards for one gate run, saved together for every winner. Each reward
+# holds credits, research points, x4 shots and an optional storage item model.
+func reward_gate(rewards: Dictionary) -> bool:
+	if failed or not locked:
+		return false
+	var next := pilots.duplicate(true)
+	for id: String in rewards:
+		var reward: Dictionary = rewards[id]
+		if not next.has(id):
+			return fail("Invalid server gate reward.")
+		var pilot: Dictionary = next[id]
+		pilot["credits"] = mini(MAX_CREDITS, int(pilot["credits"]) + int(reward["credits"]))
+		Research.add_points(pilot["equipment"], int(reward["research"]))
+		pilot["ammo"]["x4"] = mini(Ammunition.MAX_SHOTS, int(pilot["ammo"]["x4"]) + int(reward["x4"]))
+		if not str(reward["item"]).is_empty():
+			var item_id := "gate-" + Crypto.new().generate_random_bytes(8).hex_encode()
+			if pilot["equipment"]["items"].has(item_id):
+				return fail("Gate reward item ID conflict.")
+			pilot["equipment"]["items"][item_id] = {"model": reward["item"], "ship": "", "slot": ""}
+		if not Equipment.valid(pilot["equipment"]) or not Ammunition.valid(pilot["ammo"]):
+			return fail("Invalid server gate reward.")
+	return persist(next)
+
+
 # The persisted sequence rejects every old request, including after a reconnect or restart.
 # Only successful changes advance it; distinct station actions use the next sequence.
 # StationActions owns the per-action economy rules and result messages.

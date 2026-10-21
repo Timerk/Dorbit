@@ -21,7 +21,8 @@ const SIGNAL := {
 	"done": "That is enough to decode the courier manifest. I have located their cache and added its parts to your stock. Keep collecting: once the gate is complete, we can turn it on the Vashar ourselves.",
 }
 const LIVES := 3
-const REWARD := {"credits": 150000, "research": 6}
+# Every participant: credits, research points and x4 rounds, plus a chance at an LF-4 laser.
+const REWARD := {"credits": 150000, "research": 6, "x4": 15000, "item": "lf-4", "item_chance": 0.2}
 # Pilots counted when locking a wave's size. Each additional pilot adds half the base count.
 const SCALED_PILOTS := 4
 const WAVE_DELAY := 8.0
@@ -143,3 +144,8 @@ static func wave_counts(wave: int, pilots: int) -> Dictionary:
 
 static func signal_objective(gates: Dictionary) -> String:
 	return "%s  %d / %d" % [SIGNAL["objective"], int(gates["progress"]), int(SIGNAL["required"])]
+
+
+static func reward_text(item: bool) -> String:
+	var text := "%s and +%s x4 shots" % [Story.reward_text(REWARD["credits"], REWARD["research"]), StationShop.credits_text(REWARD["x4"])]
+	return text + (" and an %s laser (in storage)" % Equipment.MODELS[REWARD["item"]]["name"] if item else "")

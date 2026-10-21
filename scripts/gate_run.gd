@@ -218,18 +218,30 @@ func victory() -> void:
 	phase = "victory"
 	clock = GalaxyGates.VICTORY_TIME
 	SectorMaps.rift_open = false
-	var balances: Dictionary[int, int] = {}
-	var research: Dictionary[int, int] = {}
+	var session: FlightSession = combat.session
+	var winners: Array[int] = []
+	var items: Dictionary[int, bool] = {}
+	var rewards := {}
 	for id: int in combat.records:
 		if lives.has(key(id)):
-			balances[id] = mini(PilotStore.MAX_CREDITS, int(combat.records[id]["credits"]) + int(GalaxyGates.REWARD["credits"]))
-			research[id] = GalaxyGates.REWARD["research"]
-	var contracts: Dictionary[int, Dictionary] = {}
-	if not balances.is_empty() and not combat.session.save_balances(balances, contracts, research):
+			winners.append(id)
+			items[id] = rng.randf() < float(GalaxyGates.REWARD["item_chance"])
+			rewards[key(id)] = {"credits": GalaxyGates.REWARD["credits"], "research": GalaxyGates.REWARD["research"],
+				"x4": GalaxyGates.REWARD["x4"], "item": GalaxyGates.REWARD["item"] if items[id] else ""}
+	# One save for every winner before anyone sees a reward.
+	if session.sector.dedicated_server and not rewards.is_empty() and not session.store.reward_gate(rewards):
+		session.stop_for_save_failure()
 		return
-	for id: int in balances:
-		combat.records[id]["credits"] = balances[id]
-		combat.message(id, "Vashar mothership destroyed. Their invasion is set back. %s. The rift closes in %d seconds." % [Story.reward_text(GalaxyGates.REWARD["credits"], GalaxyGates.REWARD["research"]), int(GalaxyGates.VICTORY_TIME)])
+	for id: int in winners:
+		var ship := session.ships[id]
+		if session.sector.dedicated_server:
+			var pilot: Dictionary = session.store.pilots[key(id)]
+			combat.records[id]["credits"] = pilot["credits"]
+			ship.ammo = pilot["ammo"].duplicate()
+		else:
+			combat.records[id]["credits"] = mini(PilotStore.MAX_CREDITS, int(combat.records[id]["credits"]) + int(GalaxyGates.REWARD["credits"]))
+			ship.ammo["x4"] = mini(Ammunition.MAX_SHOTS, int(ship.ammo["x4"]) + int(GalaxyGates.REWARD["x4"]))
+		combat.message(id, "Vashar mothership destroyed. Their invasion is set back. %s. The rift closes in %d seconds." % [GalaxyGates.reward_text(items[id]), int(GalaxyGates.VICTORY_TIME)])
 		combat.publish_inventory(id)
 	publish()
 
