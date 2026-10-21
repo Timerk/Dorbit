@@ -159,7 +159,7 @@ func destruction_checks() -> void:
 	sector.alien.home_position = sector.alien.position
 	sector.alien.take_damage(sector.alien.max_hull + sector.alien.max_shield + 1, sector.player)
 	var id := sector.loot.next_id
-	check(sector.loot.drops.has(id) and not sector.loot.is_presented(id), "Actual death creates loot state but hides the box and caption during the explosion")
+	check(sector.loot.drops.has(id) and not sector.loot.is_presented(id), "Actual death creates loot state but hides the box during the explosion")
 	var update: Dictionary = sector.loot.drops[id].duplicate(true)
 	update["resources"] = {"prometium": 1}
 	sector.loot.apply_drop(id, update)
