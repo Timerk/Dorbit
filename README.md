@@ -379,7 +379,7 @@ preserves existing reserves. Both require a launched living ship.
 
 Removing Slot CPU 1 returns equipment from its added slots to inventory. Cargo
 capacity removal is blocked until excess cargo is sold. Items and settings persist
-with the pilot. Client and server must both use network schema 19. See
+with the pilot. Client and server must both use network schema 21. See
 [the agreed mechanics and prices](GAME_PLAN.md#extras-equipment) and
 [generated artwork and prompts](assets/ui/extras/README.md).
 
@@ -565,7 +565,22 @@ Every pilot, including existing ones, starts a personal ten-step prologue that t
 | Light the Beacon | Stay at the approach beacon for 6 s | 2,000 CR |
 | Standing Orders | Hold any hunting contract | 5,000 CR + 3 RP |
 
-Press **C** and choose **Story** to read briefings, review completed steps, deliver cargo or skip the chapter. Skipping asks for a second press and pays every remaining step reward. Kills count with the hunting-contract contribution rules; scans restart when you leave the field; the recorder and the lit beacon are personal. Delivery and skipping use station service rules. The server saves each step and its reward together in the equipment record, so save schema 8 is unchanged; network schema 20 requires matching builds. Run `res://tests/story_test.gd` for the full authenticated playthrough, and run it with a renderer to capture `build/validation/story-*.png`. Review the [flight card and transmission](docs/feedback/story-flight.png), the [waypoint gate](docs/feedback/story-objective-gate.png), the [scan field](docs/feedback/story-objective-field.png), the [controls pop-up](docs/feedback/story-controls.png) and the [Story tab](docs/feedback/story-board.png). Run `res://tests/objective_art_preview.gd` with a renderer to capture every objective visual under `build/validation/objective-review`. Sites, quantities and rewards need playtesting.
+Press **C** and choose **Story** to read briefings, review completed steps, deliver cargo or skip the current chapter. Skipping asks for a second press and pays that chapter's remaining step rewards. Kills count with the hunting-contract contribution rules; scans restart when you leave the field; the recorder and the lit beacon are personal. Delivery and skipping use station service rules. The server saves each step and its reward together in the equipment record, so save schema 8 is unchanged; network schema 21 requires matching builds. Run `res://tests/story_test.gd` for the full authenticated playthrough, and run it with a renderer to capture `build/validation/story-*.png`. Review the [flight card and transmission](docs/feedback/story-flight.png), the [waypoint gate](docs/feedback/story-objective-gate.png), the [scan field](docs/feedback/story-objective-field.png), the [controls pop-up](docs/feedback/story-controls.png) and the [Story tab](docs/feedback/story-board.png). Run `res://tests/objective_art_preview.gd` with a renderer to capture every objective visual under `build/validation/objective-review`. Sites, quantities and rewards need playtesting.
+
+### Story chapter 1: Operation Groundwork
+
+The prologue hands over to a six-step chapter that explains Skylab and research. Pilots who already finished or skipped the prologue start here.
+
+| Step | Objective | Reward |
+| --- | --- | --- |
+| Industry Online | Start a Basic module upgrade in Skylab (**Esc > Skylab**) | 1,000 CR + Prometid x50, Duranium x50 in Skylab |
+| Countermeasures | Learn any research level at Outpost 01 (**Esc > Research**) | 2,000 CR + 1 RP |
+| Field Test | Destroy 3 Scouts | 2,500 CR |
+| Raw Supply | Start an ore collector upgrade once Basic allows it | 1,500 CR |
+| Supply Line | Send a Skylab shipment to your ship from Transport | 1,500 CR |
+| Shield Samples | Destroy a Sentinel | 3,000 CR + 2 RP |
+
+The granted stock covers a first research level, which also costs one of the prologue's research points. Skylab and research steps complete with the command that satisfies them, and the Skylab or Research confirmation names the finished step. Contact transmissions wait while a menu is open. The Story tab lists each chapter under its own heading and skips one chapter at a time. Rewards and dialogue need playtesting.
 
 ### Hunting contracts
 

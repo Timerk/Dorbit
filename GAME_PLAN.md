@@ -1,6 +1,6 @@
 # Dorbit game requirements and development plan
 
-Status: Milestones 1 and 2 accepted after user playtesting, including internet combat, rewards, death, repairs, health synchronization and good observed performance with five clients, including a laptop below the original reference hardware. Milestone 3 now includes the dedicated Linux server, persistent pilot progression, ship and equipment purchases, hunting contracts, Skylab industry and research; the first connected-map expansion is also implemented. Current saves use schema 8 with the combat journal, and the network uses schema 19. Repeat-session progression and ten-player performance still need representative playtesting; combat and economy balance remain provisional.
+Status: Milestones 1 and 2 accepted after user playtesting, including internet combat, rewards, death, repairs, health synchronization and good observed performance with five clients, including a laptop below the original reference hardware. Milestone 3 now includes the dedicated Linux server, persistent pilot progression, ship and equipment purchases, hunting contracts, Skylab industry and research; the first connected-map expansion is also implemented. Current saves use schema 8 with the combat journal, and the network uses schema 21. Repeat-session progression and ten-player performance still need representative playtesting; combat and economy balance remain provisional.
 
 This document records the planning discussion. Proposed values and open questions are marked separately so they can be adjusted through playtesting.
 
@@ -518,7 +518,7 @@ Fitting never repairs or refills hull, shield or boost energy.
 
 Items and per-item automation settings survive death, reconnect and server restart
 in the current save schema 8 without an extras starter grant or extra-specific migration. Older binaries cannot read
-new extra model IDs: back up before introducing these items. These extras were introduced in network schema 16; current schema 19
+new extra model IDs: back up before introducing these items. These extras were introduced in network schema 16; current schema 21
 requires matching clients and servers. Original generated images and their exact
 prompts are under `assets/ui/extras`; prices, repair gates and automation behavior
 still need user playtesting.
@@ -667,7 +667,7 @@ The same resource adds rounds or duration without changing its percentage. A dif
 
 The user chose timers that count only while online. They count with that hull active, including station menus and rescue; inactive hulls and disconnected pilots retain their time. The server checkpoints durations every five seconds and flushes them on disconnect, shutdown and successful station actions. Abrupt termination can restore up to five seconds of unused duration. Weapon-round consumption saves before damage, so consumed rounds cannot return after restart.
 
-The user requested ship refining anywhere because its ingredients come from the active ship's cargo. Refining is available outside outpost range, while moving and immediately after damage. It still requires a connected living ship, the current ship life, sufficient ingredients, successful persistence and sequence protection. The Update tab retains station service checks for equipment boosts. Save schema 5 adds validated per-ship boost reserves and migrates schemas 1–4 while preserving progression; provisioning and credential rotation preserve boosts. Rollback needs a pre-migration backup. These resource actions were introduced in network schema 10; current schema 19 requires matching clients and servers. Offline preview exposes both tabs with resource actions disabled. Balance and timer feel need human playtesting; Rocket weapons and Skylab are implemented below.
+The user requested ship refining anywhere because its ingredients come from the active ship's cargo. Refining is available outside outpost range, while moving and immediately after damage. It still requires a connected living ship, the current ship life, sufficient ingredients, successful persistence and sequence protection. The Update tab retains station service checks for equipment boosts. Save schema 5 adds validated per-ship boost reserves and migrates schemas 1–4 while preserving progression; provisioning and credential rotation preserve boosts. Rollback needs a pre-migration backup. These resource actions were introduced in network schema 10; current schema 21 requires matching clients and servers. Offline preview exposes both tabs with resource actions disabled. Balance and timer feel need human playtesting; Rocket weapons and Skylab are implemented below.
 
 ### Persistent Skylab industry
 
@@ -723,7 +723,7 @@ Drobit choices requiring playtesting. Premium is an optional operator-set durati
 The historical save-schema-7 migration preserved versions 1–6 before admission, including both earlier
 ammunition/boost and industry layouts. Legacy industry wallets convert once at
 100 credits per unit; active/queued robots retain their lifetime.
-These changes were introduced in network schema 16; current schema 19 requires matching client/server builds. See [implementation policies,
+These changes were introduced in network schema 16; current schema 21 requires matching client/server builds. See [implementation policies,
 rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot's
 454/870 power budget and exact inventories/capacities remain a separate debug fixture.
 
@@ -732,8 +732,9 @@ rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot'
 The user requested a personal skill tree on 2026-10-17 and chose the starting
 rules below. It is the first slice of the personal research proposed for the
 reclamation campaign in [PR #76](https://github.com/Timerk/Dorbit/pull/76). Story
-intelligence quests can award research points once they exist; until then,
-hunting contracts award them.
+steps and hunting contracts award research points; chapter 1,
+[Operation Groundwork](#implemented-chapter-1-operation-groundwork), teaches
+Skylab and the first research level.
 
 A Research console page shows three rows. Each skill has five levels, and each
 level costs one research point plus refined Skylab stock. A skill unlocks once
@@ -774,7 +775,7 @@ Cargo Compression capacity are refused.
 Learning and resetting use station service rules and the economy request
 sequence; research changes apply immediately to the flying ship. Research lives in
 the pilot's saved equipment record, absent meaning nothing researched, so save
-schema 8 is unchanged. Network schema 19 requires matching builds. Bounty Claims
+schema 8 is unchanged. Network schema 21 requires matching builds. Bounty Claims
 adds to the pilot's own share without reducing others'. Salvage Drones bonus units
 do not come from the shared box; fractional units round up by chance. Effect
 values, point rewards, material costs, the level cap and reset price are
@@ -847,7 +848,7 @@ The historical save-schema-7 migration preserved schemas 1–6 and granted
 100 R-310 once, with zero other rocket ammo. New pilots receive the same grant.
 The provisioning tool supports the same migration and launcher fittings.
 Back up the ledger before upgrading; rollback needs a pre-migration backup.
-These changes were introduced in network schema 16; current schema 19 requires matching client/server builds. Resource rocket
+These changes were introduced in network schema 16; current schema 21 requires matching client/server builds. Resource rocket
 boosts use the existing per-ship reserve and combat journal formats; no new save
 or network schema is required. Laser/timed reserve behavior is unchanged.
 
@@ -1055,7 +1056,7 @@ hangars and outer docking arms do not extend station services or protection.
 Clients and dedicated servers load the same 53 simple collision boxes, with
 open hangar entrances. Autopilot chooses a clear service approach when the tower
 or reactor occupies its usual radial stopping point. The physical station layout change was introduced in network schema 16; current
-schema 19 requires matching builds. This layout change did not change saves.
+schema 21 requires matching builds. This layout change did not change saves.
 Final visual acceptance, scale, approach comfort and group performance remain
 playtesting decisions within Milestone 3.
 
@@ -1287,7 +1288,7 @@ repair state); credits, kills, objective stage, rescue countdown and contracts g
 only to their owner (introduced in network schema 16; current is 19). Each transfer
 increments the flight life and map-visit epoch, so delayed commands, world state
 and effects cannot revive an earlier visit, including returning to the same map.
-Map transfers were introduced in network schema 16; current schema 19 requires matching client/server builds. Save schema 8 is unchanged
+Map transfers were introduced in network schema 16; current schema 21 requires matching client/server builds. Save schema 8 is unchanged
 because flight locations are temporary. Ordinary travel gates are separate from
 the future Galaxy Gates alien-wave challenges.
 
@@ -1406,6 +1407,41 @@ the pilot presses it and closes once all have been tried. Sites, timings,
 quantities, rewards and dialogue remain provisional
 until playtested. Later chapters and
 shared construction stages are still to be designed.
+
+#### Implemented chapter 1: Operation Groundwork
+
+After the prologue, pilots had research points but no introduction to research
+or Skylab. On 2026-10-21 the user asked for quests that explain both, chose a
+separate chapter after the prologue rather than a longer prologue, and chose to
+have Brell grant the refined stock for a first research level rather than make
+new pilots wait for their refineries. Chapters are consecutive runs of one step
+list: pilots who finished or skipped the prologue, including existing pilots,
+start chapter 1 automatically. The Story tab skips one chapter at a time and pays
+that chapter's remaining rewards, including its lab stock.
+
+| # | Step | Contact | Objective | Reward |
+| --- | --- | --- | --- | --- |
+| 1 | Industry Online | Brell | Start a Basic module upgrade in Skylab | 1,000 CR + 50 Prometid + 50 Duranium in Skylab |
+| 2 | Countermeasures | Sato | Learn any research level at Outpost 01 | 2,000 CR + 1 RP |
+| 3 | Field Test | Vance | Destroy 3 Scouts | 2,500 CR |
+| 4 | Raw Supply | Brell | Start an ore collector upgrade in Skylab | 1,500 CR |
+| 5 | Supply Line | Brell | Dispatch a Skylab shipment to the active ship | 1,500 CR |
+| 6 | Shield Samples | Sato | Destroy a Sentinel | 3,000 CR + 2 RP |
+
+The chapter totals 11,500 CR, 3 research points and the starting stock. Brell
+explains collectors, refineries, offline production and why Basic goes first:
+no module can exceed Basic's level, so a new pilot's first collector upgrade
+waits for the 120-second Basic job (or Finish now). Sato frames research as
+countermeasures against adaptive alien shields that cost a point plus refined
+stock, and names Promerium and Seprom as the inputs for later levels. Skylab and
+research steps complete inside the successful Skylab command or station
+transaction that satisfies them, with the reward saved in the same transaction;
+the confirmation names the completed step. The stock grant stops at storage
+capacity. Transmissions wait while a menu is open, so a step finished in Skylab
+or Research is still announced. Pilots whose Basic core is already at the maximum level, or
+who have reached the research cap, can skip the chapter. Network schema 21
+requires matching builds; save schema 8 is unchanged. Rewards, the stock grant
+and dialogue remain provisional until playtested.
 
 #### Shared station construction
 
