@@ -374,6 +374,10 @@ func transact_lab(id: String, sequence: int, action: String, payload: Dictionary
 		result = "Preview: Skylab reset to starting levels."
 	else:
 		result = Skylab.command(next[id], sequence, action, payload, at)
+		# Only a successful command changes the record; its story step saves with it.
+		if next[id] != pilots[id]:
+			Story.record_lab(next[id], action, payload)
+			result += Story.progress_notice(Story.state(pilots[id]["equipment"]), Story.state(next[id]["equipment"]))
 	if next[id] != pilots[id]:
 		next[id]["equipment"]["revision"] = sequence
 		if not valid_credits(next[id]["credits"]) or not Skylab.valid(next[id]["skylab"], next[id]["equipment"]) or not CargoResources.valid(next[id]["cargo"], next[id]["equipment"]):

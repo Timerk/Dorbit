@@ -174,7 +174,9 @@ func burst(location: Vector3, radius: float) -> void:
 
 
 func _process(delta: float) -> void:
-	comm_time = maxf(0.0, comm_time - delta)
+	# Hold transmissions while menus cover the HUD, such as a step finished in Skylab.
+	if not sector.paused:
+		comm_time = maxf(0.0, comm_time - delta)
 	var story := sector.story_state()
 	if story.is_empty():
 		seen_step = -1

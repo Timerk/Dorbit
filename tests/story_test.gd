@@ -1,13 +1,15 @@
 extends "res://tests/hunting_contracts_test.gd"
-## Prologue rules, every objective type through authenticated play, skipping and persistence.
+## Chapter rules, every objective type through authenticated play, skipping and persistence.
 
 
 func run_rules() -> void:
 	var story := Story.empty()
-	check(Story.valid(story) and Story.STEPS.size() == 10, "An empty chapter is valid and the prologue has ten steps")
-	for invalid: Variant in [null, {"step": 0}, {"step": 11, "progress": 0}, {"step": 3, "progress": 2}, {"step": 0, "progress": -1}, {"step": 10, "progress": 1}, {"step": 0, "progress": 0, "extra": 1}]:
+	check(Story.valid(story) and Story.STEPS.size() == 16, "An empty story is valid and the chapters have sixteen steps")
+	check(Story.CHAPTERS.size() == 2 and Story.chapter_end(0) == 10 and Story.chapter_end(1) == 16, "The prologue has ten steps and chapter 1 has six")
+	check(Story.chapter(9) == 0 and Story.chapter(10) == 1 and Story.chapter(16) == 1, "Steps and a finished story map to their chapters")
+	for invalid: Variant in [null, {"step": 0}, {"step": 17, "progress": 0}, {"step": 3, "progress": 2}, {"step": 0, "progress": -1}, {"step": 16, "progress": 1}, {"step": 0, "progress": 0, "extra": 1}]:
 		check(not Story.valid(invalid), "Malformed story state is rejected: %s" % JSON.stringify(invalid))
-	check(Story.valid({"step": 3, "progress": 1}) and Story.valid({"step": 10, "progress": 0}), "Partial kills and the complete chapter are valid")
+	check(Story.valid({"step": 3, "progress": 1}) and Story.valid({"step": 10, "progress": 0}) and Story.valid({"step": 16, "progress": 0}), "Partial kills, a finished prologue and the finished story are valid")
 	check(Story.current({}).is_empty() and Story.site({}, 0).is_empty(), "No inventory means no story step")
 	check(Story.advance(story, "kill", 1, "Scout").is_empty(), "Events for another step type do not count")
 	var kills := {"step": 3, "progress": 0}
@@ -19,16 +21,37 @@ func run_rules() -> void:
 	check(Story.advance({"step": 6, "progress": 8}, "collect", 50)["story"] == {"step": 7, "progress": 0}, "Large pickups complete collection without overflowing progress")
 	var total_credits := 0
 	var total_research := 0
-	for step: Dictionary in Story.STEPS:
-		total_credits += step["credits"]
-		total_research += step["research"]
+	for index in Story.STEPS.size():
+		var step: Dictionary = Story.STEPS[index]
+		if index < 10:
+			total_credits += step["credits"]
+			total_research += step["research"]
 		check(not Story.hint(step).contains("{") and not Story.hint(step).contains("}"), "%s hint names bound keys" % step["title"])
 		check(Story.CONTACTS.has(step["contact"]), "%s has a known contact" % step["title"])
+		# Combat and flight rewards save through the combat ledger, which carries no lab stock.
+		check(not step.has("lab") or step["type"] in ["lab_upgrade", "lab_ship", "research", "deliver"], "%s pays lab stock only from a station or Skylab transaction" % step["title"])
+	check(total_credits == 17300 and total_research == 4, "The prologue totals 17,300 CR and 4 research points")
 	var skipped := Story.skip(story)
-	check(skipped["story"] == {"step": 10, "progress": 0} and skipped["credits"] == total_credits and skipped["research"] == total_research, "Skipping pays every remaining step reward")
+	check(skipped["story"] == {"step": 10, "progress": 0} and skipped["credits"] == total_credits and skipped["research"] == total_research and skipped["lab"].is_empty(), "Skipping the prologue pays only its remaining step rewards")
 	check(Story.skip({"step": 9, "progress": 0})["credits"] == 5000, "Skipping late pays only the remaining steps")
+	var groundwork := Story.skip({"step": 10, "progress": 0})
+	check(groundwork["story"] == {"step": 16, "progress": 0} and groundwork["credits"] == 11500 and groundwork["research"] == 3 and groundwork["lab"] == {"prometid": 50, "duranium": 50}, "Skipping chapter 1 pays its credits, research and lab stock")
+	check(Story.skip({"step": 16, "progress": 0})["credits"] == 0, "A finished story has nothing left to skip")
+	check(Story.advance({"step": 10, "progress": 0}, "lab_upgrade", 1, "collector").is_empty() and Story.advance({"step": 10, "progress": 0}, "lab_upgrade", 1, "basic")["lab"] == {"prometid": 50, "duranium": 50}, "Only a Basic upgrade completes Industry Online, which grants lab stock")
+	check(Story.advance({"step": 13, "progress": 0}, "lab_upgrade", 1, "prometidRefinery").is_empty() and not Story.advance({"step": 13, "progress": 0}, "lab_upgrade", 1, "collector").is_empty(), "Raw Supply needs a collector upgrade")
 	check(Story.objective({"step": 2, "progress": 0}, 2.6) == "Hold position inside the scan field  2 / 5 s", "Scan objectives show elapsed seconds")
-	check(Story.completion_notice(Story.STEPS[9], {"step": 10, "progress": 0}).ends_with("Operation Foothold complete."), "The last step closes the chapter")
+	var handoff := Story.completion_lines(Story.STEPS[9], {"step": 10, "progress": 0})
+	check(handoff.size() == 2 and handoff[0][1].ends_with("Operation Foothold complete.") and handoff[1] == ["brell", Story.STEPS[10]["briefing"]], "The prologue's last step closes it and hands over to chapter 1")
+	check(Story.completion_notice(Story.STEPS[15], {"step": 16, "progress": 0}).ends_with("Operation Groundwork complete."), "The last step closes the final chapter")
+	check(Story.reward_text(1000, 0, {"prometid": 50, "duranium": 50}) == "+1,000 CR and Prometid x50, Duranium x50 in Skylab", "Lab stock rewards are described")
+	var pilot := {"credits": PilotStore.MAX_CREDITS - 10, "equipment": Equipment.starter(), "skylab": Skylab.bootstrap(0)}
+	pilot["equipment"]["story"] = {"step": 10, "progress": 0}
+	pilot["skylab"]["inventory"]["prometid"] = Skylab.capacities(pilot["skylab"])["prometid"] - 20
+	Story.record_lab(pilot, "upgrade", {"module": "basic"})
+	check(Story.state(pilot["equipment"])["step"] == 11 and pilot["credits"] == PilotStore.MAX_CREDITS and pilot["skylab"]["inventory"]["prometid"] == Skylab.capacities(pilot["skylab"])["prometid"] and pilot["skylab"]["inventory"]["duranium"] == 50, "Recorded rewards saturate the wallet and stop at storage capacity")
+	check(Skylab.valid(pilot["skylab"], pilot["equipment"]), "Granted lab stock keeps Skylab valid")
+	Story.record_lab(pilot, "ship", {})
+	check(Story.state(pilot["equipment"])["step"] == 11, "Events for a later step do not count early")
 	var equipment := Equipment.starter()
 	equipment["story"] = {"step": 4, "progress": 0}
 	check(Equipment.valid(equipment), "Saved story progress keeps equipment valid")
@@ -74,6 +97,59 @@ func saved(server: Sector, client: Sector) -> Dictionary:
 	return Story.state(server.session.store.pilots[server.session.pilot_ids[client.multiplayer.get_unique_id()]]["equipment"])
 
 
+# Operation Groundwork through authenticated Skylab, research, combat and transport requests.
+func play_groundwork(server: Sector, pilot: Sector) -> void:
+	var store := server.session.store
+	var id := pilot.multiplayer.get_unique_id()
+	var pilot_id: String = server.session.pilot_ids[id]
+	var lab: Dictionary = store.pilots[pilot_id]["skylab"]
+	check(Research.learn_blocker(Research.state(store.pilots[pilot_id]["equipment"]), "reinforced_plating", lab["inventory"]).begins_with("Need Prometid"), "A new pilot lacks the refined stock for a first research level")
+	pilot.session.combat.request_lab("upgrade", {"module": "enduriumCollector"})
+	await settle(0.1)
+	await replicate(server)
+	check(saved(server, pilot)["step"] == 10 and pilot.session.combat.station_message == "Upgrade Basic first.", "Collectors cannot outgrow Basic, which the first step teaches")
+	var credits: int = store.pilots[pilot_id]["credits"]
+	var prometid := int(store.pilots[pilot_id]["skylab"]["inventory"]["prometid"])
+	pilot.session.combat.request_lab("upgrade", {"module": "basic"})
+	await settle(0.1)
+	await replicate(server)
+	lab = store.pilots[pilot_id]["skylab"]
+	check(saved(server, pilot)["step"] == 11 and store.pilots[pilot_id]["credits"] == credits - 500 + 1000 and int(lab["inventory"]["prometid"]) == prometid + 50, "A Basic upgrade pays the step reward and lab stock with its cost")
+	check(pilot.session.combat.station_message == "Upgrade started. Industry Online complete: +1,000 CR and Prometid x50, Duranium x50 in Skylab.", "The Skylab confirmation reports the step reward")
+	await process_frame
+	check(pilot.story_sites.comm_lines.size() == 2 and pilot.story_sites.comm_lines[1][0] == "sato", "Sato briefs the research step")
+	server.session.ships[id].position = Vector3(0, 0, 400)
+	pilot.session.combat.request_station("research", "reinforced_plating")
+	await settle(0.1)
+	check(saved(server, pilot)["step"] == 11, "Research follows station service rules")
+	station(server, pilot)
+	var points: int = Research.state(store.pilots[pilot_id]["equipment"])["points"]
+	pilot.session.combat.request_station("research", "reinforced_plating")
+	await settle(0.1)
+	await replicate(server)
+	check(saved(server, pilot)["step"] == 12 and Research.level(Research.state(store.pilots[pilot_id]["equipment"]), "reinforced_plating") == 1 and Research.state(store.pilots[pilot_id]["equipment"])["points"] == points, "Learning a level with the granted stock completes Countermeasures and refunds its point")
+	check(pilot.session.combat.station_message.ends_with("Countermeasures complete: +2,000 CR and +1 research points."), "The research confirmation reports the step reward")
+	for count in 3:
+		await kill(server, "Scout", [pilot])
+	check(saved(server, pilot)["step"] == 13, "Three Scout kills complete the field test")
+	pilot.session.combat.request_lab("finish_upgrade", {"module": "basic"})
+	await settle(0.1)
+	check(saved(server, pilot)["step"] == 13 and store.pilots[pilot_id]["skylab"]["modules"]["basic"]["level"] == 2, "Finishing Basic is not itself a story step")
+	pilot.session.combat.request_lab("upgrade", {"module": "terbiumCollector"})
+	await settle(0.1)
+	await replicate(server)
+	check(saved(server, pilot)["step"] == 14 and store.pilots[pilot_id]["skylab"]["modules"]["terbiumCollector"]["upgrade"] != null, "A collector upgrade completes Raw Supply once Basic allows it")
+	pilot.session.combat.request_lab("ship", {"manifest": {"prometium": 10}})
+	await settle(0.1)
+	await replicate(server)
+	check(saved(server, pilot)["step"] == 15 and store.pilots[pilot_id]["skylab"]["shipment"] != null, "Dispatching a shipment completes the supply line")
+	points = Research.state(store.pilots[pilot_id]["equipment"])["points"]
+	await kill(server, "Sentinel", [pilot])
+	check(Story.complete(saved(server, pilot)) and Research.state(store.pilots[pilot_id]["equipment"])["points"] == points + 2, "A Sentinel kill completes chapter 1 with its research reward")
+	await process_frame
+	check(pilot.story_sites.comm.ends_with("Operation Groundwork complete."), "The last transmission closes chapter 1")
+
+
 func run() -> void:
 	run_rules()
 	var server := make_sector("StoryServer", true, CONTRACT_PORT)
@@ -96,7 +172,7 @@ func run() -> void:
 	var pilot_id: String = server.session.pilot_ids[id]
 	var combat := server.session.combat
 	await settle(0.1)
-	check(pilot.story_state() == Story.empty(), "New and existing pilots start the prologue")
+	check(pilot.story_state() == Story.empty(), "New pilots start the prologue")
 	check(pilot.story_sites.comm.begins_with("VANCE: Pilot, this is Commander Vance"), "Joining shows the current briefing as a transmission")
 	check(pilot.story_sites.comm_lines.size() == 1 and pilot.story_sites.comm_lines[0][0] == "vance", "The briefing transmission is attributed to its contact")
 	for contact: String in Story.CONTACTS:
@@ -207,11 +283,16 @@ func run() -> void:
 	combat.tick(0.02)
 	await settle(0.08)
 	await replicate(server)
-	check(Story.complete(saved(server, pilot)) and Research.state(store.pilots[pilot_id]["equipment"])["points"] == research + 3, "Accepting a hunt completes the prologue with its research reward")
+	check(saved(server, pilot) == {"step": 10, "progress": 0} and Research.state(store.pilots[pilot_id]["equipment"])["points"] == research + 3, "Accepting a hunt completes the prologue with its research reward")
 	await process_frame
-	check(pilot.hud.story_height() == 0.0 and not pilot.story_sites.site.visible and not pilot.hud.navigation.contacts().any(func(contact: Dictionary) -> bool: return str(contact["key"]).begins_with("story_")), "A finished chapter leaves the flight card, map and space clear")
+	check(pilot.story_sites.comm_lines.size() == 2 and pilot.story_sites.comm_lines[1][0] == "brell" and pilot.hud.story_height() > 0.0, "Finishing the prologue hands over to Brell's first chapter 1 briefing")
+	check(not pilot.story_sites.site.visible and not pilot.hud.navigation.contacts().any(func(contact: Dictionary) -> bool: return str(contact["key"]).begins_with("story_")), "Skylab steps have no site in space or on the map")
+	await capture(pilot, "story-groundwork-flight")
+	await play_groundwork(server, pilot)
+	await process_frame
+	check(pilot.hud.story_height() == 0.0 and not pilot.story_sites.site.visible, "A finished story leaves the flight card and space clear")
 	var file: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(store.path))
-	check(int(file["pilots"][pilot_id]["equipment"]["story"]["step"]) == 10, "Story progress is written to the pilot ledger")
+	check(int(file["pilots"][pilot_id]["equipment"]["story"]["step"]) == 16, "Story progress is written to the pilot ledger")
 	# The partner skips at the board after arming the confirmation.
 	var partner_id: String = server.session.pilot_ids[partner.multiplayer.get_unique_id()]
 	station(server, partner)
@@ -233,10 +314,27 @@ func run() -> void:
 	partner.hud.act_on_story("story_skip")
 	await settle(0.1)
 	await replicate(server)
-	check(Story.complete(saved(server, partner)) and store.pilots[partner_id]["credits"] == credits + 17300 and Research.state(store.pilots[partner_id]["equipment"])["points"] == research + 4, "Skipping completes the chapter and pays the remaining rewards")
+	check(saved(server, partner) == {"step": 10, "progress": 0} and store.pilots[partner_id]["credits"] == credits + 17300 and Research.state(store.pilots[partner_id]["equipment"])["points"] == research + 4, "Skipping completes the prologue and pays its remaining rewards")
+	check(partner.session.combat.station_message == "Prologue skipped. +17,300 CR and +4 research points.", "The skip confirmation names the prologue")
+	await process_frame
+	partner.hud.update_contract_panel()
+	check(partner.hud.story_skip.text == "SKIP CHAPTER 1" and partner.hud.contract_slots.text == "Operation Groundwork / 0 of 6 complete", "The Story tab moves on to chapter 1")
+	check(partner.hud.story_headers[0].visible and partner.hud.story_choices[9].visible and partner.hud.story_choices[10].text.begins_with("1. Industry Online"), "Prologue steps stay listed and chapter 1 numbers its own steps")
+	check(partner.hud.story_selected == 10 and partner.hud.contract_title.text == "Industry Online" and partner.hud.contract_reward.text.ends_with("\nSkylab    Prometid x50, Duranium x50"), "Progress selects the new current step and shows its lab stock reward")
+	await process_frame
+	await process_frame
+	var list := partner.hud.story_scroll.get_global_rect()
+	check(list.encloses(partner.hud.story_choices[10].get_global_rect()) and list.encloses(partner.hud.story_headers[1].get_global_rect()), "The Story list scrolls to the new chapter and its current step")
+	await capture(partner, "story-board-chapter-1")
+	var stock: Dictionary = store.pilots[partner_id]["skylab"]["inventory"].duplicate()
 	partner.session.combat.request_station("story_skip", "")
 	await settle(0.1)
-	check(store.pilots[partner_id]["credits"] == credits + 17300 and partner.session.combat.station_message == "Prologue already complete.", "A completed chapter cannot be skipped again")
+	await replicate(server)
+	var lab: Dictionary = store.pilots[partner_id]["skylab"]["inventory"]
+	check(Story.complete(saved(server, partner)) and store.pilots[partner_id]["credits"] == credits + 28800 and int(lab["prometid"]) >= int(stock["prometid"]) + 50 and int(lab["duranium"]) >= int(stock["duranium"]) + 50, "Skipping chapter 1 pays its credits and lab stock")
+	partner.session.combat.request_station("story_skip", "")
+	await settle(0.1)
+	check(store.pilots[partner_id]["credits"] == credits + 28800 and partner.session.combat.station_message == "Story already complete.", "A completed story cannot be skipped again")
 	server.session.disconnect_session("Restart")
 	await settle(0.3)
 	check(server.session.host(test_port(CONTRACT_PORT)) == OK, "Server reopens the ledger")
@@ -246,7 +344,7 @@ func run() -> void:
 	server.session.disconnect_session("Schema validation")
 	await settle(0.2)
 	var ledger: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(store.path))
-	ledger["pilots"]["pilot0"]["equipment"]["story"] = {"step": 11, "progress": 0}
+	ledger["pilots"]["pilot0"]["equipment"]["story"] = {"step": 17, "progress": 0}
 	write_ledger(store.path, ledger)
 	var original := FileAccess.get_file_as_string(store.path)
 	var reopened := PilotStore.new()

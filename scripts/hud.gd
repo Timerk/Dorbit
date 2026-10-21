@@ -44,7 +44,12 @@ var contract_back: Button
 var story_tab: Button
 var story_view := false
 var story_choices: Array[Button] = []
+# One heading per chapter in the Story list, before that chapter's first step.
+var story_headers: Array[Label] = []
+var story_scroll: ScrollContainer
 var story_selected := 0
+# The step the Story tab last showed as current; progress moves the selection with it.
+var story_seen := -1
 var story_briefing: Label
 var story_speaker: HBoxContainer
 var story_portrait: TextureRect
@@ -130,6 +135,7 @@ func build_contract_panel() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	left.add_child(scroll)
+	story_scroll = scroll
 	var offers := VBoxContainer.new()
 	offers.add_theme_constant_override("separation", 12)
 	offers.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -143,6 +149,11 @@ func build_contract_panel() -> void:
 		contract_choices[offer] = button
 	contract_empty = StationUi.text(offers, "No active quests", 20, StationUi.MUTED)
 	for index in Story.STEPS.size():
+		var number := Story.chapter(index)
+		if index == Story.chapter_start(number):
+			var heading := StationUi.text(offers, Story.CHAPTERS[number]["title"].to_upper(), 16, StationUi.AMBER)
+			heading.add_theme_font_override("font", StationUi.BOLD)
+			story_headers.append(heading)
 		var button := StationUi.button(offers, "", func(): select_story(index))
 		button.custom_minimum_size.y = 64
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -205,6 +216,15 @@ func show_story() -> void:
 	story_skip_armed = false
 	story_selected = mini(int(sector.story_state().get("step", 0)), Story.STEPS.size() - 1)
 	update_contract_panel()
+	reveal_story()
+
+
+# Scroll the Story list to the selected step's chapter heading and the step itself,
+# once newly shown rows have their layout.
+func reveal_story() -> void:
+	await get_tree().process_frame
+	story_scroll.ensure_control_visible(story_headers[Story.chapter(story_selected)])
+	story_scroll.ensure_control_visible(story_choices[story_selected])
 
 
 func select_story(index: int) -> void:
@@ -275,6 +295,8 @@ func update_contract_panel() -> void:
 	contract_tabs[1].set_pressed_no_signal(not story_view and contract_active_only)
 	for button: Button in story_choices:
 		button.visible = story_view
+	for heading: Label in story_headers:
+		heading.visible = story_view
 	for control: Control in [story_speaker, story_tip, story_deliver, story_skip]:
 		control.visible = story_view
 	if story_view:
@@ -326,23 +348,34 @@ func update_story_panel(blocker: String) -> void:
 	var live := sector.story_state()
 	var story := Story.empty() if live.is_empty() else live
 	var reached := int(story["step"])
-	contract_slots.text = "%s / %d of %d complete" % [Story.CHAPTER, reached, Story.STEPS.size()]
+	var chapter := Story.chapter(reached)
+	var start := Story.chapter_start(chapter)
+	var finish := Story.chapter_end(chapter)
+	if reached != story_seen:
+		story_seen = reached
+		story_selected = mini(reached, Story.STEPS.size() - 1)
+		reveal_story()
+	contract_slots.text = "%s / %d of %d complete" % [Story.CHAPTERS[chapter]["title"], mini(reached, finish) - start, finish - start]
 	for offer: String in contract_choices:
 		contract_choices[offer].hide()
 	contract_empty.hide()
 	contract_accept.hide()
 	contract_abandon.hide()
 	story_selected = clampi(story_selected, 0, mini(reached, Story.STEPS.size() - 1))
+	# Earlier chapters stay listed for review; later chapters stay hidden.
+	for number in story_headers.size():
+		story_headers[number].visible = number <= chapter
 	for index in story_choices.size():
 		var state := "Complete" if index < reached else ("Current" if index == reached else "Locked")
-		story_choices[index].text = "%d. %s\n%s" % [index + 1, Story.STEPS[index]["title"], state]
+		story_choices[index].visible = index < finish
+		story_choices[index].text = "%d. %s\n%s" % [index - Story.chapter_start(Story.chapter(index)) + 1, Story.STEPS[index]["title"], state]
 		story_choices[index].disabled = index > reached
 		story_choices[index].set_pressed_no_signal(index == story_selected)
 	var step: Dictionary = Story.STEPS[story_selected]
 	var current := story_selected == reached
 	contract_title.text = step["title"]
-	contract_preview.visible = step.has("kind")
-	if step.has("kind"):
+	contract_preview.visible = step["type"] == "kill"
+	if contract_preview.visible:
 		contract_preview.show_kind(step["kind"])
 	contract_progress.visible = true
 	contract_progress.max_value = step["required"]
@@ -357,6 +390,8 @@ func update_story_panel(blocker: String) -> void:
 	story_portrait.texture = StorySites.portrait(step["contact"])
 	story_tip.text = "TIP: " + Story.hint(step) if current else step["done"]
 	contract_reward.text = "Reward    " + Story.reward_text(step["credits"], step["research"])
+	if step.has("lab"):
+		contract_reward.text += "\nSkylab    " + CargoResources.describe(step["lab"])
 	var pending := sector.session.combat.station_pending
 	story_deliver.visible = current and step["type"] == "deliver"
 	var status := blocker
@@ -367,7 +402,7 @@ func update_story_panel(blocker: String) -> void:
 			status = "Need %s in your active ship's cargo." % needed
 	story_deliver.disabled = not status.is_empty() or pending
 	story_skip.visible = not Story.complete(story)
-	story_skip.text = "CONFIRM SKIP / PAY REMAINING REWARDS" if story_skip_armed else "SKIP PROLOGUE"
+	story_skip.text = "CONFIRM SKIP / PAY REMAINING REWARDS" if story_skip_armed else "SKIP " + str(Story.CHAPTERS[chapter]["label"]).to_upper()
 	story_skip.disabled = not blocker.is_empty() or pending
 	contract_status.text = status.replace("to repair.", "to manage quests.").replace("Repairs available", "Quest actions available")
 	contract_status.visible = not status.is_empty()
@@ -460,7 +495,9 @@ func story_height() -> float:
 func draw_story(rect: Rect2) -> void:
 	var story := sector.story_state()
 	var step := Story.current(story)
-	text_at(rect.position + Vector2(18, 66), "%d / %d  %s" % [int(story["step"]) + 1, Story.STEPS.size(), str(step["title"]).to_upper()], 16, GOLD, 244)
+	var chapter := Story.chapter(int(story["step"]))
+	var start := Story.chapter_start(chapter)
+	text_at(rect.position + Vector2(18, 66), "%d / %d  %s" % [int(story["step"]) - start + 1, Story.chapter_end(chapter) - start, str(step["title"]).to_upper()], 16, GOLD, 244)
 	text_at(rect.position + Vector2(18, 90), Story.objective(story, sector.story_sites.scan_seconds), 15, INK, 244)
 	paragraph(rect.position + Vector2(18, 112), story_hint, 244, 14, MUTED)
 

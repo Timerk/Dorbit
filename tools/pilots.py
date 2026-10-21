@@ -111,8 +111,8 @@ def valid_research(data: object) -> bool:
             and all(isinstance(level, int) and 1 <= level <= 5 for level in data["skills"].values()))
 
 
-# Mirrors Story.STEPS in scripts/story.gd: ten prologue steps.
-STORY_STEPS = 10
+# Mirrors Story.STEPS in scripts/story.gd: the ten-step prologue and six-step chapter 1.
+STORY_STEPS = 16
 
 
 def valid_story(data: object) -> bool:
