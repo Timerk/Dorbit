@@ -16,7 +16,7 @@ const MODELS := {
 	"sg3n-a02": {"name": "SG3N-A02", "kind": "generator", "price": 16000, "damage": 0.0, "shield": 2000.0, "absorption": 0.5, "speed": 0.0},
 	"fs-01": {"name": "FS-01", "kind": "generator", "price": 256000, "damage": 0.0, "shield": 3200.0, "absorption": 0.7, "regen_bonus": 0.0625, "speed": 0.0},
 	"sg3n-a03": {"name": "SG3N-A03", "kind": "generator", "price": 128000, "damage": 0.0, "shield": 5000.0, "absorption": 0.6, "speed": 0.0},
-	"sg3n-b00": {"name": "SG3N-B00", "kind": "generator", "price": 0, "unavailable": "Unavailable in the shop. Korrath Gate victories have a 20% chance to award one.", "damage": 0.0, "shield": 9000.0, "absorption": 0.7, "speed": 0.0},
+	"sg3n-b00": {"name": "SG3N-B00", "kind": "generator", "price": 0, "unavailable": "Unavailable in the shop. Korrath Gate victories can award one.", "damage": 0.0, "shield": 9000.0, "absorption": 0.7, "speed": 0.0},
 	"sg3n-b01": {"name": "SG3N-B01", "kind": "generator", "price": 2500 * URIDIUM_TO_CREDITS, "damage": 0.0, "shield": 9500.0, "absorption": 0.7, "speed": 0.0},
 	"sg3n-b02": {"name": "SG3N-B02", "kind": "generator", "price": 10000 * URIDIUM_TO_CREDITS, "damage": 0.0, "shield": 10000.0, "absorption": 0.8, "speed": 0.0},
 	"g3n-1010": {"name": "G3N-1010", "kind": "generator", "price": 2000, "damage": 0.0, "shield": 0.0, "speed": 2.0},
