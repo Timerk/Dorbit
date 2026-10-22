@@ -654,6 +654,10 @@ func flight_launched(id: int) -> void:
 func peer_left(id: int) -> void:
 	if active and sector.dedicated_server and not combat.flush_boosts([id]):
 		stop_for_save_failure()
+	# Disconnecting mid-wave is a retreat, like quitting to the station. Run
+	# lives are keyed by pilot identity, so settle them before it is erased.
+	if active and multiplayer.is_server() and ships.has(id) and GalaxyGates.is_arena(ships[id].map_id):
+		combat.gate.retreated(id, false)
 	pilot_ids.erase(id)
 	challenges.erase(id)
 	if active and multiplayer.is_server():

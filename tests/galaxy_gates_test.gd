@@ -16,7 +16,7 @@ func run_rules() -> void:
 	var vashar := GalaxyGates.info(VASHAR)
 	var operation: Dictionary = vashar["signal"]
 	check(GalaxyGates.valid(gates, VASHAR) and GalaxyGates.valid_collection({}), "Empty gate progress is valid")
-	for invalid: Variant in [null, {"parts": 0}, {"parts": -1, "signal": "available", "progress": 0}, {"parts": 100, "signal": "available", "progress": 0},
+	for invalid: Variant in [null, {"parts": 0}, {"parts": -1, "signal": "available", "progress": 0}, {"parts": 1000, "signal": "available", "progress": 0},
 			{"parts": 0, "signal": "unknown", "progress": 0}, {"parts": 0, "signal": "available", "progress": 1},
 			{"parts": 0, "signal": "active", "progress": operation["required"]}, {"parts": 0, "signal": "done", "progress": 0, "extra": 1}]:
 		check(not GalaxyGates.valid(invalid, VASHAR), "Malformed gate state is rejected: %s" % JSON.stringify(invalid))
@@ -39,7 +39,7 @@ func run_rules() -> void:
 	check(done["completed"] and done["gates"] == {"parts": 4 + operation["parts"], "signal": "done", "progress": 0}
 		and done["credits"] == operation["credits"] and done["research"] == operation["research"], "The final part decodes the cache once")
 	check(not GalaxyGates.accept_blocker(done["gates"], VASHAR).is_empty(), "A decoded signal waits for the next gate")
-	check(GalaxyGates.collect({"parts": 98, "signal": "available", "progress": 0}, VASHAR, 5, 5)["gates"]["parts"] == GalaxyGates.MAX_PARTS, "Stock is capped")
+	check(GalaxyGates.collect({"parts": 998, "signal": "available", "progress": 0}, VASHAR, 5, 5)["gates"]["parts"] == GalaxyGates.MAX_PARTS, "Stock is capped")
 	var assembled := GalaxyGates.assemble({"parts": 23, "signal": "done", "progress": 0}, VASHAR)
 	check(assembled == {"parts": 3, "signal": "available", "progress": 0}, "Assembly consumes one gate and reopens the signal")
 	check(GalaxyGates.assemble({"parts": 30, "signal": "available", "progress": 0}, KORRATH)["parts"] == 6, "Each gate consumes its own part count")
@@ -65,6 +65,7 @@ func run_rules() -> void:
 		check(int(GalaxyGates.wave_counts(gate_id, final_wave, 10)[definition["escort"]]) <= int(definition["pool"][definition["escort"]]) - GalaxyGates.ESCORTS,
 			"%s boss wave leaves dormant escorts at any group size" % definition["name"])
 		check(float(Alien.TYPES[definition["boss"]]["range"]) < 310.0, "%s boss stays out-ranged by pilot lasers" % definition["name"])
+	check(SectorMaps.first_hop(VMAP, 1) == 0 and SectorMaps.first_hop(KMAP, 2) == 0, "Routing out of an arena leads through its exit to M1")
 
 
 func saved(server: Sector, client: Sector, gate_id: String = VASHAR) -> Dictionary:
@@ -225,6 +226,7 @@ func run() -> void:
 	gate.tick(GalaxyGates.FIRST_WAVE_DELAY)
 	var alive := gate.wave_aliens.filter(func(alien: Alien): return alien.alive).size()
 	check(gate.phase == "fighting" and gate.wave == 0 and alive == GalaxyGates.wave_counts(VASHAR, 0, 2)["Shardling"], "The first wave scales to the pilots inside")
+	check(gate.wave_aliens.all(func(alien: Alien): return gate.clear_of_rocks(alien.position, 14.9)), "Wave aliens spawn clear of arena asteroids")
 	await sync(server)
 	check(pilot.map_id == VMAP and pilot.session.combat.gate_summary["wave"] == 1, "The pilot's client shows the arena and wave")
 	check(pilot.hud.gate_status().begins_with("VASHAR GATE / WAVE 1 OF") and pilot.hud.gate_countdown() < 0.0, "The HUD reports the active wave once the countdown ends")
@@ -241,6 +243,8 @@ func run() -> void:
 	var ship := server.session.ships[partner_id]
 	ship.take_damage(ship.max_hull + ship.max_shield + 1.0, null)
 	check(gate.lives[server.session.pilot_ids[partner_id]] == GalaxyGates.info(VASHAR)["lives"] - 1, "Dying in the arena costs one life")
+	gate.retreated(partner_id)
+	check(gate.lives[server.session.pilot_ids[partner_id]] == GalaxyGates.info(VASHAR)["lives"] - 1, "Quitting during rescue does not cost a second life")
 	combat.tick(3.1)
 	check(ship.alive and ship.map_id == 0, "Rescue returns the pilot to Outpost 01")
 	var rejoined: String = await enter(server, partner)

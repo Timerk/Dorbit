@@ -704,7 +704,7 @@ func build_map_visuals(map: int) -> void:
 	gates.name = "Map%dGates" % (map + 1)
 	add_child(gates)
 	map_scenery[map].append(gates)
-	for destination: int in SectorMaps.GATES.get(map, {}).keys() + SectorMaps.SPECIAL_GATES.get(map, {}).keys():
+	for destination: int in SectorMaps.endpoints(map):
 		SectorMaps.gate_model(gates, map, destination)
 	refresh_rift()
 	# Newly created materials must respect the current device setting too.

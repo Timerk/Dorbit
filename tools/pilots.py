@@ -124,7 +124,7 @@ def valid_story(data: object) -> bool:
 
 
 # Mirrors GalaxyGates in scripts/galaxy_gates.gd: per-gate progress with at most
-# 99 parts and operation progress below each gate's requirement.
+# 999 parts and operation progress below each gate's requirement.
 GATE_OPERATION_REQUIRED = {"vashar": 8, "korrath": 10, "sylith": 12}
 
 
@@ -134,7 +134,7 @@ def valid_gates(data: object) -> bool:
     for gate, state in data.items():
         if (gate not in GATE_OPERATION_REQUIRED or not isinstance(state, dict)
                 or state.keys() != {"parts", "signal", "progress"}
-                or type(state["parts"]) is not int or not 0 <= state["parts"] <= 99
+                or type(state["parts"]) is not int or not 0 <= state["parts"] <= 999
                 or state["signal"] not in ("available", "active", "done")
                 or type(state["progress"]) is not int
                 or not 0 <= state["progress"] <= (GATE_OPERATION_REQUIRED[gate] - 1 if state["signal"] == "active" else 0)):
