@@ -6,7 +6,7 @@ extends RefCounted
 ## themselves and strike its staging fleet before it comes through.
 ## Part counts, chances, waves, lives and rewards are provisional playtesting values.
 
-const MAX_PARTS := 99
+const MAX_PARTS := 999
 # Pilots counted when locking a wave's size. Each additional pilot adds half the base count.
 const SCALED_PILOTS := 4
 const WAVE_DELAY := 8.0
