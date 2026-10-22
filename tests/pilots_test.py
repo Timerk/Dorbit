@@ -322,9 +322,12 @@ class ProvisioningTest(unittest.TestCase):
         self.assertFalse(pilots.valid_equipment(equipment))
         del equipment["story"]
         # Galaxy gate parts are optional; signal progress exists only while active.
-        equipment["gates"] = {"parts": 20, "signal": "active", "progress": 7}
+        equipment["gates"] = {"vashar": {"parts": 20, "signal": "active", "progress": 7},
+                              "korrath": {"parts": 3, "signal": "active", "progress": 9}}
         self.assertTrue(pilots.valid_equipment(equipment))
-        equipment["gates"] = {"parts": 20, "signal": "done", "progress": 1}
+        equipment["gates"] = {"vashar": {"parts": 20, "signal": "done", "progress": 1}}
+        self.assertFalse(pilots.valid_equipment(equipment))
+        equipment["gates"] = {"unknown": {"parts": 1, "signal": "available", "progress": 0}}
         self.assertFalse(pilots.valid_equipment(equipment))
         del equipment["gates"]
         equipment["items"]["ammo-cpu"]["ammo_type"] = "x4"

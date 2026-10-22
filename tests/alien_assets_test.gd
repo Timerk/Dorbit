@@ -78,14 +78,14 @@ func run() -> void:
 		check(alien.alive and alien.visible and alien.collision_layer == 2,
 			kind + " respawn restores visibility and collision")
 		alien.free()
-	# Vashar Gate aliens use procedural playtest models until authored art is approved.
 	check(sizes.size() == Alien.TYPES.size() and sizes[0] < sizes[1] and sizes[1] < sizes[2],
 		"Scout, Sentinel and Heavy retain increasing visual size")
 	check(Alien.VISUAL_DIAMETERS.size() == Alien.TYPES.size(),
-		"Every encounter type has an imported model and a mesh-free server diameter")
-	check_vashar()
-	# The Vashar Gate roster is its own faction progression, checked separately.
-	var roster: Array = Alien.TYPES.keys().filter(func(kind: String): return not GalaxyGates.POOL.has(kind))
+		"Every authored encounter type has an imported model and a mesh-free server diameter")
+	check_gate_models("vashar")
+	check_gate_models("korrath")
+	# Gate rosters are their own faction progressions, checked separately.
+	var roster: Array = Alien.TYPES.keys().filter(func(kind: String): return not kind in GalaxyGates.arena_kinds())
 	roster.sort_custom(func(a: String, b: String): return Alien.TYPES[a]["hull"] < Alien.TYPES[b]["hull"])
 	var previous_diameter := 0.0
 	for kind: String in roster:
@@ -151,7 +151,7 @@ func check_finish(kind: String, mesh: ArrayMesh) -> void:
 		if material.resource_name.ends_with("coated armor"):
 			painted = material.clearcoat_enabled
 			# Vashar armor keeps a low lift so near-black crystal contrasts with its violet seams.
-			var minimum_lift := 2.0 if kind in ["Scout", "Sentinel", "Heavy"] else (0.1 if GalaxyGates.POOL.has(kind) else 0.3)
+			var minimum_lift := 2.0 if kind in ["Scout", "Sentinel", "Heavy"] else (0.1 if kind in GalaxyGates.arena_kinds() else 0.3)
 			check(material.emission_enabled and material.emission == Color.WHITE
 				and material.emission_operator == BaseMaterial3D.EMISSION_OP_MULTIPLY
 				and material.emission_energy_multiplier >= minimum_lift
@@ -164,21 +164,21 @@ func check_finish(kind: String, mesh: ArrayMesh) -> void:
 				rear_exhaust = rear_exhaust or vertex.z > bounds.end.z - bounds.size.length() * .08
 	check(textures.size() == 3 and painted and luminous, kind + " retains three shared maps, coated armor and emission")
 	# Vashar crystals are deliberately low-poly faceted hulls without forward optics.
-	var vashar := GalaxyGates.POOL.has(kind)
+	var vashar := kind in GalaxyGates.arena_kinds()
 	check(vashar or (forward_optics and rear_exhaust), kind + " cannons face -Z and exhausts face +Z")
 	check(lod_count > 0 and triangles > (1500 if vashar else 30000), kind + " retains detailed geometry and generated distance LODs")
 	print("ALIEN_GEOMETRY %s triangles=%d lod_levels=%d" % [kind, triangles, lod_count])
 
 
-func check_vashar() -> void:
+func check_gate_models(gate_id: String) -> void:
 	var previous := 0.0
-	for kind: String in GalaxyGates.POOL:
+	for kind: String in GalaxyGates.info(gate_id)["pool"]:
 		var alien := Alien.new()
 		alien.kind = kind
 		root.add_child(alien)
 		var instance := alien.model.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D
 		var diameter := instance.mesh.get_aabb().size.length() * float(Alien.VISUAL_SCALE[kind])
-		check(diameter > previous, kind + " is larger than the previous Vashar tier")
+		check(diameter > previous, kind + " is larger than the previous faction tier")
 		check(is_equal_approx(SectorVisuals.destruction_size(alien), float(Alien.VISUAL_DIAMETERS[kind]) * float(Alien.VISUAL_SCALE[kind])), kind + " destruction size matches its exported model")
 		previous = diameter
 		print("ALIEN_SIZE %s diameter=%.2f m" % [kind, diameter])

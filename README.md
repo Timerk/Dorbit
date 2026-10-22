@@ -246,7 +246,7 @@ equip it, **Quests** to accept hunting contracts, or **Cargo trade** to sell sav
 resources. **Skylab** manages persistent collectors, refining, upgrades, robots
 and shipments to ship cargo; see [Skylab rules and balance](docs/skylab.md).
 **Settings** and **Connection** are also available. **Galaxy Gates** shows your
-gate parts, the Signal Anomaly operation and the Vashar Gate; see
+parts and operations for the Vashar and Korrath gates; see
 [Galaxy gates](GAME_PLAN.md#galaxy-gates-the-vashar-gate). Choose the amber **START** button on Overview
 to spawn at Outpost 01 with your selected ship and fitting. Esc or Back returns to
 the overview; these actions do not launch. Docked ships are hidden from other

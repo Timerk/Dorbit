@@ -278,7 +278,7 @@ func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary 
 			return fail("Invalid server story update.")
 		next[id]["equipment"]["story"] = stories[id].duplicate()
 	for id: String in gates:
-		if not next.has(id) or not GalaxyGates.valid(gates[id]):
+		if not next.has(id) or not GalaxyGates.valid_collection(gates[id]):
 			return fail("Invalid server gate update.")
 		next[id]["equipment"]["gates"] = gates[id].duplicate()
 	return persist(next)

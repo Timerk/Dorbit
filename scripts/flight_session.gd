@@ -7,7 +7,7 @@ const MAX_PLAYERS: int = 10
 const COMMAND_TIMEOUT: float = 0.5
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when packet contents or shared physics change without an RPC signature change.
-const NETWORK_SCHEMA: int = 21
+const NETWORK_SCHEMA: int = 22
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
@@ -574,7 +574,7 @@ func dock_request() -> void:
 	if not ships.has(id) or ships[id].get_meta("docked", false):
 		return
 	var ship := ships[id]
-	if ship.map_id == GalaxyGates.MAP:
+	if GalaxyGates.is_arena(ship.map_id):
 		combat.gate.retreated(id)
 	ship.set_meta("docked", true)
 	if ship.map_id != 0:
@@ -656,7 +656,7 @@ func peer_left(id: int) -> void:
 		stop_for_save_failure()
 	# Disconnecting mid-wave is a retreat, like quitting to the station. Run
 	# lives are keyed by pilot identity, so settle them before it is erased.
-	if active and multiplayer.is_server() and ships.has(id) and ships[id].map_id == GalaxyGates.MAP:
+	if active and multiplayer.is_server() and ships.has(id) and GalaxyGates.is_arena(ships[id].map_id):
 		combat.gate.retreated(id, false)
 	pilot_ids.erase(id)
 	challenges.erase(id)
@@ -1143,17 +1143,17 @@ func jump(id: int, life: int, destination: int) -> String:
 		return "Fly within 50 m of the gate to jump."
 	if Time.get_ticks_msec() < jump_until.get(id, 0):
 		return "Gate stabilizing. Wait two seconds between jumps."
-	if destination == GalaxyGates.MAP:
-		var blocker := combat.gate.entry_blocker(id)
+	if GalaxyGates.is_arena(destination):
+		var blocker := combat.gate.entry_blocker(id, destination)
 		if not blocker.is_empty():
 			return blocker
-	if ship.map_id == GalaxyGates.MAP:
+	if GalaxyGates.is_arena(ship.map_id):
 		var sealed := combat.gate.exit_blocker()
 		if not sealed.is_empty():
 			return sealed
 	jump_until[id] = Time.get_ticks_msec() + int(SectorMaps.JUMP_COOLDOWN * 1000)
 	transfer(id, destination)
-	if destination == GalaxyGates.MAP:
+	if GalaxyGates.is_arena(destination):
 		combat.gate.entered(id)
 	return ""
 
@@ -1228,8 +1228,9 @@ func finish_local_jump() -> void:
 	for effect in get_tree().get_nodes_in_group("transient_feedback"):
 		if sector.is_ancestor_of(effect):
 			effect.queue_free()
-	if sector.map_id == GalaxyGates.MAP:
-		sector.notify("Entered the Vashar Rift. The protected gate behind you returns to M1 (%s)." % GameSettings.binding_text("jump_gate"))
+	var arena := GalaxyGates.for_map(sector.map_id)
+	if not arena.is_empty():
+		sector.notify("Entered the %s. The gate behind you returns to M1 between waves (%s)." % [GalaxyGates.info(arena)["arena"], GameSettings.binding_text("jump_gate")])
 	else:
 		sector.notify("Arrived at %s. Gates are protected; press %s nearby to return." % [SectorMaps.MAPS[sector.map_id]["name"], GameSettings.binding_text("jump_gate")])
 	reveal_jump()

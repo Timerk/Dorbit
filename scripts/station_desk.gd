@@ -30,7 +30,7 @@ func station_request(id: int, sequence: int, action: String, subject: String, sh
 	if records[id]["life"] != life:
 		blocker = "Ship changed. Review your fitting after rescue."
 	if blocker.is_empty() and action in ["gate_assemble", "gate_preview"]:
-		blocker = combat.gate.open_blocker()
+		blocker = "Unknown galaxy gate." if not GalaxyGates.GATES.has(subject) else combat.gate.open_blocker()
 	if blocker.is_empty() and action == "gate_preview" and not session.can_grant_test_credits(id):
 		blocker = "Preview gates are unavailable for this pilot on this server."
 	if not blocker.is_empty():
@@ -38,8 +38,8 @@ func station_request(id: int, sequence: int, action: String, subject: String, sh
 		return
 	# Preview gates open without parts or a saved transaction.
 	if action == "gate_preview":
-		combat.gate.start("a preview pilot")
-		publish_inventory(id, "Preview: %s opened near Outpost 01." % GalaxyGates.NAME)
+		combat.gate.start(subject, "a preview pilot")
+		publish_inventory(id, "Preview: %s opened near Outpost 01." % GalaxyGates.info(subject)["name"])
 		return
 	var previous_revision: int = session.store.pilots[pilot_id]["equipment"]["revision"]
 	var previous_ship: String = session.store.pilots[pilot_id]["equipment"]["active_ship"]
@@ -70,7 +70,7 @@ func station_request(id: int, sequence: int, action: String, subject: String, sh
 		session.ships[id].velocity = Vector3.ZERO
 	publish_inventory(id, result)
 	if action == "gate_assemble" and pilot["equipment"]["revision"] > previous_revision:
-		combat.gate.start("Pilot %d" % id)
+		combat.gate.start(subject, "Pilot %d" % id)
 	if action in ["buy", "buy_ship", "buy_ammo", "sell", "refine", "boost", "replace_boost", "research", "research_reset"] and pilot["equipment"]["revision"] > previous_revision:
 		combat.message(id, result, "purchase")
 
