@@ -20,7 +20,7 @@ const MAPS := {
 		"aliens": ["Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Bulwark", "Bulwark", "Bulwark", "Bulwark", "Bulwark", "Siegebreaker"],
 		"description": "Korrath Gate / siege bastion / waves end with the Siegebreaker"},
 	6: {"name": "SG / Sylith Hollow", "color": Color("4fe3d2"), "instance": true,
-		"aliens": ["Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Veilcaster", "Veilcaster", "Veilcaster", "Veilcaster", "Veilcaster", "Ascendant"],
+		"aliens": ["Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Veilcaster", "Veilcaster", "Veilcaster", "Veilcaster", "Veilcaster", "Ascendant"],
 		"description": "Sylith Gate / choir hollow / waves end with the Ascendant"},
 }
 const GATES := {

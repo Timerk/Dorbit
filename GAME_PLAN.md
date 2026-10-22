@@ -1634,12 +1634,14 @@ Sylith gate cores through the Frontier relay network. The gate leads into the
 | --- | --- | --- | --- |
 | Wisp | 14,000 / 9,000 | 7,000 / 0.7 s | 6,000 |
 | Veilcaster | 70,000 / 40,000 | 24,000 / 0.85 s | 30,000 |
-| Ascendant | 1,000,000 / 500,000 | 50,000 / 0.5 s | 600,000 |
+| Ascendant | 1,000,000 / 500,000 | 50,000 / 0.5 s, 270 m | 600,000 |
 
 - **Rewards:** 500,000 CR, 15 research points and 40,000 x4 shots per
   participant, with a 35% chance of an LF-4 laser.
-- Shared gate rules apply. The arena is map 6 with a teal ice-world backdrop and
-  its portal sits near Outpost 01's approach beacon. Sylith aliens use colored
+- Shared gate rules apply, including the escort reserve in boss waves (pool:
+  14 Wisps, 5 Veilcasters). The arena is map 6 with a cold teal nebula backdrop,
+  and its portal sits beyond Outpost 01 toward the defense ring wreck. Network
+  schema 23 adds the Sylith arena and aliens. Sylith aliens use colored
   placeholder models; art is deferred. All values are provisional.
 
 #### First campaign implementation scope

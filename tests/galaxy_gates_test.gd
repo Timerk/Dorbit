@@ -1,13 +1,14 @@
 extends "res://tests/hunting_contracts_test.gd"
-## Gate part rules, the Signal Anomaly operation, assembly, preview gates and a
-## full Vashar Gate run with lives, waves, escorts, victory and collapse.
+## Gate part rules for every gate, the Vashar operation, assembly, preview gates,
+## a full Vashar run with lives, waves, escorts, victory and collapse, and full
+## runs of every further gate.
 
 
 const VASHAR := "vashar"
 const KORRATH := "korrath"
+const SYLITH := "sylith"
 const VMAP := 4
 const KMAP := 5
-const SYLITH := "sylith"
 
 
 func run_rules() -> void:
