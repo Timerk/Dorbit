@@ -30,6 +30,10 @@ const SPECIAL_GATES := {
 }
 # Replicated from the server's gate run; the Outpost 01 entry exists only while open.
 static var rift_open := false
+# Read-only link tables per map, rebuilt when the open portal changes. Hot paths
+# (protection, contacts, HUD) look links up every tick without allocating.
+static var link_cache := {}
+static var link_cache_open := false
 
 # Maps in the connected network, excluding gate arenas.
 static func network_maps() -> Array[int]:
@@ -40,12 +44,24 @@ static func network_maps() -> Array[int]:
 	return result
 
 
-# Every usable gate on a map, keyed by destination.
+# Every usable gate on a map, keyed by destination. Callers must not modify it.
 static func links(map: int) -> Dictionary:
+	if link_cache_open != rift_open:
+		link_cache.clear()
+		link_cache_open = rift_open
+	if not link_cache.has(map):
+		var result: Dictionary = GATES.get(map, {}).duplicate()
+		for destination: int in SPECIAL_GATES.get(map, {}):
+			if map != 0 or rift_open:
+				result[destination] = SPECIAL_GATES[map][destination]
+		link_cache[map] = result
+	return link_cache[map]
+
+
+# Every gate endpoint on a map, open or closed; used to keep alien homes clear.
+static func endpoints(map: int) -> Dictionary:
 	var result: Dictionary = GATES.get(map, {}).duplicate()
-	for destination: int in SPECIAL_GATES.get(map, {}):
-		if map != 0 or rift_open:
-			result[destination] = SPECIAL_GATES[map][destination]
+	result.merge(SPECIAL_GATES.get(map, {}))
 	return result
 
 

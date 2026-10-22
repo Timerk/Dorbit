@@ -91,15 +91,15 @@ static func roll_parts(kind: String, rng: RandomNumberGenerator, guaranteed: boo
 	return parts
 
 
-## Adds collected parts and counts them toward an active signal operation.
-## Returns the next state with any operation reward.
-static func collect(gates: Dictionary, amount: int) -> Dictionary:
+## Adds collected parts. `qualifying` of them came from the operation's map and
+## count toward an active signal operation. Returns the next state with any reward.
+static func collect(gates: Dictionary, amount: int, qualifying: int) -> Dictionary:
 	var next := gates.duplicate()
 	var result := {"gates": next, "credits": 0, "research": 0, "completed": false}
 	next["parts"] = mini(MAX_PARTS, int(next["parts"]) + amount)
-	if not signal_active(next):
+	if not signal_active(next) or qualifying <= 0:
 		return result
-	var progress := int(next["progress"]) + amount
+	var progress := int(next["progress"]) + qualifying
 	if progress < int(SIGNAL["required"]):
 		next["progress"] = progress
 		return result

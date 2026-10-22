@@ -428,7 +428,7 @@ func alien_home_clear(point: Vector3, enemy: Alien) -> bool:
 		return false
 	if enemy.map_id == 0 and point.distance_to(STATION_POSITION) < float(enemy.tuning()["detection"]) + PROTECTION_RADIUS + 15.0:
 		return false
-	for destination: int in SectorMaps.links(enemy.map_id):
+	for destination: int in SectorMaps.endpoints(enemy.map_id):
 		if point.distance_to(SectorMaps.gate_position(enemy.map_id, destination)) < float(enemy.tuning()["detection"]) + SectorMaps.PROTECTION_RADIUS + 35.0:
 			return false
 	for other: Alien in world_aliens.values():
