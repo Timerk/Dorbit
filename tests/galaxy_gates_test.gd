@@ -34,7 +34,9 @@ func run_rules() -> void:
 		check(GalaxyGates.roll_parts("Skirmisher", rng, true) >= 1, "The operation guarantees a part")
 	check(GalaxyGates.wave_counts(0, 1) == {"Shardling": 3} and GalaxyGates.wave_counts(1, 3) == {"Shardling": 8},
 		"Waves scale with pilots and stay within the arena pool")
-	check(GalaxyGates.wave_counts(6, 10)["Mothership"] == 1 and GalaxyGates.wave_counts(6, 10)["Shardling"] <= GalaxyGates.POOL["Shardling"], "The boss wave has one mothership at any group size")
+	check(GalaxyGates.wave_counts(6, 10)["Mothership"] == 1 and GalaxyGates.wave_counts(6, 10)["Shardling"] <= GalaxyGates.POOL["Shardling"] - GalaxyGates.ESCORTS,
+		"The boss wave has one mothership and leaves dormant escorts at any group size")
+	check(Alien.TYPES["Mothership"]["range"] < 310.0, "The mothership stays out-ranged by pilot lasers")
 	check(str(GalaxyGates.pool_kinds()) == str(SectorMaps.MAPS[GalaxyGates.MAP]["aliens"]), "The arena roster matches the gate pool")
 
 

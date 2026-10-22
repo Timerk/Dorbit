@@ -134,13 +134,16 @@ static func assemble(gates: Dictionary) -> Dictionary:
 	return next
 
 
-## Alien counts for one wave, locked when it starts.
+## Alien counts for one wave, locked when it starts. The boss never scales, and
+## a boss wave leaves enough dormant Shardlings for the mothership's escorts.
 static func wave_counts(wave: int, pilots: int) -> Dictionary:
 	var counts := {}
 	var extra := clampi(pilots, 1, SCALED_PILOTS) - 1
+	var boss_wave: bool = WAVES[wave].has("Mothership")
 	for kind: String in WAVES[wave]:
 		var base := int(WAVES[wave][kind])
-		counts[kind] = base if kind == "Mothership" else mini(int(POOL[kind]), base + int(base * extra / 2.0))
+		var limit := int(POOL[kind]) - (ESCORTS if boss_wave and kind == "Shardling" else 0)
+		counts[kind] = base if kind == "Mothership" else mini(limit, base + int(base * extra / 2.0))
 	return counts
 
 

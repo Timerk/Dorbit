@@ -48,7 +48,7 @@ const TYPES := {
 	# Vashar Gate arena only. The run director spawns them; detection covers the arena and they never leash.
 	"Shardling": {"hull": 4000.0, "shield": 2000.0, "damage": 2200.0, "interval": 0.85, "range": 220.0, "speed": 30.0, "detection": 2400.0, "leash": 5000.0, "reward": 1500, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("c86bff")},
 	"Spireguard": {"hull": 16000.0, "shield": 8000.0, "damage": 7500.0, "interval": 0.8, "range": 250.0, "speed": 17.0, "detection": 2400.0, "leash": 5000.0, "reward": 7000, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("ff5fa8")},
-	"Mothership": {"hull": 200000.0, "shield": 100000.0, "damage": 18000.0, "interval": 0.55, "range": 320.0, "speed": 5.0, "detection": 2400.0, "leash": 5000.0, "reward": 120000, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("9b5cff"), "radius": 16.0},
+	"Mothership": {"hull": 200000.0, "shield": 100000.0, "damage": 18000.0, "interval": 0.55, "range": 270.0, "speed": 5.0, "detection": 2400.0, "leash": 5000.0, "reward": 120000, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("9b5cff"), "radius": 16.0},
 }
 
 var alien_id: int = 0
