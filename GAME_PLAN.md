@@ -1626,6 +1626,33 @@ construction views and Godot captures live in `korrath-review/README.md` in the
 art archive. Fine details and hidden surfaces interpret the concepts for game
 geometry. All values remain provisional until playtested.
 
+#### Galaxy gates: the Sylith Gate
+
+The third gate continues the hidden alien relay thread in M4. The **Sylith** are
+a phase-shifting choir that speaks through alien relays; the occupiers route
+Sylith gate cores through the Frontier relay network. The gate leads into the
+*Sylith Hollow*, where the Ascendant, a relay-ark, gathers the choir.
+
+- **Parts:** 28. *Relay Intercept* (Commander Vance) guarantees a part for each
+  contributed M4 kill; 12 parts complete it for +6 parts, 50,000 CR and 4 RP.
+  Random drops come only from M4 (Ravager 10%, Overlord 14%).
+- **Waves:** nine, with Wisps (fast) and Veilcasters (heavy). The final wave adds
+  the nearly stationary Ascendant, which launches two Wisps every 25 s.
+
+| Type | Hull / shield | Damage / interval | Credit pool |
+| --- | --- | --- | --- |
+| Wisp | 14,000 / 9,000 | 7,000 / 0.7 s | 6,000 |
+| Veilcaster | 70,000 / 40,000 | 24,000 / 0.85 s | 30,000 |
+| Ascendant | 1,000,000 / 500,000 | 50,000 / 0.5 s, 270 m | 600,000 |
+
+- **Rewards:** 500,000 CR, 15 research points and 40,000 x4 shots per
+  participant, with a 35% chance of an LF-4 laser.
+- Shared gate rules apply, including the escort reserve in boss waves (pool:
+  14 Wisps, 5 Veilcasters). The arena is map 6 with a cold teal nebula backdrop,
+  and its portal sits beyond Outpost 01 toward the defense ring wreck. Network
+  schema 23 adds the Sylith arena and aliens. Sylith aliens use colored
+  placeholder models; art is deferred. All values are provisional.
+
 #### First campaign implementation scope
 
 Begin with the pilot prologue and the clearance operation that establishes

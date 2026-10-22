@@ -35,7 +35,7 @@ func run() -> void:
 			var shape := collider.shape
 			colliders.append([str(collider.global_transform), shape.get_class(),
 				shape.radius if shape is SphereShape3D else str(shape.size)])
-	check(colliders.size() == 197, "All 144 asteroids across four maps and two gate arenas, and 53 station colliders, survive export")
+	check(colliders.size() == 221, "All 168 asteroids across four maps and three gate arenas, and 53 station colliders, survive export")
 	var arena_slots := 0
 	for gate_id: String in GalaxyGates.ORDER:
 		arena_slots += GalaxyGates.pool_kinds(gate_id).size()

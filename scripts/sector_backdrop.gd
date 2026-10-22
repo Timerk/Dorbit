@@ -11,6 +11,8 @@ const THEMES := [
 	{"planet": Vector3(-1700, 900, -3600), "radius": 1500.0, "ocean": Color("1a0f24"), "land": Color("3b2346"), "atmosphere": Color("b04cff"), "water": 0.0, "clouds": 0.0, "mining": 1.0, "cool": Color("3a1752"), "warm": Color("b0367f"), "light": Color("c86bff")},
 	# Korrath Bastion: a scorched forge world behind the siege fleet.
 	{"planet": Vector3(1900, 1000, -3500), "radius": 1600.0, "ocean": Color("2a1208"), "land": Color("5a2a14"), "atmosphere": Color("ff7a2e"), "water": 0.0, "clouds": 0.02, "mining": 1.0, "cool": Color("3d1a10"), "warm": Color("c2541f"), "light": Color("ff9a52")},
+	# Sylith Hollow: a cold teal nebula around a pale mineral world.
+	{"planet": Vector3(-1800, 1100, -3600), "radius": 1450.0, "ocean": Color("0d2a33"), "land": Color("3e6b70"), "atmosphere": Color("5ff0e0"), "water": 0.3, "clouds": 0.3, "mining": 0.6, "cool": Color("0f3540"), "warm": Color("2a8f8a"), "light": Color("8ff5e8")},
 ]
 
 
@@ -127,6 +129,12 @@ static func build(parent: Node3D, map: int) -> Node3D:
 		carrier(root, wreck, Vector3(0.15, -1.3, 0.22))
 		human_relay(root, Vector3(-1450, -280, -1500), 1.5)
 		human_ring(root, Vector3(-1800, 500, 1800), 330.0, Vector3(0.3, -0.7, 0.4), false)
+	elif map == 6:
+		# Choir relays ring the hollow; no human structures.
+		alien_relay(root, Vector3(1500, 300, -2300), 1.8)
+		alien_relay(root, Vector3(-1600, -200, 2000), 1.2)
+		alien_relay(root, Vector3(1900, -260, 1500), 0.8)
+		planet_collectors(root, planet_position, radius, 3)
 	elif map == 5:
 		# Siege staging: heavy alien relays and extraction collars around the forge world.
 		planet_collectors(root, planet_position, radius, 5)
