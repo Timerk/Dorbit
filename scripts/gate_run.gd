@@ -159,10 +159,9 @@ func tick(delta: float) -> void:
 	if not active:
 		return
 	var pilots := inside()
-	if (pilots.size() > 0) != (last_inside > 0):
+	if pilots.size() != last_inside:
 		last_inside = pilots.size()
 		publish()
-	last_inside = pilots.size()
 	if phase == "victory":
 		clock -= delta
 		if clock <= 0.0:
@@ -268,19 +267,19 @@ func victory() -> void:
 			items[id] = rng.randf() < float(reward["item_chance"])
 			rewards[key(id)] = {"credits": reward["credits"], "research": reward["research"],
 				"x4": reward["x4"], "item": reward["item"] if items[id] else ""}
-	# One save for every winner before anyone sees a reward.
-	if session.sector.dedicated_server and not rewards.is_empty() and not session.store.reward_gate(rewards):
+	# Rewards are persistent; runs only start on a dedicated server. One save
+	# covers every winner before anyone sees a reward.
+	if not session.sector.dedicated_server:
+		publish()
+		return
+	if not rewards.is_empty() and not session.store.reward_gate(rewards):
 		session.stop_for_save_failure()
 		return
 	for id: int in winners:
 		var ship := session.ships[id]
-		if session.sector.dedicated_server:
-			var pilot: Dictionary = session.store.pilots[key(id)]
-			combat.records[id]["credits"] = pilot["credits"]
-			ship.ammo = pilot["ammo"].duplicate()
-		else:
-			combat.records[id]["credits"] = mini(PilotStore.MAX_CREDITS, int(combat.records[id]["credits"]) + int(reward["credits"]))
-			ship.ammo["x4"] = mini(Ammunition.MAX_SHOTS, int(ship.ammo["x4"]) + int(reward["x4"]))
+		var pilot: Dictionary = session.store.pilots[key(id)]
+		combat.records[id]["credits"] = pilot["credits"]
+		ship.ammo = pilot["ammo"].duplicate()
 		combat.message(id, "%s %s. The arena closes in %d seconds." % [definition()["victory"], GalaxyGates.reward_text(gate, items[id]), int(GalaxyGates.VICTORY_TIME)])
 		combat.publish_inventory(id)
 	publish()
@@ -310,21 +309,24 @@ func broadcast(text: String) -> void:
 
 
 ## Run summary for one pilot's HUD and station page.
-func state_for(id: int) -> Dictionary:
+func state_for(id: int, pilots: int = -1) -> Dictionary:
 	if not active:
 		return {"active": false}
+	if pilots < 0:
+		pilots = inside().size()
 	# Seconds until the next wave; clients count down locally from receipt and
 	# stop while the arena is empty, matching the paused server clock.
 	var countdown := clock if phase in ["waiting", "interval"] else -1.0
 	return {"active": true, "gate": gate, "map": map(), "open": SectorMaps.open_rift == map(), "phase": phase,
 		"wave": wave + 1, "waves": definition()["waves"].size(), "lives": lives.get(key(id), int(definition()["lives"])),
-		"entered": lives.has(key(id)), "builder": builder, "pilots": inside().size(),
-		"countdown": countdown, "paused": inside().is_empty()}
+		"entered": lives.has(key(id)), "builder": builder, "pilots": pilots,
+		"countdown": countdown, "paused": pilots == 0}
 
 
 func publish() -> void:
+	var pilots := inside().size()
 	for id: int in combat.records:
 		if id == 1:
-			combat.gate_state(state_for(id))
+			combat.gate_state(state_for(id, pilots))
 		else:
-			combat.gate_state.rpc_id(id, state_for(id))
+			combat.gate_state.rpc_id(id, state_for(id, pilots))

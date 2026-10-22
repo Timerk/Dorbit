@@ -27,16 +27,17 @@ func run_rules() -> void:
 	equipment["gates"] = {VASHAR: {"parts": 7, "signal": "active", "progress": 99}}
 	check(not Equipment.valid(equipment), "Equipment with impossible gate progress is rejected")
 	check(GalaxyGates.accept_blocker(gates, VASHAR).is_empty() and not GalaxyGates.assemble_blocker(gates, VASHAR).is_empty(), "A new pilot can trace the signal but cannot assemble")
-	var plain := GalaxyGates.collect(gates, VASHAR, 2)
+	var plain := GalaxyGates.collect(gates, VASHAR, 2, 2)
 	check(plain["gates"]["parts"] == 2 and plain["gates"]["progress"] == 0 and not plain["completed"], "Parts outside the operation only add to stock")
 	var active := {"parts": 0, "signal": "active", "progress": 6}
-	var partial := GalaxyGates.collect(active, VASHAR, 1)
+	var partial := GalaxyGates.collect(active, VASHAR, 1, 1)
+	check(GalaxyGates.collect(active, VASHAR, 3, 0)["gates"] == {"parts": 3, "signal": "active", "progress": 6}, "Parts from other maps add stock without operation progress")
 	check(partial["gates"] == {"parts": 1, "signal": "active", "progress": 7} and partial["credits"] == 0, "Operation parts advance progress")
-	var done := GalaxyGates.collect(partial["gates"], VASHAR, 3)
+	var done := GalaxyGates.collect(partial["gates"], VASHAR, 3, 3)
 	check(done["completed"] and done["gates"] == {"parts": 4 + operation["parts"], "signal": "done", "progress": 0}
 		and done["credits"] == operation["credits"] and done["research"] == operation["research"], "The final part decodes the cache once")
 	check(not GalaxyGates.accept_blocker(done["gates"], VASHAR).is_empty(), "A decoded signal waits for the next gate")
-	check(GalaxyGates.collect({"parts": 98, "signal": "available", "progress": 0}, VASHAR, 5)["gates"]["parts"] == GalaxyGates.MAX_PARTS, "Stock is capped")
+	check(GalaxyGates.collect({"parts": 98, "signal": "available", "progress": 0}, VASHAR, 5, 5)["gates"]["parts"] == GalaxyGates.MAX_PARTS, "Stock is capped")
 	var assembled := GalaxyGates.assemble({"parts": 23, "signal": "done", "progress": 0}, VASHAR)
 	check(assembled == {"parts": 3, "signal": "available", "progress": 0}, "Assembly consumes one gate and reopens the signal")
 	check(GalaxyGates.assemble({"parts": 30, "signal": "available", "progress": 0}, KORRATH)["parts"] == 6, "Each gate consumes its own part count")
@@ -177,6 +178,14 @@ func run() -> void:
 	check(server.loot.drops.has(drop) and not server.loot.drops[drop].has("parts"), "Resources stay in the box when the hold is full")
 	var partner_drop: int = await kill_on_map(server, 1, [partner])
 	check(partner_drop < 0 or int(server.loot.drops[partner_drop].get("parts", {}).get(VASHAR, 0)) <= 1, "Pilots without the operation get only random parts")
+	# A closer pilot without the operation cannot take the operation pilot's parts.
+	var shared: int = await kill_on_map(server, 1, [pilot])
+	var before_shared: int = saved(server, pilot)["parts"]
+	server.session.ships[partner_id].position = server.loot.drops[shared]["position"]
+	server.session.ships[id].position = server.loot.drops[shared]["position"] + Vector3(6, 0, 0)
+	combat.collect_loot()
+	await settle(0.05)
+	check(saved(server, pilot)["parts"] > before_shared, "Gate parts go to the in-range pilot running the operation first")
 	for attempt in range(GalaxyGates.info(VASHAR)["signal"]["required"]):
 		if saved(server, pilot)["signal"] != "active":
 			break
@@ -194,6 +203,7 @@ func run() -> void:
 	check(store.persist(next), "Seed a full set of gate parts")
 	await request(server, pilot, "gate_assemble")
 	check(gate.active and SectorMaps.open_rift == VMAP and saved(server, pilot) == {"parts": 2, "signal": "available", "progress": 0}, "Assembly consumes parts, reopens the signal and opens the gate")
+	check(gate.builder == "Pilot %d" % id, "Runs are announced by the public pilot label, not the login ID")
 	await sync(server)
 	check(pilot.session.combat.gate_summary.get("active", false) and partner.session.combat.gate_summary.get("open", false), "Every pilot learns the gate is open")
 	check(pilot.hud.navigation.has_contact("gate%d" % VMAP), "The open gate is a navigation contact at Outpost 01")

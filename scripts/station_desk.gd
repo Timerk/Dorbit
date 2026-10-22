@@ -70,7 +70,7 @@ func station_request(id: int, sequence: int, action: String, subject: String, sh
 		session.ships[id].velocity = Vector3.ZERO
 	publish_inventory(id, result)
 	if action == "gate_assemble" and pilot["equipment"]["revision"] > previous_revision:
-		combat.gate.start(subject, pilot_id)
+		combat.gate.start(subject, "Pilot %d" % id)
 	if action in ["buy", "buy_ship", "buy_ammo", "sell", "refine", "boost", "replace_boost", "research", "research_reset"] and pilot["equipment"]["revision"] > previous_revision:
 		combat.message(id, result, "purchase")
 
