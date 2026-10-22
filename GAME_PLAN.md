@@ -1508,7 +1508,7 @@ invasion back, which keeps repeated runs consistent with the story. The same
 premise supports a future event where the aliens manage to set up a gate on a
 normal map and pilots must push the incoming invasion back.
 
-**Parts.** A gate needs 20 parts, saved per pilot (at most 99). Pilots get them in
+**Parts.** A gate needs 20 parts, saved per pilot (at most 999). Pilots get them in
 two ways:
 
 - *Signal Anomaly* (Dr. Sato, accepted on the Galaxy Gates page): research
@@ -1546,7 +1546,7 @@ The first wave starts 12 s after a pilot arrives, and later waves 8 s after the
 previous one is cleared. A large centered countdown shows the time to the next
 wave inside the rift and pauses while nobody is inside. The rift has no protected
 zone: wave aliens always pursue the pilots, including at the return gate, which is
-sealed while a wave is alive. Quitting to the station mid-wave costs a life, so
+sealed while a wave is alive. Quitting to the station or disconnecting mid-wave costs a life (once; a pilot already destroyed pays only for the death), so
 pilots cannot slip out to repair and return. Each additional pilot inside (up to four) adds half the
 base count, capped by the arena pool of 8 Shardlings and 4 Spireguards; the size
 locks when the wave starts. The mothership is fixed-strength and launches two

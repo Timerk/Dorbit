@@ -102,6 +102,9 @@ static func protected(ship: SpaceShip) -> bool:
 static func first_hop(source: int, destination: int) -> int:
 	if source == destination:
 		return -1
+	# Gate arenas lead only back to Outpost 01.
+	if source == GalaxyGates.MAP:
+		return 0
 	var pending: Array[int] = [source]
 	var previous := {source: -1}
 	while not pending.is_empty():

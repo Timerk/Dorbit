@@ -132,7 +132,8 @@ func _process(_delta: float) -> void:
 		elif run["phase"] == "waiting":
 			run_text = "GATE OPEN near Outpost 01, assembled by %s. Fly through it to join; the first wave starts when a pilot arrives." % run["builder"]
 		else:
-			run_text = "GATE OPEN near Outpost 01. Wave %d of %d in progress, %d pilots inside. Your lives: %d." % [run["wave"], run["waves"], run["pilots"], run["lives"]]
+			var progress := "Wave %d of %d in progress" % [run["wave"], run["waves"]] if run["phase"] == "fighting" else "Wave %d of %d cleared, next wave incoming" % [run["wave"], run["waves"]]
+			run_text = "GATE OPEN near Outpost 01. %s, %d pilots inside. Your lives: %d." % [progress, run["pilots"], run["lives"]]
 	StationUi.set_text(run_label, run_text)
 	var station := StationUi.blocker(sector)
 	var reason := station

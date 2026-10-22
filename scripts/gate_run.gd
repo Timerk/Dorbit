@@ -109,10 +109,12 @@ func exit_blocker() -> String:
 
 
 ## Quitting to the station during a wave counts as a lost life.
-func retreated(id: int) -> void:
-	if active and phase == "fighting" and lives.has(key(id)):
+## A destroyed ship already paid with its death; only a living ship retreats.
+func retreated(id: int, notify: bool = true) -> void:
+	if active and phase == "fighting" and lives.has(key(id)) and combat.session.ships[id].alive:
 		lives[key(id)] = maxi(0, lives[key(id)] - 1)
-		combat.message(id, "You abandoned the wave. %d lives left in this %s run." % [lives[key(id)], GalaxyGates.NAME])
+		if notify:
+			combat.message(id, "You abandoned the wave. %d lives left in this %s run." % [lives[key(id)], GalaxyGates.NAME])
 		publish()
 
 
@@ -195,9 +197,29 @@ func start_wave(index: int, pilots: int) -> void:
 
 func wave_point(kind: String) -> Vector3:
 	var origin := SectorMaps.origin(GalaxyGates.MAP)
-	if kind == "Mothership":
-		return origin + Vector3(0, 60, -450)
-	return origin + Vector3(rng.randf_range(-320, 320), rng.randf_range(-120, 120), rng.randf_range(-420, -80))
+	var boss := kind == "Mothership"
+	var point := origin + Vector3(0, 60, -450)
+	# Keep spawn points clear of the arena's asteroid colliders.
+	for attempt in range(48):
+		if not boss or attempt > 0:
+			var spread := 1.0 if not boss else 0.25
+			point = (origin + Vector3(0, 60, -450) if boss else origin + Vector3(0, 0, -250)) + Vector3(
+				rng.randf_range(-320, 320), rng.randf_range(-120, 120), rng.randf_range(-170, 170)) * spread
+		if clear_of_rocks(point, 40.0 if boss else 15.0):
+			return point
+	return point
+
+
+func clear_of_rocks(point: Vector3, margin: float) -> bool:
+	var terrain: Node3D = sector().map_terrain.get(GalaxyGates.MAP)
+	if terrain == null:
+		return true
+	for rock: Node in terrain.get_children():
+		var body := rock as StaticBody3D
+		var shape := (body.get_child(0) as CollisionShape3D).shape as SphereShape3D
+		if point.distance_to(body.global_position) < shape.radius + margin:
+			return false
+	return true
 
 
 func spawn(alien: Alien, point: Vector3) -> void:

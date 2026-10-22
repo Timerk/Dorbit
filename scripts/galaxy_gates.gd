@@ -12,7 +12,7 @@ const GLOW := Color("c86bff")
 const FACTION := "Vashar"
 const MAP := 4
 const PARTS_REQUIRED := 20
-const MAX_PARTS := 99
+const MAX_PARTS := 999
 # Chance that an alien carries one part in its loot box. Home-map aliens carry none.
 const PART_CHANCE := {"Skirmisher": 0.08, "Raider": 0.12, "Marauder": 0.12, "Warden": 0.16, "Ravager": 0.16, "Overlord": 0.2}
 # Each qualifying kill on the signal map guarantees a part while the operation is active.

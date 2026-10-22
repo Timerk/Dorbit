@@ -123,10 +123,10 @@ def valid_story(data: object) -> bool:
             and type(data["progress"]) is int and 0 <= data["progress"] <= 1000)
 
 
-# Mirrors GalaxyGates in scripts/galaxy_gates.gd: at most 99 parts, signal progress below 8.
+# Mirrors GalaxyGates in scripts/galaxy_gates.gd: at most 999 parts, signal progress below 8.
 def valid_gates(data: object) -> bool:
     return (isinstance(data, dict) and data.keys() == {"parts", "signal", "progress"}
-            and type(data["parts"]) is int and 0 <= data["parts"] <= 99
+            and type(data["parts"]) is int and 0 <= data["parts"] <= 999
             and data["signal"] in ("available", "active", "done")
             and type(data["progress"]) is int
             and 0 <= data["progress"] <= (7 if data["signal"] == "active" else 0))
