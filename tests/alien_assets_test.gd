@@ -78,14 +78,12 @@ func run() -> void:
 		check(alien.alive and alien.visible and alien.collision_layer == 2,
 			kind + " respawn restores visibility and collision")
 		alien.free()
-	# Korrath Gate aliens use colored placeholder models until authored art exists.
-	var placeholders: Array = GalaxyGates.info("korrath")["pool"].keys()
-	check(sizes.size() == Alien.TYPES.size() - placeholders.size() and sizes[0] < sizes[1] and sizes[1] < sizes[2],
+	check(sizes.size() == Alien.TYPES.size() and sizes[0] < sizes[1] and sizes[1] < sizes[2],
 		"Scout, Sentinel and Heavy retain increasing visual size")
-	check(Alien.VISUAL_DIAMETERS.size() == Alien.TYPES.size() - placeholders.size() and placeholders.all(func(kind: String): return not Alien.VISUAL_DIAMETERS.has(kind)),
+	check(Alien.VISUAL_DIAMETERS.size() == Alien.TYPES.size(),
 		"Every authored encounter type has an imported model and a mesh-free server diameter")
-	check_vashar()
-	check_placeholders(placeholders)
+	check_gate_models("vashar")
+	check_gate_models("korrath")
 	# Gate rosters are their own faction progressions, checked separately.
 	var roster: Array = Alien.TYPES.keys().filter(func(kind: String): return not kind in GalaxyGates.arena_kinds())
 	roster.sort_custom(func(a: String, b: String): return Alien.TYPES[a]["hull"] < Alien.TYPES[b]["hull"])
@@ -172,30 +170,16 @@ func check_finish(kind: String, mesh: ArrayMesh) -> void:
 	print("ALIEN_GEOMETRY %s triangles=%d lod_levels=%d" % [kind, triangles, lod_count])
 
 
-func check_vashar() -> void:
+func check_gate_models(gate_id: String) -> void:
 	var previous := 0.0
-	for kind: String in GalaxyGates.info("vashar")["pool"]:
+	for kind: String in GalaxyGates.info(gate_id)["pool"]:
 		var alien := Alien.new()
 		alien.kind = kind
 		root.add_child(alien)
 		var instance := alien.model.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D
 		var diameter := instance.mesh.get_aabb().size.length() * float(Alien.VISUAL_SCALE[kind])
-		check(diameter > previous, kind + " is larger than the previous Vashar tier")
+		check(diameter > previous, kind + " is larger than the previous faction tier")
 		check(is_equal_approx(SectorVisuals.destruction_size(alien), float(Alien.VISUAL_DIAMETERS[kind]) * float(Alien.VISUAL_SCALE[kind])), kind + " destruction size matches its exported model")
 		previous = diameter
 		print("ALIEN_SIZE %s diameter=%.2f m" % [kind, diameter])
-		alien.free()
-
-
-func check_placeholders(kinds: Array) -> void:
-	var previous := 0.0
-	for kind: String in kinds:
-		var alien := Alien.new()
-		alien.kind = kind
-		root.add_child(alien)
-		var diameter := SectorVisuals.destruction_size(alien)
-		check(not alien.model.find_children("*", "MeshInstance3D", true, false).is_empty(), kind + " has a placeholder model")
-		check(diameter > previous, kind + " placeholder is larger than the previous Korrath tier")
-		check(is_equal_approx((alien.get_child(0) as CollisionShape3D).shape.radius, float(Alien.TYPES[kind].get("radius", 2.2))), kind + " uses its configured collider")
-		previous = diameter
 		alien.free()

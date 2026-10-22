@@ -1614,8 +1614,15 @@ where a Siegebreaker battlestation is being readied against Outpost 01.
 - Lives, countdown, sealed exit, scaling, escorts, preview tools and collapse
   follow the Vashar rules. The arena is map 5 with a forge-orange backdrop.
 
-The three Korrath aliens use colored placeholder models; authored concepts,
-models and review renders are deferred. All values are provisional.
+The user approved the Korrath concepts and requested Blender models matching
+them on 2026-10-22. Husk, Bulwark and Siegebreaker now use authored gunmetal and
+copper siege hulls with orange furnace cores. The runtime GLBs share 2K PBR maps
+and generate distance LODs on import; their visible diagonals are 12.35 m,
+28.8 m and 108 m respectively. Combat statistics, colliders and waves are
+unchanged. Editable Blender files with packed 4K maps, the concepts, build script,
+construction views and Godot captures live in `korrath-review/README.md` in the
+art archive. Fine details and hidden surfaces interpret the concepts for game
+geometry. All values remain provisional until playtested.
 
 #### First campaign implementation scope
 

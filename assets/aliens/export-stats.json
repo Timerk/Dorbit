@@ -178,5 +178,50 @@
     "forward": "-Z",
     "up": "+Y",
     "atlas_size": 2048
+  },
+  "Husk": {
+    "triangles": 27972,
+    "materials": 6,
+    "bytes": 12785120,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 9.5,
+    "bounds_godot": [
+      5.479079,
+      1.28553,
+      7.653568
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
+  },
+  "Bulwark": {
+    "triangles": 34452,
+    "materials": 6,
+    "bytes": 13926740,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 12.0,
+    "bounds_godot": [
+      7.080173,
+      2.547897,
+      9.347694
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
+  },
+  "Siegebreaker": {
+    "triangles": 62324,
+    "materials": 6,
+    "bytes": 15721328,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 12.0,
+    "bounds_godot": [
+      7.258338,
+      2.373378,
+      9.256544
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
   }
 }
