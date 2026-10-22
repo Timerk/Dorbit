@@ -54,15 +54,15 @@ const TYPES := {
 	# Vashar Gate arena only. The run director spawns them; detection covers the arena and they never leash.
 	"Shardling": {"hull": 4000.0, "shield": 2000.0, "damage": 2200.0, "interval": 0.85, "range": 220.0, "speed": 30.0, "detection": 2400.0, "leash": 5000.0, "reward": 1500, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("c86bff")},
 	"Spireguard": {"hull": 16000.0, "shield": 8000.0, "damage": 7500.0, "interval": 0.8, "range": 250.0, "speed": 17.0, "detection": 2400.0, "leash": 5000.0, "reward": 7000, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("ff5fa8")},
-	"Mothership": {"hull": 200000.0, "shield": 100000.0, "damage": 18000.0, "interval": 0.55, "range": 320.0, "speed": 5.0, "detection": 2400.0, "leash": 5000.0, "reward": 120000, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("9b5cff"), "radius": 16.0},
+	"Mothership": {"hull": 200000.0, "shield": 100000.0, "damage": 18000.0, "interval": 0.55, "range": 270.0, "speed": 5.0, "detection": 2400.0, "leash": 5000.0, "reward": 120000, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("9b5cff"), "radius": 16.0},
 	# Korrath Gate arena only, with placeholder models until authored art exists.
 	"Husk": {"hull": 8000.0, "shield": 4000.0, "damage": 4000.0, "interval": 0.8, "range": 230.0, "speed": 34.0, "detection": 2400.0, "leash": 5000.0, "reward": 3000, "respawn": 0.0, "scale": Vector3(0.9, 0.7, 1.2), "color": Color("ff8a3d")},
 	"Bulwark": {"hull": 36000.0, "shield": 18000.0, "damage": 14000.0, "interval": 0.85, "range": 260.0, "speed": 15.0, "detection": 2400.0, "leash": 5000.0, "reward": 15000, "respawn": 0.0, "scale": Vector3(1.4, 1.2, 1.3), "color": Color("d0562a")},
-	"Siegebreaker": {"hull": 500000.0, "shield": 250000.0, "damage": 30000.0, "interval": 0.5, "range": 340.0, "speed": 3.0, "detection": 2400.0, "leash": 5000.0, "reward": 300000, "respawn": 0.0, "scale": Vector3(1.6, 0.8, 1.6), "color": Color("ffb35c"), "radius": 22.0},
+	"Siegebreaker": {"hull": 500000.0, "shield": 250000.0, "damage": 30000.0, "interval": 0.5, "range": 270.0, "speed": 3.0, "detection": 2400.0, "leash": 5000.0, "reward": 300000, "respawn": 0.0, "scale": Vector3(1.6, 0.8, 1.6), "color": Color("ffb35c"), "radius": 22.0},
 	# Sylith Gate arena only, with placeholder models until authored art exists.
 	"Wisp": {"hull": 14000.0, "shield": 9000.0, "damage": 7000.0, "interval": 0.7, "range": 240.0, "speed": 40.0, "detection": 2400.0, "leash": 5000.0, "reward": 6000, "respawn": 0.0, "scale": Vector3(0.8, 0.5, 1.3), "color": Color("4fe3d2")},
 	"Veilcaster": {"hull": 70000.0, "shield": 40000.0, "damage": 24000.0, "interval": 0.85, "range": 270.0, "speed": 14.0, "detection": 2400.0, "leash": 5000.0, "reward": 30000, "respawn": 0.0, "scale": Vector3(1.1, 1.6, 1.1), "color": Color("2fa8c9")},
-	"Ascendant": {"hull": 1000000.0, "shield": 500000.0, "damage": 50000.0, "interval": 0.5, "range": 350.0, "speed": 2.0, "detection": 2400.0, "leash": 5000.0, "reward": 600000, "respawn": 0.0, "scale": Vector3(1.0, 1.8, 1.0), "color": Color("a6fff2"), "radius": 26.0},
+	"Ascendant": {"hull": 1000000.0, "shield": 500000.0, "damage": 50000.0, "interval": 0.5, "range": 270.0, "speed": 2.0, "detection": 2400.0, "leash": 5000.0, "reward": 600000, "respawn": 0.0, "scale": Vector3(1.0, 1.8, 1.0), "color": Color("a6fff2"), "radius": 26.0},
 }
 
 var alien_id: int = 0

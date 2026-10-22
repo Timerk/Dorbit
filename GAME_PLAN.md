@@ -1548,13 +1548,15 @@ sealed while a wave is alive. Quitting to the station mid-wave costs a life, so
 pilots cannot slip out to repair and return. Each additional pilot inside (up to four) adds half the
 base count, capped by the arena pool of 8 Shardlings and 4 Spireguards; the size
 locks when the wave starts. The mothership is fixed-strength and launches two
-Shardlings from its hangar every 25 s while it survives.
+Shardlings from its hangar every 25 s while it survives; its wave always leaves
+two Shardlings in reserve for this. Its 270 m weapons stay out-ranged by pilot
+lasers, like every other alien.
 
 | Type | Hull / shield | Damage / interval | Credit pool |
 | --- | --- | --- | --- |
 | Shardling | 4,000 / 2,000 | 2,200 / 0.85 s | 1,500 |
 | Spireguard | 16,000 / 8,000 | 7,500 / 0.8 s | 7,000 |
-| Mothership | 200,000 / 100,000 | 18,000 / 0.55 s | 120,000 |
+| Mothership | 200,000 / 100,000 | 18,000 / 0.55 s, 270 m | 120,000 |
 
 Kills share credit pools and leave resource boxes as usual. Each pilot has three
 lives per run. Dying in the rift costs one, and the normal rescue returns the
@@ -1587,7 +1589,8 @@ On 2026-10-22 the user asked for a second gate; final models and renders can
 follow later. Each gate is now a data definition (`GalaxyGates.GATES`): faction,
 arena map, Outpost 01 portal, part count and chances, parts operation, alien pool,
 waves, boss, escorts and rewards. Saved progress is per gate. One gate run is open
-on the server at a time, and only its portal appears near Outpost 01.
+on the server at a time, and only its portal appears near Outpost 01. Network schema 22
+adds the Korrath arena and aliens.
 
 The **Korrath** are siege engineers. The occupying aliens drag Korrath gate
 segments through the deeper sectors; the gate leads into the *Korrath Bastion*,
@@ -1597,13 +1600,14 @@ where a Siegebreaker battlestation is being readied against Outpost 01.
   each contributed M3 kill; 10 parts complete it for +5 parts, 25,000 CR and 3 RP.
   Random drops come only from M3 and M4 (8–16%).
 - **Waves:** eight, with Husks (fast) and Bulwarks (heavy). The final wave adds
-  the slow Siegebreaker, which launches two Husks every 25 s.
+  the slow Siegebreaker, which launches two Husks every 25 s; boss waves keep two
+  escorts in reserve for this at every group size.
 
 | Type | Hull / shield | Damage / interval | Credit pool |
 | --- | --- | --- | --- |
 | Husk | 8,000 / 4,000 | 4,000 / 0.8 s | 3,000 |
 | Bulwark | 36,000 / 18,000 | 14,000 / 0.85 s | 15,000 |
-| Siegebreaker | 500,000 / 250,000 | 30,000 / 0.5 s | 300,000 |
+| Siegebreaker | 500,000 / 250,000 | 30,000 / 0.5 s, 270 m | 300,000 |
 
 - **Rewards:** 300,000 CR, 10 research points and 25,000 x4 shots per
   participant, with a 20% chance of the shop-unavailable SG3N-B00 shield.
