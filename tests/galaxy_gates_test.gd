@@ -48,7 +48,7 @@ func run_rules() -> void:
 		check(not GalaxyGates.roll_parts("Skirmisher", rng, []).has(KORRATH), "Korrath parts only come from the deeper maps")
 	check(GalaxyGates.wave_counts(VASHAR, 0, 1) == {"Shardling": 3} and GalaxyGates.wave_counts(VASHAR, 1, 3) == {"Shardling": 8},
 		"Waves scale with pilots and stay within the arena pool")
-	check(GalaxyGates.wave_counts(VASHAR, 6, 10)["Mothership"] == 1 and GalaxyGates.wave_counts(VASHAR, 6, 10)["Shardling"] <= vashar["pool"]["Shardling"], "The boss wave has one mothership at any group size")
+	check(GalaxyGates.wave_counts(VASHAR, 6, 10)["Mothership"] == 1, "The boss wave has one mothership at any group size")
 	for gate_id: String in GalaxyGates.ORDER:
 		var definition := GalaxyGates.info(gate_id)
 		check(str(GalaxyGates.pool_kinds(gate_id)) == str(SectorMaps.MAPS[definition["map"]]["aliens"]), "%s arena roster matches its pool" % definition["name"])
@@ -58,6 +58,10 @@ func run_rules() -> void:
 			for kind: String in wave:
 				check(Alien.TYPES.has(kind) and CargoResources.LOOT.has(kind) and int(wave[kind]) <= int(definition["pool"][kind]), "%s wave aliens exist and fit the pool" % definition["name"])
 		check(definition["waves"].back().has(definition["boss"]) and definition["pool"].has(definition["escort"]), "%s ends with its boss and escorts" % definition["name"])
+		var final_wave: int = definition["waves"].size() - 1
+		check(int(GalaxyGates.wave_counts(gate_id, final_wave, 10)[definition["escort"]]) <= int(definition["pool"][definition["escort"]]) - GalaxyGates.ESCORTS,
+			"%s boss wave leaves dormant escorts at any group size" % definition["name"])
+		check(float(Alien.TYPES[definition["boss"]]["range"]) < 310.0, "%s boss stays out-ranged by pilot lasers" % definition["name"])
 
 
 func saved(server: Sector, client: Sector, gate_id: String = VASHAR) -> Dictionary:

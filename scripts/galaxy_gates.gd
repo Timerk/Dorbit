@@ -211,14 +211,17 @@ static func assemble(gates: Dictionary, gate: String) -> Dictionary:
 	return next
 
 
-## Alien counts for one wave, locked when it starts. The boss never scales.
+## Alien counts for one wave, locked when it starts. The boss never scales, and
+## a boss wave leaves enough dormant escorts for the boss to launch.
 static func wave_counts(gate: String, wave: int, pilots: int) -> Dictionary:
 	var counts := {}
 	var definition: Dictionary = GATES[gate]
 	var extra := clampi(pilots, 1, SCALED_PILOTS) - 1
+	var boss_wave: bool = definition["waves"][wave].has(definition["boss"])
 	for kind: String in definition["waves"][wave]:
 		var base := int(definition["waves"][wave][kind])
-		counts[kind] = base if kind == definition["boss"] else mini(int(definition["pool"][kind]), base + int(base * extra / 2.0))
+		var limit := int(definition["pool"][kind]) - (ESCORTS if boss_wave and kind == definition["escort"] else 0)
+		counts[kind] = base if kind == definition["boss"] else mini(limit, base + int(base * extra / 2.0))
 	return counts
 
 
