@@ -589,9 +589,16 @@ func draw_context() -> void:
 		marker_labels.append(layout.transform_rect("context", comm_rect))
 		point.y = comm_rect.end.y + 8
 	var messages: Array[String] = []
-	for destination: int in SectorMaps.GATES[sector.map_id]:
+	for destination: int in SectorMaps.links(sector.map_id):
 		if sector.player.position.distance_to(SectorMaps.gate_position(sector.map_id, destination)) <= SectorMaps.JUMP_RADIUS:
-			messages.append("%s / JUMP TO %s / GATE PROTECTED" % [GameSettings.binding_text("jump_gate"), SectorMaps.code(destination)])
+			var place := "THE VASHAR RIFT" if destination == GalaxyGates.MAP else SectorMaps.code(destination)
+			if sector.map_id == GalaxyGates.MAP and sector.session.combat.gate_summary.get("phase", "") == "fighting":
+				messages.append("RIFT EXIT SEALED / CLEAR THE WAVE TO LEAVE")
+			else:
+				messages.append("%s / JUMP TO %s%s" % [GameSettings.binding_text("jump_gate"), place, "" if sector.map_id == GalaxyGates.MAP else " / GATE PROTECTED"])
+	var run := gate_status()
+	if not run.is_empty():
+		messages.append(run)
 	if CargoResources.units(sector.cargo) >= sector.cargo_capacity:
 		messages.append("CARGO FULL / SELL AT OUTPOST 01 [B]")
 	if sector.toast_time > 0:
@@ -707,6 +714,7 @@ func _draw() -> void:
 		draw_objectives()
 		layout.end_draw(self)
 	draw_context()
+	draw_gate_countdown()
 	draw_tutorial()
 	draw_performance()
 	if layout.begin_draw(self, "ship"):
@@ -734,14 +742,15 @@ func _draw() -> void:
 	var site := Story.site(sector.story_state(), sector.map_id)
 	if not site.is_empty():
 		marker(Story.site_position(site), "OBJECTIVE / " + str(site["site"]).to_upper(), GOLD, false)
-	for destination: int in SectorMaps.GATES[sector.map_id]:
-		marker(SectorMaps.gate_position(sector.map_id, destination), "GATE TO " + SectorMaps.code(destination), SectorMaps.MAPS[destination]["color"], false, null, false)
+	for destination: int in SectorMaps.links(sector.map_id):
+		marker(SectorMaps.gate_position(sector.map_id, destination), SectorMaps.gate_label(destination), SectorMaps.MAPS[destination]["color"], false, null, false)
 	if is_instance_valid(sector.target):
 		alien_marker(sector.target as Alien)
 	for id: int in sector.loot.drops:
 		if sector.loot.is_presented(id):
 			var drop: Dictionary = sector.loot.drops[id]
-			marker(drop["position"], "LOOT %d UNITS / FLY CLOSE" % CargoResources.units(drop["resources"]), AMBER, false, null, false)
+			var parts := int(drop.get("parts", 0))
+			marker(drop["position"], "LOOT %d UNITS%s / FLY CLOSE" % [CargoResources.units(drop["resources"]), " + %d GATE PART%s" % [parts, "" if parts == 1 else "S"] if parts > 0 else ""], GalaxyGates.GLOW if parts > 0 else AMBER, false, null, false)
 	for alien_id: int in sector.aliens:
 		var enemy := sector.aliens[alien_id]
 		if enemy != sector.target and enemy.alive and enemy.visible:
@@ -881,3 +890,57 @@ func occupied(rect: Rect2) -> bool:
 		if label.intersects(rect):
 			return true
 	return false
+
+
+# One-line Vashar Gate run status: wave and lives inside the rift, an invitation at M1.
+func gate_status() -> String:
+	var run: Dictionary = sector.session.combat.gate_summary if is_instance_valid(sector.session) else {}
+	if not run.get("active", false):
+		return ""
+	if sector.map_id == GalaxyGates.MAP:
+		if run["phase"] == "victory":
+			return "VASHAR GATE CLEARED / RETURN THROUGH THE GATE"
+		var wave := "WAVE %d OF %d" % [run["wave"], run["waves"]]
+		if gate_countdown() >= 0.0:
+			wave = "WAVE %d IN %d s" % [int(run["wave"]) + 1, ceili(gate_countdown())]
+		return "VASHAR GATE / %s / %d LIVES" % [wave, run["lives"]]
+	if sector.map_id == 0 and run.get("open", false):
+		return "VASHAR GATE OPEN NEAR OUTPOST 01 / %d LIVES" % run["lives"] if run["lives"] > 0 else "VASHAR GATE OPEN / NO LIVES LEFT"
+	return ""
+
+
+## Seconds until the next Vashar wave, counted down locally from the last
+## server update; -1 without a pending wave. Paused while the rift is empty.
+func gate_countdown() -> float:
+	var run: Dictionary = sector.session.combat.gate_summary if is_instance_valid(sector.session) else {}
+	if not run.get("active", false) or float(run.get("countdown", -1.0)) < 0.0:
+		return -1.0
+	if run.get("paused", false):
+		return float(run["countdown"])
+	return maxf(0.0, float(run["countdown"]) - (Time.get_ticks_msec() - int(run.get("received", 0))) / 1000.0)
+
+
+## Large centered countdown inside the rift before each wave.
+func draw_gate_countdown() -> void:
+	if sector.map_id != GalaxyGates.MAP:
+		return
+	var seconds := gate_countdown()
+	if seconds < 0.0:
+		return
+	var run: Dictionary = sector.session.combat.gate_summary
+	var title := "WAVE %d OF %d" % [int(run["wave"]) + 1, int(run["waves"])]
+	if int(run["wave"]) + 1 == int(run["waves"]):
+		title = "FINAL WAVE / VASHAR MOTHERSHIP"
+	var number := str(ceili(seconds))
+	var center := Vector2(size.x * 0.5, size.y * 0.3)
+	var title_width := font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
+	var number_width := font.get_string_size(number, HORIZONTAL_ALIGNMENT_LEFT, -1, 84).x
+	var box := Rect2(center - Vector2(maxf(title_width, 220) * 0.5 + 28, 70), Vector2(maxf(title_width, 220) + 56, 150))
+	draw_rect(box, Color(0.02, 0.03, 0.04, 0.72))
+	draw_rect(Rect2(box.position, Vector2(box.size.x, 3)), GalaxyGates.GLOW)
+	text_at(Vector2(center.x - title_width * 0.5, box.position.y + 36), title, 26, GalaxyGates.GLOW)
+	text_at(Vector2(center.x - number_width * 0.5, box.position.y + 118), number, 84, INK)
+	var caption := "WAITING FOR PILOTS" if run.get("paused", false) else "ALIENS INCOMING"
+	var caption_width := font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+	text_at(Vector2(center.x - caption_width * 0.5, box.end.y - 8), caption, 14, Color(INK, 0.7))
+	marker_labels.append(box)

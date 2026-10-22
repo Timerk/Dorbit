@@ -46,7 +46,7 @@ func run() -> void:
 			"settings": panel = sector.settings_menu.panel
 			"connection": panel = sector.session.menu
 			"skylab": panel = sector.skylab_menu
-			_: panel = menu.placeholder
+			_: panel = sector.gate_menu
 		if not panel.is_visible_in_tree() or menu.start_button.is_visible_in_tree():
 			push_error("Exported offline %s did not open independently of Overview." % page)
 			quit(1)

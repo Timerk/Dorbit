@@ -25,10 +25,10 @@ func run() -> void:
 		await capture("connected-map-network-%d" % pixels.x)
 		check(Rect2(Vector2.ZERO, Vector2(pixels)).encloses(navigation.overview.get_global_rect()), "Connections view fits the %d window" % pixels.x)
 		var chart := navigation.network_plot
-		for map: int in SectorMaps.MAPS:
+		for map: int in SectorMaps.network_maps():
 			check(Rect2(Vector2.ZERO, chart.size).encloses(chart.map_rect(map)), "Image card remains inside the map canvas")
 			check(chart.PICTURES[map].get_width() >= 720, "Every card uses a detailed sector capture")
-			for other: int in SectorMaps.MAPS:
+			for other: int in SectorMaps.network_maps():
 				if map < other:
 					check(not chart.map_rect(map).intersects(chart.map_rect(other)), "Sector images do not overlap")
 		var route := chart.route_edges(3)

@@ -31,7 +31,7 @@ func run() -> void:
 		root.size = dimensions
 		await click(client, client.main_menu.navigation["skylab"])
 		await settle(.3)
-		check(menu.visible and not client.main_menu.placeholder.visible, "Skylab replaces the Coming soon placeholder")
+		check(menu.visible and not client.gate_menu.visible, "Skylab replaces the Galaxy Gates page")
 		check(menu.buttons.size() == 12 and menu.ore_labels.size() == 8 and menu.ore_labels.has("xenomit"), "All modules and eight separate resource capacities are displayed")
 		check(client.main_menu.content_rect().grow(1).encloses(menu.get_global_rect()), "Industry screen fits %s" % dimensions)
 		check(menu.get_global_rect().position.distance_to(client.main_menu.content_rect().position) < 1 and menu.get_global_rect().size.distance_to(client.main_menu.content_rect().size) < 1, "Skylab fills the entire navigation content area at %s" % dimensions)

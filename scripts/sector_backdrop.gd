@@ -7,6 +7,8 @@ const THEMES := [
 	{"planet": Vector3(2000, 1020, -3550), "radius": 1350.0, "ocean": Color("554632"), "land": Color("b48a56"), "atmosphere": Color("b68d52"), "water": 0.0, "clouds": 0.08, "mining": 1.0, "cool": Color("80653a"), "warm": Color("c48a3c"), "light": Color("e0b46a")},
 	{"planet": Vector3(-2150, 1200, -3750), "radius": 1150.0, "ocean": Color("382c29"), "land": Color("916957"), "atmosphere": Color("b36045"), "water": 0.0, "clouds": 0.04, "mining": 0.8, "cool": Color("68362e"), "warm": Color("bc5940"), "light": Color("d98660")},
 	{"planet": Vector3(2050, 1100, -3500), "radius": 1350.0, "ocean": Color("1d263c"), "land": Color("555265"), "atmosphere": Color("557ca7"), "water": 0.2, "clouds": 0.18, "mining": 1.0, "cool": Color("454980"), "warm": Color("9161b2"), "light": Color("558fac")},
+	# Vashar Rift: the faction's staging space beyond the gate.
+	{"planet": Vector3(-1700, 900, -3600), "radius": 1500.0, "ocean": Color("1a0f24"), "land": Color("3b2346"), "atmosphere": Color("b04cff"), "water": 0.0, "clouds": 0.0, "mining": 1.0, "cool": Color("3a1752"), "warm": Color("b0367f"), "light": Color("c86bff")},
 ]
 
 
@@ -123,6 +125,12 @@ static func build(parent: Node3D, map: int) -> Node3D:
 		carrier(root, wreck, Vector3(0.15, -1.3, 0.22))
 		human_relay(root, Vector3(-1450, -280, -1500), 1.5)
 		human_ring(root, Vector3(-1800, 500, 1800), 330.0, Vector3(0.3, -0.7, 0.4), false)
+	elif map == GalaxyGates.MAP:
+		# No human structures: alien relays and collectors staging the next invasion wave.
+		planet_collectors(root, planet_position, radius, 4)
+		alien_relay(root, Vector3(1600, 200, -2300), 1.4)
+		alien_relay(root, Vector3(-1500, -260, 1900), 0.9)
+		alien_collar(root, Vector3(1900, -120, 1500), 260.0, Vector3(0.4, 0.2, -0.3), "StagingCollar")
 	else:
 		human_ring(root, planet_position, radius*1.3, Vector3(0.18, 0.32, -0.4), true)
 		planet_collectors(root, planet_position, radius, 3)

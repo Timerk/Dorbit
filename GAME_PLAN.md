@@ -360,8 +360,9 @@ speed. See README.md for configuration and use.
 Normal clients connect to the persistent server into a docked pilot console before
 entering the map. The graphite-and-amber console presents saved credits, active-ship
 preparation, Hangar, Shop, Quests, Cargo Trade, Settings and Connection. The user
-approved persistent Skylab industry on 2026-10-08 as a Milestone 3 extension;
-Galaxy Gates remains a coming-soon page.
+approved persistent Skylab industry on 2026-10-08 as a Milestone 3 extension.
+The Galaxy Gates page manages gate parts and the Vashar Gate; see
+[Galaxy gates](#galaxy-gates-the-vashar-gate).
 
 Docked pilots can buy ships/equipment, activate owned hulls, fit items, trade saved
 cargo and accept or abandon hunts through the same server-validated persistence
@@ -533,7 +534,7 @@ The user requested the models in four supplied screenshots, with their damage, s
 | MP-1 | 40,000 CR | +70 damage per shot |
 | LF-2 | 500,000 CR (5,000 U) | +140 damage per shot |
 | LF-3 | 1,000,000 CR (10,000 U) | +175 damage per shot; +15% for this laser against aliens (201.25 total) |
-| LF-4 | Unavailable: future loot/assembly | +200 damage per shot |
+| LF-4 | Not sold: 20% Vashar Gate victory reward | +200 damage per shot |
 | SG3N-A01 | 8,000 CR | +1,000 shield / 40% absorption |
 | SG3N-A02 | 16,000 CR | +2,000 shield / 50% absorption |
 | FS-01 | 256,000 CR | +3,200 shield / 70% absorption; +6.25% shield regeneration |
@@ -1291,7 +1292,7 @@ increments the flight life and map-visit epoch, so delayed commands, world state
 and effects cannot revive an earlier visit, including returning to the same map.
 Map transfers were introduced in network schema 16; current schema 19 requires matching client/server builds. Save schema 8 is unchanged
 because flight locations are temporary. Ordinary travel gates are separate from
-the future Galaxy Gates alien-wave challenges.
+the Galaxy Gates alien-wave challenges.
 
 ### Reclamation campaign background art
 
@@ -1462,7 +1463,7 @@ The user approved periodic alien counterattack events with increasingly strong
 waves and a concluding boss fight. The first assault is a story milestone after the
 initial defense wing is ready; recurring assaults follow, with stronger variants
 introduced by later chapters. These are shared station-defense encounters,
-separate from travel gates and future Galaxy Gates challenges.
+separate from travel gates and Galaxy Gates challenges.
 
 An assault starts with a visible early-warning countdown so pilots can resupply
 and return. Marked attack directions lead into opening Scout waves, Sentinel
@@ -1492,6 +1493,99 @@ Event operating rules agreed as the starting direction:
   only with enough pilots online; the station takes no invasion damage while
   everyone is offline. Timing, minimum participation and behavior if pilots leave
   during an assault still require explicit rules.
+
+#### Galaxy gates: the Vashar Gate
+
+On 2026-10-21 the user approved galaxy gates as wave-challenge instances, separate
+from travel gates and station-defense assaults. Gates are named after alien
+factions rather than Greek letters, and use alien models that never appear on the
+normal maps. The first implementation adds one gate so it can be playtested
+before more are designed.
+
+Story: the occupying aliens are ferrying gate parts through the reclaimed sectors
+to build gates that summon allied factions. The first is the **Vashar**. Pilots
+capture the parts, assemble the gate themselves and strike the Vashar staging
+fleet before it can come through. Destroying its mothership sets the Vashar
+invasion back, which keeps repeated runs consistent with the story. The same
+premise supports a future event where the aliens manage to set up a gate on a
+normal map and pilots must push the incoming invasion back.
+
+**Parts.** A gate needs 20 parts, saved per pilot (at most 999). Pilots get them in
+two ways:
+
+- *Signal Anomaly* (Dr. Sato, accepted on the Galaxy Gates page): research
+  picks up the courier traffic in M2. While it is active, every M2 kill the pilot
+  contributes to guarantees a part in that alien's loot box. Recovering 8 parts
+  decodes the courier cache for +4 parts, 10,000 CR and 2 research points. One
+  operation is available per gate; assembling the gate makes the next available.
+- Random drops: aliens beyond Outpost 01 sometimes carry a part (8–12% in M2,
+  12–16% in M3, 16–20% in M4). Home-map and arena aliens carry none.
+
+Parts sit in the normal loot box and take no cargo space. A living pilot within
+pickup range collects all of a box's parts, even with a full hold: pilots running
+the operation come first, otherwise the nearest pilot. Only parts recovered on
+the operation's map advance it; boxes remain shared, as with resources. Gate runs
+are announced by the builder's public pilot label, not the login identity.
+
+**Opening a run.** At Outpost 01 a pilot with 20 parts presses *Assemble and open
+gate*. The parts are consumed and the Vashar Gate opens near the station. Any pilot
+can fly through it while it is open. One run exists on the server at a time.
+
+**The run.** The arena (*Vashar Rift*) is a separate map outside the connected
+network, with a protected return gate to M1. Seven waves follow:
+
+| Wave | Base enemies |
+| --- | --- |
+| 1 | 3 Shardlings |
+| 2 | 5 Shardlings |
+| 3 | 4 Shardlings, 1 Spireguard |
+| 4 | 5 Shardlings, 2 Spireguards |
+| 5 | 6 Shardlings, 2 Spireguards |
+| 6 | 5 Shardlings, 3 Spireguards |
+| 7 | Vashar mothership, 4 Shardlings, 2 Spireguards |
+
+The first wave starts 12 s after a pilot arrives, and later waves 8 s after the
+previous one is cleared. A large centered countdown shows the time to the next
+wave inside the rift and pauses while nobody is inside. The rift has no protected
+zone: wave aliens always pursue the pilots, including at the return gate, which is
+sealed while a wave is alive. Quitting to the station or disconnecting mid-wave costs a life (once; a pilot already destroyed pays only for the death), so
+pilots cannot slip out to repair and return. Each additional pilot inside (up to four) adds half the
+base count, capped by the arena pool of 8 Shardlings and 4 Spireguards; the size
+locks when the wave starts. The mothership is fixed-strength and launches two
+Shardlings from its hangar every 25 s while it survives; its wave always leaves
+two Shardlings in reserve for this. Its 270 m weapons stay out-ranged by pilot
+lasers, like every other alien.
+
+| Type | Hull / shield | Damage / interval | Credit pool |
+| --- | --- | --- | --- |
+| Shardling | 4,000 / 2,000 | 2,200 / 0.85 s | 1,500 |
+| Spireguard | 16,000 / 8,000 | 7,500 / 0.8 s | 7,000 |
+| Mothership | 200,000 / 100,000 | 18,000 / 0.55 s, 270 m | 120,000 |
+
+Kills share credit pools and leave resource boxes as usual. Each pilot has three
+lives per run. Dying in the rift costs one, and the normal rescue returns the
+pilot to Outpost 01; pilots with lives left can fly back in while the gate is open.
+Destroying the final wave pays every participant still connected 150,000 CR,
+6 research points and 15,000 x4 shots; each also has a 20% chance of an LF-4
+laser, delivered to storage. Victory closes the entrance and returns anyone still inside to M1
+after 90 s. A run collapses, without refunding parts, when no pilot has been inside
+for 120 s or every participant has used all their lives.
+
+**Preview tools.** Allowlisted preview pilots see *Preview: open gate without
+parts* on the Galaxy Gates page. It opens a run immediately for testing; ordinary
+pilots and production servers cannot use it.
+
+**Implementation notes.** Gate progress is an optional equipment field, so save
+schema 8 is unchanged. Older builds reject saves that contain it, so rollback
+needs a backup taken before the first gate parts are collected. The run itself is
+session state: a server restart ends an open run and its parts are lost. Network
+schema 21 adds the run summary. The user supplied concepts for the three Vashar
+aliens; Blender models built from them (faceted obsidian crystal hulls, purple
+armor, violet seams and hot-pink weapon and hangar glow) ship as 2K-textured GLBs.
+Sources, renders and the build script are in `vashar-review/README.md` in the art
+archive. All counts, chances, stats, lives,
+timings and rewards above are provisional until playtested. Further gates,
+other equipment rewards, personal gate instances and the on-map invasion event are future work.
 
 #### First campaign implementation scope
 

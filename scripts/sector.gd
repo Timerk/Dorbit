@@ -49,6 +49,7 @@ var shop: StationShop
 var equipment_menu: ShipEquipment
 var resource_workshop: ResourceWorkshop
 var research_menu: ResearchMenu
+var gate_menu: GateMenu
 var story_sites: StorySites
 var dedicated_server: bool = false
 var client_only: bool = true
@@ -108,7 +109,9 @@ func _ready() -> void:
 			world_aliens[id] = enemy
 			map_rosters[map][id] = enemy
 			add_child(enemy)
-			if dedicated_server or not client_only:
+			if SectorMaps.MAPS[map].get("instance", false):
+				GateRun.dormant(enemy)
+			elif dedicated_server or not client_only:
 				relocate_alien(enemy)
 			enemy.destroyed.connect(on_destroyed)
 			enemy.fired.connect(on_laser.bind(enemy))
@@ -152,6 +155,9 @@ func _ready() -> void:
 		research_menu = ResearchMenu.new()
 		research_menu.sector = self
 		shop_layer.add_child(research_menu)
+		gate_menu = GateMenu.new()
+		gate_menu.sector = self
+		shop_layer.add_child(gate_menu)
 		skylab_menu = SkylabMenu.new()
 		skylab_menu.sector = self
 		shop_layer.add_child(skylab_menu)
@@ -268,6 +274,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if research_menu.visible:
 			research_menu.close()
+			return
+		if gate_menu.visible:
+			gate_menu.close()
 			return
 		session.menu.hide()
 		set_paused(not paused)
@@ -386,7 +395,7 @@ func _physics_process(delta: float) -> void:
 		enemy.tick_combat(delta)
 		if enemy.alive:
 			enemy.fly(delta, player if player.alive and player.map_id == enemy.map_id and not SectorMaps.protected(player) and player.position.distance_to(enemy.position) < float(enemy.tuning()["detection"]) else null, STATION_POSITION)
-		else:
+		elif enemy.map_id != GalaxyGates.MAP:
 			enemy.respawn = maxf(0.0, enemy.respawn - delta)
 			if enemy.respawn <= 0.0:
 				relocate_alien(enemy)
@@ -419,7 +428,7 @@ func alien_home_clear(point: Vector3, enemy: Alien) -> bool:
 		return false
 	if enemy.map_id == 0 and point.distance_to(STATION_POSITION) < float(enemy.tuning()["detection"]) + PROTECTION_RADIUS + 15.0:
 		return false
-	for destination: int in SectorMaps.GATES[enemy.map_id]:
+	for destination: int in SectorMaps.endpoints(enemy.map_id):
 		if point.distance_to(SectorMaps.gate_position(enemy.map_id, destination)) < float(enemy.tuning()["detection"]) + SectorMaps.PROTECTION_RADIUS + 35.0:
 			return false
 	for other: Alien in world_aliens.values():
@@ -695,8 +704,9 @@ func build_map_visuals(map: int) -> void:
 	gates.name = "Map%dGates" % (map + 1)
 	add_child(gates)
 	map_scenery[map].append(gates)
-	for destination: int in SectorMaps.GATES[map]:
+	for destination: int in SectorMaps.endpoints(map):
 		SectorMaps.gate_model(gates, map, destination)
+	refresh_rift()
 	# Newly created materials must respect the current device setting too.
 	for node: Node3D in map_scenery[map]:
 		SectorVisuals.configure_texture_filtering(node, settings.anisotropic_filtering > 0)
@@ -732,7 +742,14 @@ func activate_map(map: int) -> void:
 			if int(loot.drops[id].get("map", 0)) == map:
 				loot.apply_drop(id, loot.drops[id])
 	if is_instance_valid(hud):
-		hud.navigation.waypoint_key = "station" if map == 0 else "gate%d" % SectorMaps.GATES[map].keys()[0]
+		hud.navigation.waypoint_key = "station" if map == 0 else "gate%d" % SectorMaps.links(map).keys()[0]
 		hud.navigation.reset_view()
 		hud.navigation.close_overview(false)
 	SectorBackdrop.activate(self, map)
+
+
+# Shows the Outpost 01 Vashar Gate only while the server reports an open run.
+func refresh_rift() -> void:
+	var gate := get_node_or_null("Map1Gates/GateToM%d" % (GalaxyGates.MAP + 1)) as Node3D
+	if gate != null:
+		gate.visible = SectorMaps.rift_open

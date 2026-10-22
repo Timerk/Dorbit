@@ -7,7 +7,7 @@ const MAX_PLAYERS: int = 10
 const COMMAND_TIMEOUT: float = 0.5
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when packet contents or shared physics change without an RPC signature change.
-const NETWORK_SCHEMA: int = 20
+const NETWORK_SCHEMA: int = 21
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
@@ -483,6 +483,7 @@ func ready_for_flight(docked: bool = false) -> void:
 		stop_for_save_failure()
 		return
 	combat.publish_inventory(id)
+	combat.gate_state.rpc_id(id, combat.gate.state_for(id))
 	combat.loot_state.rpc_id(id, loot_for_map(0), ships[id].map_visit)
 	status = "Server on UDP %d. Players: %d/%d" % [host_port, ships.size(), MAX_PLAYERS]
 	if sector.dedicated_server:
@@ -573,6 +574,8 @@ func dock_request() -> void:
 	if not ships.has(id) or ships[id].get_meta("docked", false):
 		return
 	var ship := ships[id]
+	if ship.map_id == GalaxyGates.MAP:
+		combat.gate.retreated(id)
 	ship.set_meta("docked", true)
 	if ship.map_id != 0:
 		ship.map_visit += 1
@@ -651,6 +654,10 @@ func flight_launched(id: int) -> void:
 func peer_left(id: int) -> void:
 	if active and sector.dedicated_server and not combat.flush_boosts([id]):
 		stop_for_save_failure()
+	# Disconnecting mid-wave is a retreat, like quitting to the station. Run
+	# lives are keyed by pilot identity, so settle them before it is erased.
+	if active and multiplayer.is_server() and ships.has(id) and ships[id].map_id == GalaxyGates.MAP:
+		combat.gate.retreated(id, false)
 	pilot_ids.erase(id)
 	challenges.erase(id)
 	if active and multiplayer.is_server():
@@ -1033,7 +1040,7 @@ func request_jump() -> void:
 		return
 	var destination := -1
 	var nearest := SectorMaps.JUMP_RADIUS
-	for map: int in SectorMaps.GATES[sector.map_id]:
+	for map: int in SectorMaps.links(sector.map_id):
 		var distance := sector.player.position.distance_to(SectorMaps.gate_position(sector.map_id, map))
 		if distance <= nearest:
 			nearest = distance
@@ -1130,13 +1137,30 @@ func jump(id: int, life: int, destination: int) -> String:
 	var ship := ships[id]
 	if life != combat.records[id]["life"] or not ship.alive or ship.get_meta("docked", false):
 		return "Jump unavailable for this flight."
-	if not SectorMaps.GATES[ship.map_id].has(destination):
+	if not SectorMaps.links(ship.map_id).has(destination):
 		return "No gate connects these maps."
 	if ship.position.distance_to(SectorMaps.gate_position(ship.map_id, destination)) > SectorMaps.JUMP_RADIUS:
 		return "Fly within 50 m of the gate to jump."
 	if Time.get_ticks_msec() < jump_until.get(id, 0):
 		return "Gate stabilizing. Wait two seconds between jumps."
+	if destination == GalaxyGates.MAP:
+		var blocker := combat.gate.entry_blocker(id)
+		if not blocker.is_empty():
+			return blocker
+	if ship.map_id == GalaxyGates.MAP:
+		var sealed := combat.gate.exit_blocker()
+		if not sealed.is_empty():
+			return sealed
 	jump_until[id] = Time.get_ticks_msec() + int(SectorMaps.JUMP_COOLDOWN * 1000)
+	transfer(id, destination)
+	if destination == GalaxyGates.MAP:
+		combat.gate.entered(id)
+	return ""
+
+
+## Moves a living pilot to another map's arrival point, invalidating the previous visit.
+func transfer(id: int, destination: int) -> void:
+	var ship := ships[id]
 	var source := ship.map_id
 	ship.map_id = destination
 	ship.map_visit += 1
@@ -1152,7 +1176,6 @@ func jump(id: int, life: int, destination: int) -> String:
 	for enemy: Alien in sector.world_aliens.values():
 		enemy.contributors.erase(id)
 	announce_map_change(id)
-	return ""
 
 
 func announce_map_change(id: int) -> void:
@@ -1205,5 +1228,8 @@ func finish_local_jump() -> void:
 	for effect in get_tree().get_nodes_in_group("transient_feedback"):
 		if sector.is_ancestor_of(effect):
 			effect.queue_free()
-	sector.notify("Arrived at %s. Gates are protected; press %s nearby to return." % [SectorMaps.MAPS[sector.map_id]["name"], GameSettings.binding_text("jump_gate")])
+	if sector.map_id == GalaxyGates.MAP:
+		sector.notify("Entered the Vashar Rift. The protected gate behind you returns to M1 (%s)." % GameSettings.binding_text("jump_gate"))
+	else:
+		sector.notify("Arrived at %s. Gates are protected; press %s nearby to return." % [SectorMaps.MAPS[sector.map_id]["name"], GameSettings.binding_text("jump_gate")])
 	reveal_jump()
