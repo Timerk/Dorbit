@@ -151,7 +151,7 @@ func begin() -> void:
 		sector.player.simulation_authority = multiplayer.is_server()
 	for alien: Alien in sector.world_aliens.values():
 		alien.simulation_authority = multiplayer.is_server()
-		if multiplayer.is_server():
+		if multiplayer.is_server() and not GalaxyGates.is_arena(alien.map_id):
 			sector.relocate_alien(alien)
 		alien.position = alien.home_position
 		alien.patrol_time = 0.0
@@ -1040,8 +1040,10 @@ func collect_loot() -> void:
 	var changed: Dictionary[int, Dictionary] = {}
 	var notices: Dictionary[int, Dictionary] = {}
 	var saved: Dictionary = {}
-	# Parts collected per pilot, keyed by gate ID.
+	# Parts collected per pilot, keyed by gate ID, and those recovered on each
+	# gate's operation map, which advance its operation.
 	var parts: Dictionary[int, Dictionary] = {}
+	var qualifying: Dictionary[int, Dictionary] = {}
 	for drop_id: int in session.sector.loot.drops:
 		var drop: Dictionary = session.sector.loot.drops[drop_id].duplicate(true)
 		# Gate parts need no cargo space; the nearest living pilot takes them all.
@@ -1049,8 +1051,12 @@ func collect_loot() -> void:
 		if carrier >= 0:
 			if not parts.has(carrier):
 				parts[carrier] = {}
+				qualifying[carrier] = {}
 			for gate_id: String in drop["parts"]:
-				parts[carrier][gate_id] = int(parts[carrier].get(gate_id, 0)) + int(drop["parts"][gate_id])
+				var count := int(drop["parts"][gate_id])
+				parts[carrier][gate_id] = int(parts[carrier].get(gate_id, 0)) + count
+				if int(drop.get("map", 0)) == int(GalaxyGates.info(gate_id)["signal"]["map"]):
+					qualifying[carrier][gate_id] = int(qualifying[carrier].get(gate_id, 0)) + count
 			drop.erase("parts")
 			changed[drop_id] = {} if drop["resources"].is_empty() else drop
 		var candidates: Array[int] = []
@@ -1093,7 +1099,7 @@ func collect_loot() -> void:
 		var earned := 0
 		results[id] = {}
 		for gate_id: String in parts[id]:
-			var result := GalaxyGates.collect(GalaxyGates.state(equipment, gate_id), gate_id, parts[id][gate_id])
+			var result := GalaxyGates.collect(GalaxyGates.state(equipment, gate_id), gate_id, parts[id][gate_id], int(qualifying[id].get(gate_id, 0)))
 			results[id][gate_id] = result
 			next_gates[gate_id] = result["gates"]
 			credits = mini(PilotStore.MAX_CREDITS, credits + int(result["credits"]))
@@ -1135,20 +1141,30 @@ func collect_loot() -> void:
 			cargo_result.rpc_id(id, next[id]["starter"])
 
 
-# The nearest living pilot within pickup range of a box holding gate parts, or -1.
+# The living pilot within pickup range who takes a box's gate parts, or -1.
+# Pilots running Signal Anomaly come first, so its guaranteed parts reach them;
+# otherwise the nearest pilot wins, with ties in peer-ID order.
 func part_collector(drop: Dictionary) -> int:
 	if drop.get("parts", {}).is_empty() or not session.sector.dedicated_server:
 		return -1
 	var best := -1
-	var nearest := INF
+	var best_key := Vector2(INF, INF)
 	for id: int in records:
 		var ship := session.ships[id]
 		if ship.map_id != int(drop.get("map", 0)) or ship.get_meta("docked", false) or not ship.alive:
 			continue
 		var distance := ship.position.distance_to(drop["position"])
-		if distance <= ResourceLoot.PICKUP_RADIUS and (distance < nearest or (is_equal_approx(distance, nearest) and id < best)):
+		if distance > ResourceLoot.PICKUP_RADIUS:
+			continue
+		# Running the operation of any gate whose parts this box carries.
+		var equipment: Dictionary = session.store.pilots[session.pilot_ids[id]]["equipment"]
+		var running := false
+		for gate_id: String in drop["parts"]:
+			running = running or GalaxyGates.signal_active(GalaxyGates.state(equipment, gate_id))
+		var rank := Vector2(0.0 if running else 1.0, distance)
+		if rank < best_key or (rank.is_equal_approx(best_key) and id < best):
 			best = id
-			nearest = distance
+			best_key = rank
 	return best
 
 

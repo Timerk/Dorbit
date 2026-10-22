@@ -19,6 +19,9 @@ const VISUAL_DIAMETERS := {
 	"Shardling": 9.5,
 	"Spireguard": 9.5,
 	"Mothership": 16.0,
+	"Husk": 9.5,
+	"Bulwark": 12.0,
+	"Siegebreaker": 12.0,
 }
 # Stronger encounters should remain easy to track among cooperating pilots.
 const VISUAL_SCALE := {
@@ -55,7 +58,7 @@ const TYPES := {
 	"Shardling": {"hull": 4000.0, "shield": 2000.0, "damage": 2200.0, "interval": 0.85, "range": 220.0, "speed": 30.0, "detection": 2400.0, "leash": 5000.0, "reward": 1500, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("c86bff")},
 	"Spireguard": {"hull": 16000.0, "shield": 8000.0, "damage": 7500.0, "interval": 0.8, "range": 250.0, "speed": 17.0, "detection": 2400.0, "leash": 5000.0, "reward": 7000, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("ff5fa8")},
 	"Mothership": {"hull": 200000.0, "shield": 100000.0, "damage": 18000.0, "interval": 0.55, "range": 270.0, "speed": 5.0, "detection": 2400.0, "leash": 5000.0, "reward": 120000, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("9b5cff"), "radius": 16.0},
-	# Korrath Gate arena only, with placeholder models until authored art exists.
+	# Korrath Gate arena only; authored siege-engineer hulls use orange furnace cores.
 	"Husk": {"hull": 8000.0, "shield": 4000.0, "damage": 4000.0, "interval": 0.8, "range": 230.0, "speed": 34.0, "detection": 2400.0, "leash": 5000.0, "reward": 3000, "respawn": 0.0, "scale": Vector3(0.9, 0.7, 1.2), "color": Color("ff8a3d")},
 	"Bulwark": {"hull": 36000.0, "shield": 18000.0, "damage": 14000.0, "interval": 0.85, "range": 260.0, "speed": 15.0, "detection": 2400.0, "leash": 5000.0, "reward": 15000, "respawn": 0.0, "scale": Vector3(1.4, 1.2, 1.3), "color": Color("d0562a")},
 	"Siegebreaker": {"hull": 500000.0, "shield": 250000.0, "damage": 30000.0, "interval": 0.5, "range": 270.0, "speed": 3.0, "detection": 2400.0, "leash": 5000.0, "reward": 300000, "respawn": 0.0, "scale": Vector3(1.6, 0.8, 1.6), "color": Color("ffb35c"), "radius": 22.0},
@@ -97,6 +100,7 @@ static func model_scene(alien_kind: String) -> Node3D:
 	var scene: PackedScene = load("res://assets/aliens/%s.glb" % alien_kind.to_lower())
 	var instance := scene.instantiate() as Node3D
 	instance.scale *= float(VISUAL_SCALE[alien_kind])
+	var korrath: bool = alien_kind in GalaxyGates.info("korrath")["pool"]
 	# Apply to shared materials at load time so existing imported assets also
 	# receive the visibility finish. Keep dark machinery and recesses distinct.
 	for node: MeshInstance3D in instance.find_children("*", "MeshInstance3D", true, false):
@@ -109,6 +113,15 @@ static func model_scene(alien_kind: String) -> Node3D:
 				material.emission_texture = material.albedo_texture
 				# Vashar armor stays dark so its violet seams carry the contrast.
 				material.emission_energy_multiplier = 2.0 if alien_kind in ["Scout", "Sentinel", "Heavy"] else (0.12 if alien_kind in GalaxyGates.arena_kinds() else 0.35)
+				if korrath:
+					# Scorched iron has a broad dull finish under the strong sector sun.
+					material.metallic_specular = 0.2
+					material.clearcoat = 0.04
+			elif korrath and material.resource_name.ends_with("sensor emission"):
+				# Unlit furnace apertures retain orange instead of picking up white sun specular.
+				material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+				material.emission = Color("ff6508")
+				material.emission_energy_multiplier = 0.4
 	return instance
 
 
