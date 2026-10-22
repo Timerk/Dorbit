@@ -78,14 +78,15 @@ func run() -> void:
 		check(alien.alive and alien.visible and alien.collision_layer == 2,
 			kind + " respawn restores visibility and collision")
 		alien.free()
-	# Korrath Gate aliens use colored placeholder models until authored art exists.
-	var placeholders: Array = GalaxyGates.info("korrath")["pool"].keys()
+	# Korrath and Sylith Gate aliens use colored placeholder models until authored art exists.
+	var placeholders: Array = GalaxyGates.info("korrath")["pool"].keys() + GalaxyGates.info("sylith")["pool"].keys()
 	check(sizes.size() == Alien.TYPES.size() - placeholders.size() and sizes[0] < sizes[1] and sizes[1] < sizes[2],
 		"Scout, Sentinel and Heavy retain increasing visual size")
 	check(Alien.VISUAL_DIAMETERS.size() == Alien.TYPES.size() - placeholders.size() and placeholders.all(func(kind: String): return not Alien.VISUAL_DIAMETERS.has(kind)),
 		"Every authored encounter type has an imported model and a mesh-free server diameter")
 	check_vashar()
-	check_placeholders(placeholders)
+	check_placeholders(GalaxyGates.info("korrath")["pool"].keys())
+	check_placeholders(GalaxyGates.info("sylith")["pool"].keys())
 	# Gate rosters are their own faction progressions, checked separately.
 	var roster: Array = Alien.TYPES.keys().filter(func(kind: String): return not kind in GalaxyGates.arena_kinds())
 	roster.sort_custom(func(a: String, b: String): return Alien.TYPES[a]["hull"] < Alien.TYPES[b]["hull"])
@@ -195,7 +196,7 @@ func check_placeholders(kinds: Array) -> void:
 		root.add_child(alien)
 		var diameter := SectorVisuals.destruction_size(alien)
 		check(not alien.model.find_children("*", "MeshInstance3D", true, false).is_empty(), kind + " has a placeholder model")
-		check(diameter > previous, kind + " placeholder is larger than the previous Korrath tier")
+		check(diameter > previous, kind + " placeholder is larger than the previous tier of its faction")
 		check(is_equal_approx((alien.get_child(0) as CollisionShape3D).shape.radius, float(Alien.TYPES[kind].get("radius", 2.2))), kind + " uses its configured collider")
 		previous = diameter
 		alien.free()

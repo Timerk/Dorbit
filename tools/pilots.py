@@ -125,7 +125,7 @@ def valid_story(data: object) -> bool:
 
 # Mirrors GalaxyGates in scripts/galaxy_gates.gd: per-gate progress with at most
 # 99 parts and operation progress below each gate's requirement.
-GATE_OPERATION_REQUIRED = {"vashar": 8, "korrath": 10}
+GATE_OPERATION_REQUIRED = {"vashar": 8, "korrath": 10, "sylith": 12}
 
 
 def valid_gates(data: object) -> bool:

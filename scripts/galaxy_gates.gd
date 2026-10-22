@@ -20,7 +20,7 @@ const ESCORTS := 2
 const SIGNAL_STATES := ["available", "active", "done"]
 # Display and lookup order. Each gate has its own arena map, entry portal near
 # Outpost 01, parts, operation, alien pool, waves and rewards.
-const ORDER := ["vashar", "korrath"]
+const ORDER := ["vashar", "korrath", "sylith"]
 const GATES := {
 	"vashar": {
 		"name": "Vashar Gate", "faction": "Vashar", "arena": "Vashar Rift", "map": 4, "glow": Color("c86bff"),
@@ -75,6 +75,33 @@ const GATES := {
 			{"Husk": 8, "Bulwark": 2},
 			{"Husk": 6, "Bulwark": 3},
 			{"Siegebreaker": 1, "Husk": 4, "Bulwark": 2},
+		],
+	},
+	"sylith": {
+		"name": "Sylith Gate", "faction": "Sylith", "arena": "Sylith Hollow", "map": 6, "glow": Color("4fe3d2"),
+		"portal": Vector3(250, -50, 400), "parts_required": 28, "lives": 3,
+		"summary": "The Sylith are a phase-shifting choir that speaks through alien relays. The occupiers are routing Sylith gate cores through the Frontier relay network. Assemble the gate, enter the hollow where their choir gathers and silence the Ascendant before the Sylith can cross over.",
+		"part_chance": {"Ravager": 0.1, "Overlord": 0.14},
+		"signal": {
+			"title": "Relay Intercept", "contact": "vance", "map": 3, "required": 12, "parts": 6, "credits": 50000, "research": 4,
+			"objective": "Recover Sylith gate cores from aliens in M4 / Frontier",
+			"briefing": "Vance here. Sato finally cracked the Frontier relay traffic. The aliens are not just talking to each other; they are routing gate cores for a third ally, the Sylith. Command wants those cores before they reach a gate. Hunt the relay escorts in M4 and bring the cores home.",
+			"done": "Good hunting, pilot. The escorts were carrying a full manifest; we pulled the remaining cores from their drop point and added them to your stock. Build that gate and take the fight to the Sylith.",
+		},
+		"reward": {"credits": 500000, "research": 15, "x4": 40000, "item": "lf-4", "item_chance": 0.35},
+		"boss": "Ascendant", "boss_title": "SYLITH ASCENDANT", "escort": "Wisp",
+		"victory": "The Sylith Ascendant is silenced. Their choir falls quiet for now.",
+		"pool": {"Wisp": 12, "Veilcaster": 5, "Ascendant": 1},
+		"waves": [
+			{"Wisp": 5},
+			{"Wisp": 8},
+			{"Wisp": 5, "Veilcaster": 1},
+			{"Wisp": 8, "Veilcaster": 2},
+			{"Veilcaster": 3},
+			{"Wisp": 10, "Veilcaster": 2},
+			{"Wisp": 8, "Veilcaster": 3},
+			{"Wisp": 10, "Veilcaster": 4},
+			{"Ascendant": 1, "Wisp": 6, "Veilcaster": 2},
 		],
 	},
 }

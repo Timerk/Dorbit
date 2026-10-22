@@ -19,6 +19,9 @@ const MAPS := {
 	5: {"name": "KG / Korrath Bastion", "color": Color("ff8a3d"), "instance": true,
 		"aliens": ["Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Bulwark", "Bulwark", "Bulwark", "Bulwark", "Bulwark", "Siegebreaker"],
 		"description": "Korrath Gate / siege bastion / waves end with the Siegebreaker"},
+	6: {"name": "SG / Sylith Hollow", "color": Color("4fe3d2"), "instance": true,
+		"aliens": ["Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Wisp", "Veilcaster", "Veilcaster", "Veilcaster", "Veilcaster", "Veilcaster", "Ascendant"],
+		"description": "Sylith Gate / choir hollow / waves end with the Ascendant"},
 }
 const GATES := {
 	0: {1: Vector3(0, 120, -900)},
@@ -29,9 +32,10 @@ const GATES := {
 # Galaxy gate endpoints: each gate's portal near Outpost 01 (see GalaxyGates
 # "portal") and every arena's return gate.
 const SPECIAL_GATES := {
-	0: {4: Vector3(320, 40, -300), 5: Vector3(-340, -30, -330)},
+	0: {4: Vector3(320, 40, -300), 5: Vector3(-340, -30, -330), 6: Vector3(250, -50, 400)},
 	4: {0: Vector3(0, 0, 700)},
 	5: {0: Vector3(0, 0, 700)},
+	6: {0: Vector3(0, 0, 700)},
 }
 # Replicated from the server's gate run: the arena map whose Outpost 01 portal is
 # open, or -1. Only one gate run is open at a time.
