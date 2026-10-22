@@ -424,7 +424,7 @@ func tick(delta: float) -> void:
 		alien.tick_combat(delta)
 		if alien.alive:
 			alien.fly(delta, choose_target(alien), Sector.STATION_POSITION)
-		elif alien.map_id != GalaxyGates.MAP: # The gate run owns arena spawns.
+		elif not GalaxyGates.is_arena(alien.map_id): # The gate run owns arena spawns.
 			alien.respawn = maxf(0.0, alien.respawn - delta)
 			if alien.respawn <= 0.0:
 				sector.relocate_alien(alien)
@@ -547,7 +547,7 @@ func destroyed(ship: SpaceShip) -> void:
 			session.sector.autopilot.cancel()
 			ship.release_mouse()
 		message(id, "Ship lost. Recovery cost: %d credits. Rescue in three seconds." % fee)
-		if ship.map_id == GalaxyGates.MAP:
+		if GalaxyGates.is_arena(ship.map_id):
 			gate.died(id)
 
 
@@ -1040,13 +1040,17 @@ func collect_loot() -> void:
 	var changed: Dictionary[int, Dictionary] = {}
 	var notices: Dictionary[int, Dictionary] = {}
 	var saved: Dictionary = {}
-	var parts: Dictionary[int, int] = {}
+	# Parts collected per pilot, keyed by gate ID.
+	var parts: Dictionary[int, Dictionary] = {}
 	for drop_id: int in session.sector.loot.drops:
 		var drop: Dictionary = session.sector.loot.drops[drop_id].duplicate(true)
 		# Gate parts need no cargo space; the nearest living pilot takes them all.
 		var carrier := part_collector(drop)
 		if carrier >= 0:
-			parts[carrier] = parts.get(carrier, 0) + int(drop["parts"])
+			if not parts.has(carrier):
+				parts[carrier] = {}
+			for gate_id: String in drop["parts"]:
+				parts[carrier][gate_id] = int(parts[carrier].get(gate_id, 0)) + int(drop["parts"][gate_id])
 			drop.erase("parts")
 			changed[drop_id] = {} if drop["resources"].is_empty() else drop
 		var candidates: Array[int] = []
@@ -1064,7 +1068,7 @@ func collect_loot() -> void:
 			var taken := CargoResources.collect(next[id][equipment["active_ship"]], drop["resources"], CargoResources.capacity(equipment))
 			if taken.is_empty():
 				continue
-			changed[drop_id] = {} if drop["resources"].is_empty() and int(drop.get("parts", 0)) == 0 else drop
+			changed[drop_id] = {} if drop["resources"].is_empty() and not drop.has("parts") else drop
 			var extra := CargoResources.collect_bonus(next[id][equipment["active_ship"]], taken, Research.bonus(equipment, "loot"), CargoResources.capacity(equipment))
 			for resource: String in extra:
 				taken[resource] += extra[resource]
@@ -1079,14 +1083,26 @@ func collect_loot() -> void:
 	var gates := {}
 	var balances := {}
 	var research := {}
+	# results[pilot][gate] holds each gate's collection result.
 	var results: Dictionary[int, Dictionary] = {}
 	for id: int in parts:
 		var pilot_id: String = session.pilot_ids[id]
-		results[id] = GalaxyGates.collect(GalaxyGates.state(session.store.pilots[pilot_id]["equipment"]), parts[id])
-		gates[pilot_id] = results[id]["gates"]
-		if results[id]["completed"]:
-			balances[pilot_id] = mini(PilotStore.MAX_CREDITS, int(records[id]["credits"]) + int(results[id]["credits"]))
-			research[pilot_id] = results[id]["research"]
+		var equipment: Dictionary = session.store.pilots[pilot_id]["equipment"]
+		var next_gates := GalaxyGates.states(equipment).duplicate(true)
+		var credits := int(records[id]["credits"])
+		var earned := 0
+		results[id] = {}
+		for gate_id: String in parts[id]:
+			var result := GalaxyGates.collect(GalaxyGates.state(equipment, gate_id), gate_id, parts[id][gate_id])
+			results[id][gate_id] = result
+			next_gates[gate_id] = result["gates"]
+			credits = mini(PilotStore.MAX_CREDITS, credits + int(result["credits"]))
+			earned += int(result["research"])
+		gates[pilot_id] = next_gates
+		if credits != int(records[id]["credits"]):
+			balances[pilot_id] = credits
+		if earned > 0:
+			research[pilot_id] = earned
 	# All nearby pickups commit once, before removing a single unit or part from space.
 	if session.sector.dedicated_server and not session.store.commit(balances, {}, saved, {}, {}, research, {}, gates):
 		session.stop_for_save_failure()
@@ -1095,11 +1111,16 @@ func collect_loot() -> void:
 	for drop_id: int in changed:
 		session.sector.loot.change(drop_id, changed[drop_id])
 	for id: int in results:
-		var gate_state: Dictionary = results[id]["gates"]
-		message(id, "Collected %d Vashar gate part%s. %d / %d toward the gate." % [parts[id], "" if parts[id] == 1 else "s", int(gate_state["parts"]), GalaxyGates.PARTS_REQUIRED])
-		if results[id]["completed"]:
+		if balances.has(session.pilot_ids[id]):
 			records[id]["credits"] = balances[session.pilot_ids[id]]
-			message(id, "SATO: %s %s." % [GalaxyGates.SIGNAL["done"], Story.reward_text(results[id]["credits"], results[id]["research"]) + " and +%d gate parts" % int(GalaxyGates.SIGNAL["parts"])])
+		for gate_id: String in results[id]:
+			var result: Dictionary = results[id][gate_id]
+			var definition := GalaxyGates.info(gate_id)
+			var count: int = parts[id][gate_id]
+			message(id, "Collected %d %s part%s. %d / %d toward the gate." % [count, definition["faction"] + " gate", "" if count == 1 else "s", int(result["gates"]["parts"]), definition["parts_required"]])
+			if result["completed"]:
+				var operation: Dictionary = definition["signal"]
+				message(id, "%s: %s %s and +%d gate parts." % [Story.CONTACTS[operation["contact"]]["call"], operation["done"], Story.reward_text(result["credits"], result["research"]), int(operation["parts"])])
 		publish_inventory(id)
 	for id: int in notices:
 		message(id, "Collected " + CargoResources.describe(notices[id]))
@@ -1116,7 +1137,7 @@ func collect_loot() -> void:
 
 # The nearest living pilot within pickup range of a box holding gate parts, or -1.
 func part_collector(drop: Dictionary) -> int:
-	if int(drop.get("parts", 0)) <= 0 or not session.sector.dedicated_server:
+	if drop.get("parts", {}).is_empty() or not session.sector.dedicated_server:
 		return -1
 	var best := -1
 	var nearest := INF
@@ -1131,16 +1152,19 @@ func part_collector(drop: Dictionary) -> int:
 	return best
 
 
-# Parts carried by a destroyed alien. Signal Anomaly guarantees one on its map
-# when any contributing pilot has the operation active.
-func roll_gate_parts(alien: Alien) -> int:
+# Parts carried by a destroyed alien, per gate. A gate's operation guarantees one
+# on its map when any contributing pilot has that operation active.
+func roll_gate_parts(alien: Alien) -> Dictionary:
 	if not session.sector.dedicated_server:
-		return 0
-	var guaranteed := false
-	if alien.map_id == int(GalaxyGates.SIGNAL["map"]):
+		return {}
+	var guaranteed := []
+	for gate_id: String in GalaxyGates.ORDER:
+		if alien.map_id != int(GalaxyGates.info(gate_id)["signal"]["map"]):
+			continue
 		for id: int in alien.contributors:
-			if GalaxyGates.signal_active(GalaxyGates.state(session.store.pilots[session.pilot_ids[id]]["equipment"])):
-				guaranteed = true
+			if GalaxyGates.signal_active(GalaxyGates.state(session.store.pilots[session.pilot_ids[id]]["equipment"], gate_id)):
+				guaranteed.append(gate_id)
+				break
 	return GalaxyGates.roll_parts(alien.kind, part_rng, guaranteed)
 
 
@@ -1149,7 +1173,7 @@ func gate_state(data: Dictionary) -> void:
 	gate_summary = data
 	gate_summary["received"] = Time.get_ticks_msec()
 	if not multiplayer.is_server():
-		SectorMaps.rift_open = data.get("open", false)
+		SectorMaps.open_rift = int(data.get("map", -1)) if data.get("open", false) else -1
 	if not session.sector.dedicated_server:
 		session.sector.refresh_rift()
 

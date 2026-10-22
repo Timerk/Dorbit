@@ -34,6 +34,9 @@ const VISUAL_SCALE := {
 	"Shardling": 1.0,
 	"Spireguard": 2.0,
 	"Mothership": 4.0,
+	"Husk": 1.3,
+	"Bulwark": 2.4,
+	"Siegebreaker": 9.0,
 }
 const TYPES := {
 	"Scout": {"hull": 1000.0, "shield": 500.0, "damage": 1500.0, "interval": 0.85, "range": 205.0, "speed": 29.0, "detection": 230.0, "leash": 210.0, "reward": 300, "respawn": 10.0, "scale": Vector3(0.7, 0.7, 0.85), "color": Color("ffc875")},
@@ -49,6 +52,10 @@ const TYPES := {
 	"Shardling": {"hull": 4000.0, "shield": 2000.0, "damage": 2200.0, "interval": 0.85, "range": 220.0, "speed": 30.0, "detection": 2400.0, "leash": 5000.0, "reward": 1500, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("c86bff")},
 	"Spireguard": {"hull": 16000.0, "shield": 8000.0, "damage": 7500.0, "interval": 0.8, "range": 250.0, "speed": 17.0, "detection": 2400.0, "leash": 5000.0, "reward": 7000, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("ff5fa8")},
 	"Mothership": {"hull": 200000.0, "shield": 100000.0, "damage": 18000.0, "interval": 0.55, "range": 320.0, "speed": 5.0, "detection": 2400.0, "leash": 5000.0, "reward": 120000, "respawn": 0.0, "scale": Vector3.ONE, "color": Color("9b5cff"), "radius": 16.0},
+	# Korrath Gate arena only, with placeholder models until authored art exists.
+	"Husk": {"hull": 8000.0, "shield": 4000.0, "damage": 4000.0, "interval": 0.8, "range": 230.0, "speed": 34.0, "detection": 2400.0, "leash": 5000.0, "reward": 3000, "respawn": 0.0, "scale": Vector3(0.9, 0.7, 1.2), "color": Color("ff8a3d")},
+	"Bulwark": {"hull": 36000.0, "shield": 18000.0, "damage": 14000.0, "interval": 0.85, "range": 260.0, "speed": 15.0, "detection": 2400.0, "leash": 5000.0, "reward": 15000, "respawn": 0.0, "scale": Vector3(1.4, 1.2, 1.3), "color": Color("d0562a")},
+	"Siegebreaker": {"hull": 500000.0, "shield": 250000.0, "damage": 30000.0, "interval": 0.5, "range": 340.0, "speed": 3.0, "detection": 2400.0, "leash": 5000.0, "reward": 300000, "respawn": 0.0, "scale": Vector3(1.6, 0.8, 1.6), "color": Color("ffb35c"), "radius": 22.0},
 }
 
 var alien_id: int = 0
@@ -94,7 +101,7 @@ static func model_scene(alien_kind: String) -> Node3D:
 				material.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY
 				material.emission_texture = material.albedo_texture
 				# Vashar armor stays dark so its violet seams carry the contrast.
-				material.emission_energy_multiplier = 2.0 if alien_kind in ["Scout", "Sentinel", "Heavy"] else (0.12 if GalaxyGates.POOL.has(alien_kind) else 0.35)
+				material.emission_energy_multiplier = 2.0 if alien_kind in ["Scout", "Sentinel", "Heavy"] else (0.12 if alien_kind in GalaxyGates.arena_kinds() else 0.35)
 	return instance
 
 

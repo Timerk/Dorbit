@@ -75,7 +75,7 @@ func check_campaign_backdrops() -> void:
 	root.add_child(authority)
 	authority.set_physics_process(false)
 	var client_obstacles := static_obstacles(flight)
-	check(client_obstacles == static_obstacles(authority) and client_obstacles.size() == 173, "All four rendered maps and the gate arena retain identical server obstacles")
+	check(client_obstacles == static_obstacles(authority) and client_obstacles.size() == 197, "All four rendered maps and both gate arenas retain identical server obstacles")
 	check(render_nodes(authority) == 0, "Four-map server creates no campaign planets, machines or sky")
 	check(flight.map_scenery.keys() == [0], "Startup builds only the current map's scenery")
 	check(authority.map_scenery.is_empty(), "Dedicated startup has no visual map cache")
@@ -94,8 +94,8 @@ func check_campaign_backdrops() -> void:
 		flight.player.map_id = map
 		for destination: int in SectorMaps.links(map):
 			flight.player.position = SectorMaps.gate_position(map, destination)
-			# The gate arena deliberately has no safe zone; every other gate protects pilots.
-			check(SectorMaps.protected(flight.player) != (map == GalaxyGates.MAP), "Unvisited gate protection is available at startup")
+			# Gate arenas deliberately have no safe zone; every other gate protects pilots.
+			check(SectorMaps.protected(flight.player) != GalaxyGates.is_arena(map), "Unvisited gate protection is available at startup")
 			check(SectorMaps.arrival(map, destination).distance_to(flight.player.position) <= SectorMaps.JUMP_RADIUS, "Unvisited reciprocal spawn stays inside the gate trigger range")
 	flight.player.map_id = 0
 	flight.player.position = Sector.SPAWN_POSITION

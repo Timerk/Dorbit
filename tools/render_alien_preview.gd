@@ -13,7 +13,7 @@ func render_preview() -> void:
 	var vashar_view := "--vashar" in OS.get_cmdline_user_args()
 	var kinds: Array = ["Skirmisher", "Raider", "Marauder", "Warden", "Ravager", "Overlord"] if outer_view else Alien.TYPES.keys()
 	if vashar_view:
-		kinds = GalaxyGates.POOL.keys()
+		kinds = GalaxyGates.info("vashar")["pool"].keys()
 	if DisplayServer.get_name() == "headless":
 		push_error("Alien review rendering requires a graphics display.")
 		quit(1)

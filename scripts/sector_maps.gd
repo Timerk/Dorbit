@@ -11,11 +11,14 @@ const MAPS := {
 	1: {"name": "M2 / Outer Patrol", "color": Color("67dfb5"), "aliens": ["Skirmisher", "Skirmisher", "Skirmisher", "Raider", "Raider"], "description": "Tier 1 / Skirmishers and Raiders / no station"},
 	2: {"name": "M3 / Debris Fields", "color": Color("efb35f"), "aliens": ["Marauder", "Marauder", "Marauder", "Warden", "Warden"], "description": "Tier 2 / Marauders and Wardens / no station"},
 	3: {"name": "M4 / Frontier", "color": Color("d48eef"), "aliens": ["Ravager", "Ravager", "Ravager", "Overlord", "Overlord"], "description": "Tier 3 / Ravagers and Overlords / no station"},
-	# Vashar Gate arena: outside the connected network, entered only through an open gate.
-	# Its pool matches GalaxyGates.POOL; waves activate these aliens.
+	# Galaxy gate arenas: outside the connected network, entered only through an
+	# open gate. Each pool matches its GalaxyGates definition; waves activate it.
 	4: {"name": "VG / Vashar Rift", "color": Color("c86bff"), "instance": true,
 		"aliens": ["Shardling", "Shardling", "Shardling", "Shardling", "Shardling", "Shardling", "Shardling", "Shardling", "Spireguard", "Spireguard", "Spireguard", "Spireguard", "Mothership"],
 		"description": "Vashar Gate / staging fleet / waves end with the mothership"},
+	5: {"name": "KG / Korrath Bastion", "color": Color("ff8a3d"), "instance": true,
+		"aliens": ["Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Husk", "Bulwark", "Bulwark", "Bulwark", "Bulwark", "Bulwark", "Siegebreaker"],
+		"description": "Korrath Gate / siege bastion / waves end with the Siegebreaker"},
 }
 const GATES := {
 	0: {1: Vector3(0, 120, -900)},
@@ -23,13 +26,16 @@ const GATES := {
 	2: {1: Vector3(750, -120, 300), 3: Vector3(-720, 220, -400)},
 	3: {1: Vector3(-760, 80, 300), 2: Vector3(730, -160, -400)},
 }
-# Galaxy gate endpoints: the Vashar Gate near Outpost 01 and the arena's return gate.
+# Galaxy gate endpoints: each gate's portal near Outpost 01 (see GalaxyGates
+# "portal") and every arena's return gate.
 const SPECIAL_GATES := {
-	0: {4: Vector3(320, 40, -300)},
+	0: {4: Vector3(320, 40, -300), 5: Vector3(-340, -30, -330)},
 	4: {0: Vector3(0, 0, 700)},
+	5: {0: Vector3(0, 0, 700)},
 }
-# Replicated from the server's gate run; the Outpost 01 entry exists only while open.
-static var rift_open := false
+# Replicated from the server's gate run: the arena map whose Outpost 01 portal is
+# open, or -1. Only one gate run is open at a time.
+static var open_rift := -1
 
 # Maps in the connected network, excluding gate arenas.
 static func network_maps() -> Array[int]:
@@ -44,13 +50,14 @@ static func network_maps() -> Array[int]:
 static func links(map: int) -> Dictionary:
 	var result: Dictionary = GATES.get(map, {}).duplicate()
 	for destination: int in SPECIAL_GATES.get(map, {}):
-		if map != 0 or rift_open:
+		if map != 0 or destination == open_rift:
 			result[destination] = SPECIAL_GATES[map][destination]
 	return result
 
 
 static func gate_label(destination: int) -> String:
-	return GalaxyGates.NAME.to_upper() if destination == GalaxyGates.MAP else "GATE TO " + code(destination)
+	var gate := GalaxyGates.for_map(destination)
+	return GalaxyGates.info(gate)["name"].to_upper() if not gate.is_empty() else "GATE TO " + code(destination)
 
 # Short map label such as "M2", used where a gate names its destination.
 static func code(map: int) -> String:
@@ -73,7 +80,7 @@ static func arrival(map: int, source: int, slot: int = 0) -> Vector3:
 
 static func protected(ship: SpaceShip) -> bool:
 	# The gate arena has no safe zone: aliens may pursue pilots to the exit.
-	if ship.map_id == GalaxyGates.MAP:
+	if GalaxyGates.is_arena(ship.map_id):
 		return false
 	if ship.map_id == 0 and ship.position.distance_to(Sector.STATION_POSITION) <= Sector.PROTECTION_RADIUS:
 		return true
@@ -104,7 +111,9 @@ static func first_hop(source: int, destination: int) -> int:
 static func gate_model(parent: Node3D, map: int, destination: int) -> void:
 	var root := Node3D.new()
 	root.name = "GateToM%d" % (destination+1)
-	var vashar := GalaxyGates.MAP in [map, destination]
+	# Galaxy gates and arena exits take their faction's color.
+	var gate := GalaxyGates.for_map(destination if map == 0 else map)
+	var glow: Color = GalaxyGates.info(gate)["glow"] if not gate.is_empty() else Color("48e6f5")
 	root.position = gate_position(map, destination)
 	parent.add_child(root)
 	root.look_at(origin(map), Vector3.UP)
@@ -120,20 +129,20 @@ static func gate_model(parent: Node3D, map: int, destination: int) -> void:
 				surface.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 				surface.albedo_color = Color(0.02,0.72,1.0)
 				surface.emission_energy_multiplier = 0.4
-				if vashar:
+				if not gate.is_empty():
 					# The imported material is shared by every gate; tint a copy.
-					var violet := surface.duplicate() as BaseMaterial3D
-					violet.albedo_color = Color(0.78,0.42,1.0)
-					violet.emission = Color(0.78,0.42,1.0)
-					part.set_surface_override_material(index, violet)
+					var tinted := surface.duplicate() as BaseMaterial3D
+					tinted.albedo_color = glow
+					tinted.emission = glow
+					part.set_surface_override_material(index, tinted)
 	SectorVisuals.configure_texture_filtering(model)
 	var aperture := QuadMesh.new()
 	aperture.size = Vector2.ONE*25.2
 	var energy := ShaderMaterial.new()
 	energy.shader = preload("res://shaders/gate_portal.gdshader")
 	energy.set_shader_parameter("turbulence",preload("res://assets/sector/nebula-panorama.png"))
-	if vashar:
-		energy.set_shader_parameter("energy_color", Color(0.8,0.3,1.0))
+	if not gate.is_empty():
+		energy.set_shader_parameter("energy_color", glow)
 	var portal := SectorVisuals.mesh(root,aperture,Vector3.ZERO,energy)
 	portal.name = "Portal"
 	portal.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -142,7 +151,7 @@ static func gate_model(parent: Node3D, map: int, destination: int) -> void:
 	for side in [-1,1]:
 		var light := OmniLight3D.new()
 		light.position = Vector3(0,0,side*5.0)
-		light.light_color = Color("c86bff") if vashar else Color("48e6f5")
+		light.light_color = glow
 		light.light_energy = 5.0
 		light.omni_range = 29
 		light.omni_attenuation = 0.8
