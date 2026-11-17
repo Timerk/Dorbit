@@ -38,6 +38,7 @@
     {"name": "equipment_test", "checks": [["equipment_test.gd"]]},
     {"name": "equipment_stats_test", "checks": [["equipment_stats_test.gd"]]},
     {"name": "station_actions_test", "checks": [["station_actions_test.gd"]]},
+    {"name": "player_trading_test", "checks": [["player_trading_test.gd"]]},
     {"name": "shop_test", "checks": [["shop_test.gd"]]},
     {"name": "main_menu_test", "checks": [["main_menu_test.gd"]]},
     {"name": "menu_rendering_test", "checks": [["menu_rendering_test.gd"]]},
@@ -58,6 +59,7 @@
     {"name": "settings", "checks": [["connection_menu_test.gd"], ["connection_menu_test.gd", "--", "--restart"], ["display_test.gd"], ["display_test.gd", "--", "--restart"], ["graphics_test.gd"], ["graphics_test.gd", "--", "--restart"], ["graphics_test.gd", "--", "--filter-restart", "2"], ["graphics_test.gd", "--", "--filter-restart", "3"], ["graphics_test.gd", "--", "--filter-restart", "4"]]}
   ],
   "linux": [
+    {"name": "player_trading_test", "checks": [["player_trading_test.gd"]]},
     {"name": "checkpoint_trace", "checks": [["checkpoint_trace_test.gd"], ["tests/checkpoint_report_test.py"]]},
     {"name": "asset_budgets_test", "checks": [["asset_budgets_test.gd"]]},
     {"name": "benchmark_packet_accounting", "checks": [["tests/benchmark_server_test.py"]]},

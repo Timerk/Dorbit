@@ -20,6 +20,22 @@ including loads from the exported Windows pack.
 
 ## Play
 
+### Player trading
+
+At Outpost 01, open **Hangar > Player trade**, choose an available pilot and send
+an invitation. The other pilot opens the same window and accepts. Select stored
+equipment and a credit amount, then press **Update offer**. Both pilots must
+confirm the displayed offers to finish. An offer can contain up to twelve items;
+one-sided gifts are allowed. Remove fitted equipment before trading it.
+
+Updating an offer clears both confirmations. Closing the window, disconnecting,
+leaving station service range or changing an inventory cancels the trade. Idle
+trades expire after two minutes. The server saves both sides together, including
+item settings; completed trades survive restart. Cargo, ammunition and ships
+cannot be included. Use matching client and server builds.
+
+[Trade window at 960 x 600](docs/feedback/player-trade.png).
+
 ### Flight HUD
 
 The flight HUD follows the menu's graphite panels, amber accents and Rajdhani

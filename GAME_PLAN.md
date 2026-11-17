@@ -442,7 +442,42 @@ The first Milestone 3 equipment slice added fittings for the Liberator starter. 
 - Fitting changes never repair hull, refill shields or boost energy, or reset weapon cooldowns. Added shield capacity starts empty and recovers through the normal shield regeneration rules. Removing capacity discards excess charge.
 - The server commits a purchase's credit deduction, new item and request sequence together. Successful requests cannot run again, even after restart. A new intentional purchase uses the next sequence. Inventory and fittings survive death, reconnects and server restarts.
 - Equipment purchases have an editable quantity with minus/plus buttons that change it by one, defaulting to one when selecting another model. The shop shows the batch total and remaining balance. Each request buys 1–999 items into storage as one saved transaction; insufficient funds reject the entire batch. Ships remain limited to one owned hull per model. Batch purchases were introduced in network schema 10 (current is 19), requiring matching clients and servers; save schema 5 introduced resource boosts (current is 8).
-- No equipment selling, trading, rarity, equipment leveling, loot acquisition or assembly are included. Resource cargo and sales are described below.
+- Direct player trading is described below. Equipment selling to the station, rarity, equipment leveling, loot acquisition and assembly remain outside this slice. Resource cargo and sales are described below.
+
+### Direct player trading
+
+On 2026-10-21 the user requested trading inventory items directly with other
+players. This Milestone 3 addition exchanges stored equipment and credits at
+Outpost 01. Open Hangar and choose Player trade, select an available pilot and
+send an invitation. The recipient opens the same window and accepts. Each pilot
+can offer up to twelve unequipped items and an integer credit amount, including
+one-sided gifts. Ships, fitted equipment, resource cargo, ammunition, research
+and Skylab stock are outside this first slice. Starter equipment can be traded
+after removal; pilots can fly with empty fittings and buy replacements normally.
+
+Both pilots review the server's offers and confirm the current offer version.
+Local edits require Update offer before confirmation. Updating either offer
+clears both confirmations; delayed confirmations cannot accept changed terms.
+After confirming, that pilot's editors lock; Cancel withdraws the trade, while a
+partner's offer update unlocks both sides for another review.
+The server checks ownership, quantities, credit limits, the reviewed inventories
+and both pilots' station eligibility. Both must remain alive on M1, within 120 m
+of Outpost 01, moving at most 8 m/s and five seconds clear of damage. Docked
+preflight pilots can trade. Offers go only to the two participants, with the
+counterparty seeing only offered equipment and credits.
+
+The final confirmation saves both wallets, both inventories and both request
+revisions together before publishing success. Incoming equipment gets a new
+recipient-local ID and retains its instance settings. The existing save schema 8
+needs no migration. New trade RPC signatures change the protocol fingerprint,
+requiring matching client/server builds. Cancelling, closing the trade window,
+disconnecting, changing ship life or station eligibility, or changing an
+inventory cancels the exchange without transferring anything. Invitations and
+offers expire after two minutes without accepted activity, and are discarded on
+server restart. Completed trades survive reconnects and restarts; duplicate
+confirmations cannot repeat them. Failed persistence stops progression under the
+existing save-failure policy. The item cap, station-only restriction and timeout
+remain playtesting settings.
 
 ### Extras equipment
 

@@ -39,6 +39,7 @@ func station_request(id: int, sequence: int, action: String, subject: String, sh
 	if session.store.failed:
 		session.stop_for_save_failure()
 		return
+	combat.trading.tick()
 	var pilot: Dictionary = session.store.pilots[pilot_id]
 	records[id]["credits"] = pilot["credits"]
 	session.ships[id].ammo = pilot["ammo"].duplicate()
@@ -85,6 +86,7 @@ func skylab_request(id: int, sequence: int, action: String, payload: Dictionary)
 		session.stop_for_save_failure()
 		return
 	sync_lab_accounts()
+	combat.trading.tick()
 	publish_inventory(id, result)
 
 
