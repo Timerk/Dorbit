@@ -216,9 +216,14 @@ func run() -> void:
 	await click(left, menu.confirm_button)
 	await settle(.1)
 	check(a.trade_state["confirmed"] and not menu.credits.editable and menu.own_items.get_child(0).disabled, "Confirmed offers lock their local editors until cancelled or changed by the partner")
-	await command(right, "confirm")
-	check(a.trade_state.is_empty() and b.trade_state.is_empty(), "Final confirmation ends both trade sessions")
-	if not a.trade_state.is_empty():
+	b.request_trade("confirm")
+	deadline = Time.get_ticks_msec() + 5000
+	while not (a.trade_state.is_empty() and b.trade_state.is_empty()) and Time.get_ticks_msec() < deadline:
+		await process_frame
+	var both_completed := (a.trade_state.is_empty() and a.trade_message == PlayerTrading.COMPLETED
+		and b.trade_state.is_empty() and b.trade_message == PlayerTrading.COMPLETED)
+	check(both_completed, "Final confirmation ends both trade sessions (left: %s, right: %s)" % [a.trade_message, b.trade_message])
+	if not both_completed:
 		await finish()
 		return
 	check(store.pilots["pilot0"]["credits"] == 931 and store.pilots["pilot1"]["credits"] == 1069, "Both credit offers exchange in one balanced checkpoint")
