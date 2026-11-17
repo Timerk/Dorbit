@@ -285,8 +285,11 @@ func run() -> void:
 	var lasers := func(pilot: String) -> Array: return store.pilots[pilot]["equipment"]["items"].values().filter(func(item: Dictionary): return item["model"] == "lf-4")
 	check(lasers.call(pilot_id).size() == 1 and lasers.call(pilot_id)[0]["ship"] == "" and lasers.call(partner_pilot).is_empty(), "A won LF-4 roll places one LF-4 in storage")
 	check(Equipment.fitting_blocker(store.pilots[pilot_id]["equipment"], store.pilots[pilot_id]["equipment"]["items"].find_key(lasers.call(pilot_id)[0]), "starter", "laser2").is_empty(), "The rewarded LF-4 can be fitted")
-	await settle(0.1)
-	check(pilot.session.combat.inventory["items"].values().any(func(item: Dictionary): return item["model"] == "lf-4"), "The pilot's client receives the LF-4")
+	var awarded_id: String = store.pilots[pilot_id]["equipment"]["items"].find_key(lasers.call(pilot_id)[0])
+	var deadline := Time.get_ticks_msec() + 5000
+	while not pilot.session.combat.inventory["items"].has(awarded_id) and Time.get_ticks_msec() < deadline:
+		await process_frame
+	check(pilot.session.combat.inventory["items"].get(awarded_id, {}).get("model") == "lf-4", "The pilot's client receives the LF-4")
 	var closed: String = await enter(server, pilot)
 	check(not closed.is_empty(), "A won gate cannot be re-entered")
 	gate.tick(GalaxyGates.VICTORY_TIME + 0.1)
