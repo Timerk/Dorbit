@@ -75,7 +75,7 @@ func check_campaign_backdrops() -> void:
 	root.add_child(authority)
 	authority.set_physics_process(false)
 	var client_obstacles := static_obstacles(flight)
-	check(client_obstacles == static_obstacles(authority) and client_obstacles.size() == 149, "All four rendered maps retain identical server obstacles")
+	check(client_obstacles == static_obstacles(authority) and client_obstacles.size() == 173, "All four rendered maps and the gate arena retain identical server obstacles")
 	check(render_nodes(authority) == 0, "Four-map server creates no campaign planets, machines or sky")
 	check(flight.map_scenery.keys() == [0], "Startup builds only the current map's scenery")
 	check(authority.map_scenery.is_empty(), "Dedicated startup has no visual map cache")
@@ -87,11 +87,15 @@ func check_campaign_backdrops() -> void:
 		flight.autopilot.collect_obstacles()
 		check(flight.autopilot.obstacles.size() == (77 if map == 0 else 24), "Autopilot sees every map's obstacles before its scenery exists")
 		var enemy: Alien = authority.map_rosters[map].values()[0]
-		check(authority.alien_home_clear(enemy.home_position, enemy), "Alien relocation uses complete startup collision and gate data")
+		if SectorMaps.MAPS[map].get("instance", false):
+			check(not enemy.alive and not enemy.visible, "Gate arena aliens stay dormant until a run spawns them")
+		else:
+			check(authority.alien_home_clear(enemy.home_position, enemy), "Alien relocation uses complete startup collision and gate data")
 		flight.player.map_id = map
-		for destination: int in SectorMaps.GATES[map]:
+		for destination: int in SectorMaps.links(map):
 			flight.player.position = SectorMaps.gate_position(map, destination)
-			check(SectorMaps.protected(flight.player), "Unvisited gate protection is available at startup")
+			# The gate arena deliberately has no safe zone; every other gate protects pilots.
+			check(SectorMaps.protected(flight.player) != (map == GalaxyGates.MAP), "Unvisited gate protection is available at startup")
 			check(SectorMaps.arrival(map, destination).distance_to(flight.player.position) <= SectorMaps.JUMP_RADIUS, "Unvisited reciprocal spawn stays inside the gate trigger range")
 	flight.player.map_id = 0
 	flight.player.position = Sector.SPAWN_POSITION
@@ -108,7 +112,7 @@ func check_campaign_backdrops() -> void:
 				var body := flight.map_terrain[map].get_child(index) as StaticBody3D
 				var model := rocks.get_child(index) as Node3D
 				check(model.global_position.is_equal_approx(body.global_position) and is_equal_approx(model.scale.x, body.get_child(0).shape.radius), "Lazy asteroid visuals align with their existing collider")
-		for destination: int in SectorMaps.GATES[map]:
+		for destination: int in SectorMaps.links(map):
 			var gate := flight.get_node("Map%dGates/GateToM%d" % [map+1,destination+1]) as Node3D
 			check(gate.global_position.is_equal_approx(SectorMaps.gate_position(map,destination)), "Detailed gate retains its authoritative travel position")
 			check(gate.find_children("*","CollisionObject3D",true,false).is_empty(), "Transit armor and portal add no collision bodies")

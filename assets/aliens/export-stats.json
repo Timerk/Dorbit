@@ -133,5 +133,50 @@
     "forward": "-Z",
     "up": "+Y",
     "atlas_size": 2048
+  },
+  "Shardling": {
+    "triangles": 15364,
+    "materials": 6,
+    "bytes": 9778832,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 9.5,
+    "bounds_godot": [
+      5.46453,
+      4.732422,
+      6.163854
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
+  },
+  "Spireguard": {
+    "triangles": 28316,
+    "materials": 7,
+    "bytes": 10306748,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 9.5,
+    "bounds_godot": [
+      5.205069,
+      4.104681,
+      6.80506
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
+  },
+  "Mothership": {
+    "triangles": 39930,
+    "materials": 7,
+    "bytes": 11414636,
+    "omitted_degenerate_triangles": 0,
+    "visual_diameter": 16.0,
+    "bounds_godot": [
+      10.962345,
+      3.956571,
+      10.962322
+    ],
+    "forward": "-Z",
+    "up": "+Y",
+    "atlas_size": 2048
   }
 }

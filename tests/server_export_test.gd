@@ -35,8 +35,8 @@ func run() -> void:
 			var shape := collider.shape
 			colliders.append([str(collider.global_transform), shape.get_class(),
 				shape.radius if shape is SphereShape3D else str(shape.size)])
-	check(colliders.size() == 149, "All 96 asteroids across four maps and 53 station colliders survive export")
-	check(sector.world_aliens.size() == 20 and sector.map_rosters.size() == 4, "All four map populations survive server export")
+	check(colliders.size() == 173, "All 120 asteroids across four maps and the gate arena, and 53 station colliders, survive export")
+	check(sector.world_aliens.size() == 20 + GalaxyGates.pool_kinds().size() and sector.map_rosters.size() == 5, "All four map populations and the gate arena pool survive server export")
 	for model: String in ShipCatalog.MODELS:
 		var pilot := Pilot.new()
 		pilot.render_enabled = false

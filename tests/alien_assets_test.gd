@@ -59,8 +59,8 @@ func run() -> void:
 			and alien.model.scale.is_equal_approx(Vector3.ONE * float(Alien.VISUAL_SCALE[kind])),
 			kind + " retains its baked orientation with presentation scaling")
 		var collision := alien.get_child(0) as CollisionShape3D
-		check(collision.shape is SphereShape3D and is_equal_approx(collision.shape.radius, 2.2),
-			kind + " keeps the 2.2 m collision sphere")
+		check(collision.shape is SphereShape3D and is_equal_approx(collision.shape.radius, float(Alien.TYPES[kind].get("radius", 2.2))),
+			kind + " keeps its configured collision sphere")
 		check(alien.hull == Alien.TYPES[kind]["hull"] and alien.shield == Alien.TYPES[kind]["shield"]
 			and alien.laser_damage == Alien.TYPES[kind]["damage"], kind + " keeps combat tuning")
 		check_finish(kind, mesh)
@@ -78,11 +78,14 @@ func run() -> void:
 		check(alien.alive and alien.visible and alien.collision_layer == 2,
 			kind + " respawn restores visibility and collision")
 		alien.free()
+	# Vashar Gate aliens use procedural playtest models until authored art is approved.
 	check(sizes.size() == Alien.TYPES.size() and sizes[0] < sizes[1] and sizes[1] < sizes[2],
 		"Scout, Sentinel and Heavy retain increasing visual size")
 	check(Alien.VISUAL_DIAMETERS.size() == Alien.TYPES.size(),
 		"Every encounter type has an imported model and a mesh-free server diameter")
-	var roster: Array = Alien.TYPES.keys()
+	check_vashar()
+	# The Vashar Gate roster is its own faction progression, checked separately.
+	var roster: Array = Alien.TYPES.keys().filter(func(kind: String): return not GalaxyGates.POOL.has(kind))
 	roster.sort_custom(func(a: String, b: String): return Alien.TYPES[a]["hull"] < Alien.TYPES[b]["hull"])
 	var previous_diameter := 0.0
 	for kind: String in roster:
@@ -147,7 +150,8 @@ func check_finish(kind: String, mesh: ArrayMesh) -> void:
 			kind + " shares metallic and roughness maps")
 		if material.resource_name.ends_with("coated armor"):
 			painted = material.clearcoat_enabled
-			var minimum_lift := 2.0 if kind in ["Scout", "Sentinel", "Heavy"] else 0.3
+			# Vashar armor keeps a low lift so near-black crystal contrasts with its violet seams.
+			var minimum_lift := 2.0 if kind in ["Scout", "Sentinel", "Heavy"] else (0.1 if GalaxyGates.POOL.has(kind) else 0.3)
 			check(material.emission_enabled and material.emission == Color.WHITE
 				and material.emission_operator == BaseMaterial3D.EMISSION_OP_MULTIPLY
 				and material.emission_energy_multiplier >= minimum_lift
@@ -159,6 +163,23 @@ func check_finish(kind: String, mesh: ArrayMesh) -> void:
 				forward_optics = forward_optics or vertex.z < bounds.position.z + .04
 				rear_exhaust = rear_exhaust or vertex.z > bounds.end.z - bounds.size.length() * .08
 	check(textures.size() == 3 and painted and luminous, kind + " retains three shared maps, coated armor and emission")
-	check(forward_optics and rear_exhaust, kind + " cannons face -Z and exhausts face +Z")
-	check(lod_count > 0 and triangles > 30000, kind + " retains detailed geometry and generated distance LODs")
+	# Vashar crystals are deliberately low-poly faceted hulls without forward optics.
+	var vashar := GalaxyGates.POOL.has(kind)
+	check(vashar or (forward_optics and rear_exhaust), kind + " cannons face -Z and exhausts face +Z")
+	check(lod_count > 0 and triangles > (1500 if vashar else 30000), kind + " retains detailed geometry and generated distance LODs")
 	print("ALIEN_GEOMETRY %s triangles=%d lod_levels=%d" % [kind, triangles, lod_count])
+
+
+func check_vashar() -> void:
+	var previous := 0.0
+	for kind: String in GalaxyGates.POOL:
+		var alien := Alien.new()
+		alien.kind = kind
+		root.add_child(alien)
+		var instance := alien.model.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D
+		var diameter := instance.mesh.get_aabb().size.length() * float(Alien.VISUAL_SCALE[kind])
+		check(diameter > previous, kind + " is larger than the previous Vashar tier")
+		check(is_equal_approx(SectorVisuals.destruction_size(alien), float(Alien.VISUAL_DIAMETERS[kind]) * float(Alien.VISUAL_SCALE[kind])), kind + " destruction size matches its exported model")
+		previous = diameter
+		print("ALIEN_SIZE %s diameter=%.2f m" % [kind, diameter])
+		alien.free()

@@ -115,7 +115,7 @@ class NetworkPlot extends Control:
 					draw_polyline(points, color, 1.5, true)
 					for port: Vector2 in [points[0], points[-1]]:
 						draw_circle(port, 3.5, color)
-		for map: int in SectorMaps.MAPS:
+		for map: int in SectorMaps.network_maps():
 			var rect := map_rect(map)
 			var color: Color = SectorMaps.MAPS[map]["color"]
 			var border := FlightHud.AMBER if selected == map else color if map == current else Color("405767")
@@ -148,7 +148,7 @@ class NetworkPlot extends Control:
 	func _gui_input(event: InputEvent) -> void:
 		if event is InputEventMouseMotion:
 			hovered_map = -1
-			for map: int in SectorMaps.MAPS:
+			for map: int in SectorMaps.network_maps():
 				if map_rect(map).has_point(event.position):
 					hovered_map = map
 			mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if hovered_map >= 0 and hovered_map != navigation.sector.map_id else Control.CURSOR_ARROW
@@ -160,7 +160,7 @@ class NetworkPlot extends Control:
 					tooltip_text += "\nSet waypoint to " + SectorMaps.MAPS[hop]["name"]
 			queue_redraw()
 		elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			for map: int in SectorMaps.MAPS:
+			for map: int in SectorMaps.network_maps():
 				if map_rect(map).has_point(event.position):
 					select_map(map)
 					accept_event()
@@ -168,7 +168,7 @@ class NetworkPlot extends Control:
 			if event.keycode in [KEY_LEFT,KEY_RIGHT,KEY_UP,KEY_DOWN]:
 				if keyboard_map < 0:
 					keyboard_map = navigation.sector.map_id
-				keyboard_map = posmod(keyboard_map + (-1 if event.keycode in [KEY_LEFT,KEY_UP] else 1),SectorMaps.MAPS.size())
+				keyboard_map = posmod(keyboard_map + (-1 if event.keycode in [KEY_LEFT,KEY_UP] else 1),SectorMaps.network_maps().size())
 				hovered_map = -1
 				queue_redraw()
 				accept_event()
@@ -270,7 +270,7 @@ func contacts_current() -> bool:
 	# Allocation-free check of the cached membership; refreshes moving positions.
 	if contact_cache_map != sector.map_id:
 		return false
-	var index: int = SectorMaps.GATES[sector.map_id].size() + (1 if sector.map_id == 0 else 0)
+	var index: int = SectorMaps.links(sector.map_id).size() + (1 if sector.map_id == 0 else 0)
 	var site := Story.site(sector.story_state(), sector.map_id)
 	if not site.is_empty():
 		if index >= contact_cache.size() or contact_cache[index]["key"] != "story_" + site["id"]:
@@ -307,8 +307,8 @@ func build_contacts() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	if sector.map_id == 0:
 		result.append({"key": "station", "name": "Outpost 01", "position": Sector.STATION_POSITION, "color": FlightHud.GREEN, "ship": null})
-	for map: int in SectorMaps.GATES[sector.map_id]:
-		result.append({"key": "gate%d" % map, "name": "Gate to " + SectorMaps.code(map), "position": SectorMaps.gate_position(sector.map_id, map), "color": SectorMaps.MAPS[map]["color"], "ship": null})
+	for map: int in SectorMaps.links(sector.map_id):
+		result.append({"key": "gate%d" % map, "name": SectorMaps.gate_label(map).capitalize() if map == GalaxyGates.MAP else "Gate to " + SectorMaps.code(map), "position": SectorMaps.gate_position(sector.map_id, map), "color": SectorMaps.MAPS[map]["color"], "ship": null})
 	var site := Story.site(sector.story_state(), sector.map_id)
 	if not site.is_empty():
 		result.append({"key": "story_" + site["id"], "name": "Objective: " + site["site"], "position": Story.site_position(site), "color": StorySites.GOLD, "ship": null})
@@ -584,7 +584,7 @@ func draw_radar() -> void:
 	var title_state := Vector2i(sector.map_id, range_index)
 	if title_state != radar_title_state:
 		radar_title_state = title_state
-		radar_title = "M%d / RADAR / %s m" % [sector.map_id + 1, FlightHud.number(RANGES[range_index])]
+		radar_title = "%s / RADAR / %s m" % [SectorMaps.code(sector.map_id), FlightHud.number(RANGES[range_index])]
 	card(radar_rect(), radar_title)
 	var center := origin + Vector2(84, 108)
 	draw_circle(center, 62, Color("111a20"))
