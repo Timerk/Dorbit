@@ -113,8 +113,13 @@ func open(directory: String) -> bool:
 			if pilot.has("equipment"):
 				return fail("Unexpected equipment in legacy save. Original file preserved.")
 			pilot["equipment"] = Equipment.starter()
-		elif not Equipment.valid(pilot.get("equipment")):
-			return fail("Invalid pilot equipment. Original file preserved.")
+		else:
+			var equipment: Variant = pilot.get("equipment")
+			# The first Vashar gate stored one gate state directly in equipment.
+			if equipment is Dictionary and GalaxyGates.valid(equipment.get("gates"), "vashar"):
+				equipment["gates"] = {"vashar": equipment["gates"]}
+			if not Equipment.valid(equipment):
+				return fail("Invalid pilot equipment. Original file preserved.")
 		pilot["equipment"]["revision"] = int(pilot["equipment"]["revision"])
 		if pilot["equipment"].has("research"):
 			Research.normalize(pilot["equipment"]["research"])

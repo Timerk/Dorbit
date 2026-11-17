@@ -88,6 +88,48 @@ class ProvisioningTest(unittest.TestCase):
                 self.assertEqual(backup["pilots"]["test"]["boosts"], boosts)
             self.assertTrue(pilots.valid_skylab(saved["pilots"]["new"]["skylab"], saved["pilots"]["new"]["equipment"]))
 
+    def test_gate_save_edits(self):
+        flat = {"parts": 23, "signal": "active", "progress": 7}
+        current = {"vashar": flat, "korrath": {"parts": 19, "signal": "active", "progress": 9}}
+        for first_edit in ("rotate", "add"):
+            with self.subTest(first_edit=first_edit), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                path, _, _, _ = self.journal_fixture(root)
+                data = json.loads(path.read_text())
+                records = data["pilots"]
+                for pilot in ("current", "empty", "absent"):
+                    records[pilot] = json.loads(json.dumps(records["test"]))
+                records["test"]["equipment"]["gates"] = flat
+                records["current"]["equipment"]["gates"] = current
+                records["empty"]["equipment"]["gates"] = {}
+                path.write_text(json.dumps(data))
+                expected = {pilot: rec["equipment"].copy() for pilot, rec in records.items()}
+                expected["test"]["gates"] = {"vashar": flat}
+                for index, edit in enumerate((first_edit, "rotate")):
+                    pilot, flags = ("test", ["--rotate"]) if edit == "rotate" else ("new", [])
+                    result = subprocess.run([sys.executable, pilots.__file__, str(root), pilot,
+                                             str(root / f"credential-{index}.json"), *flags], capture_output=True)
+                    self.assertEqual(result.returncode, 0, result.stderr.decode())
+                    saved = json.loads(path.read_text())["pilots"]
+                    for pilot, equipment in expected.items():
+                        self.assertEqual(saved[pilot]["equipment"], equipment)
+
+    def test_corrupt_gate_save_preserved(self):
+        flat = {"parts": 23, "signal": "active", "progress": 7}
+        for invalid in (None, flat | {"korrath": flat}, {"parts": 12}, flat | {"progress": 8},
+                        flat | {"parts": True}, {"unknown": flat}, {"korrath": None}):
+            with self.subTest(invalid=invalid), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                path, _, _, _ = self.journal_fixture(root)
+                data = json.loads(path.read_text())
+                data["pilots"]["test"]["equipment"]["gates"] = invalid
+                path.write_text(json.dumps(data))
+                before = {p.name: p.read_bytes() for p in root.iterdir()}
+                result = subprocess.run([sys.executable, pilots.__file__, str(root), "new",
+                                         str(root / "new.json")], capture_output=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual({p.name: p.read_bytes() for p in root.iterdir()}, before)
+
     def test_checkpointed_journal_does_not_reverse_purchase(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
