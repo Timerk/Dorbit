@@ -153,7 +153,7 @@ jobs:
       DORBIT_TEST_WORKERS: 2
     runs-on: windows-latest
     cache-mode: read
-    timeout-minutes: 20
+    timeout-minutes: 30
     outputs:
       attempt: ${{ steps.build.outputs.attempt }}
     steps:
