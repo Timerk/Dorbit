@@ -3,60 +3,91 @@ extends "res://tests/hunting_contracts_test.gd"
 ## full Vashar Gate run with lives, waves, escorts, victory and collapse.
 
 
+const VASHAR := "vashar"
+const KORRATH := "korrath"
+const VMAP := 4
+const KMAP := 5
+
+
 func run_rules() -> void:
 	var gates := GalaxyGates.empty()
-	check(GalaxyGates.valid(gates), "Empty gate progress is valid")
+	var vashar := GalaxyGates.info(VASHAR)
+	var operation: Dictionary = vashar["signal"]
+	check(GalaxyGates.valid(gates, VASHAR) and GalaxyGates.valid_collection({}), "Empty gate progress is valid")
 	for invalid: Variant in [null, {"parts": 0}, {"parts": -1, "signal": "available", "progress": 0}, {"parts": 1000, "signal": "available", "progress": 0},
 			{"parts": 0, "signal": "unknown", "progress": 0}, {"parts": 0, "signal": "available", "progress": 1},
-			{"parts": 0, "signal": "active", "progress": GalaxyGates.SIGNAL["required"]}, {"parts": 0, "signal": "done", "progress": 0, "extra": 1}]:
-		check(not GalaxyGates.valid(invalid), "Malformed gate state is rejected: %s" % JSON.stringify(invalid))
+			{"parts": 0, "signal": "active", "progress": operation["required"]}, {"parts": 0, "signal": "done", "progress": 0, "extra": 1}]:
+		check(not GalaxyGates.valid(invalid, VASHAR), "Malformed gate state is rejected: %s" % JSON.stringify(invalid))
+	check(not GalaxyGates.valid_collection({"unknown": gates}) and not GalaxyGates.valid_collection([gates]), "Unknown gates and non-dictionaries are rejected")
+	check(GalaxyGates.valid({"parts": 0, "signal": "active", "progress": 9}, KORRATH) and not GalaxyGates.valid({"parts": 0, "signal": "active", "progress": 9}, VASHAR),
+		"Operation progress is bounded by each gate's own requirement")
 	var equipment := Equipment.starter()
-	equipment["gates"] = {"parts": 7, "signal": "active", "progress": 3}
-	check(Equipment.valid(equipment), "Saved gate progress keeps equipment valid")
-	equipment["gates"] = {"parts": 7, "signal": "active", "progress": 99}
+	equipment["gates"] = {VASHAR: {"parts": 7, "signal": "active", "progress": 3}, KORRATH: {"parts": 2, "signal": "available", "progress": 0}}
+	check(Equipment.valid(equipment), "Saved progress for several gates keeps equipment valid")
+	equipment["gates"] = {VASHAR: {"parts": 7, "signal": "active", "progress": 99}}
 	check(not Equipment.valid(equipment), "Equipment with impossible gate progress is rejected")
-	check(GalaxyGates.accept_blocker(gates).is_empty() and not GalaxyGates.assemble_blocker(gates).is_empty(), "A new pilot can trace the signal but cannot assemble")
-	var plain := GalaxyGates.collect(gates, 2, 2)
+	check(GalaxyGates.accept_blocker(gates, VASHAR).is_empty() and not GalaxyGates.assemble_blocker(gates, VASHAR).is_empty(), "A new pilot can trace the signal but cannot assemble")
+	var plain := GalaxyGates.collect(gates, VASHAR, 2, 2)
 	check(plain["gates"]["parts"] == 2 and plain["gates"]["progress"] == 0 and not plain["completed"], "Parts outside the operation only add to stock")
 	var active := {"parts": 0, "signal": "active", "progress": 6}
-	var partial := GalaxyGates.collect(active, 1, 1)
-	check(GalaxyGates.collect(active, 3, 0)["gates"] == {"parts": 3, "signal": "active", "progress": 6}, "Parts from other maps add stock without operation progress")
+	var partial := GalaxyGates.collect(active, VASHAR, 1, 1)
+	check(GalaxyGates.collect(active, VASHAR, 3, 0)["gates"] == {"parts": 3, "signal": "active", "progress": 6}, "Parts from other maps add stock without operation progress")
 	check(partial["gates"] == {"parts": 1, "signal": "active", "progress": 7} and partial["credits"] == 0, "Operation parts advance progress")
-	var done := GalaxyGates.collect(partial["gates"], 3, 3)
-	check(done["completed"] and done["gates"] == {"parts": 4 + GalaxyGates.SIGNAL["parts"], "signal": "done", "progress": 0}
-		and done["credits"] == GalaxyGates.SIGNAL["credits"] and done["research"] == GalaxyGates.SIGNAL["research"], "The final part decodes the cache once")
-	check(not GalaxyGates.accept_blocker(done["gates"]).is_empty(), "A decoded signal waits for the next gate")
-	check(GalaxyGates.collect({"parts": 998, "signal": "available", "progress": 0}, 5, 5)["gates"]["parts"] == GalaxyGates.MAX_PARTS, "Stock is capped")
-	var assembled := GalaxyGates.assemble({"parts": 23, "signal": "done", "progress": 0})
+	var done := GalaxyGates.collect(partial["gates"], VASHAR, 3, 3)
+	check(done["completed"] and done["gates"] == {"parts": 4 + operation["parts"], "signal": "done", "progress": 0}
+		and done["credits"] == operation["credits"] and done["research"] == operation["research"], "The final part decodes the cache once")
+	check(not GalaxyGates.accept_blocker(done["gates"], VASHAR).is_empty(), "A decoded signal waits for the next gate")
+	check(GalaxyGates.collect({"parts": 998, "signal": "available", "progress": 0}, VASHAR, 5, 5)["gates"]["parts"] == GalaxyGates.MAX_PARTS, "Stock is capped")
+	var assembled := GalaxyGates.assemble({"parts": 23, "signal": "done", "progress": 0}, VASHAR)
 	check(assembled == {"parts": 3, "signal": "available", "progress": 0}, "Assembly consumes one gate and reopens the signal")
+	check(GalaxyGates.assemble({"parts": 30, "signal": "available", "progress": 0}, KORRATH)["parts"] == 6, "Each gate consumes its own part count")
 	var rng := RandomNumberGenerator.new()
 	for attempt in range(50):
-		check(GalaxyGates.roll_parts("Scout", rng, false) == 0 and GalaxyGates.roll_parts("Shardling", rng, false) == 0, "Home-map and arena aliens carry no parts")
-		check(GalaxyGates.roll_parts("Skirmisher", rng, true) >= 1, "The operation guarantees a part")
-	check(GalaxyGates.wave_counts(0, 1) == {"Shardling": 3} and GalaxyGates.wave_counts(1, 3) == {"Shardling": 8},
+		check(GalaxyGates.roll_parts("Scout", rng, []).is_empty() and GalaxyGates.roll_parts("Shardling", rng, []).is_empty() and GalaxyGates.roll_parts("Husk", rng, []).is_empty(),
+			"Home-map and arena aliens carry no parts")
+		check(int(GalaxyGates.roll_parts("Skirmisher", rng, [VASHAR]).get(VASHAR, 0)) >= 1, "The operation guarantees a part")
+		check(not GalaxyGates.roll_parts("Skirmisher", rng, []).has(KORRATH), "Korrath parts only come from the deeper maps")
+	check(GalaxyGates.wave_counts(VASHAR, 0, 1) == {"Shardling": 3} and GalaxyGates.wave_counts(VASHAR, 1, 3) == {"Shardling": 8},
 		"Waves scale with pilots and stay within the arena pool")
-	check(GalaxyGates.wave_counts(6, 10)["Mothership"] == 1 and GalaxyGates.wave_counts(6, 10)["Shardling"] <= GalaxyGates.POOL["Shardling"] - GalaxyGates.ESCORTS,
-		"The boss wave has one mothership and leaves dormant escorts at any group size")
-	check(Alien.TYPES["Mothership"]["range"] < 310.0, "The mothership stays out-ranged by pilot lasers")
-	check(str(GalaxyGates.pool_kinds()) == str(SectorMaps.MAPS[GalaxyGates.MAP]["aliens"]), "The arena roster matches the gate pool")
-	check(SectorMaps.first_hop(GalaxyGates.MAP, 1) == 0, "Routing out of the arena leads through its exit to M1")
+	check(GalaxyGates.wave_counts(VASHAR, 6, 10)["Mothership"] == 1, "The boss wave has one mothership at any group size")
+	for gate_id: String in GalaxyGates.ORDER:
+		var definition := GalaxyGates.info(gate_id)
+		check(str(GalaxyGates.pool_kinds(gate_id)) == str(SectorMaps.MAPS[definition["map"]]["aliens"]), "%s arena roster matches its pool" % definition["name"])
+		check(GalaxyGates.for_map(definition["map"]) == gate_id and SectorMaps.SPECIAL_GATES[0][definition["map"]] == definition["portal"], "%s has its own arena and Outpost 01 portal" % definition["name"])
+		check(Equipment.MODELS.has(definition["reward"]["item"]) and not Equipment.purchase_blocker(definition["reward"]["item"]).is_empty(), "%s rewards an item the shop does not sell" % definition["name"])
+		for wave: Dictionary in definition["waves"]:
+			for kind: String in wave:
+				check(Alien.TYPES.has(kind) and CargoResources.LOOT.has(kind) and int(wave[kind]) <= int(definition["pool"][kind]), "%s wave aliens exist and fit the pool" % definition["name"])
+		check(definition["waves"].back().has(definition["boss"]) and definition["pool"].has(definition["escort"]), "%s ends with its boss and escorts" % definition["name"])
+		var final_wave: int = definition["waves"].size() - 1
+		check(int(GalaxyGates.wave_counts(gate_id, final_wave, 10)[definition["escort"]]) <= int(definition["pool"][definition["escort"]]) - GalaxyGates.ESCORTS,
+			"%s boss wave leaves dormant escorts at any group size" % definition["name"])
+		check(float(Alien.TYPES[definition["boss"]]["range"]) < 310.0, "%s boss stays out-ranged by pilot lasers" % definition["name"])
+	check(SectorMaps.first_hop(VMAP, 1) == 0 and SectorMaps.first_hop(KMAP, 2) == 0, "Routing out of an arena leads through its exit to M1")
 
 
-func saved(server: Sector, client: Sector) -> Dictionary:
-	return GalaxyGates.state(server.session.store.pilots[server.session.pilot_ids[client.multiplayer.get_unique_id()]]["equipment"])
+func saved(server: Sector, client: Sector, gate_id: String = VASHAR) -> Dictionary:
+	return GalaxyGates.state(server.session.store.pilots[server.session.pilot_ids[client.multiplayer.get_unique_id()]]["equipment"], gate_id)
 
 
 func move_to(server: Sector, client: Sector, map: int) -> void:
 	var id := client.multiplayer.get_unique_id()
-	if server.session.ships[id].map_id != map:
-		server.session.transfer(id, map)
+	# Follow real gate connections; arenas connect only to Outpost 01.
+	while server.session.ships[id].map_id != map:
+		var current := server.session.ships[id].map_id
+		var hop := 0
+		if SectorMaps.GATES.get(current, {}).has(map) or (current == 0 and GalaxyGates.is_arena(map)):
+			hop = map
+		elif not GalaxyGates.is_arena(current) and not GalaxyGates.is_arena(map):
+			hop = SectorMaps.first_hop(current, map)
+		server.session.transfer(id, hop)
 		await settle(0.08)
 
 
-func request(server: Sector, client: Sector, action: String) -> void:
+func request(server: Sector, client: Sector, action: String, gate_id: String = VASHAR) -> void:
 	await move_to(server, client, 0)
 	station(server, client)
-	client.session.combat.request_station(action, "")
+	client.session.combat.request_station(action, gate_id)
 	await settle(0.12)
 
 
@@ -81,15 +112,15 @@ func pick_up(server: Sector, client: Sector, drop_id: int) -> void:
 	await settle(0.05)
 
 
-func enter(server: Sector, client: Sector) -> String:
+func enter(server: Sector, client: Sector, arena: int = VMAP) -> String:
 	var id := client.multiplayer.get_unique_id()
 	await move_to(server, client, 0)
 	var ship := server.session.ships[id]
-	ship.position = SectorMaps.gate_position(0, GalaxyGates.MAP)
+	ship.position = SectorMaps.gate_position(0, arena)
 	server.session.jump_until.erase(id)
-	var reason := server.session.jump(id, server.session.combat.records[id]["life"], GalaxyGates.MAP)
+	var reason := server.session.jump(id, server.session.combat.records[id]["life"], arena)
 	# Leave the protected arrival zone so the pilot can fight.
-	ship.position = SectorMaps.origin(GalaxyGates.MAP) + Vector3(0, 0, 200)
+	ship.position = SectorMaps.origin(arena) + Vector3(0, 0, 200)
 	return reason
 
 
@@ -127,12 +158,12 @@ func run() -> void:
 	var partner_id := partner.multiplayer.get_unique_id()
 	var pilot_id: String = server.session.pilot_ids[id]
 	check(saved(server, pilot) == GalaxyGates.empty(), "Existing pilots start without gate parts")
-	for alien: Alien in server.map_rosters[GalaxyGates.MAP].values():
+	for alien: Alien in server.map_rosters[VMAP].values():
 		check(not alien.alive, "Arena aliens are dormant before any run")
 
 	# Signal Anomaly: guaranteed M2 parts, pickup without cargo space and the cache reward.
 	await request(server, pilot, "gate_signal")
-	check(saved(server, pilot)["signal"] == "active" and pilot.session.combat.inventory["gates"]["signal"] == "active", "Accepting the operation is saved and published")
+	check(saved(server, pilot)["signal"] == "active" and pilot.session.combat.inventory["gates"][VASHAR]["signal"] == "active", "Accepting the operation is saved and published")
 	await request(server, pilot, "gate_signal")
 	check(pilot.session.combat.station_message.contains("already active"), "An active operation cannot be accepted twice")
 	var next := store.pilots.duplicate(true)
@@ -141,13 +172,13 @@ func run() -> void:
 	combat.cargo_holds[id] = next[pilot_id]["cargo"].duplicate(true)
 	var credits: int = combat.records[id]["credits"]
 	var drop: int = await kill_on_map(server, 1, [pilot])
-	check(drop >= 0 and int(server.loot.drops[drop].get("parts", 0)) >= 1, "An M2 kill during the operation carries a gate part")
-	var carried := int(server.loot.drops[drop]["parts"])
+	check(drop >= 0 and int(server.loot.drops[drop].get("parts", {}).get(VASHAR, 0)) >= 1, "An M2 kill during the operation carries a gate part")
+	var carried := int(server.loot.drops[drop]["parts"][VASHAR])
 	await pick_up(server, pilot, drop)
-	check(saved(server, pilot)["parts"] == carried and saved(server, pilot)["progress"] == mini(carried, GalaxyGates.SIGNAL["required"] - 1), "Gate parts are collected and saved with a full cargo hold")
+	check(saved(server, pilot)["parts"] == carried and saved(server, pilot)["progress"] == mini(carried, GalaxyGates.info(VASHAR)["signal"]["required"] - 1), "Gate parts are collected and saved with a full cargo hold")
 	check(server.loot.drops.has(drop) and not server.loot.drops[drop].has("parts"), "Resources stay in the box when the hold is full")
 	var partner_drop: int = await kill_on_map(server, 1, [partner])
-	check(partner_drop < 0 or int(server.loot.drops[partner_drop].get("parts", 0)) <= 1, "Pilots without the operation get only random parts")
+	check(partner_drop < 0 or int(server.loot.drops[partner_drop].get("parts", {}).get(VASHAR, 0)) <= 1, "Pilots without the operation get only random parts")
 	# A closer pilot without the operation cannot take the operation pilot's parts.
 	var shared: int = await kill_on_map(server, 1, [pilot])
 	var before_shared: int = saved(server, pilot)["parts"]
@@ -156,27 +187,27 @@ func run() -> void:
 	combat.collect_loot()
 	await settle(0.05)
 	check(saved(server, pilot)["parts"] > before_shared, "Gate parts go to the in-range pilot running the operation first")
-	for attempt in range(GalaxyGates.SIGNAL["required"]):
+	for attempt in range(GalaxyGates.info(VASHAR)["signal"]["required"]):
 		if saved(server, pilot)["signal"] != "active":
 			break
 		var box: int = await kill_on_map(server, 1, [pilot])
 		await pick_up(server, pilot, box)
 	var after := saved(server, pilot)
-	check(after["signal"] == "done" and after["parts"] >= GalaxyGates.SIGNAL["required"] + GalaxyGates.SIGNAL["parts"], "Completing the operation adds the cache parts")
-	check(store.pilots[pilot_id]["credits"] >= credits + GalaxyGates.SIGNAL["credits"], "The operation pays its credit reward")
+	check(after["signal"] == "done" and after["parts"] >= GalaxyGates.info(VASHAR)["signal"]["required"] + GalaxyGates.info(VASHAR)["signal"]["parts"], "Completing the operation adds the cache parts")
+	check(store.pilots[pilot_id]["credits"] >= credits + GalaxyGates.info(VASHAR)["signal"]["credits"], "The operation pays its credit reward")
 	await request(server, pilot, "gate_assemble")
 	check(saved(server, pilot)["parts"] == after["parts"] and not gate.active, "Assembly needs a full set of parts")
 
 	# Assembly consumes parts and opens one shared run.
 	next = store.pilots.duplicate(true)
-	next[pilot_id]["equipment"]["gates"]["parts"] = GalaxyGates.PARTS_REQUIRED + 2
+	next[pilot_id]["equipment"]["gates"][VASHAR]["parts"] = GalaxyGates.info(VASHAR)["parts_required"] + 2
 	check(store.persist(next), "Seed a full set of gate parts")
 	await request(server, pilot, "gate_assemble")
-	check(gate.active and SectorMaps.rift_open and saved(server, pilot) == {"parts": 2, "signal": "available", "progress": 0}, "Assembly consumes parts, reopens the signal and opens the gate")
+	check(gate.active and SectorMaps.open_rift == VMAP and saved(server, pilot) == {"parts": 2, "signal": "available", "progress": 0}, "Assembly consumes parts, reopens the signal and opens the gate")
 	check(gate.builder == "Pilot %d" % id, "Runs are announced by the public pilot label, not the login ID")
 	await sync(server)
 	check(pilot.session.combat.gate_summary.get("active", false) and partner.session.combat.gate_summary.get("open", false), "Every pilot learns the gate is open")
-	check(pilot.hud.navigation.has_contact("gate%d" % GalaxyGates.MAP), "The open gate is a navigation contact at Outpost 01")
+	check(pilot.hud.navigation.has_contact("gate%d" % VMAP), "The open gate is a navigation contact at Outpost 01")
 	await request(server, partner, "gate_assemble")
 	check(partner.session.combat.station_message.contains("already open"), "Only one run is open at a time")
 
@@ -184,7 +215,7 @@ func run() -> void:
 	var first: String = await enter(server, pilot)
 	var second: String = await enter(server, partner)
 	check(first.is_empty() and second.is_empty(), "Pilots fly through the open gate")
-	check(server.session.ships[id].map_id == GalaxyGates.MAP and gate.lives[pilot_id] == GalaxyGates.LIVES, "Entering joins the run with full lives")
+	check(server.session.ships[id].map_id == VMAP and gate.lives[pilot_id] == GalaxyGates.info(VASHAR)["lives"], "Entering joins the run with full lives")
 	gate.tick(1.0)
 	await settle(0.1)
 	var countdown: float = pilot.hud.gate_countdown()
@@ -192,26 +223,26 @@ func run() -> void:
 	check(pilot.hud.gate_status().contains("WAVE 1 IN"), "The status line names the next wave and its countdown")
 	gate.tick(GalaxyGates.FIRST_WAVE_DELAY)
 	var alive := gate.wave_aliens.filter(func(alien: Alien): return alien.alive).size()
-	check(gate.phase == "fighting" and gate.wave == 0 and alive == GalaxyGates.wave_counts(0, 2)["Shardling"], "The first wave scales to the pilots inside")
+	check(gate.phase == "fighting" and gate.wave == 0 and alive == GalaxyGates.wave_counts(VASHAR, 0, 2)["Shardling"], "The first wave scales to the pilots inside")
 	check(gate.wave_aliens.all(func(alien: Alien): return gate.clear_of_rocks(alien.position, 14.9)), "Wave aliens spawn clear of arena asteroids")
 	await sync(server)
-	check(pilot.map_id == GalaxyGates.MAP and pilot.session.combat.gate_summary["wave"] == 1, "The pilot's client shows the arena and wave")
+	check(pilot.map_id == VMAP and pilot.session.combat.gate_summary["wave"] == 1, "The pilot's client shows the arena and wave")
 	check(pilot.hud.gate_status().begins_with("VASHAR GATE / WAVE 1 OF") and pilot.hud.gate_countdown() < 0.0, "The HUD reports the active wave once the countdown ends")
 	# No safe zone in the rift: aliens pursue a pilot waiting at the exit, which stays sealed.
 	var holder := server.session.ships[id]
-	holder.position = SectorMaps.gate_position(GalaxyGates.MAP, 0)
+	holder.position = SectorMaps.gate_position(VMAP, 0)
 	server.session.ships[partner_id].position = holder.position + Vector3(8, 0, 0)
 	check(not SectorMaps.protected(holder), "The rift exit has no protected zone")
 	var hunter: Alien = gate.wave_aliens.filter(func(alien: Alien): return alien.alive)[0]
 	check(combat.choose_target(hunter) in [holder, server.session.ships[partner_id]], "Wave aliens pursue pilots waiting at the rift exit")
 	server.session.jump_until.erase(id)
-	check(server.session.jump(id, combat.records[id]["life"], 0).contains("sealed") and holder.map_id == GalaxyGates.MAP, "The rift exit is sealed while a wave is alive")
-	holder.position = SectorMaps.origin(GalaxyGates.MAP) + Vector3(0, 0, 200)
+	check(server.session.jump(id, combat.records[id]["life"], 0).contains("sealed") and holder.map_id == VMAP, "The rift exit is sealed while a wave is alive")
+	holder.position = SectorMaps.origin(VMAP) + Vector3(0, 0, 200)
 	var ship := server.session.ships[partner_id]
 	ship.take_damage(ship.max_hull + ship.max_shield + 1.0, null)
-	check(gate.lives[server.session.pilot_ids[partner_id]] == GalaxyGates.LIVES - 1, "Dying in the arena costs one life")
+	check(gate.lives[server.session.pilot_ids[partner_id]] == GalaxyGates.info(VASHAR)["lives"] - 1, "Dying in the arena costs one life")
 	gate.retreated(partner_id)
-	check(gate.lives[server.session.pilot_ids[partner_id]] == GalaxyGates.LIVES - 1, "Quitting during rescue does not cost a second life")
+	check(gate.lives[server.session.pilot_ids[partner_id]] == GalaxyGates.info(VASHAR)["lives"] - 1, "Quitting during rescue does not cost a second life")
 	combat.tick(3.1)
 	check(ship.alive and ship.map_id == 0, "Rescue returns the pilot to Outpost 01")
 	var rejoined: String = await enter(server, partner)
@@ -226,15 +257,15 @@ func run() -> void:
 	while true:
 		var probe := RandomNumberGenerator.new()
 		probe.seed = seed
-		if probe.randf() < GalaxyGates.REWARD["item_chance"] and probe.randf() >= GalaxyGates.REWARD["item_chance"]:
+		if probe.randf() < GalaxyGates.info(VASHAR)["reward"]["item_chance"] and probe.randf() >= GalaxyGates.info(VASHAR)["reward"]["item_chance"]:
 			break
 		seed += 1
 	var research := int(Research.state(store.pilots[pilot_id]["equipment"])["points"])
-	for wave in range(GalaxyGates.WAVES.size()):
+	for wave in range(GalaxyGates.info(VASHAR)["waves"].size()):
 		if wave > 0:
 			gate.tick(GalaxyGates.WAVE_DELAY + 0.1)
 		check(gate.phase == "fighting" and gate.wave == wave, "Wave %d starts" % (wave + 1))
-		if wave == GalaxyGates.WAVES.size() - 1:
+		if wave == GalaxyGates.info(VASHAR)["waves"].size() - 1:
 			var boss := gate.wave_aliens.filter(func(alien: Alien): return alien.kind == "Mothership")
 			check(boss.size() == 1 and boss[0].alive, "The final wave brings the mothership")
 			var before := gate.wave_aliens.filter(func(alien: Alien): return alien.alive).size()
@@ -243,11 +274,11 @@ func run() -> void:
 			check(gate.wave_aliens.filter(func(alien: Alien): return alien.alive).size() > before, "The mothership launches escorts")
 		clear_wave(server, pilot)
 		gate.tick(0.1)
-	check(gate.phase == "victory" and not SectorMaps.rift_open, "Destroying the last wave wins and closes the entrance")
-	check(store.pilots[pilot_id]["credits"] >= pilot_credits + GalaxyGates.REWARD["credits"]
-		and int(Research.state(store.pilots[pilot_id]["equipment"])["points"]) == research + GalaxyGates.REWARD["research"], "Victory pays participants credits and research")
+	check(gate.phase == "victory" and SectorMaps.open_rift != VMAP, "Destroying the last wave wins and closes the entrance")
+	check(store.pilots[pilot_id]["credits"] >= pilot_credits + GalaxyGates.info(VASHAR)["reward"]["credits"]
+		and int(Research.state(store.pilots[pilot_id]["equipment"])["points"]) == research + GalaxyGates.info(VASHAR)["reward"]["research"], "Victory pays participants credits and research")
 	for winner: String in x4:
-		check(int(store.pilots[winner]["ammo"]["x4"]) == x4[winner] + GalaxyGates.REWARD["x4"], "Victory adds 15,000 x4 shots to each participant")
+		check(int(store.pilots[winner]["ammo"]["x4"]) == x4[winner] + GalaxyGates.info(VASHAR)["reward"]["x4"], "Victory adds 15,000 x4 shots to each participant")
 	check(server.session.ships[id].ammo["x4"] == store.pilots[pilot_id]["ammo"]["x4"], "The live ship can fire the rewarded x4 shots")
 	var lasers := func(pilot: String) -> Array: return store.pilots[pilot]["equipment"]["items"].values().filter(func(item: Dictionary): return item["model"] == "lf-4")
 	check(lasers.call(pilot_id).size() == 1 and lasers.call(pilot_id)[0]["ship"] == "" and lasers.call(partner_pilot).is_empty(), "A won LF-4 roll places one LF-4 in storage")
@@ -259,7 +290,7 @@ func run() -> void:
 	gate.tick(GalaxyGates.VICTORY_TIME + 0.1)
 	await settle(0.1)
 	check(not gate.active and server.session.ships[id].map_id == 0 and server.session.ships[partner_id].map_id == 0, "The rift closes and returns remaining pilots home")
-	for alien: Alien in server.map_rosters[GalaxyGates.MAP].values():
+	for alien: Alien in server.map_rosters[VMAP].values():
 		check(not alien.alive, "Closing the rift leaves arena aliens dormant")
 
 	# Preview gates need an allowlisted pilot; an empty gate collapses.
@@ -278,10 +309,67 @@ func run() -> void:
 	var retreating: String = await enter(server, partner)
 	gate.tick(GalaxyGates.FIRST_WAVE_DELAY + 0.1)
 	var partner_pilot_id: String = server.session.pilot_ids[partner_id]
-	check(retreating.is_empty() and gate.phase == "fighting" and gate.lives[partner_pilot_id] == GalaxyGates.LIVES, "A pilot joins the preview wave")
+	check(retreating.is_empty() and gate.phase == "fighting" and gate.lives[partner_pilot_id] == GalaxyGates.info(VASHAR)["lives"], "A pilot joins the preview wave")
 	partner.session.quit_to_menu()
 	await settle(0.15)
-	check(server.session.ships[partner_id].get_meta("docked", false) and gate.lives[partner_pilot_id] == GalaxyGates.LIVES - 1, "Quitting to the station mid-wave costs a life")
+	check(server.session.ships[partner_id].get_meta("docked", false) and gate.lives[partner_pilot_id] == GalaxyGates.info(VASHAR)["lives"] - 1, "Quitting to the station mid-wave costs a life")
 	gate.tick(GalaxyGates.ABANDON_TIME + 0.1)
-	check(not gate.active and not SectorMaps.rift_open, "A gate nobody holds collapses")
+	check(not gate.active and SectorMaps.open_rift != VMAP, "A gate nobody holds collapses")
+	await run_korrath(server, pilot)
 	finish()
+
+
+# The second gate: its own operation map, portal, arena, boss and rewards.
+func run_korrath(server: Sector, pilot: Sector) -> void:
+	var store := server.session.store
+	var combat := server.session.combat
+	var gate := combat.gate
+	var id := pilot.multiplayer.get_unique_id()
+	var pilot_id: String = server.session.pilot_ids[id]
+	var korrath := GalaxyGates.info(KORRATH)
+	await request(server, pilot, "gate_signal", KORRATH)
+	check(saved(server, pilot, KORRATH)["signal"] == "active" and saved(server, pilot)["signal"] == "available", "The Korrath operation is tracked separately from the Vashar one")
+	var drop: int = await kill_on_map(server, int(korrath["signal"]["map"]), [pilot])
+	check(drop >= 0 and int(server.loot.drops[drop].get("parts", {}).get(KORRATH, 0)) >= 1, "An M3 kill during the Korrath operation carries a Korrath part")
+	await pick_up(server, pilot, drop)
+	check(saved(server, pilot, KORRATH)["parts"] >= 1 and saved(server, pilot, KORRATH)["progress"] >= 1, "Korrath parts are saved under their own gate")
+	await request(server, pilot, "gate_preview", KORRATH)
+	check(gate.active and gate.gate == KORRATH and SectorMaps.open_rift == KMAP, "A preview pilot opens the Korrath Gate")
+	check(SectorMaps.links(0).has(KMAP) and not SectorMaps.links(0).has(VMAP), "Only the open gate's portal is usable at Outpost 01")
+	await sync(server)
+	check(pilot.hud.navigation.has_contact("gate%d" % KMAP) and pilot.session.combat.gate_summary["gate"] == KORRATH, "Clients see the open Korrath Gate")
+	var blocked := server.session.jump(id, combat.records[id]["life"], VMAP)
+	check(not blocked.is_empty(), "A closed gate cannot be entered while another is open")
+	var entered: String = await enter(server, pilot, KMAP)
+	check(entered.is_empty() and server.session.ships[id].map_id == KMAP, "Pilots fly into the Korrath Bastion")
+	await settle(0.1)
+	check(pilot.hud.gate_status().begins_with("KORRATH GATE / WAVE 1 IN"), "The HUD names the Korrath Gate and its countdown")
+	var credits: int = store.pilots[pilot_id]["credits"]
+	var shields := func() -> int: return store.pilots[pilot_id]["equipment"]["items"].values().filter(func(item: Dictionary): return item["model"] == "sg3n-b00").size()
+	var shields_before: int = shields.call()
+	gate.tick(GalaxyGates.FIRST_WAVE_DELAY + 0.1)
+	check(gate.wave_aliens.size() == GalaxyGates.wave_counts(KORRATH, 0, 1)["Husk"] and gate.wave_aliens.all(func(alien: Alien): return alien.kind == "Husk" and alien.map_id == KMAP),
+		"The first Korrath wave sends Husks into the bastion")
+	var seed := 0
+	while true:
+		var probe := RandomNumberGenerator.new()
+		probe.seed = seed
+		if probe.randf() < korrath["reward"]["item_chance"]:
+			break
+		seed += 1
+	for wave in range(korrath["waves"].size()):
+		if wave > 0:
+			gate.tick(GalaxyGates.WAVE_DELAY + 0.1)
+		if wave == korrath["waves"].size() - 1:
+			check(gate.wave_aliens.any(func(alien: Alien): return alien.kind == "Siegebreaker" and alien.alive), "The final wave brings the Siegebreaker")
+			var before := gate.wave_aliens.filter(func(alien: Alien): return alien.alive).size()
+			gate.tick(GalaxyGates.ESCORT_INTERVAL + 0.1)
+			check(gate.wave_aliens.filter(func(alien: Alien): return alien.alive).size() > before, "The Siegebreaker launches Husk escorts")
+			gate.rng.seed = seed
+		clear_wave(server, pilot)
+		gate.tick(0.1)
+	check(gate.phase == "victory" and store.pilots[pilot_id]["credits"] >= credits + int(korrath["reward"]["credits"]), "Destroying the Siegebreaker pays the Korrath reward")
+	check(shields.call() == shields_before + 1, "A won roll places an SG3N-B00 shield in storage")
+	gate.tick(GalaxyGates.VICTORY_TIME + 0.1)
+	await settle(0.1)
+	check(not gate.active and server.session.ships[id].map_id == 0, "The Korrath Bastion closes and returns pilots home")

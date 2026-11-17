@@ -45,9 +45,10 @@ static func result(pilot: Dictionary, action: String, subject: String, previous_
 	if action == "configure_extra":
 		return "Extra settings saved."
 	if action == "gate_signal":
-		return "Signal Anomaly accepted. " + GalaxyGates.SIGNAL["objective"] + "."
+		var operation: Dictionary = GalaxyGates.info(subject)["signal"]
+		return "%s accepted. %s." % [operation["title"], operation["objective"]]
 	if action == "gate_assemble":
-		return "%s assembled. It is opening near Outpost 01." % GalaxyGates.NAME
+		return "%s assembled. It is opening near Outpost 01." % GalaxyGates.info(subject)["name"]
 	if action == "research":
 		return "%s researched to level %d." % [Research.SKILLS[subject]["name"], Research.level(Research.state(equipment), subject)]
 	if action == "research_reset":
@@ -287,24 +288,27 @@ static func story(pilot: Dictionary, action: String, subject: String, ship: Stri
 	return ""
 
 static func gate(pilot: Dictionary, action: String, subject: String, ship: String, slot: String) -> String:
-	if not subject.is_empty() or not ship.is_empty() or not slot.is_empty():
+	# The subject names the gate; progress for other gates is unchanged.
+	if not GalaxyGates.GATES.has(subject) or not ship.is_empty() or not slot.is_empty():
 		return "Invalid gate request."
 	var equipment: Dictionary = pilot["equipment"]
-	var state := GalaxyGates.state(equipment)
+	var state := GalaxyGates.state(equipment, subject)
 	var blocker := ""
 	match action:
 		"gate_signal":
-			blocker = GalaxyGates.accept_blocker(state)
+			blocker = GalaxyGates.accept_blocker(state, subject)
 			state = state.duplicate()
 			state["signal"] = "active"
 			state["progress"] = 0
 		"gate_assemble":
-			blocker = GalaxyGates.assemble_blocker(state)
+			blocker = GalaxyGates.assemble_blocker(state, subject)
 			if blocker.is_empty():
-				state = GalaxyGates.assemble(state)
+				state = GalaxyGates.assemble(state, subject)
 	if not blocker.is_empty():
 		return blocker
-	equipment["gates"] = state
+	var gates := GalaxyGates.states(equipment).duplicate(true)
+	gates[subject] = state
+	equipment["gates"] = gates
 	return ""
 
 

@@ -9,6 +9,8 @@ const THEMES := [
 	{"planet": Vector3(2050, 1100, -3500), "radius": 1350.0, "ocean": Color("1d263c"), "land": Color("555265"), "atmosphere": Color("557ca7"), "water": 0.2, "clouds": 0.18, "mining": 1.0, "cool": Color("454980"), "warm": Color("9161b2"), "light": Color("558fac")},
 	# Vashar Rift: the faction's staging space beyond the gate.
 	{"planet": Vector3(-1700, 900, -3600), "radius": 1500.0, "ocean": Color("1a0f24"), "land": Color("3b2346"), "atmosphere": Color("b04cff"), "water": 0.0, "clouds": 0.0, "mining": 1.0, "cool": Color("3a1752"), "warm": Color("b0367f"), "light": Color("c86bff")},
+	# Korrath Bastion: a scorched forge world behind the siege fleet.
+	{"planet": Vector3(1900, 1000, -3500), "radius": 1600.0, "ocean": Color("2a1208"), "land": Color("5a2a14"), "atmosphere": Color("ff7a2e"), "water": 0.0, "clouds": 0.02, "mining": 1.0, "cool": Color("3d1a10"), "warm": Color("c2541f"), "light": Color("ff9a52")},
 ]
 
 
@@ -125,7 +127,13 @@ static func build(parent: Node3D, map: int) -> Node3D:
 		carrier(root, wreck, Vector3(0.15, -1.3, 0.22))
 		human_relay(root, Vector3(-1450, -280, -1500), 1.5)
 		human_ring(root, Vector3(-1800, 500, 1800), 330.0, Vector3(0.3, -0.7, 0.4), false)
-	elif map == GalaxyGates.MAP:
+	elif map == 5:
+		# Siege staging: heavy alien relays and extraction collars around the forge world.
+		planet_collectors(root, planet_position, radius, 5)
+		alien_relay(root, Vector3(-1700, 150, -2200), 1.6)
+		alien_collar(root, Vector3(-1900, -200, 1600), 320.0, Vector3(-.3, .4, .2), "SiegeCollar")
+		alien_collar(root, Vector3(1700, 260, 1900), 220.0, Vector3(.5, -.2, .3), "ForgeCollar")
+	elif map == 4:
 		# No human structures: alien relays and collectors staging the next invasion wave.
 		planet_collectors(root, planet_position, radius, 4)
 		alien_relay(root, Vector3(1600, 200, -2300), 1.4)

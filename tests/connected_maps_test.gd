@@ -59,7 +59,10 @@ func run() -> void:
 	var second := make_sector("SecondMapPilot")
 	var late := make_sector("LateMapPilot")
 	var clients: Array[Sector] = [first, second, late]
-	check(server.world_aliens.size() == 20 + GalaxyGates.pool_kinds().size() and server.map_rosters.size() == 5, "Four bounded maps contain five alien slots each, plus the dormant gate arena pool")
+	var arena_slots := 0
+	for gate_id: String in GalaxyGates.ORDER:
+		arena_slots += GalaxyGates.pool_kinds(gate_id).size()
+	check(server.world_aliens.size() == 20 + arena_slots and server.map_rosters.size() == 4 + GalaxyGates.ORDER.size(), "Four bounded maps contain five alien slots each, plus the dormant gate arena pools")
 	var gates := 0
 	for map: int in SectorMaps.GATES:
 		for destination: int in SectorMaps.GATES[map]:
@@ -68,7 +71,7 @@ func run() -> void:
 			check(SectorMaps.GATES[map][destination].length() + SectorMaps.PROTECTION_RADIUS < Sector.MAP_RADIUS, "Gate protection remains inside safe space")
 	check(gates == 8 and not SectorMaps.GATES[0].has(2) and not SectorMaps.GATES[0].has(3), "Approved topology contains exactly eight gates")
 	for enemy: Alien in server.world_aliens.values():
-		if enemy.map_id == GalaxyGates.MAP:
+		if GalaxyGates.is_arena(enemy.map_id):
 			check(not enemy.alive, "Gate arena aliens stay dormant without a run")
 			continue
 		check(server.alien_home_clear(enemy.home_position, enemy), "Alien homes avoid gates, station and colliders")

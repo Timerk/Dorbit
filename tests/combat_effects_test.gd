@@ -4,9 +4,11 @@ extends "res://tests/encounter_test.gd"
 
 class LootHud extends FlightHud:
 	var captions: Array[String] = []
+	var tints: Array[Color] = []
 
-	func marker(_location: Vector3, label: String, _color: Color, _selected: bool, _teammate: Pilot = null, _priority: bool = true) -> void:
+	func marker(_location: Vector3, label: String, color: Color, _selected: bool, _teammate: Pilot = null, _priority: bool = true) -> void:
 		captions.append(label)
+		tints.append(color)
 
 
 func run() -> void:
@@ -169,7 +171,7 @@ func destruction_checks() -> void:
 	check(sector.loot.drops.has(id) and not sector.loot.is_presented(id), "Actual death creates loot state but hides the box and caption during the explosion")
 	var update: Dictionary = sector.loot.drops[id].duplicate(true)
 	update["resources"] = {"prometium": 1}
-	update["parts"] = 2
+	update["parts"] = {"korrath": 2, "vashar": 1}
 	sector.loot.apply_drop(id, update)
 	check(not sector.loot.is_presented(id), "Updating a drop during destruction does not expose its box early")
 	sector.loot.apply_drop(999, {"position": sector.alien.position + Vector3(30, 0, 0), "resources": {"prometium": 1}, "ttl": 180.0})
@@ -181,7 +183,13 @@ func destruction_checks() -> void:
 	await create_timer(SectorVisuals.EXPLOSION_DURATION + 0.1).timeout
 	check(sector.loot.is_presented(id) and not SectorVisuals.explosion_active(sector, sector.alien.position), "Loot becomes visible only after the last explosion mesh is gone")
 	hud.draw_gate_parts()
-	check(hud.captions == ["2 GATE PARTS"], "Only the revealed gate parts get a caption")
+	check(hud.captions == ["3 GATE PARTS"] and hud.tints == [GalaxyGates.info("korrath")["glow"]], "Mixed gate parts share one marker tinted to match the box")
+	update["parts"] = {"vashar": 1}
+	sector.loot.apply_drop(id, update)
+	hud.captions.clear()
+	hud.tints.clear()
+	hud.draw_gate_parts()
+	check(hud.captions == ["1 GATE PART"] and hud.tints == [GalaxyGates.info("vashar")["glow"]], "Remaining Vashar part has its own faction tint and singular caption")
 	update.erase("parts")
 	sector.loot.apply_drop(id, update)
 	hud.captions.clear()
