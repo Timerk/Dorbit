@@ -737,6 +737,7 @@ func _draw() -> void:
 		draw_line(center + Vector2(3, 0), center + Vector2(8, 0), Color(INK, 0.5))
 		draw_circle(center, 2.0, AMBER)
 		layout.end_draw(self)
+	draw_gate_parts()
 	if sector.map_id == 0:
 		marker(Sector.STATION_POSITION, "OUTPOST 01", GREEN, false)
 	var site := Story.site(sector.story_state(), sector.map_id)
@@ -746,11 +747,6 @@ func _draw() -> void:
 		marker(SectorMaps.gate_position(sector.map_id, destination), SectorMaps.gate_label(destination), SectorMaps.MAPS[destination]["color"], false, null, false)
 	if is_instance_valid(sector.target):
 		alien_marker(sector.target as Alien)
-	for id: int in sector.loot.drops:
-		if sector.loot.is_presented(id):
-			var drop: Dictionary = sector.loot.drops[id]
-			var parts := int(drop.get("parts", 0))
-			marker(drop["position"], "LOOT %d UNITS%s / FLY CLOSE" % [CargoResources.units(drop["resources"]), " + %d GATE PART%s" % [parts, "" if parts == 1 else "S"] if parts > 0 else ""], GalaxyGates.GLOW if parts > 0 else AMBER, false, null, false)
 	for alien_id: int in sector.aliens:
 		var enemy := sector.aliens[alien_id]
 		if enemy != sector.target and enemy.alive and enemy.visible:
@@ -890,6 +886,15 @@ func occupied(rect: Rect2) -> bool:
 		if label.intersects(rect):
 			return true
 	return false
+
+
+func draw_gate_parts() -> void:
+	for id: int in sector.loot.drops:
+		var drop: Dictionary = sector.loot.drops[id]
+		var parts := int(drop.get("parts", 0))
+		if parts > 0 and sector.loot.is_presented(id):
+			var caption := "%d GATE PART%s" % [parts, "" if parts == 1 else "S"]
+			marker(drop["position"], caption, GalaxyGates.GLOW, false, null, false)
 
 
 # One-line Vashar Gate run status: wave and lives inside the rift, an invitation at M1.

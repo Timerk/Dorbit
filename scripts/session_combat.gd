@@ -19,15 +19,17 @@ var ammo_sequence: int = -1
 var boost_save_clock: float = 0.0
 var boost_sequence: int = -1
 var lab_snapshot: Dictionary = {}
+
+# Server-side Vashar Gate run; clients keep the latest published summary.
+var gate := GateRun.new(self)
+var gate_summary: Dictionary = {"active": false}
+var part_rng := RandomNumberGenerator.new()
+
 var rocket_request_sequence: int = 0
 var rocket_sequences: Dictionary[int, int] = {}
 var rocket_maps: Dictionary[String, int] = {}
 # Server-side station and Skylab request handling.
 var desk := StationDesk.new(self)
-# Server-side Vashar Gate run; clients keep the latest published summary.
-var gate := GateRun.new(self)
-var gate_summary: Dictionary = {"active": false}
-var part_rng := RandomNumberGenerator.new()
 
 
 func connect_rockets(ship: Pilot) -> void:
