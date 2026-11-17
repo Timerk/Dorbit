@@ -17,6 +17,79 @@ func begin_trade(left: Sector, right: Sector) -> void:
 	check(left.session.combat.trade_state.get("joined", false) and right.session.combat.trade_state.get("joined", false), "Both pilots explicitly join the trade")
 
 
+func delay_invite_ack(server: Sector, left: Sector, right: Sector) -> void:
+	var menu := left.equipment_menu.trade_menu
+	var sender := left.session.combat
+	var recipient := right.session.combat
+	menu.open()
+	var deadline := Time.get_ticks_msec() + 5000
+	while sender.trade_pending and Time.get_ticks_msec() < deadline:
+		await process_frame
+	menu.refresh()
+	menu.pilots.select(menu.pilots.get_item_index(right.multiplayer.get_unique_id()))
+	# Let the server and recipient handle the invitation while withholding every
+	# inbound RPC from the sender.
+	multiplayer_poll = false
+	await click(left, menu.invite_button)
+	deadline = Time.get_ticks_msec() + 5000
+	while recipient.trade_state.is_empty() and Time.get_ticks_msec() < deadline:
+		left.multiplayer.multiplayer_peer.host.flush()
+		server.multiplayer.poll()
+		right.multiplayer.poll()
+		await process_frame
+	check(sender.trade_pending and sender.trade_state.is_empty() and not recipient.trade_state.is_empty(), "Recipient sees invitation before sender receives its token")
+
+
+func close_before_invite_ack(server: Sector, left: Sector, right: Sector, expire: bool) -> void:
+	await delay_invite_ack(server, left, right)
+	var sender := left.session.combat
+	var recipient := right.session.combat
+	var menu := left.equipment_menu.trade_menu
+	var sender_id := left.multiplayer.get_unique_id()
+	var trades := server.session.combat.trading
+	var deadline := Time.get_ticks_msec() + 5000
+	if expire and trades.trades.has(sender_id):
+		trades.trades[sender_id]["expires"] = 0
+		trades.tick()
+		while not recipient.trade_state.is_empty() and Time.get_ticks_msec() < deadline:
+			server.multiplayer.poll()
+			right.multiplayer.poll()
+			await process_frame
+		recipient.request_trade("invite", {"peer": sender_id})
+		while recipient.trade_pending and Time.get_ticks_msec() < deadline:
+			server.multiplayer.poll()
+			right.multiplayer.poll()
+			await process_frame
+		check(recipient.trade_state.get("inviter", false), "Recipient sends a fresh invitation while the first acknowledgement is delayed")
+	var escape := InputEventKey.new()
+	escape.keycode = KEY_ESCAPE
+	escape.pressed = true
+	left.get_viewport().push_input(escape)
+	check(not menu.visible and not menu.shade.visible, "Escape dismisses the unacknowledged invitation")
+	menu.open()
+	# Deliver the queued acknowledgement before the server handles withdrawal.
+	server.multiplayer.multiplayer_peer.host.flush()
+	left.multiplayer.poll()
+	if not expire:
+		menu.refresh()
+		check(sender.trade_state.is_empty() and not menu.columns.visible, "Late acknowledgement cannot revive the closed trade in the reopened menu")
+	multiplayer_poll = true
+	deadline = Time.get_ticks_msec() + 5000
+	if expire:
+		while sender.trade_state.get("token", "") != recipient.trade_state.get("token") and Time.get_ticks_msec() < deadline:
+			await process_frame
+		menu.refresh()
+		await click(left, menu.confirm_button)
+		await settle()
+		check(sender.trade_state.get("joined", false) and recipient.trade_state.get("joined", false), "Reopened menu can accept the replacement invitation after the old one expired")
+	else:
+		while (sender.trade_pending or not recipient.trade_state.is_empty() or not sender.trade_state.is_empty()) and Time.get_ticks_msec() < deadline:
+			await process_frame
+		check(trades.trades.is_empty() and sender.trade_state.is_empty() and recipient.trade_state.is_empty(), "Closing before acknowledgement releases both peers and the server after reopen")
+	menu.close()
+	await settle()
+
+
 func run_rules(store: PilotStore) -> void:
 	var pilot: Dictionary = store.pilots["pilot0"]
 	for offer: Variant in [null, {}, {"items": [], "credits": -1}, {"items": [], "credits": 1.5},
@@ -182,6 +255,8 @@ func run() -> void:
 	await settle(.1)
 	check(not menu.visible and not menu.shade.visible and left.equipment_menu.visible, "Escape closes only the trade modal and its input blocker")
 	check(a.trade_state.is_empty() and b.trade_state.is_empty(), "Closing the modal cancels both pilots' offers")
+	await close_before_invite_ack(server, left, right, false)
+	await close_before_invite_ack(server, left, right, true)
 	await begin_trade(left, right)
 	server.session.ships[bid].position += Vector3(1000, 0, 0)
 	server.session.combat.trading.tick()
@@ -203,10 +278,11 @@ func run() -> void:
 	server.session.combat.trading.tick()
 	await settle(.1)
 	check(a.trade_state.is_empty(), "Abandoned invitations and offers expire")
-	await begin_trade(left, right)
-	right.session.disconnect_session("Test trade disconnect")
+	await delay_invite_ack(server, left, right)
+	left.session.disconnect_session("Test trade disconnect")
+	multiplayer_poll = true
 	await settle(.2)
-	check(a.trade_state.is_empty(), "Disconnect cancels the surviving pilot's trade")
+	check(not a.trade_pending and a.trade_state.is_empty() and b.trade_state.is_empty() and server.session.combat.trading.trades.is_empty(), "Sender disconnect before acknowledgement releases both peers and the server")
 	# Test a real write blocker after all network checks. No production data or
 	# credentials are read: this store was provisioned by the inherited fixture.
 	var before := store.pilots.duplicate(true)

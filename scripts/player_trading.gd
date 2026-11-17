@@ -63,6 +63,7 @@ func publish(id: int, message: String = "") -> void:
 			"inviter": index == 0, "joined": trade["joined"], "own": trade["offers"][index].duplicate(true),
 			"other": {"items": their_items, "credits": trade["offers"][1 - index]["credits"]},
 			"confirmed": trade["confirmed"][index], "other_confirmed": trade["confirmed"][1 - index]}
+		if index == 0: state["invite_id"] = trade["invite_id"]
 	combat.trade_result.rpc_id(id, state, candidates(id), message)
 
 
@@ -119,7 +120,11 @@ func request(id: int, action: String, token: String, version: int, payload: Dict
 		if trades.has(id) or trades.has(peer):
 			publish(id, "A pilot is already in a trade. Refresh the pilot list.")
 			return
-		var trade := {"token": Crypto.new().generate_random_bytes(16).hex_encode(), "version": 0,
+		var invite_id: Variant = payload.get("invite_id", "")
+		if not invite_id is String or invite_id.length() > 32:
+			publish(id, "Invalid invitation ID.")
+			return
+		var trade := {"token": Crypto.new().generate_random_bytes(16).hex_encode(), "invite_id": invite_id, "version": 0,
 			"peers": [id, peer], "joined": false, "offers": [{"items": [], "credits": 0}, {"items": [], "credits": 0}],
 			"confirmed": [false, false], "expires": Time.get_ticks_msec() + TIMEOUT_MS,
 			"lives": [combat.records[id]["life"], combat.records[peer]["life"]],

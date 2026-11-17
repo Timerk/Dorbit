@@ -111,10 +111,7 @@ func open() -> void:
 
 
 func close() -> void:
-	var combat := sector.session.combat
-	if sector.session.active and not combat.trade_state.is_empty():
-		# Cancel can safely race a pending offer; reliable delivery preserves order.
-		combat.trade_request.rpc_id(1, "cancel", combat.trade_state["token"], combat.trade_state["version"], {}, int(sector.player.get_meta("life", 0)))
+	sector.session.combat.close_trade()
 	hide()
 
 

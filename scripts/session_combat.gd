@@ -29,6 +29,7 @@ var trading := PlayerTrading.new(self)
 var trade_state: Dictionary = {}
 var trade_candidates: Array = []
 var trade_pending := false
+var outgoing_invite_id := ""
 var trade_message := ""
 
 
@@ -901,6 +902,7 @@ func finish() -> void:
 	trade_state = {}
 	trade_candidates = []
 	trade_pending = false
+	outgoing_invite_id = ""
 	trade_message = ""
 	rocket_maps.clear()
 	rocket_request_sequence = 0
@@ -948,7 +950,31 @@ func request_trade(action: String, payload: Dictionary = {}) -> void:
 		return
 	trade_pending = true
 	trade_message = "Waiting for server..."
+	if action == "invite":
+		outgoing_invite_id = Crypto.new().generate_random_bytes(16).hex_encode()
+		payload = payload.duplicate()
+		payload["invite_id"] = outgoing_invite_id
 	trade_request.rpc_id(1, action, trade_state.get("token", ""), int(trade_state.get("version", -1)), payload, int(session.sector.player.get_meta("life", 0)))
+
+
+func close_trade() -> void:
+	if not session.active: return
+	var life := int(session.sector.player.get_meta("life", 0))
+	if not trade_state.is_empty():
+		trade_request.rpc_id(1, "cancel", trade_state["token"], trade_state["version"], {}, life)
+	if not outgoing_invite_id.is_empty():
+		# Same reliable channel as invite. Only withdraw the invitation we sent.
+		withdraw_trade_invite.rpc_id(1, outgoing_invite_id)
+		outgoing_invite_id = ""
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func withdraw_trade_invite(invite_id: String) -> void:
+	if not session.active or not multiplayer.is_server() or not session.sector.dedicated_server: return
+	var id := multiplayer.get_remote_sender_id()
+	var outgoing: Dictionary = trading.trades.get(id, {})
+	if not invite_id.is_empty() and outgoing.get("invite_id") == invite_id and outgoing["peers"][0] == id:
+		trading.cancel(id)
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -963,6 +989,11 @@ func trade_request(action: String, token: String, version: int, payload: Diction
 @rpc("authority", "call_remote", "reliable")
 func trade_result(state: Dictionary, candidates: Array, result: String) -> void:
 	if not session.active: return
+	# A reopened menu can receive the invite acknowledgement while its
+	# withdrawal is still in flight. Never present that trade for editing.
+	if state.get("inviter", false) and state.get("token") != trade_state.get("token"):
+		if state.get("invite_id", "") != outgoing_invite_id: return
+		outgoing_invite_id = ""
 	trade_state = state
 	trade_candidates = candidates
 	trade_message = result
