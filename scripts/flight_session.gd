@@ -311,7 +311,11 @@ func rpc_signature(node: Node) -> Array:
 
 
 func protocol_fingerprint(schema: int = NETWORK_SCHEMA) -> String:
-	return JSON.stringify([schema, rpc_signature(self), rpc_signature(combat)]).sha256_text()
+	# Story progress travels as an index into the shared sequence.
+	var step_ids: Array[String] = []
+	for step in Story.STEPS:
+		step_ids.append(step["id"])
+	return JSON.stringify([schema, rpc_signature(self), rpc_signature(combat), step_ids]).sha256_text()
 
 
 func begin_authentication(id: int) -> void:
