@@ -105,6 +105,7 @@ func run() -> void:
 	check(FileAccess.get_file_as_string(path + ".bak") == before, "Backup retains previous complete ledger")
 	store.close()
 	var good := FileAccess.get_file_as_string(path)
+	check_gate_saves(directory, good)
 	for invalid in ["{broken", '{"version":2,"pilots":{}}', '{"version":1,"pilots":{"pilot0":{"verifier":"%s","credits":-1}}}' % test_token(0).sha256_text(), '{"version":1,"pilots":{"pilot0":{"verifier":"%s","credits":1.5}}}' % test_token(0).sha256_text()]:
 		write_text(path, invalid)
 		store = PilotStore.new()
@@ -128,6 +129,48 @@ func run() -> void:
 	var exit_code := OS.execute(OS.get_executable_path(), ["--headless", "--path", ProjectSettings.globalize_path("res://"), "--script", "res://tests/pilot_persistence_test.gd", "--", "--save-failure"], output, true)
 	check(exit_code == 1 and str(output).contains("SAVE_FAILURE_VERIFIED"), "A real server process exits unsuccessfully without granting an unsaved reward")
 	finish()
+
+
+func check_gate_saves(directory: String, snapshot: String) -> void:
+	var path := directory.path_join("pilots.json")
+	var ledger: Dictionary = JSON.parse_string(snapshot)
+	var equipment: Dictionary = ledger["pilots"]["pilot0"]["equipment"]
+	var flat := {"parts": 23, "signal": "active", "progress": 7}
+	var current := {"vashar": flat, "korrath": {"parts": 19, "signal": "active", "progress": 9}}
+	for gates: Variant in [flat, current, {}, null]:
+		var expected := equipment.duplicate(true)
+		if gates == null:
+			equipment.erase("gates")
+			expected.erase("gates")
+		else:
+			equipment["gates"] = gates
+			expected["gates"] = {"vashar": flat} if gates == flat else gates
+		write_text(path, JSON.stringify(ledger))
+		# Compare JSON values consistently: Godot parses numbers as floats.
+		expected = JSON.parse_string(JSON.stringify(expected))
+		for attempt in 2:
+			var store := PilotStore.new()
+			var opened := store.open(directory)
+			check(opened, "Gate fixture opens on pass %d: %s" % [attempt, store.error])
+			if opened:
+				var loaded: Dictionary = JSON.parse_string(JSON.stringify(store.pilots["pilot0"]["equipment"]))
+				check(loaded == expected, "Loader preserves gate and equipment progress")
+				check(store.commit({"pilot0": 81}), "Normal wallet commit saves gate progress")
+				var disk: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
+				check(disk["pilots"]["pilot0"]["equipment"] == expected, "Ledger writes canonical gate progress")
+			store.close()
+			if not opened: break
+	var mixed := flat.duplicate()
+	mixed["korrath"] = current["korrath"]
+	for invalid: Variant in [mixed, {"parts": 4}, {"parts": 0, "signal": "active", "progress": 8},
+			{"parts": true, "signal": "done", "progress": 0}, {"unknown": flat}, {"korrath": null}, null]:
+		equipment["gates"] = invalid
+		var original := JSON.stringify(ledger)
+		write_text(path, original)
+		var store := PilotStore.new()
+		check(not store.open(directory), "Corrupt gate fixture refuses startup")
+		store.close()
+		check(FileAccess.get_file_as_string(path) == original, "Rejected gate fixture preserves the snapshot")
 
 
 func write_text(path: String, value: String) -> void:

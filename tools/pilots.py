@@ -128,7 +128,15 @@ def valid_story(data: object) -> bool:
 GATE_OPERATION_REQUIRED = {"vashar": 8, "korrath": 10}
 
 
+def gate_collection(data: object) -> object:
+    # The single-gate ledger stored this record directly in equipment.gates.
+    if isinstance(data, dict) and data.keys() == {"parts", "signal", "progress"}:
+        return {"vashar": data}
+    return data
+
+
 def valid_gates(data: object) -> bool:
+    data = gate_collection(data)
     if not isinstance(data, dict):
         return False
     for gate, state in data.items():
@@ -376,6 +384,9 @@ def main() -> None:
                     record["equipment"] = starter_equipment()
                 elif not valid_equipment(record.get("equipment")):
                     parser.error("Invalid equipment; preserve it and recover from backup")
+                equipment = record["equipment"]
+                if "gates" in equipment:
+                    equipment["gates"] = gate_collection(equipment["gates"])
                 if data["version"] < 3:
                     if "cargo" in record:
                         parser.error("Unexpected cargo in legacy ledger; preserve it and recover")
