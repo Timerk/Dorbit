@@ -62,7 +62,7 @@ func run() -> void:
 	# Schema 17 previews share this RPC table but pack world entries and profiles
 	# without revisions, so only the schema separates their fingerprints.
 	var preview := server.session.protocol_fingerprint(17)
-	check(preview != server.session.protocol_fingerprint() and FlightSession.NETWORK_SCHEMA == 22, "Profile revisions change the protocol fingerprint")
+	check(preview != server.session.protocol_fingerprint() and FlightSession.NETWORK_SCHEMA == 23, "Profile revisions change the protocol fingerprint")
 	var preview_server := func(id: int): server.multiplayer.send_auth(id, JSON.stringify({"nonce": "00".repeat(32), "protocol": preview}).to_utf8_buffer())
 	server.multiplayer.peer_authenticating.connect(preview_server)
 	client.session.join("127.0.0.1", test_port(24683))
