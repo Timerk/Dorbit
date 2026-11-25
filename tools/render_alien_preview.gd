@@ -73,10 +73,11 @@ func render_preview() -> void:
 	var directory := ProjectSettings.globalize_path("res://build/validation")
 	DirAccess.make_dir_recursive_absolute(directory)
 	var filename := "alien-visibility-sector.png" if sector_view else "alien-models-godot.png"
-	if outer_view:
-		filename = "outer-" + filename
-	elif not gate_view.is_empty():
+	# A gate filter overrides --outer for both the roster and the filename.
+	if not gate_view.is_empty():
 		filename = gate_view + "-" + filename
+	elif outer_view:
+		filename = "outer-" + filename
 	var error := root.get_texture().get_image().save_png(directory.path_join(filename))
 	print("ALIEN_PREVIEWS ", root.size, " renderer=", RenderingServer.get_video_adapter_name(), " result=", error)
 	quit(error)
