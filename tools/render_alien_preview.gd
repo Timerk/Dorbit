@@ -62,7 +62,7 @@ func render_preview() -> void:
 				preview.camera.position = Vector3(0, 4, -25 if row == 0 else -90)
 				preview.camera.look_at(Vector3.ZERO)
 			elif row == 1:
-				var diameter := float(Alien.VISUAL_DIAMETERS[kind]) * float(Alien.VISUAL_SCALE[kind])
+				var diameter := float(Alien.VISUAL_DIAMETERS.get(kind, ContractPreview.PLACEHOLDER_DIAMETER)) * float(Alien.VISUAL_SCALE[kind])
 				preview.camera.position = Vector3(-8, 5, 10).normalized() * maxf(15.0, diameter * 1.5)
 				preview.camera.look_at(Vector3.ZERO)
 			previews.append(preview)

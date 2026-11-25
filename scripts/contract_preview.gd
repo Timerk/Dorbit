@@ -2,6 +2,7 @@ class_name ContractPreview
 extends SubViewportContainer
 ## Isolated preview sharing the textured encounter model.
 
+const PLACEHOLDER_DIAMETER := 10.0
 var viewport: SubViewport
 var model: Node3D
 var camera: Camera3D
@@ -43,8 +44,10 @@ func show_kind(kind: String) -> void:
 	if kind == selected_kind:
 		return
 	selected_kind = kind
-	var diameter := float(Alien.VISUAL_DIAMETERS[kind]) * float(Alien.VISUAL_SCALE[kind])
-	var framing := float({"Scout": 5.5, "Sentinel": 7.0, "Heavy": 10.0}.get(kind, float(Alien.VISUAL_DIAMETERS[kind]) * 0.75))
+	# Placeholder-model aliens have no measured diameter; frame them like a mid-size hull.
+	var measured := float(Alien.VISUAL_DIAMETERS.get(kind, PLACEHOLDER_DIAMETER))
+	var diameter := measured * float(Alien.VISUAL_SCALE[kind])
+	var framing := float({"Scout": 5.5, "Sentinel": 7.0, "Heavy": 10.0}.get(kind, measured * 0.75))
 	camera.size = framing * float(Alien.VISUAL_SCALE[kind])
 	camera.position = Vector3(8, 7, -10).normalized() * maxf(15.0, diameter * 1.5)
 	camera.look_at(Vector3.ZERO)
