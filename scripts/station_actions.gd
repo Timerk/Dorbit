@@ -21,7 +21,11 @@ static func apply(pilot: Dictionary, previous: Dictionary, sequence: int, action
 		"sell": return sell(pilot, subject, ship, slot)
 		"refine", "boost", "replace_boost": return refine_or_boost(pilot, action, subject, ship, slot)
 		"fit": return fit(pilot, previous, subject, ship, slot)
-		"research": return research(pilot, subject, ship, slot)
+		"research":
+			var blocker := research(pilot, subject, ship, slot)
+			if blocker.is_empty():
+				Story.record(pilot, "research")
+			return blocker
 		"research_reset": return research_reset(pilot, subject, ship, slot)
 		"story_deliver", "story_skip": return story(pilot, action, subject, ship, slot)
 		"configure_extra": return configure_extra(pilot, subject, ship, slot)
@@ -36,8 +40,9 @@ static func result(pilot: Dictionary, action: String, subject: String, previous_
 	if action in ["story_deliver", "story_skip"]:
 		var step := Story.current(previous_story)
 		var reward := Story.advance(previous_story, "deliver", step["required"]) if action == "story_deliver" else Story.skip(previous_story)
-		var notice := "Delivered %s." % CargoResources.describe({step["resource"]: step["required"]}) if action == "story_deliver" else "Prologue skipped."
-		return "%s %s." % [notice, Story.reward_text(reward["credits"], reward["research"])]
+		var skipped: String = Story.CHAPTERS[Story.chapter(int(previous_story["step"]))]["label"]
+		var notice := "Delivered %s." % CargoResources.describe({step["resource"]: step["required"]}) if action == "story_deliver" else "%s skipped." % skipped
+		return "%s %s." % [notice, Story.reward_text(reward["credits"], reward["research"], reward["lab"])]
 	if action == "test_credits":
 		return "Preview: added %d test credits." % (pilot["credits"] - previous_credits)
 	if action == "test_research":
@@ -50,7 +55,7 @@ static func result(pilot: Dictionary, action: String, subject: String, previous_
 	if action == "gate_assemble":
 		return "%s assembled. It is opening near Outpost 01." % GalaxyGates.info(subject)["name"]
 	if action == "research":
-		return "%s researched to level %d." % [Research.SKILLS[subject]["name"], Research.level(Research.state(equipment), subject)]
+		return "%s researched to level %d.%s" % [Research.SKILLS[subject]["name"], Research.level(Research.state(equipment), subject), Story.progress_notice(previous_story, Story.state(equipment))]
 	if action == "research_reset":
 		return "Skill tree reset. Research points refunded; %d available." % Research.state(equipment)["points"]
 	if action == "buy_ammo":
@@ -260,14 +265,17 @@ static func research_reset(pilot: Dictionary, subject: String, ship: String, slo
 
 
 static func story(pilot: Dictionary, action: String, subject: String, ship: String, slot: String) -> String:
-	if not subject.is_empty() or not ship.is_empty() or not slot.is_empty():
+	if (action == "story_deliver" and not subject.is_empty()) or not ship.is_empty() or not slot.is_empty():
 		return "Invalid story request."
 	var equipment: Dictionary = pilot["equipment"]
 	var state := Story.state(equipment)
 	var step := Story.current(state)
 	var reward := Story.skip(state)
 	if step.is_empty():
-		return "Prologue already complete."
+		return "Story already complete."
+	# A skip names the chapter its confirmation was armed for, so a stale one cannot skip the next.
+	if action == "story_skip" and subject != str(Story.chapter(int(state["step"]))):
+		return "Story chapter changed. Review the current chapter before skipping."
 	if action == "story_deliver":
 		if step["type"] != "deliver":
 			return "Nothing to deliver for this step."
@@ -282,9 +290,7 @@ static func story(pilot: Dictionary, action: String, subject: String, ship: Stri
 		reward = Story.advance(state, "deliver", amount)
 	if reward["credits"] > PilotStore.MAX_CREDITS - pilot["credits"]:
 		return "Reward exceeds the credit limit. Free wallet space first."
-	pilot["credits"] += reward["credits"]
-	Research.add_points(equipment, reward["research"])
-	equipment["story"] = reward["story"]
+	Story.pay(pilot, reward)
 	return ""
 
 static func gate(pilot: Dictionary, action: String, subject: String, ship: String, slot: String) -> String:
