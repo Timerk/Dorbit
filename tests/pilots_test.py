@@ -88,6 +88,26 @@ class ProvisioningTest(unittest.TestCase):
                 self.assertEqual(backup["pilots"]["test"]["boosts"], boosts)
             self.assertTrue(pilots.valid_skylab(saved["pilots"]["new"]["skylab"], saved["pilots"]["new"]["equipment"]))
 
+    def test_rollback_float_gate_counters_rotate_and_normalize(self):
+        # A rollback build that preserves unknown fields may write whole gate
+        # counters as floats. The server accepts them, so provisioning must too.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path, _, _, _ = self.journal_fixture(root)
+            data = json.loads(path.read_text())
+            data["pilots"]["test"]["equipment"]["gates"] = {"parts": 20, "signal": "active", "progress": 7}
+            path.write_text(json.dumps(data).replace('"parts": 20', '"parts": 20.0').replace('"progress": 7}', '"progress": 7.0}'))
+            self.assertIn('"progress": 7.0', path.read_text())
+            result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
+                                     str(root / "credential.json"), "--rotate"], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode())
+            gates = json.loads(path.read_text())["pilots"]["test"]["equipment"]["gates"]
+            self.assertEqual(gates, {"parts": 20, "signal": "active", "progress": 7})
+            self.assertIs(type(gates["parts"]), int)
+            self.assertIs(type(gates["progress"]), int)
+        for bad in (7.5, float("inf"), float("nan"), True, "7", 8.0):
+            self.assertFalse(pilots.valid_gates({"parts": 20, "signal": "active", "progress": bad}), bad)
+
     def test_checkpointed_journal_does_not_reverse_purchase(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

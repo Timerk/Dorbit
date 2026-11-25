@@ -123,13 +123,25 @@ def valid_story(data: object) -> bool:
             and type(data["progress"]) is int and 0 <= data["progress"] <= 1000)
 
 
+def whole(value: object, low: int, high: int) -> bool:
+    # Mirrors Skylab.integer: an older build that preserves unknown fields can
+    # write a whole counter such as 7 as 7.0; the server accepts and normalizes it.
+    return ((type(value) is int or (type(value) is float and value.is_integer()))
+            and low <= value <= high)
+
+
 # Mirrors GalaxyGates in scripts/galaxy_gates.gd: at most 999 parts, signal progress below 8.
 def valid_gates(data: object) -> bool:
     return (isinstance(data, dict) and data.keys() == {"parts", "signal", "progress"}
-            and type(data["parts"]) is int and 0 <= data["parts"] <= 999
+            and whole(data["parts"], 0, 999)
             and data["signal"] in ("available", "active", "done")
-            and type(data["progress"]) is int
-            and 0 <= data["progress"] <= (7 if data["signal"] == "active" else 0))
+            and whole(data["progress"], 0, 7 if data["signal"] == "active" else 0))
+
+
+def normalize_gates(equipment: dict) -> None:
+    if "gates" in equipment:
+        for field in ("parts", "progress"):
+            equipment["gates"][field] = int(equipment["gates"][field])
 
 
 def valid_cargo(data: object, equipment: dict) -> bool:
@@ -366,6 +378,7 @@ def main() -> None:
                     record["equipment"] = starter_equipment()
                 elif not valid_equipment(record.get("equipment")):
                     parser.error("Invalid equipment; preserve it and recover from backup")
+                normalize_gates(record["equipment"])
                 if data["version"] < 3:
                     if "cargo" in record:
                         parser.error("Unexpected cargo in legacy ledger; preserve it and recover")
