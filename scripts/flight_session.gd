@@ -61,6 +61,13 @@ var lab_clock: float = 0.0
 var jump_pending := false
 var jump_cover: CanvasLayer
 var jump_until: Dictionary[int, int] = {}
+## Netcode measurements; see NetStats. Clients feed and the F8 overlay reads them.
+var net_stats := NetStats.new()
+## Debug relay between this client and the server. Its conditions persist
+## between connections; it runs only while a connection uses it.
+var net_simulator := NetSimulator.new()
+## Route the next join() through net_simulator. Off for normal play.
+var use_net_simulator := false
 
 
 func _ready() -> void:
@@ -79,6 +86,7 @@ func _ready() -> void:
 	multiplayer.connection_failed.connect(func(): disconnect_session("Connection failed. Check the address and UDP port, then try again."))
 	multiplayer.server_disconnected.connect(func(): disconnect_session("Connection to the server was lost. You can try connecting again."))
 	if not sector.dedicated_server:
+		use_net_simulator = net_simulator.configure_from_args(OS.get_cmdline_user_args())
 		build_menu()
 	if "--print-protocol" in OS.get_cmdline_user_args():
 		# Operator/CI diagnostic. No network connection or pilot credentials are needed.
@@ -180,11 +188,15 @@ func _process(_delta: float) -> void:
 			print("Server shutdown requested; closing pilot store.")
 			get_tree().quit()
 		return
+	if active and not multiplayer.is_server():
+		net_stats.sample_transport(multiplayer.multiplayer_peer)
 	if menu.visible:
 		layout_menu()
 	status_label.text = status
 	if not attempted_address.is_empty():
 		status_label.text = "%s | UDP %d\n%s" % [attempted_address, attempted_port, status]
+	if net_simulator.is_running():
+		status_label.text += "\nRouted through the network simulator (debug)."
 	if connecting:
 		status_label.text += "\nWaiting for the server, up to %d seconds." % int(CONNECT_TIMEOUT)
 	preference_label.text = "Could not save this connection for the next launch." if preferences.save_failed else "Remembers the last successful connection on this device."
@@ -263,11 +275,23 @@ func join(host_address: String, port: int = PORT) -> Error:
 	if sector.client_only and (not PilotStore.valid_id(credential_id) or not PilotStore.valid_hex(credential_token)):
 		status = "Set DORBIT_PILOT_FILE to the pilot credential file supplied by the server operator."
 		return ERR_UNAUTHORIZED
+	# The debug relay is opt-in; the menu and status keep the real address.
+	var connect_address := host_address
+	var connect_port := port
+	if use_net_simulator:
+		var relay_error := net_simulator.start(host_address, port)
+		if relay_error != OK:
+			status = "Could not start the network simulator: %s." % error_string(relay_error)
+			return relay_error
+		connect_address = "127.0.0.1"
+		connect_port = net_simulator.listen_port
 	var peer := ENetMultiplayerPeer.new()
-	var error := peer.create_client(host_address, port)
+	var error := peer.create_client(connect_address, connect_port)
 	if error != OK:
+		net_simulator.stop()
 		status = "Could not start the connection: %s. Check the address and UDP port." % error_string(error)
 		return error
+	net_stats.reset()
 	multiplayer.multiplayer_peer = peer
 	connecting = true
 	auth_proof_sent = false
@@ -762,6 +786,7 @@ func tick(delta: float) -> void:
 			send_clock = 0.0
 			var enemy := sector.target as Alien
 			if not sector.preflight:
+				net_stats.commands_sent += 1
 				command_flight.rpc_id(1, movement, sector.player.rotation, boost, sector.auto_fire and enemy != null and not sector.paused, int(sector.player.get_meta("life", 0)), enemy.life if enemy != null else -1, enemy.alien_id if enemy != null else -1)
 		combat.interpolate(delta)
 		for id: int in goals:
@@ -878,6 +903,7 @@ func command_flight(movement: Vector3, angles: Vector3, boost: bool, fire: bool 
 		return
 	if not ships[id].alive or combat.records[id]["life"] != life:
 		return
+	net_stats.record_command_received(id)
 	commands[id] = {
 		"movement": movement.limit_length(),
 		"rotation": Vector3(clampf(angles.x, -1.48, 1.48), wrapf(angles.y, -PI, PI), 0),
@@ -900,6 +926,7 @@ func entity_profiles(players: Dictionary, aliens: Dictionary) -> void:
 func world_snapshot(packet: PackedByteArray) -> void:
 	if not active:
 		return
+	net_stats.record_snapshot_arrival()
 	var world := SnapshotCodec.decode_world(packet)
 	if world.is_empty() or not receives_map(world["visit"]):
 		return
@@ -956,10 +983,14 @@ func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int, visit: 
 		if ship == sector.player:
 			# Predict locally for immediate controls; reconcile against host position.
 			var location: Vector3 = data["position"]
+			var predicted := ship.position
 			if not received_snapshot or ship.position.distance_to(location) > 10.0:
 				ship.position = location
 			else:
 				ship.position = ship.position.lerp(location, 0.2)
+			if received_snapshot and not reset:
+				net_stats.record_correction(predicted.distance_to(location), predicted.distance_to(ship.position))
+			net_stats.record_server_state(location, data["rotation"])
 			ship.velocity = data["velocity"] if ship.alive else Vector3.ZERO
 			received_snapshot = true
 	status = "Connected. Players: %d/%d" % [ships.size(), MAX_PLAYERS]
@@ -983,6 +1014,8 @@ func disconnect_session(message: String) -> void:
 	combat.finish()
 	multiplayer.multiplayer_peer.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+	net_simulator.stop()
+	net_stats.has_server_state = false
 	for ship: Pilot in ships.values():
 		if ship != sector.player:
 			ship.queue_free()
@@ -1020,6 +1053,7 @@ func _exit_tree() -> void:
 		if not store.close() and not already_failed: get_tree().quit(1)
 	if active or connecting:
 		multiplayer.multiplayer_peer.close()
+	net_simulator.stop()
 
 
 func receives_map(visit: int) -> bool:

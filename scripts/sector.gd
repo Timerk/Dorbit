@@ -42,6 +42,8 @@ var toast: String = "Welcome to Outpost 01. Hold right mouse to steer."
 var toast_time: float = 8.0
 var objective_stage: int = 0
 var show_performance: bool = false
+## F8 netcode overlay; a debugging aid that is not saved between launches.
+var show_netcode: bool = false
 var low_quality: bool = false
 var weapon_status: String = "NO TARGET"
 var session: FlightSession
@@ -216,6 +218,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		settings.show_performance = not show_performance
 		apply_graphics(false)
 		settings.save()
+	if event.is_action_pressed("netcode"):
+		show_netcode = not show_netcode
 	if event.is_action_pressed("quality"):
 		settings.low_quality = not low_quality
 		apply_graphics(false)
