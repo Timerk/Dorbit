@@ -90,6 +90,122 @@ func close_before_invite_ack(server: Sector, left: Sector, right: Sector, expire
 	await settle()
 
 
+func press_mouse(client: Sector, control: Control, down: bool) -> void:
+	var event := InputEventMouseButton.new()
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.position = control.get_global_rect().get_center()
+	event.pressed = down
+	client.get_viewport().push_input(event)
+	await process_frame
+	await process_frame
+
+
+# Holding Confirm while the partner lowers their price and confirms must not
+# let the release consent to the new terms. With `refreshing`, the refreshed
+# menu cancels the press; without it, the click handler checks the version.
+func stale_confirmation(server: Sector, left: Sector, right: Sector, refreshing: bool) -> void:
+	var a := left.session.combat
+	var b := right.session.combat
+	var menu := left.equipment_menu.trade_menu
+	var store := server.session.store
+	await begin_trade(left, right)
+	await command(left, "offer", {"items": [], "credits": 2})
+	await command(right, "offer", {"items": [], "credits": 100})
+	menu.open()
+	await settle(.1)
+	var before := [store.pilots["pilot0"]["credits"], store.pilots["pilot1"]["credits"]]
+	var shown: int = a.trade_state["version"]
+	await press_mouse(left, menu.confirm_button, true)
+	check(menu.armed.get("version") == shown, "Confirmation press records the displayed offer version")
+	if not refreshing: menu.set_process(false)
+	await command(right, "offer", {"items": [], "credits": 1})
+	await command(right, "confirm")
+	check(b.trade_state["confirmed"] and a.trade_state["version"] != shown, "Partner changes the price and confirms during the press")
+	await press_mouse(left, menu.confirm_button, false)
+	await settle(.15)
+	menu.set_process(true)
+	var label := "while the menu refreshes" if refreshing else "without a menu refresh"
+	check(not a.trade_state.get("confirmed", true) and not a.trade_pending and server.session.combat.trading.trades.has(left.multiplayer.get_unique_id()), "Releasing a press started on older terms never confirms " + label)
+	check(store.pilots["pilot0"]["credits"] == before[0] and store.pilots["pilot1"]["credits"] == before[1], "Changed terms move no credits from a stale press " + label)
+	await settle(.05)
+	await click(left, menu.confirm_button)
+	var deadline := Time.get_ticks_msec() + 5000
+	while not (a.trade_state.is_empty() and b.trade_state.is_empty()) and Time.get_ticks_msec() < deadline:
+		await process_frame
+	check(a.trade_message == PlayerTrading.COMPLETED and store.pilots["pilot0"]["credits"] == before[0] - 1 and store.pilots["pilot1"]["credits"] == before[1] + 1, "A fresh click after review accepts the displayed terms " + label)
+	menu.close()
+	await settle(.1)
+
+
+# A combat wallet debit keeps the inventory revision but makes the offer
+# unaffordable. The server must refuse completion and leave both ledgers alone.
+func wallet_debit(server: Sector, left: Sector, right: Sector) -> void:
+	var a := left.session.combat
+	var b := right.session.combat
+	var store := server.session.store
+	var trading := server.session.combat.trading
+	var aid := left.multiplayer.get_unique_id()
+	var wallet: int = store.pilots["pilot0"]["credits"]
+	await begin_trade(left, right)
+	await command(left, "offer", {"items": [], "credits": wallet})
+	await command(right, "offer", {"items": [], "credits": 1})
+	await command(left, "confirm")
+	var revisions := [store.pilots["pilot0"]["equipment"]["revision"], store.pilots["pilot1"]["equipment"]["revision"]]
+	var offers: Array = trading.trades[aid]["offers"].duplicate(true)
+	check(store.commit({"pilot0": wallet - 1}), "Combat debits the offering wallet")
+	server.session.combat.records[aid]["credits"] = wallet - 1
+	check(store.pilots["pilot0"]["equipment"]["revision"] == revisions[0], "Wallet debit leaves the inventory revision unchanged")
+	var debited := store.pilots.duplicate(true)
+	check(store.complete_trade("pilot0", "pilot1", offers, revisions) == "Not enough credits for this offer." and store.pilots == debited, "Ledger refuses an unaffordable offer at the unchanged revision")
+	await command(right, "confirm")
+	await settle(.1)
+	check(trading.trades.is_empty() and a.trade_state.is_empty() and b.trade_state.is_empty(), "Final confirmation after the debit cancels the trade for both pilots")
+	check(a.trade_message.contains("wallet changed"), "Offering pilot learns the wallet changed: " + a.trade_message)
+	check(without_industry(store.pilots["pilot0"]) == without_industry(debited["pilot0"]) and without_industry(store.pilots["pilot1"]) == without_industry(debited["pilot1"]), "Both pilots keep their debited wallet and items")
+	check(store.commit({"pilot0": wallet}), "Restore the offering wallet")
+	server.session.combat.records[aid]["credits"] = wallet
+
+
+# The snapshot replacement commits the trade. When journal compaction then
+# fails, both pilots still learn it completed before the server stops.
+func compaction_failure(server: Sector, left: Sector, right: Sector) -> PilotStore:
+	var a := left.session.combat
+	var b := right.session.combat
+	var store := server.session.store
+	var trading := server.session.combat.trading
+	var stopped := [false]
+	trading.stop_for_save_failure = func(): stopped[0] = true
+	var credits := [store.pilots["pilot0"]["credits"], store.pilots["pilot1"]["credits"]]
+	await begin_trade(left, right)
+	await command(left, "offer", {"items": [], "credits": 3})
+	await command(left, "confirm")
+	var ammo: Dictionary = store.pilots["pilot0"]["ammo"].duplicate()
+	check(store.commit_combat({"pilot0": ammo}) and store.journal_sequence > store.checkpoint_sequence, "Pending combat journal records need compaction at the next checkpoint")
+	# Block only the journal compaction, after the snapshot replacement succeeded.
+	store.replacement_trace = func(destination: String, _marks: PackedInt64Array, renamed: bool):
+		if destination == store.path and renamed: DirAccess.make_dir_absolute(store.path + ".combat.tmp")
+	await command(right, "confirm")
+	var deadline := Time.get_ticks_msec() + 5000
+	while not (a.trade_state.is_empty() and a.trade_message == PlayerTrading.COMPLETED) and Time.get_ticks_msec() < deadline:
+		await process_frame
+	await settle(.1)
+	store.replacement_trace = Callable()
+	check(store.failed and stopped[0], "Compaction failure still stops the server for recovery: " + store.error)
+	check(a.trade_message == PlayerTrading.COMPLETED and b.trade_message == PlayerTrading.COMPLETED, "Both pilots learn the saved trade completed (left: %s, right: %s)" % [a.trade_message, b.trade_message])
+	check(a.inventory.get("revision") == store.pilots["pilot0"]["equipment"]["revision"] and b.inventory.get("revision") == store.pilots["pilot1"]["equipment"]["revision"], "Both pilots receive their saved inventories")
+	check(trading.trades.is_empty() and store.pilots["pilot0"]["credits"] == credits[0] - 3 and store.pilots["pilot1"]["credits"] == credits[1] + 3, "Committed trade is reflected in the server ledger")
+	trading.stop_for_save_failure = Callable()
+	var directory := store.path.get_base_dir()
+	store.close()
+	# Operator recovery: inspect and remove the interrupted compaction.
+	DirAccess.remove_absolute(directory.path_join("pilots.json.combat.tmp"))
+	var recovered := PilotStore.new()
+	check(recovered.open(directory), "Recovered store reopens after the compaction failure")
+	check(recovered.pilots["pilot0"]["credits"] == credits[0] - 3 and recovered.pilots["pilot1"]["credits"] == credits[1] + 3, "Recovered wallets reflect the reported trade")
+	server.session.store = recovered
+	return recovered
+
+
 func run_rules(store: PilotStore) -> void:
 	var pilot: Dictionary = store.pilots["pilot0"]
 	for offer: Variant in [null, {}, {"items": [], "credits": -1}, {"items": [], "credits": 1.5},
@@ -247,6 +363,10 @@ func run() -> void:
 	await command(left, "confirm")
 	await command(right, "confirm")
 	check(store.pilots["pilot0"]["credits"] == 930 and store.pilots["pilot1"]["credits"] == 1070, "One-sided credit gifts are supported")
+	await stale_confirmation(server, left, right, true)
+	await stale_confirmation(server, left, right, false)
+	await wallet_debit(server, left, right)
+	store = await compaction_failure(server, left, right)
 	await begin_trade(left, right)
 	await command(left, "cancel")
 	check(a.trade_state.is_empty() and b.trade_state.is_empty(), "Either pilot can cancel without transferring anything")
@@ -283,6 +403,23 @@ func run() -> void:
 	server.session.combat.trading.tick()
 	await settle(.1)
 	check(a.trade_state.is_empty(), "Abandoned invitations and offers expire")
+	# Disconnecting after the partner confirmed a nonempty offer moves nothing.
+	var o := observer.session.combat
+	await begin_trade(observer, right)
+	await command(right, "offer", {"items": ["hidden"], "credits": 5})
+	await command(right, "confirm")
+	check(b.trade_state["confirmed"] and o.trade_state["other"]["credits"] == 5, "Partner confirmed a nonempty offer")
+	var held := store.pilots.duplicate(true)
+	var stale_token: String = b.trade_state["token"]
+	var stale_version: int = b.trade_state["version"]
+	observer.session.disconnect_session("Test trade disconnect after confirmation")
+	deadline = Time.get_ticks_msec() + 5000
+	while (not b.trade_state.is_empty() or server.session.combat.trading.trades.has(bid)) and Time.get_ticks_msec() < deadline:
+		await process_frame
+	check(b.trade_state.is_empty() and b.trade_message == "Trade cancelled: a pilot disconnected." and server.session.combat.trading.trades.is_empty(), "Partner disconnect cancels a confirmed trade for the remaining pilot")
+	b.trade_request.rpc_id(1, "confirm", stale_token, stale_version, {}, int(right.player.get_meta("life", 0)))
+	await settle(.1)
+	check(without_industry(store.pilots["pilot1"]) == without_industry(held["pilot1"]) and without_industry(store.pilots["pilot2"]) == without_industry(held["pilot2"]), "Disconnect leaves both wallets and items untouched, even after a late confirmation")
 	await delay_invite_ack(server, left, right)
 	left.session.disconnect_session("Test trade disconnect")
 	multiplayer_poll = true
