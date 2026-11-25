@@ -360,7 +360,10 @@ func complete_trade(left: String, right: String, offers: Array, revisions: Array
 	for id: String in ids:
 		if not Equipment.valid(next[id]["equipment"]):
 			return "Invalid trade inventory. Items unchanged."
-	if not persist(next): return "Persistence unavailable."
+	# The snapshot replacement is the commit point: `pilots` becomes `next` only
+	# after it succeeds. A later journal compaction failure still stops the
+	# server, but both pilots are owed the completed result first.
+	if not persist(next) and not is_same(pilots, next): return "Persistence unavailable."
 	return "Trade completed. Items and credits saved."
 
 

@@ -8,6 +8,8 @@ const TIMEOUT_MS := 120_000
 const COMPLETED := "Trade completed. Items and credits saved."
 var combat: Node
 var trades: Dictionary[int, Dictionary] = {}
+# Tests replace the process exit that follows a store failure.
+var stop_for_save_failure: Callable
 
 
 func _init(owner: Node) -> void:
@@ -166,15 +168,21 @@ func request(id: int, action: String, token: String, version: int, payload: Dict
 		if trade["confirmed"][0] and trade["confirmed"][1]:
 			var peers: Array = trade["peers"]
 			var result := session.store.complete_trade(session.pilot_ids[peers[0]], session.pilot_ids[peers[1]], offers, trade["revisions"])
-			if session.store.failed:
-				session.stop_for_save_failure()
-				return
 			if result == COMPLETED:
+				# Saved trades are reported even if journal compaction then fails.
 				for peer: int in peers:
 					combat.records[peer]["credits"] = session.store.pilots[session.pilot_ids[peer]]["credits"]
 					combat.publish_inventory(peer, result)
 					combat.message(peer, result, "purchase")
-			cancel(id, result)
+				cancel(id, result)
+			if session.store.failed:
+				if result == COMPLETED and combat.multiplayer.multiplayer_peer is ENetMultiplayerPeer:
+					# Send the results before the server exits for recovery.
+					(combat.multiplayer.multiplayer_peer as ENetMultiplayerPeer).host.flush()
+				if stop_for_save_failure.is_valid(): stop_for_save_failure.call()
+				else: session.stop_for_save_failure()
+				return
+			if result != COMPLETED: cancel(id, result)
 			return
 	else:
 		publish(id, "Unknown trade action.")
