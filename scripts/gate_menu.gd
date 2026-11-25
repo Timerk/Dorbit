@@ -37,9 +37,13 @@ func _ready() -> void:
 	summary.size_flags_vertical = Control.SIZE_SHRINK_END
 	var tab_row := HBoxContainer.new()
 	rows.add_child(tab_row)
+	# A button group keeps exactly one tab pressed; clicking the selected tab
+	# leaves it highlighted.
+	var tab_group := ButtonGroup.new()
 	for gate: String in GalaxyGates.ORDER:
 		var tab := StationUi.button(tab_row, GalaxyGates.info(gate)["name"], func(): select(gate))
 		tab.toggle_mode = true
+		tab.button_group = tab_group
 		tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		StationUi.tab(tab)
 		tabs[gate] = tab

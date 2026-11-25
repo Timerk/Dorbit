@@ -113,6 +113,18 @@ func pick_up(server: Sector, client: Sector, drop_id: int) -> void:
 
 
 # Places a server-owned box directly, for pickup cases a kill cannot pin down.
+func click_control(client: Sector, control: Control) -> void:
+	var point := control.get_global_rect().get_center()
+	for pressed: bool in [true, false]:
+		var event := InputEventMouseButton.new()
+		event.button_index = MOUSE_BUTTON_LEFT
+		event.button_mask = MOUSE_BUTTON_MASK_LEFT if pressed else 0
+		event.pressed = pressed
+		event.position = point
+		client.get_viewport().push_input(event)
+	await settle(0.05)
+
+
 # `parts` maps gate IDs to part counts.
 func place_box(server: Sector, map: int, position: Vector3, parts: Dictionary, resources: Dictionary = {}) -> int:
 	server.loot.next_id += 1
@@ -371,6 +383,14 @@ func run() -> void:
 	pilot.main_menu.select_page("gates")
 	await process_frame
 	check(pilot.gate_menu.visible and pilot.gate_menu.preview_button.visible and pilot.gate_menu.run_label.text.contains("GATE OPEN"), "The Galaxy Gates page shows the open gate and preview tool")
+	# Gate tabs behave as one group: re-clicking the selected tab keeps it pressed.
+	var menu := pilot.gate_menu
+	var pressed_tabs := func() -> Array: return menu.tabs.keys().filter(func(gate: String): return menu.tabs[gate].button_pressed)
+	await click_control(pilot, menu.tabs[menu.selected])
+	check(pressed_tabs.call() == [menu.selected], "Clicking the selected gate tab keeps it highlighted")
+	await click_control(pilot, menu.tabs[KORRATH])
+	check(menu.selected == KORRATH and pressed_tabs.call() == [KORRATH] and menu.title.text == "KORRATH GATE", "Clicking another gate tab moves the highlight")
+	await click_control(pilot, menu.tabs[VASHAR])
 	# Quitting to the station mid-wave costs a life instead of a free repair.
 	var retreating: String = await enter(server, partner)
 	gate.tick(GalaxyGates.FIRST_WAVE_DELAY + 0.1)
