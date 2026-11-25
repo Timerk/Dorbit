@@ -130,6 +130,28 @@ class ProvisioningTest(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertEqual({p.name: p.read_bytes() for p in root.iterdir()}, before)
 
+    def test_rollback_float_gate_counters_rotate_and_normalize(self):
+        # A rollback build that preserves unknown fields may write whole gate
+        # counters as floats. The server accepts them, so provisioning must too.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path, _, _, _ = self.journal_fixture(root)
+            data = json.loads(path.read_text())
+            data["pilots"]["test"]["equipment"]["gates"] = {"parts": 20, "signal": "active", "progress": 7}
+            path.write_text(json.dumps(data).replace('"parts": 20', '"parts": 20.0').replace('"progress": 7}', '"progress": 7.0}'))
+            self.assertIn('"progress": 7.0', path.read_text())
+            result = subprocess.run([sys.executable, pilots.__file__, str(root), "test",
+                                     str(root / "credential.json"), "--rotate"], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode())
+            # The flat single-gate record also migrates to the Vashar key.
+            gates = json.loads(path.read_text())["pilots"]["test"]["equipment"]["gates"]
+            self.assertEqual(gates, {"vashar": {"parts": 20, "signal": "active", "progress": 7}})
+            self.assertIs(type(gates["vashar"]["parts"]), int)
+            self.assertIs(type(gates["vashar"]["progress"]), int)
+        self.assertTrue(pilots.valid_gates({"korrath": {"parts": 24.0, "signal": "active", "progress": 9.0}}))
+        for bad in (7.5, float("inf"), float("nan"), True, "7", 8.0):
+            self.assertFalse(pilots.valid_gates({"parts": 20, "signal": "active", "progress": bad}), bad)
+
     def test_checkpointed_journal_does_not_reverse_purchase(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

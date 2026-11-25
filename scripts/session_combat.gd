@@ -1048,19 +1048,39 @@ func collect_loot() -> void:
 	var qualifying: Dictionary[int, Dictionary] = {}
 	for drop_id: int in session.sector.loot.drops:
 		var drop: Dictionary = session.sector.loot.drops[drop_id].duplicate(true)
-		# Gate parts need no cargo space; the nearest living pilot takes them all.
-		var carrier := part_collector(drop)
-		if carrier >= 0:
-			if not parts.has(carrier):
-				parts[carrier] = {}
-				qualifying[carrier] = {}
-			for gate_id: String in drop["parts"]:
-				var count := int(drop["parts"][gate_id])
-				parts[carrier][gate_id] = int(parts[carrier].get(gate_id, 0)) + count
-				if int(drop.get("map", 0)) == int(GalaxyGates.info(gate_id)["signal"]["map"]):
-					qualifying[carrier][gate_id] = int(qualifying[carrier].get(gate_id, 0)) + count
-			drop.erase("parts")
-			changed[drop_id] = {} if drop["resources"].is_empty() else drop
+		# Gate parts need no cargo space. Each gate's collectors take what their
+		# stock can hold, counting parts already assigned in this pass; any
+		# remainder stays in the box rather than being clamped away.
+		var boxed: Dictionary = drop.get("parts", {})
+		var left := {}
+		var taken_any := false
+		for gate_id: String in boxed:
+			var remaining := int(boxed[gate_id])
+			var qualifies := int(drop.get("map", 0)) == int(GalaxyGates.info(gate_id)["signal"]["map"])
+			for carrier: int in part_collectors(drop, gate_id):
+				var held := int(parts[carrier].get(gate_id, 0)) if parts.has(carrier) else 0
+				var room: int = GalaxyGates.MAX_PARTS - int(GalaxyGates.state(session.store.pilots[session.pilot_ids[carrier]]["equipment"], gate_id)["parts"]) - held
+				var take: int = mini(remaining, room)
+				if take <= 0:
+					continue
+				if not parts.has(carrier):
+					parts[carrier] = {}
+					qualifying[carrier] = {}
+				parts[carrier][gate_id] = held + take
+				if qualifies:
+					qualifying[carrier][gate_id] = int(qualifying[carrier].get(gate_id, 0)) + take
+				remaining -= take
+				taken_any = true
+				if remaining == 0:
+					break
+			if remaining > 0:
+				left[gate_id] = remaining
+		if taken_any:
+			if left.is_empty():
+				drop.erase("parts")
+			else:
+				drop["parts"] = left
+			changed[drop_id] = {} if drop["resources"].is_empty() and left.is_empty() else drop
 		var candidates: Array[int] = []
 		for id: int in records:
 			var ship := session.ships[id]
@@ -1143,14 +1163,17 @@ func collect_loot() -> void:
 			cargo_result.rpc_id(id, next[id]["starter"])
 
 
-# The living pilot within pickup range who takes a box's gate parts, or -1.
-# Pilots running Signal Anomaly come first, so its guaranteed parts reach them;
-# otherwise the nearest pilot wins, with ties in peer-ID order.
-func part_collector(drop: Dictionary) -> int:
-	if drop.get("parts", {}).is_empty() or not session.sector.dedicated_server:
-		return -1
-	var best := -1
-	var best_key := Vector2(INF, INF)
+# Living pilots within pickup range who may take one gate's parts from a box,
+# in priority order. Pilots running that gate's operation come first when the
+# box lies on its operation map, so its guaranteed parts reach them even in a
+# box shared with other gates' parts; otherwise nearer pilots win, with ties in
+# peer-ID order.
+func part_collectors(drop: Dictionary, gate_id: String) -> Array[int]:
+	var result: Array[int] = []
+	if int(drop.get("parts", {}).get(gate_id, 0)) <= 0 or not session.sector.dedicated_server:
+		return result
+	var operation_map := int(drop.get("map", 0)) == int(GalaxyGates.info(gate_id)["signal"]["map"])
+	var ranks: Dictionary[int, Vector2] = {}
 	for id: int in records:
 		var ship := session.ships[id]
 		if ship.map_id != int(drop.get("map", 0)) or ship.get_meta("docked", false) or not ship.alive:
@@ -1158,16 +1181,12 @@ func part_collector(drop: Dictionary) -> int:
 		var distance := ship.position.distance_to(drop["position"])
 		if distance > ResourceLoot.PICKUP_RADIUS:
 			continue
-		# Running the operation of any gate whose parts this box carries.
-		var equipment: Dictionary = session.store.pilots[session.pilot_ids[id]]["equipment"]
-		var running := false
-		for gate_id: String in drop["parts"]:
-			running = running or GalaxyGates.signal_active(GalaxyGates.state(equipment, gate_id))
-		var rank := Vector2(0.0 if running else 1.0, distance)
-		if rank < best_key or (rank.is_equal_approx(best_key) and id < best):
-			best = id
-			best_key = rank
-	return best
+		var running := operation_map and GalaxyGates.signal_active(GalaxyGates.state(session.store.pilots[session.pilot_ids[id]]["equipment"], gate_id))
+		ranks[id] = Vector2(0.0 if running else 1.0, distance)
+		result.append(id)
+	result.sort_custom(func(a: int, b: int) -> bool:
+		return a < b if ranks[a].is_equal_approx(ranks[b]) else ranks[a] < ranks[b])
+	return result
 
 
 # Parts carried by a destroyed alien, per gate. A gate's operation guarantees one
