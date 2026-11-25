@@ -75,7 +75,7 @@ func check_campaign_backdrops() -> void:
 	root.add_child(authority)
 	authority.set_physics_process(false)
 	var client_obstacles := static_obstacles(flight)
-	check(client_obstacles == static_obstacles(authority) and client_obstacles.size() == 197, "All four rendered maps and both gate arenas retain identical server obstacles")
+	check(client_obstacles == static_obstacles(authority) and client_obstacles.size() == 221, "All four rendered maps and three gate arenas retain identical server obstacles")
 	check(render_nodes(authority) == 0, "Four-map server creates no campaign planets, machines or sky")
 	check(flight.map_scenery.keys() == [0], "Startup builds only the current map's scenery")
 	check(authority.map_scenery.is_empty(), "Dedicated startup has no visual map cache")

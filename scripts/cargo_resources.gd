@@ -27,6 +27,9 @@ const LOOT := {
 	"Husk": {"duranium": Vector2i(6, 10), "xenomit": Vector2i(2, 4), "promerium": Vector2i(2, 4)},
 	"Bulwark": {"xenomit": Vector2i(6, 10), "promerium": Vector2i(10, 14), "seprom": Vector2i(4, 6)},
 	"Siegebreaker": {"xenomit": Vector2i(30, 40), "promerium": Vector2i(40, 50), "seprom": Vector2i(25, 35)},
+	"Wisp": {"xenomit": Vector2i(4, 6), "promerium": Vector2i(4, 8), "seprom": Vector2i(1, 3)},
+	"Veilcaster": {"xenomit": Vector2i(10, 14), "promerium": Vector2i(14, 20), "seprom": Vector2i(8, 12)},
+	"Ascendant": {"xenomit": Vector2i(40, 60), "promerium": Vector2i(60, 80), "seprom": Vector2i(40, 50)},
 	"Heavy": {"prometium": Vector2i(18, 24), "endurium": Vector2i(12, 18), "terbium": Vector2i(8, 12), "prometid": Vector2i(6, 10), "duranium": Vector2i(4, 6), "xenomit": Vector2i(1, 3), "promerium": Vector2i(2, 4), "seprom": Vector2i(1, 2)},
 }
 
