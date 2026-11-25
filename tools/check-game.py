@@ -14,7 +14,8 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 ERROR = re.compile(r'SCRIPT ERROR:|Parse Error:|ERROR:')
 PORT_FLOOR = 10000
-PORT_STRIDE = 400
+# Just above the 289-port test span, so 71 groups fit below 32768.
+PORT_STRIDE = 320
 
 
 def commands(suite: str, engine: str) -> list[tuple[str, list[list[str]]]]:
