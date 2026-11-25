@@ -1,6 +1,9 @@
 extends "res://tests/dedicated_server_test.gd"
 ## A differing Combat RPC table must be rejected before any gameplay packets arrive.
 
+# --print-protocol at 6ce4c724, before invitation withdrawal joined the RPC table.
+const PRE_WITHDRAW_PROTOCOL := "58e3e3873b85df6009fdb87418ac989a0465a05052a61f3e880ba08f29e8f8c4"
+
 
 func run() -> void:
 	var server := make_sector("CompatibilityServer", true)
@@ -52,6 +55,7 @@ func run() -> void:
 	check(not client.session.active and server.session.ships.is_empty(), "Changed RPC transport settings are rejected before gameplay")
 	server.session.combat.set_script(original)
 	server.session.combat.session = server.session
+	await check_pre_withdraw_build(server, client)
 	server.multiplayer.peer_authenticating.disconnect(server.session.begin_authentication)
 	var legacy := func(id: int): server.multiplayer.send_auth(id, Crypto.new().generate_random_bytes(32))
 	server.multiplayer.peer_authenticating.connect(legacy)
@@ -124,3 +128,22 @@ func run() -> void:
 			DirAccess.make_dir_recursive_absolute(directory)
 			root.get_texture().get_image().save_png(directory.path_join("network-pilot-laser.png"))
 	await finish()
+
+
+func check_pre_withdraw_build(server: Sector, client: Sector) -> void:
+	var old_server := func(id: int): server.multiplayer.send_auth(id, JSON.stringify({"nonce": "00".repeat(32), "protocol": PRE_WITHDRAW_PROTOCOL}).to_utf8_buffer())
+	server.multiplayer.peer_authenticating.disconnect(server.session.begin_authentication)
+	server.multiplayer.peer_authenticating.connect(old_server)
+	client.session.join("127.0.0.1", test_port(24683))
+	await settle(0.3)
+	check(not client.session.active and client.session.status.contains("build"), "Client rejects the pre-withdrawal server fingerprint")
+	server.multiplayer.peer_authenticating.disconnect(old_server)
+	server.multiplayer.peer_authenticating.connect(server.session.begin_authentication)
+	client.multiplayer.auth_callback = func(id: int, data: PackedByteArray):
+		var envelope: Dictionary = JSON.parse_string(data.get_string_from_utf8())
+		var proof := Crypto.new().hmac_digest(HashingContext.HASH_SHA256, client.session.credential_token.sha256_buffer(), envelope["nonce"].hex_decode())
+		client.multiplayer.send_auth(id, JSON.stringify({"id": "pilot0", "proof": proof.hex_encode(), "protocol": PRE_WITHDRAW_PROTOCOL}).to_utf8_buffer())
+	client.session.join("127.0.0.1", test_port(24683))
+	await settle(0.3)
+	check(not client.session.active and server.session.ships.is_empty() and server.session.pilot_ids.is_empty(), "Server rejects authenticated pre-withdrawal client before admission")
+	client.multiplayer.auth_callback = client.session.authenticate
