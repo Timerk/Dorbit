@@ -21,6 +21,9 @@ const LOOT := {
 	"Overlord": {"duranium": Vector2i(24, 32), "xenomit": Vector2i(10, 14), "promerium": Vector2i(18, 24), "seprom": Vector2i(8, 12)},
 	"Scout": {"prometium": Vector2i(6, 10), "endurium": Vector2i(2, 4), "terbium": Vector2i(1, 2)},
 	"Sentinel": {"prometium": Vector2i(10, 16), "endurium": Vector2i(6, 10), "terbium": Vector2i(4, 6), "prometid": Vector2i(2, 4), "duranium": Vector2i(1, 2)},
+	"Shardling": {"prometid": Vector2i(4, 8), "duranium": Vector2i(2, 4), "xenomit": Vector2i(1, 2)},
+	"Spireguard": {"duranium": Vector2i(8, 12), "xenomit": Vector2i(3, 5), "promerium": Vector2i(4, 6)},
+	"Mothership": {"xenomit": Vector2i(20, 30), "promerium": Vector2i(30, 40), "seprom": Vector2i(15, 20)},
 	"Heavy": {"prometium": Vector2i(18, 24), "endurium": Vector2i(12, 18), "terbium": Vector2i(8, 12), "prometid": Vector2i(6, 10), "duranium": Vector2i(4, 6), "xenomit": Vector2i(1, 3), "promerium": Vector2i(2, 4), "seprom": Vector2i(1, 2)},
 }
 

@@ -2,6 +2,13 @@ extends "res://tests/encounter_test.gd"
 ## Presentation lifecycle, contact direction, caps and unchanged combat state.
 
 
+class LootHud extends FlightHud:
+	var captions: Array[String] = []
+
+	func marker(_location: Vector3, label: String, _color: Color, _selected: bool, _teammate: Pilot = null, _priority: bool = true) -> void:
+		captions.append(label)
+
+
 func run() -> void:
 	var world := Node3D.new()
 	root.add_child(world)
@@ -162,12 +169,25 @@ func destruction_checks() -> void:
 	check(sector.loot.drops.has(id) and not sector.loot.is_presented(id), "Actual death creates loot state but hides the box during the explosion")
 	var update: Dictionary = sector.loot.drops[id].duplicate(true)
 	update["resources"] = {"prometium": 1}
+	update["parts"] = 2
 	sector.loot.apply_drop(id, update)
 	check(not sector.loot.is_presented(id), "Updating a drop during destruction does not expose its box early")
 	sector.loot.apply_drop(999, {"position": sector.alien.position + Vector3(30, 0, 0), "resources": {"prometium": 1}, "ttl": 180.0})
 	check(sector.loot.is_presented(999), "An explosion does not suppress unrelated nearby loot")
+	var hud := LootHud.new()
+	hud.sector = sector
+	hud.draw_gate_parts()
+	check(hud.captions.is_empty(), "Neither ordinary loot nor an unrevealed gate part gets a marker")
 	await create_timer(SectorVisuals.EXPLOSION_DURATION + 0.1).timeout
 	check(sector.loot.is_presented(id) and not SectorVisuals.explosion_active(sector, sector.alien.position), "Loot becomes visible only after the last explosion mesh is gone")
+	hud.draw_gate_parts()
+	check(hud.captions == ["2 GATE PARTS"], "Only the revealed gate parts get a caption")
+	update.erase("parts")
+	sector.loot.apply_drop(id, update)
+	hud.captions.clear()
+	hud.draw_gate_parts()
+	check(sector.loot.is_presented(id) and hud.captions.is_empty(), "Taking the parts leaves the remaining ore visible and unlabeled")
+	hud.free()
 	sector.loot.apply_drop(id, {})
 	await process_frame
 	check(not sector.loot.meshes.has(id), "Removing a drop cannot resurrect its visual")

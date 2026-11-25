@@ -120,6 +120,8 @@ func open(directory: String) -> bool:
 			Research.normalize(pilot["equipment"]["research"])
 		if pilot["equipment"].has("story"):
 			Story.normalize(pilot["equipment"]["story"])
+		if pilot["equipment"].has("gates"):
+			GalaxyGates.normalize(pilot["equipment"]["gates"])
 		if data["version"] < 3:
 			if pilot.has("cargo"):
 				return fail("Unexpected cargo in legacy save. Original file preserved.")
@@ -240,8 +242,8 @@ func verifies(id: String, nonce: PackedByteArray, proof: PackedByteArray) -> boo
 
 # Commit all shares of a kill together, before combat publishes the new balances.
 # Research holds points earned by each pilot in this transaction; stories hold
-# each pilot's next chapter position.
-func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}, ammo: Dictionary = {}, boosts: Dictionary = {}, research: Dictionary = {}, stories: Dictionary = {}) -> bool:
+# each pilot's next chapter position; gates hold each pilot's galaxy gate parts.
+func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary = {}, ammo: Dictionary = {}, boosts: Dictionary = {}, research: Dictionary = {}, stories: Dictionary = {}, gates: Dictionary = {}) -> bool:
 	if failed or not locked:
 		return false
 	var next := pilots.duplicate(true)
@@ -275,6 +277,34 @@ func commit(balances: Dictionary, contracts: Dictionary = {}, cargo: Dictionary 
 		if not next.has(id) or not Story.valid(stories[id]):
 			return fail("Invalid server story update.")
 		next[id]["equipment"]["story"] = stories[id].duplicate()
+	for id: String in gates:
+		if not next.has(id) or not GalaxyGates.valid(gates[id]):
+			return fail("Invalid server gate update.")
+		next[id]["equipment"]["gates"] = gates[id].duplicate()
+	return persist(next)
+
+
+# Victory rewards for one gate run, saved together for every winner. Each reward
+# holds credits, research points, x4 shots and an optional storage item model.
+func reward_gate(rewards: Dictionary) -> bool:
+	if failed or not locked:
+		return false
+	var next := pilots.duplicate(true)
+	for id: String in rewards:
+		var reward: Dictionary = rewards[id]
+		if not next.has(id):
+			return fail("Invalid server gate reward.")
+		var pilot: Dictionary = next[id]
+		pilot["credits"] = mini(MAX_CREDITS, int(pilot["credits"]) + int(reward["credits"]))
+		Research.add_points(pilot["equipment"], int(reward["research"]))
+		pilot["ammo"]["x4"] = mini(Ammunition.MAX_SHOTS, int(pilot["ammo"]["x4"]) + int(reward["x4"]))
+		if not str(reward["item"]).is_empty():
+			var item_id := "gate-" + Crypto.new().generate_random_bytes(8).hex_encode()
+			if pilot["equipment"]["items"].has(item_id):
+				return fail("Gate reward item ID conflict.")
+			pilot["equipment"]["items"][item_id] = {"model": reward["item"], "ship": "", "slot": ""}
+		if not Equipment.valid(pilot["equipment"]) or not Ammunition.valid(pilot["ammo"]):
+			return fail("Invalid server gate reward.")
 	return persist(next)
 
 

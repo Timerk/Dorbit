@@ -158,7 +158,7 @@ func check_flight_pages(client: Sector, prefix: String) -> void:
 				"settings": panel = client.settings_menu.panel
 				"connection": panel = client.session.menu
 				"skylab": panel = client.skylab_menu
-				_: panel = menu.placeholder
+				_: panel = client.gate_menu
 			check(panel.is_visible_in_tree() and menu.selected_page == page and menu.resume_button.is_visible_in_tree(), "%s flight %s remains reachable at %s" % [prefix, page, dimensions])
 			check(menu.content_rect().grow(1).encloses(panel.get_global_rect()), "%s flight %s fits beside the navigation at %s" % [prefix, page, dimensions])
 			check(not client.preflight and client.paused and not client.settings_menu.pause_panel.visible and not menu.start_button.is_visible_in_tree(), "%s flight %s does not dock, launch or overlay the pause menu" % [prefix, page])
@@ -176,7 +176,7 @@ func check_flight_pages(client: Sector, prefix: String) -> void:
 			if page in ["hangar", "cargo"]:
 				await capture(client, "%s-flight-%s-%d" % [prefix, page, dimensions.x])
 		await click(client, menu.resume_button)
-		check(not menu.visible and not client.paused and not client.session.menu.visible and not menu.placeholder.visible, "%s Resume closes the shell and its pages" % prefix)
+		check(not menu.visible and not client.paused and not client.session.menu.visible and not client.gate_menu.visible, "%s Resume closes the shell and its pages" % prefix)
 		await press(client, KEY_I)
 		await press(client, KEY_ESCAPE)
 		check(not menu.visible and not client.equipment_menu.visible and not client.paused, "%s Esc closes the flight Hangar and resumes" % prefix)
