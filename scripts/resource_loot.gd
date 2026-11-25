@@ -16,6 +16,12 @@ func clear() -> void:
 		apply_drop(id, {})
 	collect_clock = 0.0
 
+# Removes every box on one map, telling its clients.
+func clear_map(map: int) -> void:
+	for id: int in drops.keys():
+		if int(drops[id].get("map", 0)) == map:
+			change(id, {})
+
 # `parts` are galaxy gate parts carried in the box; they need no cargo space.
 func spawn_drop(alien: Alien, parts: int = 0) -> void:
 	if sector.session.active and not multiplayer.is_server():

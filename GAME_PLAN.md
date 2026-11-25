@@ -1568,7 +1568,7 @@ pilot to Outpost 01; pilots with lives left can fly back in while the gate is op
 Destroying the final wave pays every participant still connected 150,000 CR,
 6 research points and 15,000 x4 shots; each also has a 20% chance of an LF-4
 laser, delivered to storage. Victory closes the entrance and returns anyone still inside to M1
-after 90 s. A run collapses, without refunding parts, when no pilot has been inside
+after 90 s. Closing a run clears any loot left in the arena. A run collapses, without refunding parts, when no pilot has been inside
 for 120 s or every participant has used all their lives.
 
 **Preview tools.** Allowlisted preview pilots see *Preview: open gate without

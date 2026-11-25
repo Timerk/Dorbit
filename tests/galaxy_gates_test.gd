@@ -329,6 +329,8 @@ func run() -> void:
 	partner.session.quit_to_menu()
 	await settle(0.15)
 	check(server.session.ships[partner_id].get_meta("docked", false) and gate.lives[partner_pilot_id] == GalaxyGates.LIVES - 1, "Quitting to the station mid-wave costs a life")
+	var leftover := place_box(server, GalaxyGates.MAP, SectorMaps.origin(GalaxyGates.MAP), 1, {"prometium": 1})
 	gate.tick(GalaxyGates.ABANDON_TIME + 0.1)
 	check(not gate.active and not SectorMaps.rift_open, "A gate nobody holds collapses")
+	check(not server.loot.drops.has(leftover) and server.loot.drops.values().all(func(box: Dictionary): return int(box.get("map", 0)) != GalaxyGates.MAP), "A closing run clears the arena's loot")
 	finish()

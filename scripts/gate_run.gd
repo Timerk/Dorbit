@@ -295,6 +295,8 @@ func close() -> void:
 	for id in inside():
 		combat.message(id, "The rift is closing. Returning to M1.")
 		combat.session.transfer(id, 0)
+	# Arena loot belongs to this run; the next one starts with an empty rift.
+	sector().loot.clear_map(GalaxyGates.MAP)
 	reset()
 	publish()
 
