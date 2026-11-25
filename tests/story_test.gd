@@ -110,6 +110,8 @@ func play_groundwork(server: Sector, pilot: Sector) -> void:
 	check(saved(server, pilot)["step"] == 10 and pilot.session.combat.station_message == "Upgrade Basic first.", "Collectors cannot outgrow Basic, which the first step teaches")
 	var credits: int = store.pilots[pilot_id]["credits"]
 	var prometid := int(store.pilots[pilot_id]["skylab"]["inventory"]["prometid"])
+	# Station menus stay open from the Skylab upgrade through the research level.
+	pilot.paused = true
 	pilot.session.combat.request_lab("upgrade", {"module": "basic"})
 	await settle(0.1)
 	await replicate(server)
@@ -129,6 +131,14 @@ func play_groundwork(server: Sector, pilot: Sector) -> void:
 	await replicate(server)
 	check(saved(server, pilot)["step"] == 12 and Research.level(Research.state(store.pilots[pilot_id]["equipment"]), "reinforced_plating") == 1 and Research.state(store.pilots[pilot_id]["equipment"])["points"] == points, "Learning a level with the granted stock completes Countermeasures and refunds its point")
 	check(pilot.session.combat.station_message.ends_with("Countermeasures complete: +2,000 CR and +1 research points."), "The research confirmation reports the step reward")
+	await process_frame
+	var sites := pilot.story_sites
+	check(sites.comm_lines.size() == 2 and sites.comm_lines[0][0] == "brell" and sites.comm_lines[1][0] == "sato" and sites.comm_queue.size() == 1, "Research behind the menu queues its transmission after Brell's unseen one")
+	pilot.paused = false
+	sites.comm_time = 0.001
+	await process_frame
+	await process_frame
+	check(sites.comm_lines[0][0] == "sato" and sites.comm_lines[-1][0] == "vance" and sites.comm_time > 0.0 and sites.comm_queue.is_empty(), "The queued research transmission follows once flight resumes")
 	for count in 3:
 		await kill(server, "Scout", [pilot])
 	check(saved(server, pilot)["step"] == 13, "Three Scout kills complete the field test")
