@@ -1598,8 +1598,10 @@ two ways:
   12–16% in M3, 16–20% in M4). Home-map and arena aliens carry none.
 
 Parts sit in the normal loot box and take no cargo space. A living pilot within
-pickup range collects a box's parts, even with a full hold: pilots running
-the operation come first, otherwise the nearest pilot. A pilot takes only what fits
+pickup range collects a box's parts, even with a full hold. Each gate's parts go
+first to pilots running that gate's operation when the box is on its operation map,
+otherwise to the nearest pilot; a box holding several gates' parts splits them this
+way. A pilot takes only what fits
 under the 999-part limit; the rest passes to the next pilot in range or stays in the
 box. Only parts recovered on
 the operation's map advance it; boxes remain shared, as with resources. Gate runs
@@ -1664,6 +1666,47 @@ Sources, renders and the build script are in `vashar-review/README.md` in the ar
 archive. All counts, chances, stats, lives,
 timings and rewards above are provisional until playtested. Further gates,
 other equipment rewards, personal gate instances and the on-map invasion event are future work.
+
+#### Galaxy gates: the Korrath Gate
+
+On 2026-10-22 the user asked for a second gate; final models and renders can
+follow later. Each gate is now a data definition (`GalaxyGates.GATES`): faction,
+arena map, Outpost 01 portal, part count and chances, parts operation, alien pool,
+waves, boss, escorts and rewards. Saved progress is per gate. One gate run is open
+on the server at a time, and only its portal appears near Outpost 01. Network schema 22
+adds the Korrath arena and aliens.
+
+The **Korrath** are siege engineers. The occupying aliens drag Korrath gate
+segments through the deeper sectors; the gate leads into the *Korrath Bastion*,
+where a Siegebreaker battlestation is being readied against Outpost 01.
+
+- **Parts:** 24. *Siege Manifest* (Chief Engineer Brell) guarantees a part for
+  each contributed M3 kill; 10 parts complete it for +5 parts, 25,000 CR and 3 RP.
+  Random drops come only from M3 and M4 (8–16%).
+- **Waves:** eight, with Husks (fast) and Bulwarks (heavy). The final wave adds
+  the slow Siegebreaker, which launches two Husks every 25 s; boss waves keep two
+  escorts in reserve for this at every group size.
+
+| Type | Hull / shield | Damage / interval | Credit pool |
+| --- | --- | --- | --- |
+| Husk | 8,000 / 4,000 | 4,000 / 0.8 s | 3,000 |
+| Bulwark | 36,000 / 18,000 | 14,000 / 0.85 s | 15,000 |
+| Siegebreaker | 500,000 / 250,000 | 30,000 / 0.5 s, 270 m | 300,000 |
+
+- **Rewards:** 300,000 CR, 10 research points and 25,000 x4 shots per
+  participant, with a 20% chance of the shop-unavailable SG3N-B00 shield.
+- Lives, countdown, sealed exit, scaling, escorts, preview tools and collapse
+  follow the Vashar rules. The arena is map 5 with a forge-orange backdrop.
+
+The user approved the Korrath concepts and requested Blender models matching
+them on 2026-10-22. Husk, Bulwark and Siegebreaker now use authored gunmetal and
+copper siege hulls with orange furnace cores. The runtime GLBs share 2K PBR maps
+and generate distance LODs on import; their visible diagonals are 12.35 m,
+28.8 m and 108 m respectively. Combat statistics, colliders and waves are
+unchanged. Editable Blender files with packed 4K maps, the concepts, build script,
+construction views and Godot captures live in `korrath-review/README.md` in the
+art archive. Fine details and hidden surfaces interpret the concepts for game
+geometry. All values remain provisional until playtested.
 
 #### First campaign implementation scope
 

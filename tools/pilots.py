@@ -130,18 +130,30 @@ def whole(value: object, low: int, high: int) -> bool:
             and low <= value <= high)
 
 
-# Mirrors GalaxyGates in scripts/galaxy_gates.gd: at most 999 parts, signal progress below 8.
+# Mirrors GalaxyGates in scripts/galaxy_gates.gd: per-gate progress with at most
+# 999 parts and operation progress below each gate's requirement.
+GATE_OPERATION_REQUIRED = {"vashar": 8, "korrath": 10}
+
+
+def gate_collection(data: object) -> object:
+    # The single-gate ledger stored this record directly in equipment.gates.
+    if isinstance(data, dict) and data.keys() == {"parts", "signal", "progress"}:
+        return {"vashar": data}
+    return data
+
+
 def valid_gates(data: object) -> bool:
-    return (isinstance(data, dict) and data.keys() == {"parts", "signal", "progress"}
-            and whole(data["parts"], 0, 999)
-            and data["signal"] in ("available", "active", "done")
-            and whole(data["progress"], 0, 7 if data["signal"] == "active" else 0))
-
-
-def normalize_gates(equipment: dict) -> None:
-    if "gates" in equipment:
-        for field in ("parts", "progress"):
-            equipment["gates"][field] = int(equipment["gates"][field])
+    data = gate_collection(data)
+    if not isinstance(data, dict):
+        return False
+    for gate, state in data.items():
+        if (gate not in GATE_OPERATION_REQUIRED or not isinstance(state, dict)
+                or state.keys() != {"parts", "signal", "progress"}
+                or not whole(state["parts"], 0, 999)
+                or state["signal"] not in ("available", "active", "done")
+                or not whole(state["progress"], 0, GATE_OPERATION_REQUIRED[gate] - 1 if state["signal"] == "active" else 0)):
+            return False
+    return True
 
 
 def valid_cargo(data: object, equipment: dict) -> bool:
@@ -378,7 +390,12 @@ def main() -> None:
                     record["equipment"] = starter_equipment()
                 elif not valid_equipment(record.get("equipment")):
                     parser.error("Invalid equipment; preserve it and recover from backup")
-                normalize_gates(record["equipment"])
+                equipment = record["equipment"]
+                if "gates" in equipment:
+                    equipment["gates"] = gate_collection(equipment["gates"])
+                    for state in equipment["gates"].values():
+                        for field in ("parts", "progress"):
+                            state[field] = int(state[field])
                 if data["version"] < 3:
                     if "cargo" in record:
                         parser.error("Unexpected cargo in legacy ledger; preserve it and recover")

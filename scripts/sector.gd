@@ -395,7 +395,7 @@ func _physics_process(delta: float) -> void:
 		enemy.tick_combat(delta)
 		if enemy.alive:
 			enemy.fly(delta, player if player.alive and player.map_id == enemy.map_id and not SectorMaps.protected(player) and player.position.distance_to(enemy.position) < float(enemy.tuning()["detection"]) else null, STATION_POSITION)
-		elif enemy.map_id != GalaxyGates.MAP:
+		elif not GalaxyGates.is_arena(enemy.map_id):
 			enemy.respawn = maxf(0.0, enemy.respawn - delta)
 			if enemy.respawn <= 0.0:
 				relocate_alien(enemy)
@@ -748,8 +748,10 @@ func activate_map(map: int) -> void:
 	SectorBackdrop.activate(self, map)
 
 
-# Shows the Outpost 01 Vashar Gate only while the server reports an open run.
+# Shows an Outpost 01 galaxy gate only while the server reports its run open.
 func refresh_rift() -> void:
-	var gate := get_node_or_null("Map1Gates/GateToM%d" % (GalaxyGates.MAP + 1)) as Node3D
-	if gate != null:
-		gate.visible = SectorMaps.rift_open
+	for gate_id: String in GalaxyGates.ORDER:
+		var arena: int = GalaxyGates.info(gate_id)["map"]
+		var gate := get_node_or_null("Map1Gates/GateToM%d" % (arena + 1)) as Node3D
+		if gate != null:
+			gate.visible = SectorMaps.open_rift == arena
