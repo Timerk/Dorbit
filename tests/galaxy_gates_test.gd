@@ -81,6 +81,16 @@ func pick_up(server: Sector, client: Sector, drop_id: int) -> void:
 	await settle(0.05)
 
 
+# Places a server-owned box directly, for pickup cases a kill cannot pin down.
+func place_box(server: Sector, map: int, position: Vector3, parts: int, resources: Dictionary = {}) -> int:
+	server.loot.next_id += 1
+	var data := {"map": map, "position": position, "resources": resources, "ttl": ResourceLoot.LIFETIME}
+	if parts > 0:
+		data["parts"] = parts
+	server.loot.change(server.loot.next_id, data)
+	return server.loot.next_id
+
+
 func enter(server: Sector, client: Sector) -> String:
 	var id := client.multiplayer.get_unique_id()
 	await move_to(server, client, 0)
@@ -156,6 +166,43 @@ func run() -> void:
 	combat.collect_loot()
 	await settle(0.05)
 	check(saved(server, pilot)["parts"] > before_shared, "Gate parts go to the in-range pilot running the operation first")
+	# A full stock never destroys parts: the remainder passes on or stays boxed.
+	var partner_key: String = server.session.pilot_ids[partner_id]
+	var before_full := store.pilots.duplicate(true)
+	await move_to(server, pilot, 2)
+	await move_to(server, partner, 2)
+	next = store.pilots.duplicate(true)
+	next[pilot_id]["equipment"]["gates"]["parts"] = GalaxyGates.MAX_PARTS - 1
+	next[partner_key]["equipment"]["gates"] = GalaxyGates.empty()
+	check(store.persist(next), "Seed a nearly full gate-part stock")
+	var spot: Vector3 = server.session.ships[id].position
+	server.session.ships[partner_id].position = spot + Vector3(4, 0, 0)
+	var full_box := place_box(server, 2, spot, 3)
+	combat.collect_loot()
+	await settle(0.05)
+	check(saved(server, pilot)["parts"] == GalaxyGates.MAX_PARTS and saved(server, partner)["parts"] == 2 and not server.loot.drops.has(full_box), "Parts beyond a full stock go to the next pilot in range")
+	next = store.pilots.duplicate(true)
+	next[partner_key]["equipment"]["gates"]["parts"] = GalaxyGates.MAX_PARTS - 1
+	check(store.persist(next), "Leave room for one more part")
+	var first_box := place_box(server, 2, spot, 1)
+	full_box = place_box(server, 2, spot, 1)
+	combat.collect_loot()
+	await settle(0.05)
+	check(saved(server, partner)["parts"] == GalaxyGates.MAX_PARTS and not server.loot.drops.has(first_box) and server.loot.drops.has(full_box) and int(server.loot.drops[full_box]["parts"]) == 1, "Pickup counts parts assigned earlier in the same pass")
+	combat.collect_loot()
+	await settle(0.05)
+	check(server.loot.drops.has(full_box) and int(server.loot.drops[full_box]["parts"]) == 1, "Parts nobody can hold stay in the box")
+	server.loot.change(full_box, {})
+	next = store.pilots.duplicate(true)
+	for key: String in [pilot_id, partner_key]:
+		if before_full[key]["equipment"].has("gates"):
+			next[key]["equipment"]["gates"] = before_full[key]["equipment"]["gates"]
+		else:
+			next[key]["equipment"].erase("gates")
+	check(store.persist(next), "Restore gate-part stocks")
+	# M3 has no gate to Outpost 01; return through M2 like a pilot would.
+	await move_to(server, pilot, 1)
+	await move_to(server, partner, 1)
 	for attempt in range(GalaxyGates.SIGNAL["required"]):
 		if saved(server, pilot)["signal"] != "active":
 			break

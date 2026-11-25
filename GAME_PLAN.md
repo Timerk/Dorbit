@@ -1520,8 +1520,10 @@ two ways:
   12–16% in M3, 16–20% in M4). Home-map and arena aliens carry none.
 
 Parts sit in the normal loot box and take no cargo space. A living pilot within
-pickup range collects all of a box's parts, even with a full hold: pilots running
-the operation come first, otherwise the nearest pilot. Only parts recovered on
+pickup range collects a box's parts, even with a full hold: pilots running
+the operation come first, otherwise the nearest pilot. A pilot takes only what fits
+under the 999-part limit; the rest passes to the next pilot in range or stays in the
+box. Only parts recovered on
 the operation's map advance it; boxes remain shared, as with resources. Gate runs
 are announced by the builder's public pilot label, not the login identity.
 
