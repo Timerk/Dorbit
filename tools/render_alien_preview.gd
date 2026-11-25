@@ -1,7 +1,7 @@
 extends SceneTree
 ## Capture contract/rear previews, or use -- --sector for 25 m / 90 m visibility.
-## -- --outer limits the set to the M2–M4 aliens and -- --vashar to the Vashar Gate aliens.
-## -- --korrath limits the set to the Korrath Gate aliens.
+## -- --outer limits the set to the M2–M4 aliens, and -- --<gate> (for example
+## -- --vashar, -- --korrath or -- --sylith) to that galaxy gate's aliens.
 
 
 func _initialize() -> void:
@@ -11,13 +11,14 @@ func _initialize() -> void:
 func render_preview() -> void:
 	var sector_view := "--sector" in OS.get_cmdline_user_args()
 	var outer_view := "--outer" in OS.get_cmdline_user_args()
-	var vashar_view := "--vashar" in OS.get_cmdline_user_args()
-	var korrath_view := "--korrath" in OS.get_cmdline_user_args()
+	# The first gate named on the command line, derived from the gate definitions.
+	var gate_view := ""
+	for gate: String in GalaxyGates.ORDER:
+		if gate_view.is_empty() and "--" + gate in OS.get_cmdline_user_args():
+			gate_view = gate
 	var kinds: Array = ["Skirmisher", "Raider", "Marauder", "Warden", "Ravager", "Overlord"] if outer_view else Alien.TYPES.keys()
-	if vashar_view:
-		kinds = GalaxyGates.info("vashar")["pool"].keys()
-	elif korrath_view:
-		kinds = GalaxyGates.info("korrath")["pool"].keys()
+	if not gate_view.is_empty():
+		kinds = GalaxyGates.info(gate_view)["pool"].keys()
 	if DisplayServer.get_name() == "headless":
 		push_error("Alien review rendering requires a graphics display.")
 		quit(1)
@@ -74,10 +75,8 @@ func render_preview() -> void:
 	var filename := "alien-visibility-sector.png" if sector_view else "alien-models-godot.png"
 	if outer_view:
 		filename = "outer-" + filename
-	elif vashar_view:
-		filename = "vashar-" + filename
-	elif korrath_view:
-		filename = "korrath-" + filename
+	elif not gate_view.is_empty():
+		filename = gate_view + "-" + filename
 	var error := root.get_texture().get_image().save_png(directory.path_join(filename))
 	print("ALIEN_PREVIEWS ", root.size, " renderer=", RenderingServer.get_video_adapter_name(), " result=", error)
 	quit(error)
