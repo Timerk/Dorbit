@@ -44,6 +44,10 @@ var comm := ""
 # The current transmission as [contact, text] lines for the portrait dialogue box.
 var comm_lines: Array = []
 var comm_time := 0.0
+# Transmissions waiting behind one still on screen or held by a menu, as [text, lines].
+var comm_queue: Array = []
+# Whether the transmission arrived behind a menu and has not been on screen yet.
+var comm_unseen := false
 # Rows of the current step's controls pop-up and whether each has been pressed.
 var tips: Array = []
 var tips_used: Array[bool] = []
@@ -174,10 +178,21 @@ func burst(location: Vector3, radius: float) -> void:
 
 
 func _process(delta: float) -> void:
-	comm_time = maxf(0.0, comm_time - delta)
+	# Hold transmissions while menus cover the HUD, such as a step finished in Skylab.
+	if not sector.paused:
+		comm_time = maxf(0.0, comm_time - delta)
+		comm_unseen = false
+		if comm_time == 0.0 and not comm_queue.is_empty():
+			var queued: Array = comm_queue.pop_front()
+			show_comm(queued[0], queued[1])
+			# Protect it from a same-frame story update until it has been drawn.
+			comm_unseen = true
 	var story := sector.story_state()
 	if story.is_empty():
 		seen_step = -1
+		# A session ended; drop transmissions so the next pilot starts clean.
+		comm_queue = []
+		show_comm("", [])
 		scan_seconds = 0.0
 		tips = []
 		hide_sites()
@@ -239,24 +254,39 @@ func open_tips(story: Dictionary) -> void:
 	tips_linger = -1.0
 
 
+func show_comm(text: String, lines: Array) -> void:
+	comm = text
+	comm_lines = lines
+	comm_time = COMM_SECONDS if not comm.is_empty() else 0.0
+	comm_unseen = sector.paused and not comm.is_empty()
+
+
 func observe(story: Dictionary) -> void:
 	var step := int(story["step"])
 	if step == seen_step:
 		return
-	comm = ""
-	comm_lines = []
+	var text := ""
+	var lines: Array = []
 	if seen_step >= 0 and step == seen_step + 1:
 		var finished: Dictionary = Story.STEPS[seen_step]
-		comm = Story.completion_notice(finished, story)
-		comm_lines = Story.completion_lines(finished, story)
+		text = Story.completion_notice(finished, story)
+		lines = Story.completion_lines(finished, story)
 		if finished["type"] in Story.POSITIONAL and finished["map"] == sector.map_id:
 			burst(Story.site_position(finished), RECORDER_GATE_RADIUS if finished["type"] == "recover" else float(finished["radius"]))
 		SectorVisuals.sound(sector, "purchase", sector.player.position)
 	elif not Story.complete(story):
 		var next := Story.current(story)
-		comm = Story.transmission(next)
-		comm_lines = [[next["contact"], next["briefing"]]]
-	comm_time = COMM_SECONDS if not comm.is_empty() else 0.0
+		text = Story.transmission(next)
+		lines = [[next["contact"], next["briefing"]]]
+	# Steps finished behind a menu, such as Skylab then Research, wait their turn
+	# instead of replacing a transmission the pilot has not seen yet.
+	if comm_time > 0.0 and not text.is_empty() and (comm_unseen or not comm_queue.is_empty()):
+		comm_queue.append([text, lines])
+	elif text.is_empty() and (comm_unseen or not comm_queue.is_empty()):
+		pass  # Nothing new to say, such as a skip that completes the story; keep unseen ones.
+	else:
+		comm_queue = []
+		show_comm(text, lines)
 	open_tips(story)
 	seen_step = step
 	scan_seconds = 0.0
