@@ -185,10 +185,14 @@ func _process(delta: float) -> void:
 		if comm_time == 0.0 and not comm_queue.is_empty():
 			var queued: Array = comm_queue.pop_front()
 			show_comm(queued[0], queued[1])
+			# Protect it from a same-frame story update until it has been drawn.
+			comm_unseen = true
 	var story := sector.story_state()
 	if story.is_empty():
 		seen_step = -1
+		# A session ended; drop transmissions so the next pilot starts clean.
 		comm_queue = []
+		show_comm("", [])
 		scan_seconds = 0.0
 		tips = []
 		hide_sites()
@@ -278,6 +282,8 @@ func observe(story: Dictionary) -> void:
 	# instead of replacing a transmission the pilot has not seen yet.
 	if comm_time > 0.0 and not text.is_empty() and (comm_unseen or not comm_queue.is_empty()):
 		comm_queue.append([text, lines])
+	elif text.is_empty() and (comm_unseen or not comm_queue.is_empty()):
+		pass  # Nothing new to say, such as a skip that completes the story; keep unseen ones.
 	else:
 		comm_queue = []
 		show_comm(text, lines)
