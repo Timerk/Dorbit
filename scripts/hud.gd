@@ -56,7 +56,8 @@ var story_portrait: TextureRect
 var story_tip: Label
 var story_deliver: Button
 var story_skip: Button
-var story_skip_armed := false
+# The chapter the armed skip confirmation applies to, or -1 when unarmed.
+var story_skip_chapter := -1
 # The flight card's hint height changes only with the step or the bindings.
 var story_hint := ""
 var story_hint_key := Vector2i(-2, -1)
@@ -213,7 +214,7 @@ func filter_contracts(active_only: bool) -> void:
 
 func show_story() -> void:
 	story_view = true
-	story_skip_armed = false
+	story_skip_chapter = -1
 	story_selected = mini(int(sector.story_state().get("step", 0)), Story.STEPS.size() - 1)
 	update_contract_panel()
 	reveal_story()
@@ -229,7 +230,7 @@ func reveal_story() -> void:
 
 func select_story(index: int) -> void:
 	story_selected = index
-	story_skip_armed = false
+	story_skip_chapter = -1
 	update_contract_panel()
 
 
@@ -238,12 +239,17 @@ func act_on_story(action: String) -> void:
 	var button := story_deliver if action == "story_deliver" else story_skip
 	if not contract_panel.visible or not story_view or not button.visible or button.disabled:
 		return
-	if action == "story_skip" and not story_skip_armed:
-		story_skip_armed = true
+	if action == "story_deliver":
+		sector.session.combat.request_station(action, "")
+		return
+	# A confirmation armed for an earlier chapter only re-arms for the current one.
+	var chapter := Story.chapter(int(sector.story_state().get("step", 0)))
+	if story_skip_chapter != chapter:
+		story_skip_chapter = chapter
 		update_contract_panel()
 		return
-	story_skip_armed = false
-	sector.session.combat.request_station(action, "")
+	story_skip_chapter = -1
+	sector.session.combat.request_station(action, str(chapter))
 
 
 func act_on_contract(action: String) -> void:
@@ -270,7 +276,7 @@ func toggle_contracts() -> void:
 	# Open on the story when the current step is handed in at this board.
 	if Story.current(sector.story_state()).get("type", "") == "deliver":
 		show_story()
-	story_skip_armed = false
+	story_skip_chapter = -1
 	contract_panel.scale = Vector2.ONE
 	StationUi.frame(contract_panel, Vector2(1150, 690))
 	contract_panel.show()
@@ -351,6 +357,8 @@ func update_story_panel(blocker: String) -> void:
 	var chapter := Story.chapter(reached)
 	var start := Story.chapter_start(chapter)
 	var finish := Story.chapter_end(chapter)
+	if story_skip_chapter != chapter:
+		story_skip_chapter = -1
 	if reached != story_seen:
 		story_seen = reached
 		story_selected = mini(reached, Story.STEPS.size() - 1)
@@ -402,7 +410,7 @@ func update_story_panel(blocker: String) -> void:
 			status = "Need %s in your active ship's cargo." % needed
 	story_deliver.disabled = not status.is_empty() or pending
 	story_skip.visible = not Story.complete(story)
-	story_skip.text = "CONFIRM SKIP / PAY REMAINING REWARDS" if story_skip_armed else "SKIP " + str(Story.CHAPTERS[chapter]["label"]).to_upper()
+	story_skip.text = "CONFIRM SKIP / PAY REMAINING REWARDS" if story_skip_chapter == chapter else "SKIP " + str(Story.CHAPTERS[chapter]["label"]).to_upper()
 	story_skip.disabled = not blocker.is_empty() or pending
 	contract_status.text = status.replace("to repair.", "to manage quests.").replace("Repairs available", "Quest actions available")
 	contract_status.visible = not status.is_empty()

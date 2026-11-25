@@ -259,7 +259,7 @@ static func research_reset(pilot: Dictionary, subject: String, ship: String, slo
 
 
 static func story(pilot: Dictionary, action: String, subject: String, ship: String, slot: String) -> String:
-	if not subject.is_empty() or not ship.is_empty() or not slot.is_empty():
+	if (action == "story_deliver" and not subject.is_empty()) or not ship.is_empty() or not slot.is_empty():
 		return "Invalid story request."
 	var equipment: Dictionary = pilot["equipment"]
 	var state := Story.state(equipment)
@@ -267,6 +267,9 @@ static func story(pilot: Dictionary, action: String, subject: String, ship: Stri
 	var reward := Story.skip(state)
 	if step.is_empty():
 		return "Story already complete."
+	# A skip names the chapter its confirmation was armed for, so a stale one cannot skip the next.
+	if action == "story_skip" and subject != str(Story.chapter(int(state["step"]))):
+		return "Story chapter changed. Review the current chapter before skipping."
 	if action == "story_deliver":
 		if step["type"] != "deliver":
 			return "Nothing to deliver for this step."

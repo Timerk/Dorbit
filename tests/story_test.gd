@@ -310,15 +310,17 @@ func run() -> void:
 	research = Research.state(store.pilots[partner_id]["equipment"])["points"]
 	partner.hud.act_on_story("story_skip")
 	await settle(0.1)
-	check(saved(server, partner) == Story.empty() and partner.hud.story_skip.text.begins_with("CONFIRM"), "The first skip press only asks for confirmation")
-	partner.hud.act_on_story("story_skip")
+	check(saved(server, partner) == Story.empty() and partner.hud.story_skip.text.begins_with("CONFIRM") and partner.hud.story_skip_chapter == 0, "The first skip press only asks for confirmation")
+	# The prologue finishes before the armed confirmation is pressed, as when a hunt
+	# completes Standing Orders; the confirmation must not carry over to chapter 1.
+	partner.session.combat.request_station("story_skip", "0")
 	await settle(0.1)
 	await replicate(server)
 	check(saved(server, partner) == {"step": 10, "progress": 0} and store.pilots[partner_id]["credits"] == credits + 17300 and Research.state(store.pilots[partner_id]["equipment"])["points"] == research + 4, "Skipping completes the prologue and pays its remaining rewards")
 	check(partner.session.combat.station_message == "Prologue skipped. +17,300 CR and +4 research points.", "The skip confirmation names the prologue")
 	await process_frame
 	partner.hud.update_contract_panel()
-	check(partner.hud.story_skip.text == "SKIP CHAPTER 1" and partner.hud.contract_slots.text == "Operation Groundwork / 0 of 6 complete", "The Story tab moves on to chapter 1")
+	check(partner.hud.story_skip_chapter == -1 and partner.hud.story_skip.text == "SKIP CHAPTER 1" and partner.hud.contract_slots.text == "Operation Groundwork / 0 of 6 complete", "The Story tab moves on to chapter 1")
 	check(partner.hud.story_headers[0].visible and partner.hud.story_choices[9].visible and partner.hud.story_choices[10].text.begins_with("1. Industry Online"), "Prologue steps stay listed and chapter 1 numbers its own steps")
 	check(partner.hud.story_selected == 10 and partner.hud.contract_title.text == "Industry Online" and partner.hud.contract_reward.text.ends_with("\nSkylab    Prometid x50, Duranium x50"), "Progress selects the new current step and shows its lab stock reward")
 	await process_frame
@@ -326,15 +328,23 @@ func run() -> void:
 	var list := partner.hud.story_scroll.get_global_rect()
 	check(list.encloses(partner.hud.story_choices[10].get_global_rect()) and list.encloses(partner.hud.story_headers[1].get_global_rect()), "The Story list scrolls to the new chapter and its current step")
 	await capture(partner, "story-board-chapter-1")
+	credits = store.pilots[partner_id]["credits"]
+	partner.hud.story_skip_chapter = 0
+	partner.hud.act_on_story("story_skip")
+	await settle(0.1)
+	check(saved(server, partner) == {"step": 10, "progress": 0} and partner.hud.story_skip_chapter == 1 and partner.hud.story_skip.text.begins_with("CONFIRM"), "A confirmation armed for the prologue only re-arms for chapter 1")
+	partner.session.combat.request_station("story_skip", "0")
+	await settle(0.1)
+	check(saved(server, partner) == {"step": 10, "progress": 0} and store.pilots[partner_id]["credits"] == credits and partner.session.combat.station_message.begins_with("Story chapter changed."), "The server rejects a skip named for an earlier chapter")
 	var stock: Dictionary = store.pilots[partner_id]["skylab"]["inventory"].duplicate()
-	partner.session.combat.request_station("story_skip", "")
+	partner.hud.act_on_story("story_skip")
 	await settle(0.1)
 	await replicate(server)
 	var lab: Dictionary = store.pilots[partner_id]["skylab"]["inventory"]
-	check(Story.complete(saved(server, partner)) and store.pilots[partner_id]["credits"] == credits + 28800 and int(lab["prometid"]) >= int(stock["prometid"]) + 50 and int(lab["duranium"]) >= int(stock["duranium"]) + 50, "Skipping chapter 1 pays its credits and lab stock")
-	partner.session.combat.request_station("story_skip", "")
+	check(Story.complete(saved(server, partner)) and store.pilots[partner_id]["credits"] == credits + 11500 and int(lab["prometid"]) >= int(stock["prometid"]) + 50 and int(lab["duranium"]) >= int(stock["duranium"]) + 50, "Skipping chapter 1 pays its credits and lab stock")
+	partner.session.combat.request_station("story_skip", "1")
 	await settle(0.1)
-	check(store.pilots[partner_id]["credits"] == credits + 28800 and partner.session.combat.station_message == "Story already complete.", "A completed story cannot be skipped again")
+	check(store.pilots[partner_id]["credits"] == credits + 11500 and partner.session.combat.station_message == "Story already complete.", "A completed story cannot be skipped again")
 	server.session.disconnect_session("Restart")
 	await settle(0.3)
 	check(server.session.host(test_port(CONTRACT_PORT)) == OK, "Server reopens the ledger")
