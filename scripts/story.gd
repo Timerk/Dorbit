@@ -2,9 +2,15 @@ class_name Story
 extends RefCounted
 ## Personal story chapters. The server advances one step at a time and saves the
 ## pilot's position in the chain with any step reward in the same transaction.
-## Sites, quantities and rewards are provisional playtesting values.
+## Chapters are consecutive runs of STEPS, so a pilot who finished one chapter is
+## already at the first step of the next. Sites, quantities and rewards are
+## provisional playtesting values.
 
-const CHAPTER := "Operation Foothold"
+# Each chapter starts at `start` and runs to the next chapter's start.
+const CHAPTERS: Array[Dictionary] = [
+	{"title": "Operation Foothold", "label": "Prologue", "start": 0},
+	{"title": "Operation Groundwork", "label": "Chapter 1", "start": 10},
+]
 const CONTACTS := {
 	"vance": {"name": "Commander Rhea Vance", "call": "VANCE"},
 	"brell": {"name": "Chief Engineer Tomas Brell", "call": "BRELL"},
@@ -13,6 +19,10 @@ const CONTACTS := {
 # Objective types: reach/recover complete inside the radius, scan needs `required`
 # seconds inside it, kill counts qualifying kills of `kind`, collect counts fresh loot
 # units, deliver consumes cargo at the station and contract needs any active hunt.
+# lab_upgrade counts Skylab upgrades started on a `kind` module (basic or collector), lab_ship counts
+# dispatched Skylab shipments and research counts learned skill levels.
+# `lab` rewards add refined stock to Skylab, up to its storage capacity; only
+# station and Skylab steps pay them, inside the same transaction.
 # Hints name input actions in braces; clients substitute the current bindings.
 const STEPS: Array[Dictionary] = [
 	{
@@ -105,6 +115,60 @@ const STEPS: Array[Dictionary] = [
 		"briefing": "We have a foothold, pilot, and you helped build it. Command wants this sector cleared before we push to the outer gates. Take a hunting contract from the board. Those are your standing orders.",
 		"done": "Welcome to the reclamation, pilot. Vance out.",
 	},
+	{
+		"id": "industry_online", "title": "Industry Online", "contact": "brell", "type": "lab_upgrade",
+		"kind": "basic", "required": 1,
+		"credits": 1000, "research": 0, "lab": {"prometid": 50, "duranium": 50},
+		"objective": "Start a Basic module upgrade in Skylab",
+		"hint": "Press {pause_game} and open SKYLAB, in flight or docked. Select the Basic module and press Build on its Upgrade tab.",
+		"briefing": "Brell again. A beacon is not a base. Outpost 01 brought a Skylab industrial platform: collectors pull raw ore out of the debris around us and refineries process it, around the clock, even while you are off shift. Everything is still on factory settings, and no module can outgrow the Basic core. Open Skylab and start a Basic upgrade.",
+		"done": "Core upgrade is underway; it finishes on its timer. Meanwhile, collectors feed the refineries: Prometium and Endurium become Prometid, Endurium and Terbium become Duranium. I ran your first batch through the line myself.",
+	},
+	{
+		"id": "countermeasures", "title": "Countermeasures", "contact": "sato", "type": "research",
+		"required": 1,
+		"credits": 2000, "research": 1,
+		"objective": "Learn a research skill level",
+		"hint": "At Outpost 01, press {pause_game} and open RESEARCH. Select any unlocked skill and learn it. Each level costs a research point plus refined Skylab stock.",
+		"briefing": "Sato here. I have been through the garrison recorder and the Sentinel wreck you left me. Their shields adapt to what hits them. Field intelligence becomes research points, and with Brell's refined stock we can build countermeasures into your ship. Bring the ship home and open the Research console. Pick whichever skill suits you.",
+		"done": "Installed and calibrated, and it applies the moment you launch. Higher levels and later skills need Promerium and Seprom, which Brell's deeper refineries make from Prometid and Duranium. Hunts and operations like this one earn more points.",
+	},
+	{
+		"id": "field_test", "title": "Field Test", "contact": "vance", "type": "kill",
+		"kind": "Scout", "required": 3,
+		"credits": 2500, "research": 0,
+		"objective": "Destroy Scouts with your upgraded ship",
+		"hint": "{cycle_target} locks a target and {fire} toggles lasers. Kills for a hunting contract count here too.",
+		"briefing": "Vance. Sato says your ship has new tricks. A lab bench is not a battlefield. Take it out and prove it on three Scouts.",
+		"done": "Confirmed kills. Command will want more of that.",
+	},
+	{
+		"id": "raw_supply", "title": "Raw Supply", "contact": "brell", "type": "lab_upgrade",
+		"kind": "collector", "required": 1,
+		"credits": 1500, "research": 0,
+		"objective": "Start an ore collector upgrade in Skylab",
+		"hint": "In SKYLAB, select a Prometium, Endurium or Terbium collector and press Build. If Basic is still building, wait for its timer or press Finish now.",
+		"briefing": "Brell. The Basic core should be finished by now, which lifts the ceiling for everything else. More raw ore means faster refining, so raise one of the collectors.",
+		"done": "Collector upgrade is building. Each level costs credits and raw ore and takes longer than the last, so plan ahead.",
+	},
+	{
+		"id": "supply_line", "title": "Supply Line", "contact": "brell", "type": "lab_ship",
+		"required": 1,
+		"credits": 1500, "research": 0,
+		"objective": "Send a Skylab shipment to your ship",
+		"hint": "In SKYLAB, select Transport, enter an amount of any stock and press Send. It lands in your active ship's cargo, so leave room.",
+		"briefing": "One more thing. Stock in the lab does you no good out there. The Transport module ships anything in storage, raw or refined, straight into your hold. Send yourself a load: sell it, refine it aboard or hand it in for jobs like mine.",
+		"done": "Shipment is on its way. It arrives in the ship you sent it from, even if you switch hulls.",
+	},
+	{
+		"id": "shield_samples", "title": "Shield Samples", "contact": "sato", "type": "kill",
+		"kind": "Sentinel", "required": 1,
+		"credits": 3000, "research": 2,
+		"objective": "Destroy a Sentinel",
+		"hint": "Sentinels carry strong shields. Combine lasers with {rocket} rockets; your research applies in every fight.",
+		"briefing": "One more reading. I need to watch a Sentinel shield collapse against your countermeasures. Bring one down and my sensors will do the rest.",
+		"done": "There it is. Their shield pattern shifts with every hit, but it is a pattern. With enough research we can stay ahead of it.",
+	},
 ]
 # Controls taught by each step's pop-up: input actions shown as key caps, then the
 # explanation. A row is ticked when the pilot presses any of its actions.
@@ -154,6 +218,33 @@ const CONTROLS := {
 		[["contracts"], "Open Quests and accept a hunt"],
 		[["jump_gate"], "Jump through a gate (later)"],
 	],
+	"industry_online": [
+		[["pause_game"], "Menu, then SKYLAB"],
+		[["contracts"], "Quests: reread the briefing"],
+	],
+	"countermeasures": [
+		[["sector_map"], "Map: select Outpost 01"],
+		[["autopilot"], "Autopilot home"],
+		[["pause_game"], "Menu, then RESEARCH"],
+	],
+	"raw_supply": [
+		[["pause_game"], "Menu, then SKYLAB"],
+		[["contracts"], "Quests: reread the briefing"],
+	],
+	"field_test": [
+		[["cycle_target"], "Lock an alien"],
+		[["fire"], "Toggle automatic lasers"],
+		[["contracts"], "Take a hunt for the same kills"],
+	],
+	"supply_line": [
+		[["pause_game"], "Menu, then SKYLAB > Transport"],
+		[["station_shop"], "Shop: sell delivered cargo"],
+	],
+	"shield_samples": [
+		[["rocket"], "Fire a single rocket"],
+		[["launcher"], "Load, then fire Hellstorm"],
+		[["repair"], "Repair between fights"],
+	],
 }
 const POSITIONAL := ["reach", "scan", "recover"]
 const BEACON_STEP := 8
@@ -197,18 +288,76 @@ static func advance(story: Dictionary, type: String, amount: int = 1, kind: Stri
 		return {}
 	var progress := int(story["progress"]) + amount
 	if progress < int(step["required"]):
-		return {"story": {"step": story["step"], "progress": progress}, "credits": 0, "research": 0, "finished": {}}
-	return {"story": {"step": int(story["step"]) + 1, "progress": 0}, "credits": step["credits"], "research": step["research"], "finished": step}
+		return {"story": {"step": story["step"], "progress": progress}, "credits": 0, "research": 0, "lab": {}, "finished": {}}
+	return {"story": {"step": int(story["step"]) + 1, "progress": 0}, "credits": step["credits"], "research": step["research"], "lab": step.get("lab", {}), "finished": step}
 
 
-## Remaining step rewards for pilots who skip the chapter.
+## Remaining step rewards of the current chapter for pilots who skip it.
 static func skip(story: Dictionary) -> Dictionary:
 	var credits := 0
 	var research := 0
-	for index in range(int(story["step"]), STEPS.size()):
+	var lab := {}
+	var finish := chapter_end(chapter(int(story["step"])))
+	for index in range(int(story["step"]), finish):
 		credits += int(STEPS[index]["credits"])
 		research += int(STEPS[index]["research"])
-	return {"story": {"step": STEPS.size(), "progress": 0}, "credits": credits, "research": research, "finished": {}}
+		for resource: String in STEPS[index].get("lab", {}):
+			lab[resource] = int(lab.get(resource, 0)) + int(STEPS[index]["lab"][resource])
+	return {"story": {"step": finish, "progress": 0}, "credits": credits, "research": research, "lab": lab, "finished": {}}
+
+
+## The chapter containing a step index; a finished story belongs to the last chapter.
+static func chapter(index: int) -> int:
+	var found := 0
+	for number in CHAPTERS.size():
+		if int(CHAPTERS[number]["start"]) <= mini(index, STEPS.size() - 1):
+			found = number
+	return found
+
+
+static func chapter_start(number: int) -> int:
+	return CHAPTERS[number]["start"]
+
+
+static func chapter_end(number: int) -> int:
+	return STEPS.size() if number + 1 >= CHAPTERS.size() else int(CHAPTERS[number + 1]["start"])
+
+
+## Pay an `advance` or `skip` result into a copied pilot record and save the new
+## position. Credits saturate at the wallet cap; lab stock stops at storage capacity.
+static func pay(pilot: Dictionary, result: Dictionary) -> void:
+	pilot["credits"] = mini(PilotStore.MAX_CREDITS, int(pilot["credits"]) + int(result["credits"]))
+	Research.add_points(pilot["equipment"], result["research"])
+	var lab: Dictionary = pilot["skylab"]
+	var capacities := Skylab.capacities(lab)
+	for resource: String in result["lab"]:
+		var stock := int(lab["inventory"][resource])
+		lab["inventory"][resource] = maxi(stock, mini(capacities[resource], stock + int(result["lab"][resource])))
+	pilot["equipment"]["story"] = result["story"]
+
+
+## Count a station or Skylab event inside the caller's transaction.
+static func record(pilot: Dictionary, type: String, kind: String = "") -> void:
+	var result := advance(state(pilot["equipment"]), type, 1, kind)
+	if not result.is_empty():
+		pay(pilot, result)
+
+
+## The Skylab command that just succeeded, as a story event.
+static func record_lab(pilot: Dictionary, action: String, payload: Dictionary) -> void:
+	var module: Variant = payload.get("module", "")
+	if action in ["upgrade", "build_instant"]:
+		record(pilot, "lab_upgrade", "collector" if Skylab.COLLECTORS.has(module) else str(module))
+	elif action in ["ship", "ship_instant"]:
+		record(pilot, "lab_ship")
+
+
+## A confirmation suffix when a transaction also finished a story step.
+static func progress_notice(previous: Dictionary, story: Dictionary) -> String:
+	if previous.is_empty() or int(story["step"]) != int(previous["step"]) + 1:
+		return ""
+	var finished: Dictionary = STEPS[int(previous["step"])]
+	return " %s complete: %s." % [finished["title"], reward_text(finished["credits"], finished["research"], finished.get("lab", {}))]
 
 
 static func site(story: Dictionary, map: int) -> Dictionary:
@@ -223,7 +372,7 @@ static func site_position(step: Dictionary) -> Vector3:
 static func objective(story: Dictionary, scan_seconds: float = 0.0) -> String:
 	var step := current(story)
 	if step.is_empty():
-		return "Prologue complete."
+		return "Story complete."
 	var progress := float(story["progress"])
 	if step["type"] == "scan":
 		progress = minf(scan_seconds, step["required"])
@@ -238,9 +387,10 @@ static func transmission(step: Dictionary, text_key: String = "briefing") -> Str
 	return "%s: %s" % [CONTACTS[step["contact"]]["call"], step[text_key]]
 
 
-static func reward_text(credits: int, research: int) -> String:
+static func reward_text(credits: int, research: int, lab: Dictionary = {}) -> String:
 	var text := "+%s CR" % StationShop.credits_text(credits)
-	return text + (" and +%d research points" % research if research > 0 else "")
+	text += (" and +%d research points" % research) if research > 0 else ""
+	return text + (" and %s in Skylab" % CargoResources.describe(lab) if not lab.is_empty() else "")
 
 
 ## Transmission after a completed step: its closing line, reward and the next briefing.
@@ -253,10 +403,13 @@ static func completion_notice(finished: Dictionary, story: Dictionary) -> String
 
 ## The same transmission as [contact, text] lines, one per speaker.
 static func completion_lines(finished: Dictionary, story: Dictionary) -> Array:
-	var closing := "%s %s." % [finished["done"], reward_text(finished["credits"], finished["research"])]
+	var closing := "%s %s." % [finished["done"], reward_text(finished["credits"], finished["research"], finished.get("lab", {}))]
 	var next := current(story)
+	var step := int(story["step"])
+	if next.is_empty() or step == chapter_start(chapter(step)):
+		closing += " %s complete." % CHAPTERS[chapter(step - 1)]["title"]
 	if next.is_empty():
-		return [[finished["contact"], closing + " %s complete." % CHAPTER]]
+		return [[finished["contact"], closing]]
 	if next["contact"] == finished["contact"]:
 		return [[finished["contact"], closing + "\n" + next["briefing"]]]
 	return [[finished["contact"], closing], [next["contact"], next["briefing"]]]

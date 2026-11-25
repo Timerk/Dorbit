@@ -1,6 +1,6 @@
 # Dorbit game requirements and development plan
 
-Status: Milestones 1 and 2 accepted after user playtesting, including internet combat, rewards, death, repairs, health synchronization and good observed performance with five clients, including a laptop below the original reference hardware. Milestone 3 now includes the dedicated Linux server, persistent pilot progression, ship and equipment purchases, hunting contracts, Skylab industry and research; the first connected-map expansion is also implemented. Current saves use schema 8 with the combat journal, and the network uses schema 19. Repeat-session progression and ten-player performance still need representative playtesting; combat and economy balance remain provisional.
+Status: Milestones 1 and 2 accepted after user playtesting, including internet combat, rewards, death, repairs, health synchronization and good observed performance with five clients, including a laptop below the original reference hardware. Milestone 3 now includes the dedicated Linux server, persistent pilot progression, ship and equipment purchases, hunting contracts, Skylab industry and research; the first connected-map expansion is also implemented. Current saves use schema 8 with the combat journal, and the network uses schema 21. Repeat-session progression and ten-player performance still need representative playtesting; combat and economy balance remain provisional.
 
 This document records the planning discussion. Proposed values and open questions are marked separately so they can be adjusted through playtesting.
 
@@ -182,8 +182,13 @@ x1, x2, x3, x4, R-310, ECO-10, single-rocket fire, Hellstorm load/fire, unload a
 one empty slot. Keys belong to slot positions and are rebindable in Controls,
 using the existing conflict-swap behavior. Migrating older device preferences
 preserves previously customized flight bindings, swapping a conflicting new slot
-to the flight action's former default key. Ammo slots select ammo without starting
-fire; Space retains laser auto-fire and F/G retain their rebindable rocket actions.
+to the flight action's former default key. Ammo slots select ammo. The user
+requested DarkOrbit-style attacks from the bar: with an attackable alien locked,
+a laser ammo slot also starts automatic laser fire and a single-rocket slot also
+fires one rocket of that type. Without a target, or with a returning alien, they
+only select ammo. Hellstorm ammo slots stay select-only because switching
+launcher ammo unloads the launcher. Space retains its laser auto-fire toggle and
+F/G retain their rebindable rocket actions.
 
 A collapsible picker provides Lasers, Rockets, Hellstorm and Extras categories.
 Its `+` button opens customization directly during flight without entering HUD
@@ -231,7 +236,7 @@ Alien feedback integration retains the per-alien reward-share calculation and ha
 
 The October combat visual rework uses procedural additive shaders in the existing Compatibility renderer, without post-processing bloom or imported effect assets. The ordinary effect budget remains 64 roots, with a destruction reserve up to 80; each root owns a fixed number of short-lived meshes. Incoming shot endpoints supply cosmetic contact direction and surface placement. If a health snapshot arrives before its unreliable laser cue, the hit falls back to the camera-facing side. Shot validation, damage and cooldowns are unchanged. Glow strength, shield radius and timing remain visual playtesting settings.
 
-Following playtesting, the user requested larger destruction effects that scale to the destroyed ship and reveal loot afterward. Blasts now last 1.2 seconds and scale flash, expansion, flare and debris to the modeled bounding diameter. Scouts are smaller than Sentinels and Heavies; player hulls use their catalog visual diameter (3.5 m for Phoenix, 7 m by default). The server sends the visual diameter in the reliable destruction cue, without creating meshes. Matching updated client/server builds are required by the compatibility handshake. The loot box and its HUD marker remain hidden until all local explosion effects at that wreck have expired. Loot state, expiry, collection and rewards remain authoritative and are not delayed.
+Following playtesting, the user requested larger destruction effects that scale to the destroyed ship and reveal loot afterward. Blasts now last 1.2 seconds and scale flash, expansion, flare and debris to the modeled bounding diameter. Scouts are smaller than Sentinels and Heavies; player hulls use their catalog visual diameter (3.5 m for Phoenix, 7 m by default). The server sends the visual diameter in the reliable destruction cue, without creating meshes. Matching updated client/server builds are required by the compatibility handshake. The glowing loot box remains hidden until all local explosion effects at that wreck have expired. Resource boxes have no HUD marker or caption. Loot state, expiry, collection and rewards remain authoritative and are not delayed.
 
 The rendered replay covers click/Tab selection, fire-state reasons using real collision geometry, shield/hull hits, rewards and return/repair. Two processes verify 38/37-credit cooperative shares. A ten-pilot presentation fixture checks bounded effects and crowded labels; it is not a multi-alien or network capacity benchmark. See [README.md](README.md#feedback-validation) for evidence and limits.
 
@@ -443,7 +448,42 @@ The first Milestone 3 equipment slice added fittings for the Liberator starter. 
 - Fitting changes never repair hull, refill shields or boost energy, or reset weapon cooldowns. Added shield capacity starts empty and recovers through the normal shield regeneration rules. Removing capacity discards excess charge.
 - The server commits a purchase's credit deduction, new item and request sequence together. Successful requests cannot run again, even after restart. A new intentional purchase uses the next sequence. Inventory and fittings survive death, reconnects and server restarts.
 - Equipment purchases have an editable quantity with minus/plus buttons that change it by one, defaulting to one when selecting another model. The shop shows the batch total and remaining balance. Each request buys 1–999 items into storage as one saved transaction; insufficient funds reject the entire batch. Ships remain limited to one owned hull per model. Batch purchases were introduced in network schema 10 (current is 19), requiring matching clients and servers; save schema 5 introduced resource boosts (current is 8).
-- No equipment selling, trading, rarity, equipment leveling, loot acquisition or assembly are included. Resource cargo and sales are described below.
+- Direct player trading is described below. Equipment selling to the station, rarity, equipment leveling, loot acquisition and assembly remain outside this slice. Resource cargo and sales are described below.
+
+### Direct player trading
+
+On 2026-10-21 the user requested trading inventory items directly with other
+players. This Milestone 3 addition exchanges stored equipment and credits at
+Outpost 01. Open Hangar and choose Player trade, select an available pilot and
+send an invitation. The recipient opens the same window and accepts. Each pilot
+can offer up to twelve unequipped items and an integer credit amount, including
+one-sided gifts. Ships, fitted equipment, resource cargo, ammunition, research
+and Skylab stock are outside this first slice. Starter equipment can be traded
+after removal; pilots can fly with empty fittings and buy replacements normally.
+
+Both pilots review the server's offers and confirm the current offer version.
+Local edits require Update offer before confirmation. Updating either offer
+clears both confirmations; delayed confirmations cannot accept changed terms.
+After confirming, that pilot's editors lock; Cancel withdraws the trade, while a
+partner's offer update unlocks both sides for another review.
+The server checks ownership, quantities, credit limits, the reviewed inventories
+and both pilots' station eligibility. Both must remain alive on M1, within 120 m
+of Outpost 01, moving at most 8 m/s and five seconds clear of damage. Docked
+preflight pilots can trade. Offers go only to the two participants, with the
+counterparty seeing only offered equipment and credits.
+
+The final confirmation saves both wallets, both inventories and both request
+revisions together before publishing success. Incoming equipment gets a new
+recipient-local ID and retains its instance settings. The existing save schema 8
+needs no migration. New trade RPC signatures change the protocol fingerprint,
+requiring matching client/server builds. Cancelling, closing the trade window,
+disconnecting, changing ship life or station eligibility, or changing an
+inventory cancels the exchange without transferring anything. Invitations and
+offers expire after two minutes without accepted activity, and are discarded on
+server restart. Completed trades survive reconnects and restarts; duplicate
+confirmations cannot repeat them. Failed persistence stops progression under the
+existing save-failure policy. The item cap, station-only restriction and timeout
+remain playtesting settings.
 
 ### Extras equipment
 
@@ -519,7 +559,7 @@ Fitting never repairs or refills hull, shield or boost energy.
 
 Items and per-item automation settings survive death, reconnect and server restart
 in the current save schema 8 without an extras starter grant or extra-specific migration. Older binaries cannot read
-new extra model IDs: back up before introducing these items. These extras were introduced in network schema 16; current schema 19
+new extra model IDs: back up before introducing these items. These extras were introduced in network schema 16; current schema 21
 requires matching clients and servers. Original generated images and their exact
 prompts are under `assets/ui/extras`; prices, repair gates and automation behavior
 still need user playtesting.
@@ -668,7 +708,7 @@ The same resource adds rounds or duration without changing its percentage. A dif
 
 The user chose timers that count only while online. They count with that hull active, including station menus and rescue; inactive hulls and disconnected pilots retain their time. The server checkpoints durations every five seconds and flushes them on disconnect, shutdown and successful station actions. Abrupt termination can restore up to five seconds of unused duration. Weapon-round consumption saves before damage, so consumed rounds cannot return after restart.
 
-The user requested ship refining anywhere because its ingredients come from the active ship's cargo. Refining is available outside outpost range, while moving and immediately after damage. It still requires a connected living ship, the current ship life, sufficient ingredients, successful persistence and sequence protection. The Update tab retains station service checks for equipment boosts. Save schema 5 adds validated per-ship boost reserves and migrates schemas 1–4 while preserving progression; provisioning and credential rotation preserve boosts. Rollback needs a pre-migration backup. These resource actions were introduced in network schema 10; current schema 19 requires matching clients and servers. Offline preview exposes both tabs with resource actions disabled. Balance and timer feel need human playtesting; Rocket weapons and Skylab are implemented below.
+The user requested ship refining anywhere because its ingredients come from the active ship's cargo. Refining is available outside outpost range, while moving and immediately after damage. It still requires a connected living ship, the current ship life, sufficient ingredients, successful persistence and sequence protection. The Update tab retains station service checks for equipment boosts. Save schema 5 adds validated per-ship boost reserves and migrates schemas 1–4 while preserving progression; provisioning and credential rotation preserve boosts. Rollback needs a pre-migration backup. These resource actions were introduced in network schema 10; current schema 21 requires matching clients and servers. Offline preview exposes both tabs with resource actions disabled. Balance and timer feel need human playtesting; Rocket weapons and Skylab are implemented below.
 
 ### Persistent Skylab industry
 
@@ -724,7 +764,7 @@ Drobit choices requiring playtesting. Premium is an optional operator-set durati
 The historical save-schema-7 migration preserved versions 1–6 before admission, including both earlier
 ammunition/boost and industry layouts. Legacy industry wallets convert once at
 100 credits per unit; active/queued robots retain their lifetime.
-These changes were introduced in network schema 16; current schema 19 requires matching client/server builds. See [implementation policies,
+These changes were introduced in network schema 16; current schema 21 requires matching client/server builds. See [implementation policies,
 rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot's
 454/870 power budget and exact inventories/capacities remain a separate debug fixture.
 
@@ -733,8 +773,9 @@ rounding, operation and remaining balance gaps](docs/skylab.md). The screenshot'
 The user requested a personal skill tree on 2026-10-17 and chose the starting
 rules below. It is the first slice of the personal research proposed for the
 reclamation campaign in [PR #76](https://github.com/Timerk/Dorbit/pull/76). Story
-intelligence quests can award research points once they exist; until then,
-hunting contracts award them.
+steps and hunting contracts award research points; chapter 1,
+[Operation Groundwork](#implemented-chapter-1-operation-groundwork), teaches
+Skylab and the first research level.
 
 A Research console page shows three rows. Each skill has five levels, and each
 level costs one research point plus refined Skylab stock. A skill unlocks once
@@ -775,7 +816,7 @@ Cargo Compression capacity are refused.
 Learning and resetting use station service rules and the economy request
 sequence; research changes apply immediately to the flying ship. Research lives in
 the pilot's saved equipment record, absent meaning nothing researched, so save
-schema 8 is unchanged. Network schema 19 requires matching builds. Bounty Claims
+schema 8 is unchanged. Network schema 21 requires matching builds. Bounty Claims
 adds to the pilot's own share without reducing others'. Salvage Drones bonus units
 do not come from the shared box; fractional units round up by chance. Effect
 values, point rewards, material costs, the level cap and reset price are
@@ -802,18 +843,20 @@ recorded in `docs/rocket-art/generation-prompts.md`.
 
 Single rockets are inherent to every hull and need no launcher. R-310,
 PLT-2026, PLT-2021 and PLT-3030 retain absolute maximum damages of 1,000,
-2,000, 4,000 and 6,000. Game defaults are respectively 170/240/335/335 m
+2,000, 4,000 and 6,000. Game defaults are respectively 310/310/335/335 m
 range, 70/80/90/65% hit probability and 150/170/190/190 m/s projectile speed.
 Every accepted shot consumes one round and starts a shared 2-second cooldown,
 including misses. Successful damage varies from 80 to 100% of maximum. These
 probabilities, variation, distances and timings are playtesting defaults rather
 than claims about exact DarkOrbit rules. Settings live in `Ammunition.ROCKETS`.
-Rockets use target tracking without a laser forward-arc requirement.
+Rockets use target tracking without a laser forward-arc requirement. No rocket
+reaches less far than the 310 m player laser range, so any target the lasers
+can hit is also a valid rocket target.
 
 Every hull has one dedicated launcher slot. HST-1 holds three rounds and
 HST-2 holds five. ECO-10 and HSTRM-01 are dedicated launcher ammunition,
 with fixed 2,000 and 4,000 damage respectively; configured variation defaults
-to 1.0–1.0 and accuracy to 100%. Both use 280 m range and 170 m/s speed.
+to 1.0–1.0 and accuracy to 100%. Both use 310 m range and 170 m/s speed.
 Loading reserves one unit per second; activating again fires all loaded units.
 After firing, loading is blocked for three seconds. These timings live in
 `RocketWeapons`. Single and launcher cooldowns survive ammo/ship changes.
@@ -848,7 +891,7 @@ The historical save-schema-7 migration preserved schemas 1–6 and granted
 100 R-310 once, with zero other rocket ammo. New pilots receive the same grant.
 The provisioning tool supports the same migration and launcher fittings.
 Back up the ledger before upgrading; rollback needs a pre-migration backup.
-These changes were introduced in network schema 16; current schema 19 requires matching client/server builds. Resource rocket
+These changes were introduced in network schema 16; current schema 21 requires matching client/server builds. Resource rocket
 boosts use the existing per-ship reserve and combat journal formats; no new save
 or network schema is required. Laser/timed reserve behavior is unchanged.
 
@@ -1056,7 +1099,7 @@ hangars and outer docking arms do not extend station services or protection.
 Clients and dedicated servers load the same 53 simple collision boxes, with
 open hangar entrances. Autopilot chooses a clear service approach when the tower
 or reactor occupies its usual radial stopping point. The physical station layout change was introduced in network schema 16; current
-schema 19 requires matching builds. This layout change did not change saves.
+schema 21 requires matching builds. This layout change did not change saves.
 Final visual acceptance, scale, approach comfort and group performance remain
 playtesting decisions within Milestone 3.
 
@@ -1288,7 +1331,7 @@ repair state); credits, kills, objective stage, rescue countdown and contracts g
 only to their owner (introduced in network schema 16; current is 19). Each transfer
 increments the flight life and map-visit epoch, so delayed commands, world state
 and effects cannot revive an earlier visit, including returning to the same map.
-Map transfers were introduced in network schema 16; current schema 19 requires matching client/server builds. Save schema 8 is unchanged
+Map transfers were introduced in network schema 16; current schema 21 requires matching client/server builds. Save schema 8 is unchanged
 because flight locations are temporary. Ordinary travel gates are separate from
 the Galaxy Gates alien-wave challenges.
 
@@ -1407,6 +1450,41 @@ the pilot presses it and closes once all have been tried. Sites, timings,
 quantities, rewards and dialogue remain provisional
 until playtested. Later chapters and
 shared construction stages are still to be designed.
+
+#### Implemented chapter 1: Operation Groundwork
+
+After the prologue, pilots had research points but no introduction to research
+or Skylab. On 2026-10-21 the user asked for quests that explain both, chose a
+separate chapter after the prologue rather than a longer prologue, and chose to
+have Brell grant the refined stock for a first research level rather than make
+new pilots wait for their refineries. Chapters are consecutive runs of one step
+list: pilots who finished or skipped the prologue, including existing pilots,
+start chapter 1 automatically. The Story tab skips one chapter at a time and pays
+that chapter's remaining rewards, including its lab stock.
+
+| # | Step | Contact | Objective | Reward |
+| --- | --- | --- | --- | --- |
+| 1 | Industry Online | Brell | Start a Basic module upgrade in Skylab | 1,000 CR + 50 Prometid + 50 Duranium in Skylab |
+| 2 | Countermeasures | Sato | Learn any research level at Outpost 01 | 2,000 CR + 1 RP |
+| 3 | Field Test | Vance | Destroy 3 Scouts | 2,500 CR |
+| 4 | Raw Supply | Brell | Start an ore collector upgrade in Skylab | 1,500 CR |
+| 5 | Supply Line | Brell | Dispatch a Skylab shipment to the active ship | 1,500 CR |
+| 6 | Shield Samples | Sato | Destroy a Sentinel | 3,000 CR + 2 RP |
+
+The chapter totals 11,500 CR, 3 research points and the starting stock. Brell
+explains collectors, refineries, offline production and why Basic goes first:
+no module can exceed Basic's level, so a new pilot's first collector upgrade
+waits for the 120-second Basic job (or Finish now). Sato frames research as
+countermeasures against adaptive alien shields that cost a point plus refined
+stock, and names Promerium and Seprom as the inputs for later levels. Skylab and
+research steps complete inside the successful Skylab command or station
+transaction that satisfies them, with the reward saved in the same transaction;
+the confirmation names the completed step. The stock grant stops at storage
+capacity. Transmissions wait while a menu is open, so a step finished in Skylab
+or Research is still announced. Pilots whose Basic core is already at the maximum level, or
+who have reached the research cap, can skip the chapter. Network schema 21
+requires matching builds; save schema 8 is unchanged. Rewards, the stock grant
+and dialogue remain provisional until playtested.
 
 #### Shared station construction
 

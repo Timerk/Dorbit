@@ -20,6 +20,22 @@ including loads from the exported Windows pack.
 
 ## Play
 
+### Player trading
+
+At Outpost 01, open **Hangar > Player trade**, choose an available pilot and send
+an invitation. The other pilot opens the same window and accepts. Select stored
+equipment and a credit amount, then press **Update offer**. Both pilots must
+confirm the displayed offers to finish. An offer can contain up to twelve items;
+one-sided gifts are allowed. Remove fitted equipment before trading it.
+
+Updating an offer clears both confirmations. Closing the window, disconnecting,
+leaving station service range or changing an inventory cancels the trade. Idle
+trades expire after two minutes. The server saves both sides together, including
+item settings; completed trades survive restart. Cargo, ammunition and ships
+cannot be included. Use matching client and server builds.
+
+[Trade window at 960 x 600](docs/feedback/player-trade.png).
+
 ### Flight HUD
 
 The flight HUD follows the menu's graphite panels, amber accents and Rajdhani
@@ -380,7 +396,7 @@ preserves existing reserves. Both require a launched living ship.
 
 Removing Slot CPU 1 returns equipment from its added slots to inventory. Cargo
 capacity removal is blocked until excess cargo is sold. Items and settings persist
-with the pilot. Client and server must both use network schema 19. See
+with the pilot. Client and server must both use network schema 21. See
 [the agreed mechanics and prices](GAME_PLAN.md#extras-equipment) and
 [generated artwork and prompts](assets/ui/extras/README.md).
 
@@ -444,9 +460,9 @@ Press B at Outpost 01 and select **Trade raw materials**. Eight ore cards show t
 
 Cargo belongs to each owned ship and survives death, reconnects and restarts. Collected cargo and sale credits are server-owned saves. Uncollected boxes remain session state. Skylab shipments can overfill their dispatch ship if cargo fills during transit; collection then waits for free space. Real Xenomit is an eighth collectible and saleable mineral, with a custom development price of 200 CR and Heavy drops of 1–3 units. Save versions 1–7 migrate to schema 8; preserve a pre-migration backup when deploying. Credential rotation with `tools/pilots.py` retains cargo and industry.
 
-`res://tests/resources_test.gd` checks actual ENet kills, replicated and late-join loot, two-pilot pickup conservation, full and partial holds, client authority, station restrictions, per-resource and sell-all actions, duplicate sales, restart recovery, wallet limits, expiry and failed writes. Run it headlessly or with the renderer to capture the cargo panel and loot markers at 960 x 600 under `build/validation`. Windows and Linux check scripts include it. Operator-tool tests cover cargo-preserving migration and credential rotation, and reject corrupted cargo without altering the ledger.
+`res://tests/resources_test.gd` checks actual ENet kills, replicated and late-join loot, two-pilot pickup conservation, full and partial holds, client authority, station restrictions, per-resource and sell-all actions, duplicate sales, restart recovery, wallet limits, expiry and failed writes. Run it headlessly or with the renderer to capture the cargo panel and resource boxes at 960 x 600 under `build/validation`. Windows and Linux check scripts include it. Operator-tool tests cover cargo-preserving migration and credential rotation, and reject corrupted cargo without altering the ledger.
 
-Review captures show the [full cargo panel](docs/feedback/resources-full-hold.png), [confirmed sale](docs/feedback/resources-sold.png) and [resource box in space](docs/feedback/resources-in-space.png). Prices and capacities still need human balance playtesting.
+Review captures show the [full cargo panel](docs/feedback/resources-full-hold.png), [confirmed sale](docs/feedback/resources-sold.png) and [resource box in space](docs/feedback/resources-in-space.png) (captured before the HUD marker and caption were removed). Prices and capacities still need human balance playtesting.
 
 ### Refining and resource upgrades
 
@@ -566,7 +582,22 @@ Every pilot, including existing ones, starts a personal ten-step prologue that t
 | Light the Beacon | Stay at the approach beacon for 6 s | 2,000 CR |
 | Standing Orders | Hold any hunting contract | 5,000 CR + 3 RP |
 
-Press **C** and choose **Story** to read briefings, review completed steps, deliver cargo or skip the chapter. Skipping asks for a second press and pays every remaining step reward. Kills count with the hunting-contract contribution rules; scans restart when you leave the field; the recorder and the lit beacon are personal. Delivery and skipping use station service rules. The server saves each step and its reward together in the equipment record, so save schema 8 is unchanged; network schema 20 requires matching builds. Run `res://tests/story_test.gd` for the full authenticated playthrough, and run it with a renderer to capture `build/validation/story-*.png`. Review the [flight card and transmission](docs/feedback/story-flight.png), the [waypoint gate](docs/feedback/story-objective-gate.png), the [scan field](docs/feedback/story-objective-field.png), the [controls pop-up](docs/feedback/story-controls.png) and the [Story tab](docs/feedback/story-board.png). Run `res://tests/objective_art_preview.gd` with a renderer to capture every objective visual under `build/validation/objective-review`. Sites, quantities and rewards need playtesting.
+Press **C** and choose **Story** to read briefings, review completed steps, deliver cargo or skip the current chapter. Skipping asks for a second press and pays that chapter's remaining step rewards. Kills count with the hunting-contract contribution rules; scans restart when you leave the field; the recorder and the lit beacon are personal. Delivery and skipping use station service rules. The server saves each step and its reward together in the equipment record, so save schema 8 is unchanged; network schema 21 requires matching builds. Run `res://tests/story_test.gd` for the full authenticated playthrough, and run it with a renderer to capture `build/validation/story-*.png`. Review the [flight card and transmission](docs/feedback/story-flight.png), the [waypoint gate](docs/feedback/story-objective-gate.png), the [scan field](docs/feedback/story-objective-field.png), the [controls pop-up](docs/feedback/story-controls.png) and the [Story tab](docs/feedback/story-board.png). Run `res://tests/objective_art_preview.gd` with a renderer to capture every objective visual under `build/validation/objective-review`. Sites, quantities and rewards need playtesting.
+
+### Story chapter 1: Operation Groundwork
+
+The prologue hands over to a six-step chapter that explains Skylab and research. Pilots who already finished or skipped the prologue start here.
+
+| Step | Objective | Reward |
+| --- | --- | --- |
+| Industry Online | Start a Basic module upgrade in Skylab (**Esc > Skylab**) | 1,000 CR + Prometid x50, Duranium x50 in Skylab |
+| Countermeasures | Learn any research level at Outpost 01 (**Esc > Research**) | 2,000 CR + 1 RP |
+| Field Test | Destroy 3 Scouts | 2,500 CR |
+| Raw Supply | Start an ore collector upgrade once Basic allows it | 1,500 CR |
+| Supply Line | Send a Skylab shipment to your ship from Transport | 1,500 CR |
+| Shield Samples | Destroy a Sentinel | 3,000 CR + 2 RP |
+
+The granted stock covers a first research level, which also costs one of the prologue's research points. Skylab and research steps complete with the command that satisfies them, and the Skylab or Research confirmation names the finished step. Contact transmissions wait while a menu is open. The Story tab lists each chapter under its own heading and skips one chapter at a time. Rewards and dialogue need playtesting.
 
 ### Hunting contracts
 

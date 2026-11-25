@@ -30,6 +30,13 @@ var rocket_sequences: Dictionary[int, int] = {}
 var rocket_maps: Dictionary[String, int] = {}
 # Server-side station and Skylab request handling.
 var desk := StationDesk.new(self)
+var trading := PlayerTrading.new(self)
+# Client-only private trade state, received independently of world snapshots.
+var trade_state: Dictionary = {}
+var trade_candidates: Array = []
+var trade_pending := false
+var outgoing_invite_id := ""
+var trade_message := ""
 
 
 func connect_rockets(ship: Pilot) -> void:
@@ -278,6 +285,7 @@ func flush_boosts(ids: Array = []) -> bool:
 
 
 func remove_player(id: int) -> void:
+	trading.cancel(id, "Trade cancelled: a pilot disconnected.")
 	rocket_sequences.erase(id)
 	records.erase(id)
 	cargo_holds.erase(id)
@@ -339,6 +347,7 @@ func record_damage(ship: SpaceShip, attacker: SpaceShip) -> void:
 
 func tick(delta: float) -> void:
 	var sector := session.sector
+	if sector.dedicated_server: trading.tick()
 	boost_save_clock += delta
 	for alien: Alien in sector.world_aliens.values():
 		alien.check_retreat(choose_target(alien))
@@ -902,6 +911,12 @@ func show_explosion(location: Vector3, diameter: float, visit: int = -1) -> void
 
 
 func finish() -> void:
+	trading.trades.clear()
+	trade_state = {}
+	trade_candidates = []
+	trade_pending = false
+	outgoing_invite_id = ""
+	trade_message = ""
 	rocket_maps.clear()
 	rocket_request_sequence = 0
 	rocket_sequences.clear()
@@ -943,6 +958,64 @@ func finish() -> void:
 		session.sector.player.simulation_authority = true
 		session.sector.player.resource_boosts.clear()
 		Equipment.apply_stats(session.sector.player, Equipment.stats(Equipment.starter()))
+
+
+# `reviewed` holds the token and version the pilot reviewed; it defaults to
+# the latest state received.
+func request_trade(action: String, payload: Dictionary = {}, reviewed: Dictionary = {}) -> void:
+	if not session.active or multiplayer.is_server() or inventory.is_empty() or trade_pending:
+		return
+	if reviewed.is_empty(): reviewed = trade_state
+	trade_pending = true
+	trade_message = "Waiting for server..."
+	if action == "invite":
+		outgoing_invite_id = Crypto.new().generate_random_bytes(16).hex_encode()
+		payload = payload.duplicate()
+		payload["invite_id"] = outgoing_invite_id
+	trade_request.rpc_id(1, action, reviewed.get("token", ""), int(reviewed.get("version", -1)), payload, int(session.sector.player.get_meta("life", 0)))
+
+
+func close_trade() -> void:
+	if not session.active: return
+	var life := int(session.sector.player.get_meta("life", 0))
+	if not trade_state.is_empty():
+		trade_request.rpc_id(1, "cancel", trade_state["token"], trade_state["version"], {}, life)
+	if not outgoing_invite_id.is_empty():
+		# Same reliable channel as invite. Only withdraw the invitation we sent.
+		withdraw_trade_invite.rpc_id(1, outgoing_invite_id)
+		outgoing_invite_id = ""
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func withdraw_trade_invite(invite_id: String) -> void:
+	if not session.active or not multiplayer.is_server() or not session.sector.dedicated_server: return
+	var id := multiplayer.get_remote_sender_id()
+	var outgoing: Dictionary = trading.trades.get(id, {})
+	if not invite_id.is_empty() and outgoing.get("invite_id") == invite_id and outgoing["peers"][0] == id:
+		trading.cancel(id)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func trade_request(action: String, token: String, version: int, payload: Dictionary, life: int) -> void:
+	if not session.active or not multiplayer.is_server() or not session.sector.dedicated_server:
+		return
+	var id := multiplayer.get_remote_sender_id()
+	if records.has(id) and session.pilot_ids.has(id):
+		trading.request(id, action, token, version, payload, life)
+
+
+@rpc("authority", "call_remote", "reliable")
+func trade_result(state: Dictionary, candidates: Array, result: String) -> void:
+	if not session.active: return
+	# A reopened menu can receive the invite acknowledgement while its
+	# withdrawal is still in flight. Never present that trade for editing.
+	if state.get("inviter", false) and state.get("token") != trade_state.get("token"):
+		if state.get("invite_id", "") != outgoing_invite_id: return
+		outgoing_invite_id = ""
+	trade_state = state
+	trade_candidates = candidates
+	trade_message = result
+	trade_pending = false
 
 
 func request_station(action: String, subject: String, ship: String = "", slot: String = "") -> void:
