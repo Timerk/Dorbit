@@ -2,6 +2,8 @@ class_name PlayerTradeMenu
 extends PanelContainer
 ## Modal trade review using private server offers. Editing is local until Update
 ## offer is pressed; confirmation is disabled while those edits are unsent.
+## A confirmation consents only to the token and version displayed when its
+## press began. Any later offer change cancels the press and needs a new one.
 
 var sector: Sector
 var shade: ColorRect
@@ -25,6 +27,8 @@ var last_candidates: Array = []
 var last_revision := -1
 var dirty := false
 var rebuilding := false
+# Trade token and version shown when the current confirmation press started.
+var armed: Dictionary = {}
 
 
 func _ready() -> void:
@@ -88,6 +92,8 @@ func _ready() -> void:
 	update_button = StationUi.button(buttons, "UPDATE OFFER", update_offer)
 	confirm_button = StationUi.button(buttons, "CONFIRM TRADE", confirm)
 	StationUi.primary(confirm_button)
+	# Mouse presses and focused ui_accept both begin with button_down.
+	confirm_button.button_down.connect(arm_confirmation)
 	StationUi.button(buttons, "CANCEL / CLOSE", close)
 	fit_window()
 	hide()
@@ -150,12 +156,25 @@ func update_offer() -> void:
 	sector.session.combat.request_trade("offer", {"items": selected.keys(), "credits": int(credits.value)})
 
 
+func arm_confirmation() -> void:
+	armed = {"token": last_state.get("token", ""), "version": int(last_state.get("version", -1))}
+
+
 func confirm() -> void:
 	# A typed SpinBox value may not have lost focus when the button is pressed.
 	credits.apply()
+	var reviewed := armed
+	armed = {}
 	if dirty: return
-	var state := sector.session.combat.trade_state
-	sector.session.combat.request_trade("join" if not state.get("joined", false) else "confirm")
+	var combat := sector.session.combat
+	var state := combat.trade_state
+	# Never let a release accept terms that arrived after the press began. The
+	# server also rejects the reviewed version once either offer has changed.
+	if (reviewed.is_empty() or reviewed["token"] != state.get("token", "") or reviewed["token"] != last_state.get("token", "")
+			or reviewed["version"] != int(state.get("version", -1)) or reviewed["version"] != int(last_state.get("version", -1))):
+		combat.trade_message = "Offer changed. Review both offers, then confirm again."
+		return
+	combat.request_trade("join" if not state.get("joined", false) else "confirm", {}, reviewed)
 
 
 func clear_rows(list: VBoxContainer) -> void:
@@ -189,6 +208,11 @@ func refresh() -> void:
 	var changed := not is_same(last_state, state) or revision != last_revision
 	if changed:
 		rebuilding = true
+		if not armed.is_empty() and (armed["token"] != state.get("token", "") or armed["version"] != int(state.get("version", -1))):
+			# Disabling a pressed button discards its press, so the release that
+			# follows cannot send confirmation. Refresh re-enables it below.
+			armed = {}
+			confirm_button.disabled = true
 		if state.get("token", "") != last_state.get("token", "") or revision != last_revision:
 			dirty = false
 		if not dirty:

@@ -945,16 +945,19 @@ func finish() -> void:
 		Equipment.apply_stats(session.sector.player, Equipment.stats(Equipment.starter()))
 
 
-func request_trade(action: String, payload: Dictionary = {}) -> void:
+# `reviewed` holds the token and version the pilot reviewed; it defaults to
+# the latest state received.
+func request_trade(action: String, payload: Dictionary = {}, reviewed: Dictionary = {}) -> void:
 	if not session.active or multiplayer.is_server() or inventory.is_empty() or trade_pending:
 		return
+	if reviewed.is_empty(): reviewed = trade_state
 	trade_pending = true
 	trade_message = "Waiting for server..."
 	if action == "invite":
 		outgoing_invite_id = Crypto.new().generate_random_bytes(16).hex_encode()
 		payload = payload.duplicate()
 		payload["invite_id"] = outgoing_invite_id
-	trade_request.rpc_id(1, action, trade_state.get("token", ""), int(trade_state.get("version", -1)), payload, int(session.sector.player.get_meta("life", 0)))
+	trade_request.rpc_id(1, action, reviewed.get("token", ""), int(reviewed.get("version", -1)), payload, int(session.sector.player.get_meta("life", 0)))
 
 
 func close_trade() -> void:
