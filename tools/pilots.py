@@ -123,6 +123,13 @@ def valid_story(data: object) -> bool:
             and type(data["progress"]) is int and 0 <= data["progress"] <= 1000)
 
 
+def whole(value: object, low: int, high: int) -> bool:
+    # Mirrors Skylab.integer: an older build that preserves unknown fields can
+    # write a whole counter such as 7 as 7.0; the server accepts and normalizes it.
+    return ((type(value) is int or (type(value) is float and value.is_integer()))
+            and low <= value <= high)
+
+
 # Mirrors GalaxyGates in scripts/galaxy_gates.gd: per-gate progress with at most
 # 999 parts and operation progress below each gate's requirement.
 GATE_OPERATION_REQUIRED = {"vashar": 8, "korrath": 10, "sylith": 12}
@@ -142,10 +149,9 @@ def valid_gates(data: object) -> bool:
     for gate, state in data.items():
         if (gate not in GATE_OPERATION_REQUIRED or not isinstance(state, dict)
                 or state.keys() != {"parts", "signal", "progress"}
-                or type(state["parts"]) is not int or not 0 <= state["parts"] <= 999
+                or not whole(state["parts"], 0, 999)
                 or state["signal"] not in ("available", "active", "done")
-                or type(state["progress"]) is not int
-                or not 0 <= state["progress"] <= (GATE_OPERATION_REQUIRED[gate] - 1 if state["signal"] == "active" else 0)):
+                or not whole(state["progress"], 0, GATE_OPERATION_REQUIRED[gate] - 1 if state["signal"] == "active" else 0)):
             return False
     return True
 
@@ -387,6 +393,9 @@ def main() -> None:
                 equipment = record["equipment"]
                 if "gates" in equipment:
                     equipment["gates"] = gate_collection(equipment["gates"])
+                    for state in equipment["gates"].values():
+                        for field in ("parts", "progress"):
+                            state[field] = int(state[field])
                 if data["version"] < 3:
                     if "cargo" in record:
                         parser.error("Unexpected cargo in legacy ledger; preserve it and recover")

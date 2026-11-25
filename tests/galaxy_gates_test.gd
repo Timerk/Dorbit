@@ -114,6 +114,29 @@ func pick_up(server: Sector, client: Sector, drop_id: int) -> void:
 	await settle(0.05)
 
 
+# Places a server-owned box directly, for pickup cases a kill cannot pin down.
+func click_control(client: Sector, control: Control) -> void:
+	var point := control.get_global_rect().get_center()
+	for pressed: bool in [true, false]:
+		var event := InputEventMouseButton.new()
+		event.button_index = MOUSE_BUTTON_LEFT
+		event.button_mask = MOUSE_BUTTON_MASK_LEFT if pressed else 0
+		event.pressed = pressed
+		event.position = point
+		client.get_viewport().push_input(event)
+	await settle(0.05)
+
+
+# `parts` maps gate IDs to part counts.
+func place_box(server: Sector, map: int, position: Vector3, parts: Dictionary, resources: Dictionary = {}) -> int:
+	server.loot.next_id += 1
+	var data := {"map": map, "position": position, "resources": resources, "ttl": ResourceLoot.LIFETIME}
+	if not parts.is_empty():
+		data["parts"] = parts
+	server.loot.change(server.loot.next_id, data)
+	return server.loot.next_id
+
+
 func enter(server: Sector, client: Sector, arena: int = VMAP) -> String:
 	var id := client.multiplayer.get_unique_id()
 	await move_to(server, client, 0)
@@ -189,6 +212,87 @@ func run() -> void:
 	combat.collect_loot()
 	await settle(0.05)
 	check(saved(server, pilot)["parts"] > before_shared, "Gate parts go to the in-range pilot running the operation first")
+	# A full stock never destroys parts: the remainder passes on or stays boxed.
+	var partner_key: String = server.session.pilot_ids[partner_id]
+	var before_full := store.pilots.duplicate(true)
+	await move_to(server, pilot, 2)
+	await move_to(server, partner, 2)
+	next = store.pilots.duplicate(true)
+	next[pilot_id]["equipment"]["gates"][VASHAR]["parts"] = GalaxyGates.MAX_PARTS - 1
+	next[partner_key]["equipment"]["gates"] = {VASHAR: GalaxyGates.empty()}
+	check(store.persist(next), "Seed a nearly full gate-part stock")
+	var spot: Vector3 = server.session.ships[id].position
+	server.session.ships[partner_id].position = spot + Vector3(4, 0, 0)
+	var full_box := place_box(server, 2, spot, {VASHAR: 3})
+	combat.collect_loot()
+	await settle(0.05)
+	check(saved(server, pilot)["parts"] == GalaxyGates.MAX_PARTS and saved(server, partner)["parts"] == 2 and not server.loot.drops.has(full_box), "Parts beyond a full stock go to the next pilot in range")
+	next = store.pilots.duplicate(true)
+	next[partner_key]["equipment"]["gates"][VASHAR]["parts"] = GalaxyGates.MAX_PARTS - 1
+	check(store.persist(next), "Leave room for one more part")
+	var first_box := place_box(server, 2, spot, {VASHAR: 1})
+	full_box = place_box(server, 2, spot, {VASHAR: 1})
+	combat.collect_loot()
+	await settle(0.05)
+	check(saved(server, partner)["parts"] == GalaxyGates.MAX_PARTS and not server.loot.drops.has(first_box) and server.loot.drops.has(full_box) and int(server.loot.drops[full_box]["parts"][VASHAR]) == 1, "Pickup counts parts assigned earlier in the same pass")
+	combat.collect_loot()
+	await settle(0.05)
+	check(server.loot.drops.has(full_box) and int(server.loot.drops[full_box]["parts"][VASHAR]) == 1, "Parts nobody can hold stay in the box")
+	server.loot.change(full_box, {})
+	next = store.pilots.duplicate(true)
+	for key: String in [pilot_id, partner_key]:
+		if before_full[key]["equipment"].has("gates"):
+			next[key]["equipment"]["gates"] = before_full[key]["equipment"]["gates"]
+		else:
+			next[key]["equipment"].erase("gates")
+	check(store.persist(next), "Restore gate-part stocks")
+	# A mixed box: the pilot running the Korrath operation gets its M3 part even
+	# though a closer pilot runs the Vashar one, who takes the Vashar part.
+	next = store.pilots.duplicate(true)
+	var partner_gates: Dictionary = next[partner_key]["equipment"].get("gates", {}).duplicate(true)
+	next[partner_key]["equipment"]["gates"] = partner_gates.merged({KORRATH: {"parts": 0, "signal": "active", "progress": 0}}, true)
+	check(store.persist(next), "Start the partner's Korrath operation")
+	var vashar_before: int = saved(server, pilot)["parts"]
+	var mixed := place_box(server, 2, spot, {VASHAR: 1, KORRATH: 1})
+	combat.collect_loot()
+	await settle(0.05)
+	check(not server.loot.drops.has(mixed) and saved(server, partner, KORRATH)["parts"] == 1 and saved(server, partner, KORRATH)["progress"] == 1
+		and saved(server, pilot, KORRATH)["parts"] == 0 and saved(server, pilot)["parts"] == vashar_before + 1, "A mixed box sends each operation's part to the pilot running it on its map")
+	next = store.pilots.duplicate(true)
+	if partner_gates.is_empty():
+		next[partner_key]["equipment"].erase("gates")
+	else:
+		next[partner_key]["equipment"]["gates"] = partner_gates
+	check(store.persist(next), "Restore the partner's operations")
+	# M3 has no gate to Outpost 01; return through M2 like a pilot would.
+	await move_to(server, pilot, 1)
+	await move_to(server, partner, 1)
+	# An M4 box: the guaranteed Sylith part reaches the pilot running Relay
+	# Intercept, while the closer pilot takes the random Vashar and Korrath parts.
+	await move_to(server, pilot, 3)
+	await move_to(server, partner, 3)
+	next = store.pilots.duplicate(true)
+	partner_gates = next[partner_key]["equipment"].get("gates", {}).duplicate(true)
+	next[partner_key]["equipment"]["gates"] = partner_gates.merged({SYLITH: {"parts": 0, "signal": "active", "progress": 0}}, true)
+	check(store.persist(next), "Start the partner's Sylith operation")
+	spot = server.session.ships[id].position
+	server.session.ships[partner_id].position = spot + Vector3(4, 0, 0)
+	vashar_before = saved(server, pilot)["parts"]
+	var korrath_before: int = saved(server, pilot, KORRATH)["parts"]
+	mixed = place_box(server, 3, spot, {VASHAR: 1, KORRATH: 1, SYLITH: 1})
+	combat.collect_loot()
+	await settle(0.05)
+	check(not server.loot.drops.has(mixed) and saved(server, partner, SYLITH)["parts"] == 1 and saved(server, partner, SYLITH)["progress"] == 1
+		and saved(server, pilot, SYLITH)["parts"] == 0 and saved(server, pilot)["parts"] == vashar_before + 1 and saved(server, pilot, KORRATH)["parts"] == korrath_before + 1,
+		"An M4 box sends its Sylith part to the Relay Intercept pilot and the rest to the nearest pilot")
+	next = store.pilots.duplicate(true)
+	if partner_gates.is_empty():
+		next[partner_key]["equipment"].erase("gates")
+	else:
+		next[partner_key]["equipment"]["gates"] = partner_gates
+	check(store.persist(next), "Restore the partner's operations")
+	await move_to(server, pilot, 1)
+	await move_to(server, partner, 1)
 	for attempt in range(GalaxyGates.info(VASHAR)["signal"]["required"]):
 		if saved(server, pilot)["signal"] != "active":
 			break
@@ -310,6 +414,14 @@ func run() -> void:
 	pilot.main_menu.select_page("gates")
 	await process_frame
 	check(pilot.gate_menu.visible and pilot.gate_menu.preview_button.visible and pilot.gate_menu.run_label.text.contains("GATE OPEN"), "The Galaxy Gates page shows the open gate and preview tool")
+	# Gate tabs behave as one group: re-clicking the selected tab keeps it pressed.
+	var menu := pilot.gate_menu
+	var pressed_tabs := func() -> Array: return menu.tabs.keys().filter(func(gate: String): return menu.tabs[gate].button_pressed)
+	await click_control(pilot, menu.tabs[menu.selected])
+	check(pressed_tabs.call() == [menu.selected], "Clicking the selected gate tab keeps it highlighted")
+	await click_control(pilot, menu.tabs[KORRATH])
+	check(menu.selected == KORRATH and pressed_tabs.call() == [KORRATH] and menu.title.text == "KORRATH GATE", "Clicking another gate tab moves the highlight")
+	await click_control(pilot, menu.tabs[VASHAR])
 	# Quitting to the station mid-wave costs a life instead of a free repair.
 	var retreating: String = await enter(server, partner)
 	gate.tick(GalaxyGates.FIRST_WAVE_DELAY + 0.1)
@@ -318,8 +430,10 @@ func run() -> void:
 	partner.session.quit_to_menu()
 	await settle(0.15)
 	check(server.session.ships[partner_id].get_meta("docked", false) and gate.lives[partner_pilot_id] == GalaxyGates.info(VASHAR)["lives"] - 1, "Quitting to the station mid-wave costs a life")
+	var leftover := place_box(server, VMAP, SectorMaps.origin(VMAP), {VASHAR: 1}, {"prometium": 1})
 	gate.tick(GalaxyGates.ABANDON_TIME + 0.1)
 	check(not gate.active and SectorMaps.open_rift != VMAP, "A gate nobody holds collapses")
+	check(not server.loot.drops.has(leftover) and server.loot.drops.values().all(func(box: Dictionary): return int(box.get("map", 0)) != VMAP), "A closing run clears the arena's loot")
 	await run_gate(server, pilot, KORRATH)
 	await run_gate(server, pilot, SYLITH)
 	finish()

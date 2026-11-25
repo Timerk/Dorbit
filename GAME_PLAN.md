@@ -1520,8 +1520,12 @@ two ways:
   12–16% in M3, 16–20% in M4). Home-map and arena aliens carry none.
 
 Parts sit in the normal loot box and take no cargo space. A living pilot within
-pickup range collects all of a box's parts, even with a full hold: pilots running
-the operation come first, otherwise the nearest pilot. Only parts recovered on
+pickup range collects a box's parts, even with a full hold. Each gate's parts go
+first to pilots running that gate's operation when the box is on its operation map,
+otherwise to the nearest pilot; a box holding several gates' parts splits them this
+way. A pilot takes only what fits
+under the 999-part limit; the rest passes to the next pilot in range or stays in the
+box. Only parts recovered on
 the operation's map advance it; boxes remain shared, as with resources. Gate runs
 are announced by the builder's public pilot label, not the login identity.
 
@@ -1566,7 +1570,7 @@ pilot to Outpost 01; pilots with lives left can fly back in while the gate is op
 Destroying the final wave pays every participant still connected 150,000 CR,
 6 research points and 15,000 x4 shots; each also has a 20% chance of an LF-4
 laser, delivered to storage. Victory closes the entrance and returns anyone still inside to M1
-after 90 s. A run collapses, without refunding parts, when no pilot has been inside
+after 90 s. Closing a run clears any loot left in the arena. A run collapses, without refunding parts, when no pilot has been inside
 for 120 s or every participant has used all their lives.
 
 **Preview tools.** Allowlisted preview pilots see *Preview: open gate without
