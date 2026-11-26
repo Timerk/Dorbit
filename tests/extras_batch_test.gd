@@ -87,7 +87,7 @@ func run() -> void:
 			boundary[1] = saved["pilots"]["pilot2"]["ammo"]["x1"] == 10000
 	store.measuring = true
 	for id: int in server.session.ships:
-		server.session.commands[id] = {"target": server.alien.alien_id, "fire": true, "encounter": server.alien.life, "time": Time.get_ticks_msec()}
+		server.session.commands[id] = {"target": server.alien.alien_id, "fire": true, "encounter": server.alien.life, "tick": server.session.server_tick}
 	var damage_after_commit := [false]
 	server.alien.damaged.connect(func(_target: SpaceShip, _attacker: SpaceShip):
 		var saved: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(store.path))

@@ -9,6 +9,7 @@ const MIN_INERTIA_RATIO: float = 0.3
 # 180° flick in that time, so honest steering is not visibly delayed.
 const MAX_TURN_RATE: float = TAU * 2.0
 const TURN_LATENCY_ALLOWANCE: float = 0.05 # One command interval absorbs jittered packets.
+const ARM_POSITION := Vector3(0.0, 2.5, 0.0)
 
 @export var cruise_speed: float = 41.0
 @export var boost_speed: float = 83.0
@@ -43,6 +44,11 @@ var extras_clock: float = 0.0
 var repair_visual: RepairBotVisual
 var exhaust: ShipExhaust
 var turn_budget: float = 0.0
+## Facing used by simulate_input(). The server copies it to `rotation`; the
+## owning client keeps its view in `rotation` instead.
+var sim_rotation: Vector3 = Vector3.ZERO
+## World-space render offset of the model and camera; see set_visual_offset().
+var visual_offset: Vector3 = Vector3.ZERO
 
 
 func firing_blocker(target: SpaceShip) -> String:
@@ -97,7 +103,7 @@ func _ready() -> void:
 	model.queue_free()
 	attach_model()
 	arm = SpringArm3D.new()
-	arm.position = Vector3(0.0, 2.5, 0.0)
+	arm.position = ARM_POSITION
 	arm.rotation.x = -0.12
 	arm.spring_length = 16.0
 	arm.margin = 0.5
@@ -171,18 +177,46 @@ func thrust_multiplier() -> float:
 
 func turn_toward(angles: Vector3, delta: float) -> void:
 	# Clients predict their own facing; the server only follows it at a bounded rate.
+	rotation = bounded_turn(rotation, angles, delta)
+
+
+## Steps `from` toward `angles` within the turn budget, spending it.
+func bounded_turn(from: Vector3, angles: Vector3, delta: float) -> Vector3:
 	turn_budget = minf(turn_budget + MAX_TURN_RATE * delta, MAX_TURN_RATE * (delta + TURN_LATENCY_ALLOWANCE))
-	var step := Vector2(angle_difference(rotation.y, angles.y), angles.x - rotation.x).limit_length(turn_budget)
+	var step := Vector2(angle_difference(from.y, angles.y), angles.x - from.x).limit_length(turn_budget)
 	turn_budget -= step.length()
-	rotation = Vector3(clampf(rotation.x + step.y, -1.48, 1.48), wrapf(rotation.y + step.x, -PI, PI), 0.0)
+	return Vector3(clampf(from.x + step.y, -1.48, 1.48), wrapf(from.y + step.x, -PI, PI), 0.0)
 
 
 func fly_command(delta: float, movement: Vector3, boost: bool) -> void:
-	# Ease mouse motion over a few frames; remote ships receive the resulting angles.
+	apply_look(delta)
+	thrust(delta, movement, boost, global_basis)
+	present_motion(delta, movement)
+
+
+## Eases mouse motion over a few frames; remote ships receive the resulting angles.
+func apply_look(delta: float) -> void:
 	var look_step := pending_look * (1.0 - exp(-delta / steering_response))
 	pending_look -= look_step
 	rotation.y += look_step.x
 	rotation.x = clampf(rotation.x + look_step.y, -1.48, 1.48)
+
+
+## One networked input tick, run identically by the server and, when
+## predicting and replaying, by the owning client: turn `sim_rotation` toward
+## the requested facing within the turn limit, then thrust along it. The body
+## moves with the simulation facing, so collision contacts match on both
+## sides; the node's previous `rotation` is restored afterwards, so the
+## owner's view can lead the turn-limited simulation facing during flicks.
+func simulate_input(delta: float, movement: Vector3, boost: bool, facing: Vector3) -> void:
+	sim_rotation = bounded_turn(sim_rotation, facing, delta)
+	var view := rotation
+	rotation = sim_rotation
+	thrust(delta, movement, boost, Basis.from_euler(sim_rotation))
+	rotation = view
+
+
+func thrust(delta: float, movement: Vector3, boost: bool, facing: Basis) -> void:
 	movement = movement.limit_length()
 	boosting = boost and movement.length() > 0.1 and energy > 1.0
 	if boosting:
@@ -190,18 +224,34 @@ func fly_command(delta: float, movement: Vector3, boost: bool) -> void:
 	else:
 		energy = minf(100.0, energy + 18.0 * delta)
 	var speed := boost_speed if boosting else cruise_speed
-	var desired_velocity := global_basis * movement * speed
-	var thrust := acceleration
+	var desired_velocity := facing * movement * speed
+	var thrust_rate := acceleration
 	# Keep world-space momentum through turns, with stronger assistance when stopping or reversing.
 	if velocity.dot(desired_velocity) < 0.0:
-		thrust = counter_thrust
+		thrust_rate = counter_thrust
 	elif desired_velocity.length_squared() < velocity.length_squared():
-		thrust = braking
-	var next_velocity := velocity.move_toward(desired_velocity, thrust * thrust_multiplier() * delta)
+		thrust_rate = braking
+	var next_velocity := velocity.move_toward(desired_velocity, thrust_rate * thrust_multiplier() * delta)
 	# Assistance can shed or redirect momentum, but gaining speed retains the
 	# original acceleration, including launch, boost and recovery after a turn.
 	velocity = next_velocity.limit_length(velocity.length() + acceleration * delta)
 	move_and_slide()
+
+
+## Cosmetic banking and boost field of view; never part of the simulation.
+func present_motion(delta: float, movement: Vector3) -> void:
 	if render_enabled:
-		model.rotation.z = lerp_angle(model.rotation.z, -movement.x * 0.23, delta * 5.0)
+		model.rotation.z = lerp_angle(model.rotation.z, -movement.limit_length().x * 0.23, delta * 5.0)
 		camera.fov = lerpf(camera.fov, 83.0 if boosting else 75.0, delta * 3.0)
+
+
+## Draws the model and camera `offset` (world space) away from the simulated
+## position. Owner prediction uses it to hide reconciliation corrections.
+func set_visual_offset(offset: Vector3) -> void:
+	visual_offset = offset
+	if not render_enabled or not is_instance_valid(model):
+		return
+	var local := global_basis.inverse() * offset
+	model.position = local
+	if is_instance_valid(arm):
+		arm.position = ARM_POSITION + local

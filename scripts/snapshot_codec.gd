@@ -14,10 +14,14 @@ const REPAIRING := 8
 const BOOSTS := 16
 const RETURNING := 4
 const ENGAGED := 8
+## Server input counters carried in the owner entry; see InputBuffer.
+const INPUT_COUNTERS := ["applied", "duplicates", "late", "lost", "dropped", "starved"]
 
 
 ## Public movement and health for one pilot. `extras` (owner entries only) adds
-## velocity, private progress, ammunition, rocket and boost state.
+## velocity, the input acknowledgement (last processed input `ack`, buffered
+## `depth`, `turn_budget` and the server's `inputs` counters), private
+## progress, ammunition, rocket and boost state.
 static func player_entry(id: int, data: Dictionary, revision: int, extras: Dictionary = {}) -> PackedByteArray:
 	var owner := data.has("credits")
 	var systems: PackedFloat32Array = data["systems"]
@@ -41,6 +45,12 @@ static func player_entry(id: int, data: Dictionary, revision: int, extras: Dicti
 	if not owner:
 		return buffer.data_array
 	put_vector(buffer, data["velocity"])
+	buffer.put_u32(extras.get("ack", 0))
+	buffer.put_u8(clampi(extras.get("depth", 0), 0, 255))
+	buffer.put_float(extras.get("turn_budget", 0.0))
+	var inputs: Dictionary = extras.get("inputs", {})
+	for key: String in INPUT_COUNTERS:
+		buffer.put_u32(inputs.get(key, 0))
 	buffer.put_u32(data["credits"])
 	buffer.put_u32(data["kills"])
 	buffer.put_u8(data["stage"])
@@ -99,10 +109,12 @@ static func alien_profile(data: Dictionary) -> Array:
 	return [data["kind"], data["home"]]
 
 
-static func world(sequence: int, visit: int, players: Array[PackedByteArray], aliens: Array[PackedByteArray]) -> PackedByteArray:
+## `tick` is the server simulation tick the snapshot was taken after.
+static func world(sequence: int, visit: int, tick: int, players: Array[PackedByteArray], aliens: Array[PackedByteArray]) -> PackedByteArray:
 	var buffer := StreamPeerBuffer.new()
 	buffer.put_u32(sequence)
 	buffer.put_u32(visit)
+	buffer.put_u32(tick)
 	buffer.put_u8(players.size())
 	buffer.put_u8(aliens.size())
 	var packet := buffer.data_array
@@ -113,15 +125,15 @@ static func world(sequence: int, visit: int, players: Array[PackedByteArray], al
 	return packet
 
 
-## Returns {sequence, visit, players: {id: state}, aliens: {id: state}, owner}.
+## Returns {sequence, visit, tick, players: {id: state}, aliens: {id: state}, owner}.
 ## Each state's `profile` names its profile revision. States lack profile fields
 ## until merged with `player_state` or `alien_state`. `owner` holds ammunition, rockets and boosts, or is empty.
 static func decode_world(packet: PackedByteArray) -> Dictionary:
-	if packet.size() < 10:
+	if packet.size() < 14:
 		return {}
 	var buffer := StreamPeerBuffer.new()
 	buffer.data_array = packet
-	var result := {"sequence": buffer.get_u32(), "visit": buffer.get_u32(), "players": {}, "aliens": {}, "owner": {}}
+	var result := {"sequence": buffer.get_u32(), "visit": buffer.get_u32(), "tick": buffer.get_u32(), "players": {}, "aliens": {}, "owner": {}}
 	var player_count := buffer.get_u8()
 	var alien_count := buffer.get_u8()
 	for index in range(player_count):
@@ -136,6 +148,13 @@ static func decode_world(packet: PackedByteArray) -> Dictionary:
 		data["repairing"] = flags & REPAIRING != 0
 		if flags & OWNER:
 			data["velocity"] = get_vector(buffer)
+			data["ack"] = buffer.get_u32()
+			data["input_depth"] = buffer.get_u8()
+			data["turn_budget"] = buffer.get_float()
+			var inputs := {}
+			for key: String in INPUT_COUNTERS:
+				inputs[key] = buffer.get_u32()
+			data["inputs"] = inputs
 			data["credits"] = buffer.get_u32()
 			data["kills"] = buffer.get_u32()
 			data["stage"] = buffer.get_u8()

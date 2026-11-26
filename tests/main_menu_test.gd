@@ -88,7 +88,7 @@ func run() -> void:
 	var ship := server.session.ships[id]
 	check(ship.get_meta("docked") and not ship.visible and ship.collision_layer == 0, "Server docked ship is invisible and has no collision")
 	var origin := ship.position
-	client.session.command_flight.rpc_id(1, Vector3(0, 0, -1), Vector3.ZERO, true, true)
+	client.session.send_command(Vector3(0, 0, -1), Vector3.ZERO, true, true)
 	await settle()
 	server.session.tick(0.1)
 	check(ship.position == origin and not server.session.commands.has(id), "Forged movement and fire are rejected while docked")
@@ -227,7 +227,7 @@ func run() -> void:
 	check(server.session.ships.size() == 2, "Repeated launch creates no duplicate ship")
 	await check_flight_pages(client, "connected")
 	check(not ship.get_meta("docked") and ship.collision_layer == 2 and observer.session.ships.has(id), "Flight menus retain the live server ship and observer visibility")
-	client.session.command_flight.rpc_id(1, Vector3(0, 0, -1), Vector3.ZERO, true, false, int(client.player.get_meta("life", 0)))
+	client.session.send_command(Vector3(0, 0, -1), Vector3.ZERO, true, false, int(client.player.get_meta("life", 0)))
 	await settle()
 	server.session.tick(0.1)
 	check(ship.position.z < origin.z, "Launched ship can fly")
@@ -272,7 +272,7 @@ func run() -> void:
 	check(id not in server.alien.contributors and observer.multiplayer.get_unique_id() in server.alien.contributors, "Leaving the map clears only the departing pilot's encounter contribution")
 	client.session.snapshot({id: old_flight}, {}, client.session.player_sequences[id] + 1)
 	check(not client.player.visible and client.player.collision_layer == 0 and client.player.position == origin, "Delayed flight snapshot cannot restore a docked ship")
-	client.session.command_flight.rpc_id(1, Vector3(0, 0, -1), Vector3.ZERO, true, true, old_life)
+	client.session.send_command(Vector3(0, 0, -1), Vector3.ZERO, true, true, old_life)
 	await settle()
 	check(not server.session.commands.has(id), "Old flight commands remain rejected after quitting")
 	await click(client, menu.navigation["shop"])
@@ -298,7 +298,7 @@ func run() -> void:
 	await click(client, menu.start_button)
 	await replicate(server)
 	check(not client.preflight and observer.session.ships.has(id) and ship.hull == 50000 and ship.shield == 350 and ship.energy == 42 and ship.laser_damage == 130 and client.credits == 9000 and not client.active_contracts.is_empty(), "Relaunch preserves ship state and progression and restores observer visibility")
-	client.session.command_flight.rpc_id(1, Vector3(0, 0, -1), Vector3.ZERO, true, true, old_life)
+	client.session.send_command(Vector3(0, 0, -1), Vector3.ZERO, true, true, old_life)
 	await settle()
 	check(not server.session.commands.has(id), "A previous flight's commands cannot control the relaunched ship")
 	# Rescue remains authoritative even when the pilot quits during its countdown.

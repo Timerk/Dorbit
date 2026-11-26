@@ -394,7 +394,7 @@ func tick(delta: float) -> void:
 				ship.rotation = Vector3.ZERO
 				records[id]["life"] += 1
 				ship.set_meta("life", records[id]["life"])
-				session.commands.erase(id)
+				session.clear_commands(id)
 				if change_map:
 					session.announce_map_change(id)
 			continue
@@ -465,7 +465,7 @@ func remote_target(id: int) -> Alien:
 func remote_firing(id: int) -> bool:
 	var command: Dictionary = session.commands.get(id, {})
 	var alien := remote_target(id)
-	return is_instance_valid(alien) and alien.available() and command.get("fire", false) and command.get("encounter", -1) == alien.life and Time.get_ticks_msec() - command["time"] < FlightSession.COMMAND_TIMEOUT * 1000
+	return is_instance_valid(alien) and alien.available() and command.get("fire", false) and command.get("encounter", -1) == alien.life and session.server_tick - int(command.get("tick", -FlightSession.INPUT_TIMEOUT_TICKS)) < FlightSession.INPUT_TIMEOUT_TICKS
 
 
 func choose_target(alien: Alien) -> Pilot:
@@ -552,7 +552,7 @@ func destroyed(ship: SpaceShip) -> void:
 			return
 		records[id]["credits"] -= fee
 		records[id]["respawn"] = 3.0
-		session.commands.erase(id)
+		session.clear_commands(id)
 		if ship == session.sector.player:
 			session.sector.select_target(null)
 			session.sector.autopilot.cancel()
@@ -684,7 +684,7 @@ func contract_action(id: int, life: int, action: String, offer: String, run: Str
 		return false
 	records[id]["credits"] = balance
 	records[id]["contracts"] = next
-	session.commands.erase(id)
+	session.clear_commands(id)
 	message(id, notice)
 	if id == 1:
 		update_local(records[id])
@@ -722,7 +722,7 @@ func repair(id: int, life: int) -> bool:
 	records[id]["credits"] -= cost
 	ship.reset_health()
 	ship.energy = 100.0
-	session.commands.erase(id)
+	session.clear_commands(id)
 	if records[id]["stage"] >= 3:
 		records[id]["stage"] = 4
 	message(id, "Repairs complete. Cost: %d credits." % cost, "purchase")

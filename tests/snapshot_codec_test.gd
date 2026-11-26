@@ -16,7 +16,7 @@ func same(a: Variant, b: Variant) -> bool:
 
 
 func round_trip_player(id: int, data: Dictionary, extras: Dictionary = {}) -> Dictionary:
-	var packet := SnapshotCodec.world(7, 3, [SnapshotCodec.player_entry(id, data, 65535, extras)], [])
+	var packet := SnapshotCodec.world(7, 3, 4242, [SnapshotCodec.player_entry(id, data, 65535, extras)], [])
 	var world := SnapshotCodec.decode_world(packet)
 	check(world.get("sequence") == 7 and world.get("visit") == 3 and world["players"].has(id) and world["players"][id]["profile"] == 65535, "World header, player ID and profile revision decode")
 	return world
@@ -88,8 +88,13 @@ func run() -> void:
 	ship.resource_boosts = {"lasers": {"resource": "seprom", "remaining": 1_500_000_001}, "shields": {"resource": "promerium", "remaining": 512.25}}
 	var owner := session.player_state(id, true)
 	var extras := session.owner_extras(id)
+	extras.merge({"ack": 4_000_000_000, "depth": 7, "turn_budget": 0.625, "inputs": {"applied": 9, "duplicates": 40, "late": 1, "lost": 2, "dropped": 3, "starved": 4}}, true)
 	world = round_trip_player(id, owner, extras)
 	decoded = SnapshotCodec.player_state(world["players"][id], SnapshotCodec.player_profile(owner))
+	check(world["tick"] == 4242, "The world header carries the server tick")
+	check(decoded["ack"] == 4_000_000_000 and decoded["input_depth"] == 7 and decoded["turn_budget"] == 0.625 and decoded["inputs"] == extras["inputs"], "Owner entries carry the input acknowledgement, buffer depth, turn budget and input counters")
+	for key: String in ["ack", "input_depth", "turn_budget", "inputs"]:
+		decoded.erase(key)
 	check(same(decoded, owner), "Owner player state packs and unpacks with private progress and contracts")
 	var unpacked: Dictionary = world["owner"]
 	check(unpacked.get("rounds") == extras["rounds"], "Owner ammunition counts and selection unpack exactly")
@@ -104,7 +109,7 @@ func run() -> void:
 	enemy.engaged = true
 	enemy.respawn = 2.5
 	var alien := combat.pack_alien(enemy)
-	var alien_packet := SnapshotCodec.world(9, 0, [], [SnapshotCodec.alien_entry(alien, 9)])
+	var alien_packet := SnapshotCodec.world(9, 0, 1, [], [SnapshotCodec.alien_entry(alien, 9)])
 	world = SnapshotCodec.decode_world(alien_packet)
 	check(world["aliens"][enemy.alien_id]["profile"] == 9 and same(SnapshotCodec.alien_state(world["aliens"][enemy.alien_id], SnapshotCodec.alien_profile(alien)), alien), "Alien state and profile revision pack and unpack")
 	check(SnapshotCodec.decode_world(alien_packet.slice(0, 8)).is_empty() and SnapshotCodec.decode_world(alien_packet + PackedByteArray([0])).is_empty(), "Short or oversized packets are rejected")
@@ -116,7 +121,7 @@ func run() -> void:
 	var aliens: Array[PackedByteArray] = []
 	for each: Alien in server.map_rosters[0].values():
 		aliens.append(SnapshotCodec.alien_entry(combat.pack_alien(each), 1))
-	var batch := var_to_bytes(SnapshotCodec.world(1, 0, players, aliens)).size()
+	var batch := var_to_bytes(SnapshotCodec.world(1, 0, 1, players, aliens)).size()
 	var legacy := legacy_bytes(server, id) + 8 * var_to_bytes([{other: session.player_state(other, false)}, {}, 1, 0]).size()
 	print("SNAPSHOT_PAYLOAD=", JSON.stringify({"legacy_bytes": legacy, "batched_bytes": batch, "ratio": snappedf(float(legacy) / batch, 0.01)}))
 	check(batch < 1200, "Ten pilots and five aliens fit below the ENet datagram budget")
@@ -142,10 +147,10 @@ func run() -> void:
 	var sequence := session.snapshot_sequence
 	var applied: int = first.session.player_sequences.get(other, -1)
 	var entry := SnapshotCodec.player_entry(other, changed, (cached[0] + 1) % 65536)
-	first.session.world_snapshot(SnapshotCodec.world(sequence + 1, ship.map_visit, [entry], []))
+	first.session.world_snapshot(SnapshotCodec.world(sequence + 1, ship.map_visit, 0, [entry], []))
 	check(first.session.player_sequences.get(other, -1) == applied and first.session.ships[other].laser_damage == 4321.0, "State packed with a newer profile waits instead of using the cached profile")
 	first.session.entity_profiles({other: [(cached[0] + 1) % 65536, SnapshotCodec.player_profile(changed)]}, {})
-	first.session.world_snapshot(SnapshotCodec.world(sequence + 2, ship.map_visit, [entry], []))
+	first.session.world_snapshot(SnapshotCodec.world(sequence + 2, ship.map_visit, 0, [entry], []))
 	check(first.session.player_sequences.get(other, -1) == sequence + 2 and first.session.ships[other].laser_damage == 5000.0, "State applies once its profile revision arrives")
 	await replicate(server)
 	check(session.profile_revision(Vector2i(0, other), SnapshotCodec.player_profile(session.player_state(other, false)))[0] == (cached[0] + 1) % 65536, "The server advances the profile revision once per change")

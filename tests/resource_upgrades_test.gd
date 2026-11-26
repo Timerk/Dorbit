@@ -234,6 +234,9 @@ func run() -> void:
 	check(is_equal_approx(client.player.max_shield, 1100) and is_equal_approx(client.player.cruise_speed, ship.cruise_speed), "Effective timed stats replicate to clients")
 	var payload: Dictionary = client.session.goals[id].duplicate(true)
 	payload["contracts"] = {}
+	# Input acknowledgement fields travel as fixed binary owner fields; see snapshot_codec_test.
+	for key: String in ["ack", "input_depth", "turn_budget", "inputs"]:
+		payload.erase(key)
 	for offer: String in HuntingContracts.OFFERS:
 		payload["contracts"][offer] = HuntingContracts.accept(offer)
 	print("Boosted pilot with three contracts: %d bytes" % var_to_bytes([{id: payload}, {}, 1]).size())

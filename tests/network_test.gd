@@ -113,7 +113,7 @@ func run() -> void:
 	check(host.alien.alive and client.alien.alive and not client.alien.simulation_authority, "Shared alien is simulated only by the host")
 	check(client.player.camera.current, "The local camera stays active after remote ships spawn")
 	var start := host.session.ships[id].position
-	client.session.command_flight.rpc_id(1, Vector3(0, 0, -99), Vector3.ZERO, true)
+	client.session.send_command(Vector3(0, 0, -99), Vector3.ZERO, true)
 	await settle()
 	for frame in range(12):
 		host.session.tick(1.0 / 60.0)
@@ -128,7 +128,7 @@ func run() -> void:
 	# The server follows requested facing at a bounded rate instead of snapping to it.
 	var remote := host.session.ships[id]
 	remote.rotation = Vector3.ZERO
-	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3(0, PI, 0), false)
+	client.session.send_command(Vector3.ZERO, Vector3(0, PI, 0), false)
 	await settle(0.06)
 	host.session.tick(1.0 / 60.0)
 	var turn_limit := Pilot.MAX_TURN_RATE * (1.0 / 60.0 + Pilot.TURN_LATENCY_ALLOWANCE) + 0.001
@@ -140,18 +140,27 @@ func run() -> void:
 	var tracked := true
 	for step in range(1, 9):
 		var angles := Vector3(clampf(0.25 * step, -1.48, 1.48), wrapf(PI + 0.4 * step, -PI, PI), 0)
-		client.session.command_flight.rpc_id(1, Vector3.ZERO, angles, false)
+		client.session.send_command(Vector3.ZERO, angles, false)
 		await settle(0.06)
 		for frame in range(3):
 			host.session.tick(1.0 / 60.0)
 		tracked = tracked and absf(angle_difference(remote.rotation.y, angles.y)) < 0.001 and absf(remote.rotation.x - angles.x) < 0.001
 	check(tracked, "Normal steering converges on every command without server lag")
-	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false)
+	client.session.send_command(Vector3.ZERO, Vector3.ZERO, false)
 	await settle(0.06)
 	var command_before: Dictionary = host.session.commands[id].duplicate()
-	client.session.command_flight.rpc_id(1, Vector3(NAN, 0, 0), Vector3.ZERO, true)
+	var valid := FlightInput.encode(0, false, 0, -1, 0, [{"seq": 1 << 20, "movement": Vector3.ONE, "boost": true, "facing": Vector3.ZERO}])
+	client.session.flight_inputs.rpc_id(1, PackedByteArray([1, 2, 3]))
+	client.session.flight_inputs.rpc_id(1, valid + PackedByteArray([0]))
+	client.session.flight_inputs.rpc_id(1, valid.slice(0, valid.size() - 1))
 	await settle()
-	check(host.session.commands[id] == command_before, "Host rejects non-finite commands")
+	check(host.session.commands[id] == command_before, "Host rejects malformed input packets")
+	client.session.send_command(Vector3(NAN, INF, -INF), Vector3(NAN, INF, 0), true)
+	await settle()
+	var forged: Dictionary = host.session.commands[id]
+	check(forged["movement"].is_finite() and forged["movement"].length() <= 1.0 and forged["rotation"].is_finite() and absf(forged["rotation"].x) <= 1.48, "Non-finite inputs decode to finite, bounded values")
+	client.session.send_command(Vector3.ZERO, Vector3.ZERO, false)
+	await settle()
 	await settle(0.6)
 	for frame in range(30):
 		host.session.tick(1.0 / 60.0)
@@ -160,7 +169,7 @@ func run() -> void:
 	await settle(0.5)
 	check(host.session.ships.size() == 3 and client.session.ships.size() == 3 and late.session.ships.size() == 3, "Late join replicates all players to all peers")
 	host.set_paused(true)
-	client.session.command_flight.rpc_id(1, Vector3(0, 1, 0), Vector3.ZERO, false)
+	client.session.send_command(Vector3(0, 1, 0), Vector3.ZERO, false)
 	await settle()
 	var before_pause := host.session.ships[id].position
 	host._physics_process(0.1)

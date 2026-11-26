@@ -22,7 +22,7 @@ func run() -> void:
 		await process_frame
 	check(not client.preflight, "Exported server admits pilot to flight")
 	var start := client.player.position
-	client.session.command_flight.rpc_id(1, Vector3(0, 0, -1), Vector3.ZERO, true)
+	client.session.send_command(Vector3(0, 0, -1), Vector3.ZERO, true)
 	deadline = Time.get_ticks_msec() + 3000
 	while client.player.position.distance_to(start) < 1.0 and Time.get_ticks_msec() < deadline:
 		await process_frame

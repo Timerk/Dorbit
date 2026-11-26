@@ -261,7 +261,7 @@ func drive_client(delta: float) -> void:
 	if direction.length_squared() > 0.01:
 		facing = Basis.looking_at(direction, Vector3.RIGHT if absf(direction.normalized().dot(Vector3.UP)) > 0.98 else Vector3.UP)
 	var movement := (facing.inverse() * (destination - location) / 25.0).limit_length()
-	sector.session.command_flight.rpc_id(1, movement, facing.get_euler(), false,
+	sector.session.send_command(movement, facing.get_euler(), false,
 		enemy.available(), int(sector.player.get_meta("life", 0)), enemy.life, enemy.alien_id)
 	rocket_clock += 0.05
 	launcher_clock += 0.05

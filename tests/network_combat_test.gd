@@ -13,11 +13,11 @@ func intent(fire: bool, life: int, encounter: int, target: int = 0, movement := 
 
 
 ## Resend each client's unreliable flight intent, as production clients do every
-## frame, until the server stores all of them in the same turn. command_flight
+## frame, until the server stores all of them in the same turn. flight_inputs
 ## stores a new Dictionary per accepted packet, so a changed reference across this
 ## turn's server poll marks a receipt of a packet sent after the request, without
-## judging freshness by wall-clock age. Callers assert or tick combat before
-## another frame can age the receipt past COMMAND_TIMEOUT. Returns false and
+## judging freshness by age. Fire intents age in server ticks, which these
+## fixtures advance explicitly. Returns false and
 ## prints per-peer samples if the server never stores the intents.
 func deliver_intents(server: Sector, clients: Array[Sector], intents: Array[Dictionary], phase: String = "intent") -> bool:
 	var samples: Array[Dictionary] = []
@@ -25,7 +25,7 @@ func deliver_intents(server: Sector, clients: Array[Sector], intents: Array[Dict
 		await process_frame
 		for index in range(clients.size()):
 			var sent := intents[index]
-			clients[index].session.command_flight.rpc_id(1, sent["movement"], sent["angles"], sent["boost"], sent["fire"], sent["life"], sent["encounter"], sent["target"])
+			clients[index].session.send_command(sent["movement"], sent["angles"], sent["boost"], sent["fire"], sent["life"], sent["encounter"], sent["target"])
 		# Flush clients before the authority so this turn's packets reach its poll.
 		for client in clients:
 			client.multiplayer.poll()
@@ -40,9 +40,9 @@ func deliver_intents(server: Sector, clients: Array[Sector], intents: Array[Dict
 			var sent := intents[index]
 			var command: Dictionary = server.session.commands.get(id, {})
 			var received := not command.is_empty() and not is_same(command, prior[index])
-			var facing := Vector3(clampf(sent["angles"].x, -1.48, 1.48), wrapf(sent["angles"].y, -PI, PI), 0)
-			var matches: bool = command.get("movement") == sent["movement"].limit_length() and command.get("rotation", Vector3.INF).is_equal_approx(facing) and command.get("boost") == sent["boost"] and command.get("fire") == sent["fire"] and command.get("encounter") == sent["encounter"] and command.get("target") == sent["target"]
-			# command_flight drops packets from missing, docked or dead ships and other lives.
+			var facing := FlightInput.quantize_facing(sent["angles"])
+			var matches: bool = command.get("movement") == FlightInput.quantize_movement(sent["movement"]).limit_length() and command.get("rotation", Vector3.INF).is_equal_approx(facing) and command.get("boost") == sent["boost"] and command.get("fire") == sent["fire"] and command.get("encounter") == sent["encounter"] and command.get("target") == sent["target"]
+			# flight_inputs drops packets from missing, docked or dead ships and other lives.
 			var ship: SpaceShip = server.session.ships.get(id)
 			var blocker := ""
 			if ship == null:
@@ -72,7 +72,7 @@ func deliver_intents(server: Sector, clients: Array[Sector], intents: Array[Dict
 func send_fire(client: Sector, fire: bool = true, life: int = 0, encounter_id: int = 0) -> void:
 	var server := authority_for(client)
 	if server == null or server.session.combat.records.get(client.multiplayer.get_unique_id(), {}).get("life", -1) != life:
-		client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false, fire, life, encounter_id, 0)
+		client.session.send_command(Vector3.ZERO, Vector3.ZERO, false, fire, life, encounter_id, 0)
 		await settle(0.06)
 		return
 	check(await deliver_intents(server, [client], [intent(fire, life, encounter_id)], "send_fire"), "Server receives the client's fire intent")

@@ -29,9 +29,10 @@ func run() -> void:
 	var stats: Dictionary = client.session.net_simulator.stats()
 	var net := client.session.net_stats
 	print("Relay stats: ", stats)
-	print("Client stats: rtt %.1f ms, up %.0f B/s, down %.0f B/s, snapshots %d, jitter %s, max error %.2f m, commands %d sent / %d accepted" % [
+	var inputs: Dictionary = server.session.input_buffers[id].counters() if server.session.input_buffers.has(id) else {}
+	print("Client stats: rtt %.1f ms, up %.0f B/s, down %.0f B/s, snapshots %d, jitter %s, max sim error %.2f m, inputs %d sent, server %s" % [
 		net.rtt_ms, net.up_bytes_per_second, net.down_bytes_per_second, net.snapshots_received,
-		net.snapshot_jitter(), net.max_error_m, net.commands_sent, server.session.net_stats.commands_received.get(id, 0)])
+		net.snapshot_jitter(), net.max_error_m, net.inputs_sent, inputs])
 	check(stats["up"]["forwarded_packets"] > 30 and stats["down"]["forwarded_packets"] > 30, "Traffic flows both ways through the relay")
 	check(stats["up"]["dropped_packets"] + stats["down"]["dropped_packets"] > 0, "The relay drops datagrams")
 	check(stats["up"]["duplicated_packets"] + stats["down"]["duplicated_packets"] > 0, "The relay duplicates datagrams")
@@ -40,8 +41,9 @@ func run() -> void:
 	check(net.up_bytes_per_second > 0.0 and net.down_bytes_per_second > net.up_bytes_per_second, "Client traffic rates are sampled")
 	check(net.corrections > 0 and net.has_server_state, "Reconciliation against server state is measured")
 	check(server.session.ships[id].position.z < Sector.SPAWN_POSITION.z, "Relayed flight commands move the pilot on the server")
-	var accepted: int = server.session.net_stats.commands_received.get(id, 0)
-	check(accepted > 0 and accepted <= net.commands_sent, "The server counts accepted flight commands")
+	var applied: int = inputs.get("applied", 0)
+	check(applied > 0 and applied <= net.inputs_sent, "The server applies relayed flight inputs")
+	check(inputs.get("lost", -1) == 0, "Redundant input packets lose no inputs at 5% loss")
 	# The F8 overlay edits the running relay and shows the server ghost.
 	var toggle := InputEventAction.new()
 	toggle.action = "netcode"
