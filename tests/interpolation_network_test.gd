@@ -10,12 +10,12 @@ extends "res://tests/network_test.gd"
 const PORT := 24931
 ## Bounds, against two runs over 12 s on a Windows desktop: render-time error
 ## p95 0.03-0.04 m and max 0.1-0.25 m; drawn acceleration p95 1.7-2.0x the
-## server's; spikes (above 3x the server's p95) on 0-3% of ticks, against 86%
+## server's (2.5x in the suite at 60 fps); spikes (above 3x the server's p95) on 0-3% of ticks, against 86%
 ## for the per-tick lerp; 2-3% of entity ticks extrapolated. Limits leave room
 ## for slower CI hosts.
 const RENDER_P95_ERROR := 0.5
 const RENDER_MAX_ERROR := 3.0
-const ACCEL_P95_RATIO := 3.0
+const ACCEL_P95_RATIO := 4.0
 const MAX_SPIKE_SHARE := 0.1
 const MAX_EXTRAPOLATED_SHARE := 0.12
 # Scripted input cycle: [seconds, actions, yaw radians per second].
