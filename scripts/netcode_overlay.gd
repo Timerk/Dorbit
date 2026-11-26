@@ -5,6 +5,9 @@ extends Control
 ## Client-side diagnostics only; nothing here is sent to the server.
 
 const SIZE := Vector2(340, 356)
+# Readings start here; the controls sit below them.
+const LINE_HEIGHT := 16
+const CONTROLS_TOP := 146
 const REFRESH := 0.25
 const DIRECTION_LABELS := ["Both ways (round trip)", "Upstream only", "Downstream only"]
 # Slider limits per mode: [round trip, one way].
@@ -29,8 +32,8 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	size = SIZE
 	var rows := VBoxContainer.new()
-	rows.position = Vector2(12, 138)
-	rows.size = Vector2(SIZE.x - 24, SIZE.y - 146)
+	rows.position = Vector2(12, CONTROLS_TOP)
+	rows.size = Vector2(SIZE.x - 24, SIZE.y - CONTROLS_TOP - 8)
 	rows.add_theme_constant_override("separation", 2)
 	add_child(rows)
 	direction = OptionButton.new()
@@ -194,16 +197,18 @@ func _draw() -> void:
 		lines.append("Not connected to a server.")
 	else:
 		var jitter := stats.snapshot_jitter()
-		lines.append("RTT  %d ms" % roundi(stats.rtt_ms))
-		lines.append("Up  %s/s    Down  %s/s" % [String.humanize_size(int(stats.up_bytes_per_second)), String.humanize_size(int(stats.down_bytes_per_second))])
+		lines.append("RTT  %d ms    Up  %s/s    Down  %s/s" % [roundi(stats.rtt_ms), String.humanize_size(int(stats.up_bytes_per_second)), String.humanize_size(int(stats.down_bytes_per_second))])
 		lines.append("Snapshot jitter  %.1f ms mean / %.1f ms max" % [jitter.x, jitter.y])
-		lines.append("Correction  %.2f m last / %.2f m max" % [stats.latest_correction_m, stats.max_correction_m])
-		lines.append("Prediction error  %.2f m last / %.2f m max" % [stats.latest_error_m, stats.max_error_m])
+		lines.append("Inputs  %d unacked,  replayed %d (max %d)" % [stats.unacked_inputs, stats.replayed_ticks, stats.max_replayed_ticks])
+		lines.append("Ack lag  %d ticks,  server buffer %s" % [stats.ack_lag_ticks, str(stats.server_input_depth) if stats.server_input_depth >= 0 else "-"])
+		lines.append("Sim error  %.2f / %.2f m max,  offset %.2f m" % [stats.latest_error_m, stats.max_error_m, stats.latest_offset_m])
+		var inputs := stats.server_inputs
+		lines.append("Server  lost %d  late %d  dup %d  starved %d" % [inputs.get("lost", 0), inputs.get("late", 0), inputs.get("duplicates", 0), inputs.get("starved", 0)])
 		if simulator.is_running():
 			var relay := simulator.stats()
 			lines.append("Relay lost  %d up / %d down,  dup %d / %d" % [relay["up"]["dropped_packets"], relay["down"]["dropped_packets"], relay["up"]["duplicated_packets"], relay["down"]["duplicated_packets"]])
 	for index in lines.size():
-		draw_string(font, Vector2(12, 44 + index * 18), lines[index], HORIZONTAL_ALIGNMENT_LEFT, SIZE.x - 24, 14, FlightHud.INK if index == 0 else FlightHud.MUTED)
+		draw_string(font, Vector2(12, 44 + index * LINE_HEIGHT), lines[index], HORIZONTAL_ALIGNMENT_LEFT, SIZE.x - 24, 14, FlightHud.INK if index == 0 else FlightHud.MUTED)
 
 
 func update_ghost(shown: bool) -> void:

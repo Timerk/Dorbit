@@ -4,7 +4,7 @@ extends "res://tests/dedicated_server_test.gd"
 
 func fire_at(server: Sector, clients: Array[Sector], enemies: Array[Alien], life: int = -1, phase: String = "fire") -> void:
 	# All simultaneous intents must reach the server in the same turn, so combat
-	# can consume them together even when each frame exceeds COMMAND_TIMEOUT.
+	# can consume them together however long each frame takes.
 	var intents: Array[Dictionary] = []
 	for index in range(clients.size()):
 		var enemy := enemies[index]
@@ -45,26 +45,27 @@ func run() -> void:
 	for enemy: Alien in server.aliens.values():
 		check(SnapshotCodec.alien_entry(combat.pack_alien(enemy), 1).size() <= 58, "Alien snapshot entry stays compact")
 		check(not first.aliens[enemy.alien_id].simulation_authority, "Clients cannot simulate any alien")
-	first.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false, true, 0, 0, 999)
+	first.session.send_command(Vector3.ZERO, Vector3.ZERO, false, true, 0, 0, 999)
 	await settle(0.06)
 	check(not combat.remote_firing(first_id), "Unknown alien IDs cannot fire or claim a reward")
-	# Regress CI stalls longer than COMMAND_TIMEOUT after settings have loaded.
+	# Regress CI stalls after settings have loaded: fire intents age in server
+	# ticks, so slow frames alone never expire them.
 	var previous_max_fps := Engine.max_fps
 	Engine.max_fps = 1
 	await fire_at(server, [first, second], [scout, heavy], -1, "slow-frame simultaneous encounters")
 	combat.tick(0.01)
-	# Reproduce the scheduler condition explicitly: a received command goes stale
-	# across capped frames without client heartbeats, then actual ENet retries must
-	# converge again. The production timeout remains authoritative.
 	# Own polling during this regression so a convenient automatic poll cannot
 	# hide a missing receipt barrier in fire_at. Restore it before other fixtures.
 	var previous_multiplayer_poll := multiplayer_poll
 	multiplayer_poll = false
 	await process_frame
 	await process_frame
-	check(not combat.remote_firing(first_id) and not combat.remote_firing(second_id), "Slow frames expire both received fire intents at the production timeout")
+	check(combat.remote_firing(first_id) and combat.remote_firing(second_id), "Slow frames without server ticks keep both fire intents")
+	# Server ticks without input packets expire the intents at the production timeout.
+	server.session.server_tick += FlightSession.INPUT_TIMEOUT_TICKS
+	check(not combat.remote_firing(first_id) and not combat.remote_firing(second_id), "Input timeout ticks expire both received fire intents")
 	await fire_at(server, [first, second], [scout, heavy], -1, "slow-frame retry after expiry")
-	check(combat.remote_firing(first_id) and combat.remote_firing(second_id), "ENet retries restore both fresh intents together after slow-frame expiry")
+	check(combat.remote_firing(first_id) and combat.remote_firing(second_id), "ENet retries restore both fresh intents together after expiry")
 	multiplayer_poll = previous_multiplayer_poll
 	Engine.max_fps = previous_max_fps
 	check(scout.shield < scout.max_shield and heavy.shield < heavy.max_shield, "Two simultaneous fire intents damage independent aliens")
@@ -92,7 +93,7 @@ func run() -> void:
 	check(combat.records[first_id]["credits"] == 300 and combat.records[second_id]["credits"] == 0, "Scout pays only its contributor")
 	check(heavy.hull + heavy.shield == heavy_health and heavy.life == heavy_life and heavy.contributors == [second_id], "Scout death preserves Heavy health, life and contributions")
 	# These clients disable physics/input heartbeats. Snapshot convergence may take
-	# longer than COMMAND_TIMEOUT; check retained intent independently of its age.
+	# longer than the input timeout; check retained intent independently of its age.
 	var heavy_command: Dictionary = server.session.commands.get(second_id, {})
 	check(second.target == second.aliens[4] and second.auto_fire and combat.remote_target(second_id) == heavy and heavy_command.get("fire", false) and heavy_command.get("encounter", -1) == heavy.life, "Another alien's death preserves Heavy targeting and fire intent")
 	var timer := scout.respawn

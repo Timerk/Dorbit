@@ -32,19 +32,26 @@ extends "res://tests/network_test.gd"
 ##   total sent bytes per second divided by the number of connected clients.
 ## - jitter_mean_ms / jitter_p95_ms / jitter_max_ms: |snapshot inter-arrival
 ##   time - 50 ms| as handled by the client, so frame timing is included.
-## - error_*_m: distance from the predicted local ship to the authoritative
-##   position in each applied snapshot, before reconciliation (mean/p95/max).
-## - correction_*_m: distance reconciliation moved the local ship for each
-##   snapshot. The current reconciliation applies it within one frame, so this
-##   is also the visible jump beyond expected motion.
+## - error_*_m: simulation error at each reconciliation: how far rewinding to
+##   the authoritative state and replaying unacknowledged inputs moved the
+##   predicted ship (mean/p95/max). Before phase 2 (network schema 23) this was
+##   the distance from the predicted ship to the round-trip-old authoritative
+##   position, which mostly measured latency rather than misprediction.
+## - correction_*_m: the visual offset hiding corrections, sampled every client
+##   physics tick: how far the drawn ship is from the simulated one. Before
+##   phase 2 it was how far each snapshot's 20% lerp moved the ship, a visible
+##   jump within one frame.
 ## - gap_*_m: distance from the client's ship to the server's current position
 ##   of the same ship, sampled every frame (possible because both run in this
-##   process). Accurate prediction leads the server by the upstream delay times
-##   speed; dragging the ship toward old snapshots shows up as error staying
-##   small while this gap reflects the delay instead.
-## - commands_sent / commands_applied: flight commands the client sent and the
-##   server accepted; commands_lost is their difference, as a count and percent.
-##   ENet discards duplicated and out-of-order sequenced commands itself.
+##   process). Accurate prediction leads the server by the upstream delay and
+##   the server's input buffer times speed.
+## - replay_mean / replay_max: unacknowledged inputs replayed per reconciliation.
+## - depth_mean: inputs the server had buffered for this pilot, sampled every frame.
+## - inputs_sent / inputs_applied / inputs_lost: inputs the client sampled, the
+##   server applied, and the server skipped because they never arrived. late,
+##   dropped (catch-up) and starved (ticks reusing the last input) are the
+##   server's InputBuffer counters. Before phase 2 these columns counted 20 Hz
+##   flight commands, each lost with its datagram.
 
 const BASE_PORT := 24911
 # ENet smooths its RTT by 1/8 per reliable acknowledgement, about two per
@@ -137,8 +144,9 @@ func measure(server: Sector, client: Sector, clients: int, condition: Array) -> 
 	net.keep_samples = true
 	relay.reset_stats()
 	var id := client.multiplayer.get_unique_id()
-	var sent_before := net.commands_sent
-	var applied_before: int = server.session.net_stats.commands_received.get(id, 0)
+	var sent_before := net.inputs_sent
+	var packets_before := net.input_packets_sent
+	var inputs_before: Dictionary = server.session.input_buffers[id].counters()
 	var up_before := net.total_up_bytes
 	var down_before := net.total_down_bytes
 	var host: ENetConnection = (server.multiplayer.multiplayer_peer as ENetMultiplayerPeer).host
@@ -151,8 +159,10 @@ func measure(server: Sector, client: Sector, clients: int, condition: Array) -> 
 	net.keep_samples = false
 	var server_bytes := host.pop_statistic(ENetConnection.HOST_TOTAL_SENT_DATA)
 	var relay_stats: Dictionary = relay.stats()
-	var sent := net.commands_sent - sent_before
-	var applied: int = server.session.net_stats.commands_received.get(id, 0) - applied_before
+	var sent := net.inputs_sent - sent_before
+	var inputs: Dictionary = server.session.input_buffers[id].counters()
+	for key: String in inputs:
+		inputs[key] -= inputs_before[key]
 	return {
 		"rtt_added_ms": condition[0], "jitter_ms": condition[1], "loss_percent": condition[2], "duplicate_percent": condition[3],
 		"seconds": snappedf(seconds, 0.01), "rtt_ms": snappedf(NetStats.mean(rtts), 0.1),
@@ -168,19 +178,25 @@ func measure(server: Sector, client: Sector, clients: int, condition: Array) -> 
 		"error_mean_m": snappedf(NetStats.mean(net.error_samples), 0.01),
 		"error_p95_m": snappedf(NetStats.percentile(net.error_samples, 0.95), 0.01),
 		"error_max_m": snappedf(NetStats.percentile(net.error_samples, 1.0), 0.01),
-		"correction_mean_m": snappedf(NetStats.mean(net.correction_samples), 0.01),
-		"correction_p95_m": snappedf(NetStats.percentile(net.correction_samples, 0.95), 0.01),
-		"correction_max_m": snappedf(NetStats.percentile(net.correction_samples, 1.0), 0.01),
+		"correction_mean_m": snappedf(NetStats.mean(net.offset_samples), 0.01),
+		"correction_p95_m": snappedf(NetStats.percentile(net.offset_samples, 0.95), 0.01),
+		"correction_max_m": snappedf(NetStats.percentile(net.offset_samples, 1.0), 0.01),
+		"replay_mean": snappedf(NetStats.mean(net.replay_samples), 0.1),
+		"replay_max": roundi(NetStats.percentile(net.replay_samples, 1.0)),
+		"depth_mean": snappedf(NetStats.mean(depths), 0.1),
 		"gap_mean_m": snappedf(NetStats.mean(gaps), 0.01),
 		"gap_p95_m": snappedf(NetStats.percentile(gaps, 0.95), 0.01),
-		"commands_sent": sent, "commands_applied": applied, "commands_lost": sent - applied,
-		"commands_lost_percent": snappedf(100.0 * (sent - applied) / maxi(sent, 1), 0.1),
+		"inputs_sent": sent, "inputs_applied": inputs["applied"], "inputs_lost": inputs["lost"],
+		"inputs_late": inputs["late"], "inputs_dropped": inputs["dropped"], "inputs_starved": inputs["starved"],
+		"inputs_duplicates": inputs["duplicates"],
+		"input_packets": net.input_packets_sent - packets_before,
 		"relay_dropped": relay_stats["up"]["dropped_packets"] + relay_stats["down"]["dropped_packets"],
 	}
 
 
 var speeds := PackedFloat32Array()
 var gaps := PackedFloat32Array()
+var depths := PackedFloat32Array()
 
 
 ## Flies the input pattern for `seconds`; returns RTT samples taken every 0.5 s.
@@ -188,6 +204,7 @@ func fly(client: Sector, seconds: float, server: Sector = null) -> PackedFloat32
 	var rtts := PackedFloat32Array()
 	speeds = PackedFloat32Array()
 	gaps = PackedFloat32Array()
+	depths = PackedFloat32Array()
 	var id := client.multiplayer.get_unique_id()
 	var started := Time.get_ticks_msec()
 	var next_rtt := 500
@@ -219,6 +236,8 @@ func fly(client: Sector, seconds: float, server: Sector = null) -> PackedFloat32
 		speeds.append(client.player.velocity.length())
 		if server != null and server.session.ships.has(id):
 			gaps.append(client.player.position.distance_to(server.session.ships[id].position))
+			if server.session.input_buffers.has(id):
+				depths.append(server.session.input_buffers[id].depth())
 		if now - started >= next_rtt:
 			next_rtt += 500
 			rtts.append(client.session.net_stats.rtt_ms)
@@ -233,15 +252,16 @@ func release_inputs() -> void:
 
 func print_table(results: Array[Dictionary]) -> void:
 	print("\nAdded RTT is split evenly per direction (100 ms = +50 ms each way); loss and duplication apply both ways.")
-	print("| Added RTT | Loss | RTT | Speed | Client up | Client down | Server to client | Snapshot jitter mean / p95 / max | Prediction error mean / p95 / max | Correction mean / p95 / max | Gap to server now mean / p95 | Commands sent / applied / lost |")
-	print("| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+	print("| Added RTT | Loss | RTT | Speed | Client up | Client down | Server to client | Snapshot jitter mean / p95 / max | Sim error mean / p95 / max | Visual offset mean / p95 / max | Gap to server now mean / p95 | Replay mean / max | Server buffer | Inputs sent / applied / lost | Late / dropped / starved |")
+	print("| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
 	for row: Dictionary in results:
 		var jitter := "" if row["jitter_ms"] == 0.0 else " ± %d" % row["jitter_ms"]
-		print("| %d%s ms | %s%% | %.0f ms | %.1f m/s | %.1f KB/s | %.1f KB/s | %.1f KB/s | %.1f / %.1f / %.1f ms | %.2f / %.2f / %.2f m | %.2f / %.2f / %.2f m | %.2f / %.2f m | %d / %d / %d (%.1f%%) |" % [
+		print("| %d%s ms | %s%% | %.0f ms | %.1f m/s | %.1f KB/s | %.1f KB/s | %.1f KB/s | %.1f / %.1f / %.1f ms | %.2f / %.2f / %.2f m | %.2f / %.2f / %.2f m | %.2f / %.2f m | %.1f / %d | %.1f | %d / %d / %d | %d / %d / %d |" % [
 			row["rtt_added_ms"], jitter, str(row["loss_percent"]), row["rtt_ms"], row["speed_mps"],
 			row["up_bps"] / 1000.0, row["down_bps"] / 1000.0, row["server_bps"] / 1000.0,
 			row["jitter_mean_ms"], row["jitter_p95_ms"], row["jitter_max_ms"],
 			row["error_mean_m"], row["error_p95_m"], row["error_max_m"],
 			row["correction_mean_m"], row["correction_p95_m"], row["correction_max_m"],
-			row["gap_mean_m"], row["gap_p95_m"],
-			row["commands_sent"], row["commands_applied"], row["commands_lost"], row["commands_lost_percent"]])
+			row["gap_mean_m"], row["gap_p95_m"], row["replay_mean"], row["replay_max"], row["depth_mean"],
+			row["inputs_sent"], row["inputs_applied"], row["inputs_lost"],
+			row["inputs_late"], row["inputs_dropped"], row["inputs_starved"]])

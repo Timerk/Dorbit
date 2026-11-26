@@ -4,10 +4,19 @@ extends Node
 
 const PORT: int = 24567
 const MAX_PLAYERS: int = 10
-const COMMAND_TIMEOUT: float = 0.5
+## Server ticks a pilot's latest fire intent stays valid without new input packets.
+const INPUT_TIMEOUT_TICKS: int = InputBuffer.TIMEOUT_TICKS
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when packet contents or shared physics change without an RPC signature change.
-const NETWORK_SCHEMA: int = 23
+const NETWORK_SCHEMA: int = 24
+## ENet packet throttle for every server/client peer: [interval ms,
+## acceleration, deceleration]. ENet's default deceleration (2) discards
+## unreliable packets at the sender whenever one round trip exceeds the
+## previous interval's by twice its variance, which a steady high-latency link
+## does constantly. Dorbit's unreliable traffic is small and paced, and inputs
+## are redundant, so deceleration 0 keeps the throttle open. Reliable traffic
+## keeps ENet's own windowing and resends.
+const ENET_THROTTLE := [5000, 2, 0]
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
@@ -15,7 +24,16 @@ var active: bool = false
 var connecting: bool = false
 var status: String = "Choose a server and connect."
 var ships: Dictionary[int, Pilot] = {}
+## Server: each pilot's latest intent from its newest input packet:
+## {movement, rotation, boost, fire, encounter, target, seq, tick}. Movement
+## comes from input_buffers; this keeps fire and targeting.
 var commands: Dictionary[int, Dictionary] = {}
+## Server: buffered flight inputs per pilot, consumed one per tick.
+var input_buffers: Dictionary[int, InputBuffer] = {}
+## Server simulation tick, advanced once per server physics tick.
+var server_tick: int = 0
+## Client: local pilot inputs, prediction and reconciliation.
+var prediction := FlightPrediction.new()
 var goals: Dictionary[int, Dictionary] = {}
 var send_clock: float = 0.0
 var connect_clock: float = 0.0
@@ -345,6 +363,7 @@ func protocol_fingerprint(schema: int = NETWORK_SCHEMA) -> String:
 func begin_authentication(id: int) -> void:
 	if not multiplayer.is_server():
 		return
+	configure_throttle(id)
 	var nonce := Crypto.new().generate_random_bytes(32) if sector.dedicated_server else PackedByteArray([0])
 	challenges[id] = nonce
 	multiplayer.send_auth(id, JSON.stringify({"nonce": nonce.hex_encode(), "protocol": protocol_fingerprint()}).to_utf8_buffer())
@@ -461,6 +480,8 @@ func start_flight() -> void:
 	sector.player.rotation = Vector3.ZERO
 	sector.player.map_id = 0
 	sector.player.map_visit = 0
+	prediction = FlightPrediction.new()
+	prediction.reset(sector.player)
 	sector.activate_map(0)
 	# Players cannot push each other, but can block weapon line of sight.
 	sector.player.collision_mask = 1
@@ -471,7 +492,18 @@ func start_flight() -> void:
 	menu.hide()
 
 
+## Applies ENET_THROTTLE to one ENet peer (ENet tells the other end too).
+func configure_throttle(id: int) -> void:
+	var enet := multiplayer.multiplayer_peer as ENetMultiplayerPeer
+	if enet == null:
+		return
+	var peer := enet.get_peer(id)
+	if peer != null:
+		peer.throttle_configure(ENET_THROTTLE[0], ENET_THROTTLE[1], ENET_THROTTLE[2])
+
+
 func connected() -> void:
+	configure_throttle(1)
 	if sector.client_only:
 		preferences.remember(attempted_address, attempted_port)
 	sector.preflight = sector.client_only
@@ -616,7 +648,7 @@ func dock_request() -> void:
 	ship.velocity = Vector3.ZERO
 	combat.records[id]["life"] += 1
 	ship.set_meta("life", combat.records[id]["life"])
-	commands.erase(id)
+	clear_commands(id)
 	for enemy: Alien in sector.world_aliens.values():
 		enemy.contributors.erase(id)
 	for peer_id in multiplayer.get_peers():
@@ -640,6 +672,7 @@ func flight_docked(id: int, data: Dictionary, sequence: int) -> void:
 		sector.player.rotation = data["rotation"]
 		sector.player.velocity = Vector3.ZERO
 		sector.player.energy = data["energy"]
+		prediction.reset(sector.player)
 		sector.set_paused(true)
 		sector.main_menu.show_home()
 	# Keep a sequence barrier when an observer later receives the same peer's relaunch.
@@ -656,7 +689,7 @@ func launch_request() -> void:
 	ships[id].set_meta("docked", false)
 	ships[id].show()
 	ships[id].collision_layer = 2
-	commands.erase(id)
+	clear_commands(id)
 	for peer_id in multiplayer.get_peers():
 		if peer_id != id:
 			spawn.rpc_id(peer_id, id, ships[id].position)
@@ -671,6 +704,7 @@ func flight_launched(id: int) -> void:
 	ships[id].show()
 	ships[id].collision_layer = 2
 	if id == multiplayer.get_unique_id():
+		prediction.reset(sector.player)
 		sector.preflight = false
 		sector.main_menu.hide()
 		sector.main_menu.hide_pages()
@@ -716,6 +750,7 @@ func despawn(id: int) -> void:
 	profile_revisions.erase(Vector2i(1, id))
 	ships.erase(id)
 	commands.erase(id)
+	input_buffers.erase(id)
 	goals.erase(id)
 	player_sequences.erase(id)
 	combat.remove_player(id)
@@ -737,6 +772,7 @@ func tick(delta: float) -> void:
 	var boost := not sector.dedicated_server and not sector.paused and not sector.autopilot.enabled and Input.is_action_pressed("boost")
 	send_clock += delta
 	if multiplayer.is_server():
+		server_tick += 1
 		var phase_started := Time.get_ticks_usec() if benchmark_timing else 0
 		if benchmark_timing: benchmark_phases.clear()
 		if sector.dedicated_server:
@@ -756,11 +792,7 @@ func tick(delta: float) -> void:
 			if not ship.alive:
 				continue
 			if id != 1:
-				var command: Dictionary = commands.get(id, {})
-				var fresh: bool = not command.is_empty() and Time.get_ticks_msec() - command["time"] < COMMAND_TIMEOUT * 1000
-				if fresh:
-					ship.turn_toward(command["rotation"], delta)
-				ship.fly_command(delta, command["movement"] if fresh else Vector3.ZERO, command["boost"] if fresh else false)
+				simulate_pilot(id, delta)
 			sector.tick_radiation(ship, delta)
 		if benchmark_timing:
 			benchmark_phases["flight_us"] = Time.get_ticks_usec() - phase_started
@@ -779,15 +811,7 @@ func tick(delta: float) -> void:
 			if connect_clock >= CONNECT_TIMEOUT:
 				disconnect_session("Connected, but no sector arrived. Check that client and server builds match, then try again.")
 			return
-		if sector.player.alive:
-			if not sector.preflight:
-				sector.player.fly_command(delta, movement, boost)
-		if send_clock >= 0.05:
-			send_clock = 0.0
-			var enemy := sector.target as Alien
-			if not sector.preflight:
-				net_stats.commands_sent += 1
-				command_flight.rpc_id(1, movement, sector.player.rotation, boost, sector.auto_fire and enemy != null and not sector.paused, int(sector.player.get_meta("life", 0)), enemy.life if enemy != null else -1, enemy.alien_id if enemy != null else -1)
+		predict_local(delta, movement, boost)
 		combat.interpolate(delta)
 		for id: int in goals:
 			if not ships.has(id) or ships[id].map_id != sector.map_id:
@@ -802,11 +826,69 @@ func tick(delta: float) -> void:
 			ship.rotation.y = lerp_angle(ship.rotation.y, angles.y, minf(1.0, delta * 15.0))
 
 
+## Server: consumes this tick's input for a remote pilot and simulates it with
+## the same step the owner predicts with. Only movement, boost and requested
+## facing come from the client; position and velocity never do.
+func simulate_pilot(id: int, delta: float) -> void:
+	var ship := ships[id]
+	var buffer: InputBuffer = input_buffers.get_or_add(id, InputBuffer.new())
+	var input := buffer.consume()
+	var movement: Vector3 = input.get("movement", Vector3.ZERO)
+	# Keep the exact simulation facing between ticks. Reading `rotation` back
+	# after move_and_slide() decomposes the basis, so it is adopted only when
+	# something else (spawn, jump, dock or respawn) set a new facing.
+	if not ship.rotation.is_equal_approx(ship.sim_rotation):
+		ship.sim_rotation = ship.rotation
+	# Idle pilots hold their facing and brake.
+	ship.simulate_input(delta, movement, input.get("boost", false), input.get("facing", ship.rotation))
+	ship.rotation = ship.sim_rotation
+	ship.present_motion(delta, movement)
+
+
+## Client: reconciles the local ship against the newest snapshot, then samples,
+## predicts and periodically sends this tick's input.
+func predict_local(delta: float, movement: Vector3, boost: bool) -> void:
+	prediction.client_tick += 1
+	var ship := sector.player
+	if not ship.alive or sector.preflight:
+		ship.set_visual_offset(Vector3.ZERO)
+		return
+	prediction.reconcile(ship, delta, net_stats)
+	prediction.predict(ship, delta, movement, boost)
+	net_stats.inputs_sent += 1
+	if prediction.client_tick % FlightPrediction.SEND_INTERVAL_TICKS == 0:
+		var enemy := sector.target as Alien
+		net_stats.input_packets_sent += 1
+		flight_inputs.rpc_id(1, prediction.packet(int(ship.get_meta("life", 0)), sector.auto_fire and enemy != null and not sector.paused,
+			enemy.life if enemy != null else -1, enemy.alien_id if enemy != null else -1))
+	prediction.smooth(ship, delta)
+	net_stats.unacked_inputs = prediction.pending.size()
+	net_stats.record_visual_offset(ship.visual_offset.length())
+
+
+## Sends one input outside local prediction, for scripted clients and tests.
+## The server validates it exactly like predicted inputs.
+func send_command(movement: Vector3, angles: Vector3, boost: bool, fire: bool = false, life: int = 0, encounter: int = 0, target_id: int = -1) -> void:
+	var input := {"seq": prediction.next_seq, "movement": movement, "boost": boost, "facing": angles}
+	prediction.next_seq += 1
+	flight_inputs.rpc_id(1, FlightInput.encode(life, fire, encounter, target_id, prediction.client_tick, [input]))
+
+
+## Server: forgets a pilot's intent and buffered inputs when its flight or life
+## ends, so nothing from the previous flight can steer or fire.
+func clear_commands(id: int) -> void:
+	commands.erase(id)
+	if input_buffers.has(id):
+		input_buffers[id].reset()
+
+
 ## Player snapshot including transform. `owner_view` adds private progress and is
 ## sent only to the owning peer.
 func player_state(id: int, owner_view: bool) -> Dictionary:
 	var ship := ships[id]
-	var data := {"position": ship.position, "rotation": ship.rotation, "velocity": ship.velocity, "energy": ship.energy}
+	# Remote pilots send their exact simulation facing, which owners replay from.
+	var facing := ship.sim_rotation if id != 1 and ship.rotation.is_equal_approx(ship.sim_rotation) else ship.rotation
+	var data := {"position": ship.position, "rotation": facing, "velocity": ship.velocity, "energy": ship.energy}
 	data.merge(combat.pack_player(id, owner_view))
 	return data
 
@@ -850,13 +932,18 @@ func send_snapshot() -> void:
 				visible[id] = profiles[id]
 		var map := ships[viewer].map_id
 		send_profiles(viewer, visible, alien_profiles_by_map[map])
-		world_snapshot.rpc_id(viewer, SnapshotCodec.world(snapshot_sequence, ships[viewer].map_visit, players, map_aliens[map]))
+		world_snapshot.rpc_id(viewer, SnapshotCodec.world(snapshot_sequence, ships[viewer].map_visit, server_tick, players, map_aliens[map]))
 
 
 ## Private ammunition, rocket and boost state carried in the owner's entry.
 func owner_extras(id: int) -> Dictionary:
 	var ship := ships[id]
-	var extras := {"rounds": combat.ammo_rounds(id), "rockets": ship.rockets.state()}
+	var extras := {"rounds": combat.ammo_rounds(id), "rockets": ship.rockets.state(), "turn_budget": ship.turn_budget}
+	if input_buffers.has(id):
+		var buffer := input_buffers[id]
+		extras["ack"] = maxi(buffer.last_seq, 0)
+		extras["depth"] = buffer.depth()
+		extras["inputs"] = buffer.counters()
 	if sector.dedicated_server:
 		extras["boosts"] = ship.resource_boosts
 		extras["revision"] = store.pilots[pilot_ids[id]]["equipment"]["revision"]
@@ -892,24 +979,30 @@ func send_profiles(viewer: int, players: Dictionary, aliens: Dictionary) -> void
 		entity_profiles.rpc_id(viewer, changed_players, changed_aliens)
 
 
-@rpc("any_peer", "call_remote", "unreliable_ordered", 1)
-func command_flight(movement: Vector3, angles: Vector3, boost: bool, fire: bool = false, life: int = 0, encounter: int = 0, target_id: int = -1) -> void:
+## A client's recent flight inputs; see FlightInput. Unsequenced: the input
+## buffer orders and deduplicates them, and stale fire intent is ignored.
+@rpc("any_peer", "call_remote", "unreliable", 1)
+func flight_inputs(packet: PackedByteArray) -> void:
 	if not active or not multiplayer.is_server():
 		return
 	var id := multiplayer.get_remote_sender_id()
-	if not ships.has(id) or not movement.is_finite() or not angles.is_finite():
+	var decoded := FlightInput.decode(packet)
+	if not ships.has(id) or decoded.is_empty():
 		return
 	if ships[id].get_meta("docked", false):
 		return
-	if not ships[id].alive or combat.records[id]["life"] != life:
+	if not ships[id].alive or combat.records[id]["life"] != decoded["life"]:
 		return
-	net_stats.record_command_received(id)
-	commands[id] = {
-		"movement": movement.limit_length(),
-		"rotation": Vector3(clampf(angles.x, -1.48, 1.48), wrapf(angles.y, -PI, PI), 0),
-		"boost": boost, "time": Time.get_ticks_msec(),
-		"fire": fire, "encounter": encounter, "target": target_id,
-	}
+	var buffer: InputBuffer = input_buffers.get_or_add(id, InputBuffer.new())
+	for input: Dictionary in decoded["inputs"]:
+		buffer.receive(input["seq"], {"movement": input["movement"].limit_length(), "boost": input["boost"], "facing": input["facing"]})
+	var newest: Dictionary = decoded["inputs"][-1]
+	if newest["seq"] >= int(commands.get(id, {}).get("seq", -1)):
+		commands[id] = {
+			"movement": newest["movement"].limit_length(), "rotation": newest["facing"], "boost": newest["boost"],
+			"fire": decoded["fire"], "encounter": decoded["encounter"], "target": decoded["target"],
+			"seq": newest["seq"], "tick": server_tick,
+		}
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -932,6 +1025,7 @@ func world_snapshot(packet: PackedByteArray) -> void:
 		return
 	var sequence: int = world["sequence"]
 	var visit: int = world["visit"]
+	net_stats.server_tick = maxi(net_stats.server_tick, world["tick"])
 	var owner: Dictionary = world["owner"]
 	if not owner.is_empty():
 		combat.ammo_snapshot(owner["rounds"], sequence, owner["rockets"], visit)
@@ -979,19 +1073,33 @@ func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int, visit: 
 		if reset:
 			ship.position = data["position"]
 			ship.rotation = data["rotation"]
-		ship.energy = data["energy"]
-		if ship == sector.player:
-			# Predict locally for immediate controls; reconcile against host position.
-			var location: Vector3 = data["position"]
-			var predicted := ship.position
-			if not received_snapshot or ship.position.distance_to(location) > 10.0:
-				ship.position = location
+		if ship != sector.player:
+			ship.energy = data["energy"]
+		else:
+			var authoritative := {"position": data["position"], "rotation": data["rotation"], "energy": data["energy"],
+				"velocity": data["velocity"] if ship.alive else Vector3.ZERO}
+			for key: String in ["ack", "input_depth", "turn_budget"]:
+				if data.has(key):
+					authoritative[key] = data[key]
+			if reset or not received_snapshot:
+				# A new life or connection starts from the server's state.
+				prediction.reset(ship)
+				ship.position = data["position"]
+				ship.velocity = authoritative["velocity"]
+				ship.energy = data["energy"]
+				ship.sim_rotation = data["rotation"]
+				ship.turn_budget = authoritative.get("turn_budget", ship.turn_budget)
+				prediction.last_ack = maxi(prediction.last_ack, int(authoritative.get("ack", 0)))
 			else:
-				ship.position = ship.position.lerp(location, 0.2)
-			if received_snapshot and not reset:
-				net_stats.record_correction(predicted.distance_to(location), predicted.distance_to(ship.position))
-			net_stats.record_server_state(location, data["rotation"])
-			ship.velocity = data["velocity"] if ship.alive else Vector3.ZERO
+				# Rewind and replay in the next physics tick (FlightPrediction.reconcile).
+				prediction.authoritative = authoritative
+				if prediction.pending.is_empty():
+					# Nothing to replay while not predicting (docked, destroyed or
+					# scripted): adopt the state now, without move_and_slide().
+					prediction.reconcile(ship, 1.0 / Engine.physics_ticks_per_second, net_stats)
+			net_stats.record_server_state(data["position"], data["rotation"])
+			if data.has("inputs"):
+				net_stats.server_inputs = data["inputs"]
 			received_snapshot = true
 	status = "Connected. Players: %d/%d" % [ships.size(), MAX_PLAYERS]
 
@@ -1021,6 +1129,8 @@ func disconnect_session(message: String) -> void:
 			ship.queue_free()
 	ships.clear()
 	commands.clear()
+	input_buffers.clear()
+	server_tick = 0
 	goals.clear()
 	received_snapshot = false
 	snapshot_sequence = 0
@@ -1210,7 +1320,7 @@ func transfer(id: int, destination: int) -> void:
 	ship.rockets.unload()
 	combat.records[id]["life"] += 1
 	ship.set_meta("life", combat.records[id]["life"])
-	commands.erase(id)
+	clear_commands(id)
 	for enemy: Alien in sector.world_aliens.values():
 		enemy.contributors.erase(id)
 	announce_map_change(id)
@@ -1233,6 +1343,9 @@ func map_changed(id: int, data: Dictionary, sequence: int) -> void:
 		ship.rotation = data["rotation"]
 		ship.energy = data["energy"]
 		ship.velocity = data["velocity"]
+		if ship == sector.player:
+			prediction.reset(ship)
+			ship.sim_rotation = data["rotation"]
 	goals.erase(id)
 	player_sequences[id] = maxi(player_sequences.get(id, -1), sequence)
 	if ship == sector.player:

@@ -142,7 +142,7 @@ func run() -> void:
 	first.session.combat.ammo_snapshot(PackedInt32Array(), 999999, {}, old_visit)
 	check(first.get_child_count() == effect_count and first.player.ammo == ammo, "Delayed effects and owner ammunition cannot enter the new visit")
 	check(first.world_aliens[0].snapshot_goal.is_empty() and not first.loot.drops.has(999), "Delayed world snapshots and loot from a prior visit are discarded")
-	first.session.command_flight.rpc_id(1, Vector3.ONE, Vector3.ZERO, false, true, 0, 0, 0)
+	first.session.send_command(Vector3.ONE, Vector3.ZERO, false, true, 0, 0, 0)
 	await settle(0.06)
 	check(not server.session.commands.has(id), "Prior-flight movement and fire cannot cross the gate")
 	var enemy: Alien = server.map_rosters[1][100]
@@ -229,5 +229,5 @@ func run() -> void:
 
 
 func fire_at(client: Sector, enemy: Alien) -> void:
-	client.session.command_flight.rpc_id(1, Vector3.ZERO, Vector3.ZERO, false, true, int(client.player.get_meta("life", 0)), enemy.life, enemy.alien_id)
+	client.session.send_command(Vector3.ZERO, Vector3.ZERO, false, true, int(client.player.get_meta("life", 0)), enemy.life, enemy.alien_id)
 	await settle(0.06)

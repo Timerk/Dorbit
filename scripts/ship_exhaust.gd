@@ -80,7 +80,8 @@ func _process(delta: float) -> void:
 
 
 func track(delta: float) -> void:
-	var location := ship.global_position
+	# The drawn position, so hidden reconciliation corrections never pulse the plume.
+	var location := ship.global_position + ship.visual_offset
 	if not tracking or location.distance_to(last_position) > TELEPORT_SPEED * delta:
 		tracking = true
 		last_position = location
