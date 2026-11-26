@@ -117,7 +117,10 @@ func run() -> void:
 	await replicate(server)
 	for enemy: Alien in server.aliens.values():
 		var copy := late.aliens[enemy.alien_id]
-		check(copy.kind == enemy.kind and copy.life == enemy.life and copy.alive == enemy.alive and copy.returning == enemy.returning and copy.hull == enemy.hull and copy.shield == enemy.shield and is_equal_approx(copy.respawn, enemy.respawn) and copy.position.is_equal_approx(enemy.position), "Late join receives current identity, position, health, reset and respawn state")
+		check(copy.kind == enemy.kind and copy.life == enemy.life and copy.alive == enemy.alive and copy.returning == enemy.returning
+			and absf(copy.hull - enemy.hull) <= 0.125 and absf(copy.shield - enemy.shield) <= 0.125
+			and is_equal_approx(copy.respawn, enemy.respawn) and copy.position.distance_to(enemy.position) <= 0.0034,
+			"Late join receives exact identity and respawn state and bounded public pose and health")
 	# Reject stale snapshots independently; another entity's older chunk is still useful.
 	var newer := combat.pack_alien(heavy)
 	newer["hull"] = 200.0

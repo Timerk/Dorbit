@@ -255,3 +255,140 @@ server's p95.
 - `tests/interpolation_network_test.gd` checks the same measures through the
   relay at 150 ± 30 ms with 5% loss. It also replays the old lerp from the same
   packets and asserts that it stutters (80–86% spike ticks against 0–5%).
+
+## After phase 4: snapshot quantization and deltas
+
+Network schema 26. The server packs public pilots and aliens once per
+snapshot tick, then encodes a separate view for each recipient. Server tick,
+sequence, visits, lives, encounters and profile revisions remain exact.
+Reliable profiles still carry fitting and other infrequently changing state.
+The owner retains float32 position, rotation, velocity and energy for
+reconciliation and float64 hull and shields for exact repair costs.
+
+| Public field | Wire quantum | Maximum rounding error |
+| --- | --- | --- |
+| Position | Signed 24-bit per axis, 1/256 m relative to the map origin | 1/512 m per axis, 3.39 mm in 3D |
+| Euler angles | Unsigned 16-bit per axis, one turn / 65,536 | 0.00275° per axis, modulo a turn |
+| Hull and shields | Unsigned 24-bit each, ¼ point | ⅛ point over 0 to 4,194,303.75 |
+| Pilot energy | Unsigned 16-bit, 1/256 point | 1/512 point over 0 to 100 |
+| Time since hit | Unsigned 16-bit, 10 ms, capped at 6 s | 5 ms before the cap |
+
+The 1,200 m sector radius fits inside the ±32,768 m local position range.
+An entity outside the quantized range carries its original float32 position.
+The position bounds are relative to the input float32 coordinates at current
+map origins. The server and owner retain the full hit timer for repair and
+shield regeneration. The cap lets idle public records stop changing.
+Radiation and alien respawn timers keep their existing float32 encoding.
+
+`FlightInput` carries a 32-bit snapshot acknowledgement. Flying clients
+include it in their regular input packets, and idle clients send it on the
+same channel without controls. The server accepts only acknowledgements for
+that viewer's exact sent sequence in the current map visit. Both sides keep
+a 32-snapshot history. Missing or expired acknowledgements and new visits
+produce full snapshots. A client discards a delta if its named baseline
+never arrived or has expired.
+
+Each part starts with four unsigned 32-bit values for sequence, visit, tick
+and baseline. A baseline of zero marks a full snapshot. The header ends
+with an 8-bit part index, an 8-bit part count and a 16-bit record count.
+Each record has a 16-bit tag followed by a 32-bit pilot ID or 16-bit alien
+ID. The tag's top two bits identify the kind. Its lower bits mark changed
+field groups, from least to most significant.
+
+| Record | Field groups in mask order |
+| --- | --- |
+| Public pilot | Metadata, position, angles, hull, shields, energy, hit timer, radiation |
+| Owner | Metadata, position, angles, hull, shields, energy, hit timer, radiation, velocity, input acknowledgement and buffer, input counters, progress and respawn, traffic metrics, ammunition, rockets and boosts |
+| Alien | Metadata, position, angles, hull, shields, hit timer, respawn |
+
+New entities and changes to flags, profile revision or lifecycle metadata
+send all groups. A zero mask repeats the entity's state at the new server
+tick, so stationary entities keep filling their interpolation buffers.
+Each snapshot lists current entities. An entity that leaves visibility
+is absent from the new baseline.
+
+The encoder packs the owner first, then visible pilots and aliens in ID
+order. It splits on record boundaries at 1,200 bytes per RPC payload. Godot
+4.7.2's vendored ENet has a 1,392-byte default MTU and starts fragmenting
+payloads above 1,364 bytes (1,360 with its optional checksum). The remaining
+headroom covers the Godot RPC envelope, including the initial node path.
+Parts can apply independently on arrival. The client acknowledges the
+sequence only after every part arrives.
+[ENet defaults](https://github.com/godotengine/godot/blob/4.7.2-stable/thirdparty/enet/enet/enet.h)
+[Fragmentation](https://github.com/godotengine/godot/blob/4.7.2-stable/thirdparty/enet/peer.c#L98-L112)
+[Godot RPC envelope](https://github.com/godotengine/godot/blob/4.7.2-stable/modules/multiplayer/scene_rpc_interface.cpp#L326-L430)
+
+F8 reports the viewer's server snapshot payload bytes per second, mean
+bytes per snapshot tick, share of ticks using a baseline, and cumulative
+full snapshots. Those counters cover world snapshot payloads before
+transport overhead or loss. The existing Down rate and the relay
+benchmarks measure ENet traffic, including reliable messages.
+
+### Relay benchmark
+
+Both builds used the same headless Godot 4.7.2 benchmark on Windows with
+one relayed pilot and three directly connected pilots. Each condition
+warmed up for 15 s and sampled for 20 s. Phase 3 is
+`feat/snapshot-interpolation` at `7c9933a`. Server traffic is measured at
+the relay before simulated loss and includes ENet overhead. The world-only
+column uses the phase 4 server counter. Rates are decimal bytes per second.
+
+| Added RTT | Loss | Phase 3 server B/s / B/tick | Phase 4 server B/s / B/tick | Phase 4 world B/s / B/tick | Server rate saved |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 ms | 0% | 14351 / 718.6 | 5792 / 289.0 | 4959 / 247.4 | 59.6% |
+| 100 ms | 0% | 14352 / 718.4 | 5287 / 263.7 | 4999 / 249.4 | 63.2% |
+| 200 ms | 0% | 14356 / 718.2 | 5864 / 292.8 | 5040 / 251.6 | 59.2% |
+| 0 ms | 5% | 14978 / 749.4 | 5228 / 261.4 | 4936 / 246.8 | 65.1% |
+| 100 ms | 5% | 14353 / 718.6 | 5272 / 263.8 | 4985 / 249.4 | 63.3% |
+| 200 ms | 5% | 14978 / 749.0 | 5863 / 293.2 | 5037 / 251.9 | 60.9% |
+| 150 ± 30 ms | 5% | 14352 / 718.3 | 5229 / 265.5 | 4950 / 251.4 | 63.6% |
+
+Every measured phase 4 snapshot used a baseline after warm-up. Across all
+seven conditions, both builds lost zero inputs and p95 reconciliation error
+rounded to 0.00 m. The runs with the largest corrections also recorded
+input-buffer catch-up drops or starvation. The owner packets use the same
+state precision in both builds.
+
+| Added RTT | Loss | FPS before → after | Max reconciliation error (m) | p95 remote render-time error (m) | Drawn acceleration spikes | Extrapolated ticks |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 ms | 0% | 32 → 49 | 0.60 → 0.63 | 0.01 → 0.01 | 0.9% → 0.1% | 2.0% → 0.2% |
+| 100 ms | 0% | 42 → 47 | 0.00 → 1.10 | 0.04 → 0.01 | 5.2% → 0.0% | 0.0% → 0.2% |
+| 200 ms | 0% | 56 → 40 | 0.58 → 0.74 | 0.00 → 0.01 | 0.0% → 0.0% | 0.0% → 0.1% |
+| 0 ms | 5% | 50 → 42 | 0.00 → 1.46 | 0.01 → 0.01 | 0.6% → 0.5% | 0.7% → 0.7% |
+| 100 ms | 5% | 47 → 41 | 0.96 → 0.34 | 0.02 → 0.01 | 0.9% → 1.0% | 1.5% → 1.2% |
+| 200 ms | 5% | 38 → 37 | 1.10 → 0.00 | 0.03 → 0.03 | 1.9% → 1.2% | 2.8% → 1.9% |
+| 150 ± 30 ms | 5% | 44 → 23 | 2.11 → 1.17 | 0.01 → 0.15 | 0.3% → 5.3% | 0.6% → 9.4% |
+
+The four-pilot degraded run had a 357 ms maximum snapshot interval deviation
+on phase 4. At 23 fps, its arrivals were less evenly paced than those in the
+44 fps phase 3 run. Repeating just that condition with one extra pilot
+produced comparable frame rates and the same p95 remote render error and
+acceleration. Maximum render error and extrapolation still varied.
+
+| Two-pilot degraded repeat | FPS | Server B/s / B/tick | Max reconciliation error (m) | Remote render error p95 / max (m) | p95 drawn acceleration (m/s²) | Spikes | Extrapolated |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Phase 3 | 103 | 12,186 / 609.5 | 0.59 | 0.02 / 0.06 | 83 | 0.8% | 1.3% |
+| Phase 4 | 102 | 5,211 / 260.5 | 0.62 | 0.02 / 0.15 | 83 | 1.2% | 2.1% |
+
+### Ten-pilot traffic
+
+`tests/snapshot_traffic_benchmark.gd` moves ten pilots and the five M1 aliens
+on each of 100 snapshot ticks. It divides the server's ENet host counters by
+the viewer and tick counts, then scales to 20 ticks/s. The fixture drives
+snapshot sends directly and returns acknowledgements on schema 26.
+
+| Build | Server B/s per viewer at 20 Hz | Server B/tick per viewer | World B/tick per viewer |
+| --- | ---: | ---: | ---: |
+| Phase 3 | 22,529 | 1,126.4 | — |
+| Phase 4 | 6,705 | 335.3 | 319.9 |
+
+ENet traffic dropped 70.2%. The phase 4 run used a baseline on every
+measured tick. The separate MTU test forces a full snapshot with ten pilots
+and twenty aliens, including reordered and incomplete part delivery.
+
+For phase 5, an initial steady-flight budget is 8,000 pre-loss ENet bytes/s
+per viewer at 150 ± 30 ms and 5% loss, measured over 20 s with up to four
+pilots. Both degraded runs were close to 5,200 B/s on phase 4. Joins, map
+changes and prolonged gaps in acknowledgements send full snapshots.
+Combat traffic adds reliable messages, so measure it separately before
+setting a budget for the combined playthrough.

@@ -6,7 +6,7 @@ extends Control
 
 const SIZE := Vector2(340, 372)
 # Readings start here; the controls sit below them.
-const LINE_HEIGHT := 16
+const LINE_HEIGHT := 14
 const CONTROLS_TOP := 162
 const REFRESH := 0.25
 const DIRECTION_LABELS := ["Both ways (round trip)", "Upstream only", "Downstream only"]
@@ -198,6 +198,10 @@ func _draw() -> void:
 	else:
 		var jitter := stats.snapshot_jitter()
 		lines.append("RTT  %d ms    Up  %s/s    Down  %s/s" % [roundi(stats.rtt_ms), String.humanize_size(int(stats.up_bytes_per_second)), String.humanize_size(int(stats.down_bytes_per_second))])
+		var traffic := stats.server_snapshot_traffic
+		lines.append("World  %s/s  %d B/tick  %.1f%% delta  %d full" % [
+			String.humanize_size(traffic.get("bytes_per_second", 0)), traffic.get("bytes_per_tick", 0),
+			traffic.get("delta_permille", 0) / 10.0, traffic.get("full_fallbacks", 0)])
 		lines.append("Snapshot jitter  %.1f / %.1f ms max,  clock drift %+d ms" % [jitter.x, jitter.y, roundi(stats.clock_drift_ms)])
 		lines.append("Inputs  %d unacked,  replayed %d (max %d)" % [stats.unacked_inputs, stats.replayed_ticks, stats.max_replayed_ticks])
 		lines.append("Ack lag  %d ticks,  server buffer %s" % [stats.ack_lag_ticks, str(stats.server_input_depth) if stats.server_input_depth >= 0 else "-"])
@@ -210,7 +214,7 @@ func _draw() -> void:
 			var relay := simulator.stats()
 			lines.append("Relay lost  %d up / %d down,  dup %d / %d" % [relay["up"]["dropped_packets"], relay["down"]["dropped_packets"], relay["up"]["duplicated_packets"], relay["down"]["duplicated_packets"]])
 	for index in lines.size():
-		draw_string(font, Vector2(12, 44 + index * LINE_HEIGHT), lines[index], HORIZONTAL_ALIGNMENT_LEFT, SIZE.x - 24, 14, FlightHud.INK if index == 0 else FlightHud.MUTED)
+		draw_string(font, Vector2(12, 42 + index * LINE_HEIGHT), lines[index], HORIZONTAL_ALIGNMENT_LEFT, SIZE.x - 24, 14, FlightHud.INK if index == 0 else FlightHud.MUTED)
 
 
 func update_ghost(shown: bool) -> void:

@@ -1,6 +1,6 @@
 class_name NetStats
 extends RefCounted
-## Client-side netcode measurements fed by FlightSession, shown by the F8
+## Netcode measurements fed by FlightSession, shown by the F8
 ## overlay and read by tests/netcode_benchmark.gd. Measuring never changes
 ## gameplay: the server stays authoritative.
 ##
@@ -9,6 +9,9 @@ extends RefCounted
 ##   (ENetPacketPeer.PEER_ROUND_TRIP_TIME), sampled once per second.
 ## - up/down_bytes_per_second: UDP payload bytes the client's ENet host sent and
 ##   received over the last whole second (ENet headers included, IP/UDP not).
+## - server_snapshot_traffic: this viewer's world snapshot payload bytes per
+##   second and per snapshot tick, share of ticks using a baseline, and total
+##   full snapshots. The server measures these before ENet or relay loss.
 ## - snapshot jitter: for each world snapshot, |time since the previous one -
 ##   50 ms|, as handled by the client (so it includes frame quantization). The
 ##   mean and maximum cover the last JITTER_WINDOW intervals.
@@ -50,6 +53,8 @@ var up_packets_per_second: float = 0.0
 var down_packets_per_second: float = 0.0
 var total_up_bytes: int = 0
 var total_down_bytes: int = 0
+var server_snapshot_traffic: Dictionary = {}
+var _traffic_sequence := 0
 var snapshots_received: int = 0
 ## Recent snapshot inter-arrival times in milliseconds, oldest first.
 var snapshot_intervals: PackedFloat32Array = []
@@ -108,6 +113,8 @@ func reset() -> void:
 	down_packets_per_second = 0.0
 	total_up_bytes = 0
 	total_down_bytes = 0
+	server_snapshot_traffic = {}
+	_traffic_sequence = 0
 	snapshots_received = 0
 	snapshot_intervals = PackedFloat32Array()
 	has_server_state = false
@@ -132,6 +139,43 @@ func reset() -> void:
 	_window_up_packets = 0
 	_window_down_packets = 0
 	reset_extremes()
+
+
+func record_server_snapshot_traffic(sequence: int, traffic: Dictionary) -> void:
+	if sequence > _traffic_sequence:
+		_traffic_sequence = sequence
+		server_snapshot_traffic = traffic
+
+
+class SnapshotTraffic:
+	## One server-side counter per viewer. Publish the latest complete window
+	## in the owner's entry, where the readings themselves delta-compress.
+	var total_bytes := 0
+	var full_fallbacks := 0
+	var report: Dictionary = {}
+	var _window_start := -1
+	var _window_bytes := 0
+	var _window_ticks := 0
+	var _window_deltas := 0
+
+	func record(bytes: int, delta_encoded: bool, now_usec: int) -> void:
+		if _window_start < 0:
+			_window_start = now_usec
+		total_bytes += bytes
+		_window_bytes += bytes
+		_window_ticks += 1
+		_window_deltas += int(delta_encoded)
+		full_fallbacks += int(not delta_encoded)
+		var elapsed := now_usec - _window_start
+		if elapsed >= NetStats.SAMPLE_USEC:
+			report = {"bytes_per_second": roundi(_window_bytes * 1_000_000.0 / elapsed),
+				"bytes_per_tick": roundi(float(_window_bytes) / _window_ticks),
+				"delta_permille": roundi(_window_deltas * 1000.0 / _window_ticks),
+				"full_fallbacks": full_fallbacks}
+			_window_start = now_usec
+			_window_bytes = 0
+			_window_ticks = 0
+			_window_deltas = 0
 
 
 ## Clears correction extremes and kept samples, keeping transport rates.

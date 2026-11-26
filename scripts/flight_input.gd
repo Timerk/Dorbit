@@ -10,8 +10,11 @@ extends RefCounted
 ##
 ## Layout (little endian):
 ##   u8 flags (FIRE), u32 life, i32 encounter, i32 target, u32 client tick of
-##   the newest input, u32 first sequence, u8 count, then per input:
+##   the newest input, u32 snapshot acknowledgement, u32 first sequence,
+##   u8 count, then per input:
 ##   3 x i8 movement (axis * 127), u16 yaw, i16 pitch, u8 flags (BOOST).
+## Acknowledgement zero means no snapshot. A nonzero acknowledgement can
+## travel alone while the player is docked or waiting to respawn.
 ## Movement and facing are quantized here, and clients predict with the
 ## quantized values, so the server and the client simulate the same numbers.
 
@@ -21,7 +24,7 @@ const BOOST := 1
 ## cover a burst of four lost packets. A playtesting setting.
 const REDUNDANCY := 10
 const MAX_INPUTS := 16
-const HEADER_SIZE := 22
+const HEADER_SIZE := 26
 const INPUT_SIZE := 8
 const MOVEMENT_SCALE := 127.0
 const YAW_SCALE := 65536.0 / TAU
@@ -44,13 +47,14 @@ static func quantize_facing(angles: Vector3) -> Vector3:
 
 
 ## `inputs` hold {seq, movement, boost, facing} with consecutive sequences.
-static func encode(life: int, fire: bool, encounter: int, target: int, client_tick: int, inputs: Array) -> PackedByteArray:
+static func encode(life: int, fire: bool, encounter: int, target: int, client_tick: int, inputs: Array, snapshot_ack: int = 0) -> PackedByteArray:
 	var buffer := StreamPeerBuffer.new()
 	buffer.put_u8(FIRE if fire else 0)
 	buffer.put_u32(life)
 	buffer.put_32(encounter)
 	buffer.put_32(target)
 	buffer.put_u32(client_tick)
+	buffer.put_u32(snapshot_ack)
 	buffer.put_u32(inputs[0]["seq"] if not inputs.is_empty() else 0)
 	buffer.put_u8(inputs.size())
 	for input: Dictionary in inputs:
@@ -64,7 +68,7 @@ static func encode(life: int, fire: bool, encounter: int, target: int, client_ti
 	return buffer.data_array
 
 
-## Returns {fire, life, encounter, target, tick, inputs: [{seq, movement,
+## Returns {fire, life, encounter, target, tick, snapshot_ack, inputs: [{seq, movement,
 ## boost, facing}]}, or {} for a malformed packet. Values are always finite
 ## and in range, whatever the sender wrote.
 static func decode(packet: PackedByteArray) -> Dictionary:
@@ -73,10 +77,12 @@ static func decode(packet: PackedByteArray) -> Dictionary:
 	var buffer := StreamPeerBuffer.new()
 	buffer.data_array = packet
 	var result := {"fire": buffer.get_u8() & FIRE != 0, "life": buffer.get_u32(), "encounter": buffer.get_32(),
-		"target": buffer.get_32(), "tick": buffer.get_u32(), "inputs": []}
+		"target": buffer.get_32(), "tick": buffer.get_u32(), "snapshot_ack": buffer.get_u32(), "inputs": []}
 	var first := buffer.get_u32()
 	var count := buffer.get_u8()
-	if count < 1 or count > MAX_INPUTS or packet.size() != HEADER_SIZE + count * INPUT_SIZE:
+	if count > MAX_INPUTS or packet.size() != HEADER_SIZE + count * INPUT_SIZE:
+		return {}
+	if count == 0 and (result["snapshot_ack"] == 0 or result["fire"]):
 		return {}
 	for index in count:
 		var movement := Vector3.ZERO

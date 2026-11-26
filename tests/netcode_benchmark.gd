@@ -30,6 +30,10 @@ extends "res://tests/network_test.gd"
 ## - server_bps: bytes per second the server sent toward this client, counted
 ##   by the relay before simulated loss. server_avg_bps is the server host's
 ##   total sent bytes per second divided by the number of connected clients.
+## - server_bytes_per_snapshot: the relay's server bytes divided by the number
+##   of server snapshot ticks. On schema 26+, world_bps and
+##   world_bytes_per_snapshot count only this viewer's snapshot payloads.
+##   delta_share and full_fallbacks describe baseline use in the sample.
 ## - jitter_mean_ms / jitter_p95_ms / jitter_max_ms: |snapshot inter-arrival
 ##   time - 50 ms| as handled by the client, so frame timing is included.
 ## - error_*_m: simulation error at each reconciliation: how far rewinding to
@@ -176,6 +180,11 @@ func measure(server: Sector, client: Sector, clients: int, condition: Array) -> 
 	var inputs_before: Dictionary = server.session.input_buffers[id].counters()
 	var up_before := net.total_up_bytes
 	var down_before := net.total_down_bytes
+	var snapshots_before := server.session.snapshot_sequence
+	var traffic: Variant = server.session.get("snapshot_traffic")
+	var viewer: Variant = traffic.get(id) if traffic != null else null
+	var payload_before: int = viewer.total_bytes if viewer != null else 0
+	var full_before: int = viewer.full_fallbacks if viewer != null else 0
 	var host: ENetConnection = (server.multiplayer.multiplayer_peer as ENetMultiplayerPeer).host
 	host.pop_statistic(ENetConnection.HOST_TOTAL_SENT_DATA)
 	var started := Time.get_ticks_usec()
@@ -196,6 +205,7 @@ func measure(server: Sector, client: Sector, clients: int, condition: Array) -> 
 	var inputs: Dictionary = server.session.input_buffers[id].counters()
 	for key: String in inputs:
 		inputs[key] -= inputs_before[key]
+	var sent_snapshots := server.session.snapshot_sequence - snapshots_before
 	var row := {
 		"rtt_added_ms": condition[0], "jitter_ms": condition[1], "loss_percent": condition[2], "duplicate_percent": condition[3],
 		"seconds": snappedf(seconds, 0.01), "rtt_ms": snappedf(NetStats.mean(rtts), 0.1),
@@ -203,6 +213,7 @@ func measure(server: Sector, client: Sector, clients: int, condition: Array) -> 
 		"up_bps": roundi((net.total_up_bytes - up_before) / seconds),
 		"down_bps": roundi((net.total_down_bytes - down_before) / seconds),
 		"server_bps": roundi(relay_stats["down"]["received_bytes"] / seconds),
+		"server_bytes_per_snapshot": snappedf(float(relay_stats["down"]["received_bytes"]) / maxi(1, sent_snapshots), 0.1),
 		"server_avg_bps": roundi(server_bytes / seconds / clients),
 		"snapshots": net.jitter_samples.size(),
 		"jitter_mean_ms": snappedf(NetStats.mean(net.jitter_samples), 0.1),
@@ -225,6 +236,12 @@ func measure(server: Sector, client: Sector, clients: int, condition: Array) -> 
 		"input_packets": net.input_packets_sent - packets_before,
 		"relay_dropped": relay_stats["up"]["dropped_packets"] + relay_stats["down"]["dropped_packets"],
 	}
+	if viewer != null and sent_snapshots > 0:
+		var payload: int = viewer.total_bytes - payload_before
+		row["world_bps"] = roundi(payload / seconds)
+		row["world_bytes_per_snapshot"] = snappedf(float(payload) / sent_snapshots, 0.1)
+		row["full_fallbacks"] = viewer.full_fallbacks - full_before
+		row["delta_share"] = 1.0 - float(row["full_fallbacks"]) / sent_snapshots
 	row.merge(remote_metrics(net))
 	return row
 
