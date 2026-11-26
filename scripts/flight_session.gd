@@ -9,6 +9,14 @@ const INPUT_TIMEOUT_TICKS: int = InputBuffer.TIMEOUT_TICKS
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when packet contents or shared physics change without an RPC signature change.
 const NETWORK_SCHEMA: int = 24
+## ENet packet throttle for every server/client peer: [interval ms,
+## acceleration, deceleration]. ENet's default deceleration (2) discards
+## unreliable packets at the sender whenever one round trip exceeds the
+## previous interval's by twice its variance, which a steady high-latency link
+## does constantly. Dorbit's unreliable traffic is small and paced, and inputs
+## are redundant, so deceleration 0 keeps the throttle open. Reliable traffic
+## keeps ENet's own windowing and resends.
+const ENET_THROTTLE := [5000, 2, 0]
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
@@ -355,6 +363,7 @@ func protocol_fingerprint(schema: int = NETWORK_SCHEMA) -> String:
 func begin_authentication(id: int) -> void:
 	if not multiplayer.is_server():
 		return
+	configure_throttle(id)
 	var nonce := Crypto.new().generate_random_bytes(32) if sector.dedicated_server else PackedByteArray([0])
 	challenges[id] = nonce
 	multiplayer.send_auth(id, JSON.stringify({"nonce": nonce.hex_encode(), "protocol": protocol_fingerprint()}).to_utf8_buffer())
@@ -483,7 +492,18 @@ func start_flight() -> void:
 	menu.hide()
 
 
+## Applies ENET_THROTTLE to one ENet peer (ENet tells the other end too).
+func configure_throttle(id: int) -> void:
+	var enet := multiplayer.multiplayer_peer as ENetMultiplayerPeer
+	if enet == null:
+		return
+	var peer := enet.get_peer(id)
+	if peer != null:
+		peer.throttle_configure(ENET_THROTTLE[0], ENET_THROTTLE[1], ENET_THROTTLE[2])
+
+
 func connected() -> void:
+	configure_throttle(1)
 	if sector.client_only:
 		preferences.remember(attempted_address, attempted_port)
 	sector.preflight = sector.client_only
