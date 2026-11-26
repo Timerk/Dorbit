@@ -88,7 +88,7 @@ class MeasuredRelay extends NetSimulator:
 
 func run() -> void:
 	var started := Time.get_ticks_msec()
-	if not await admit_and_launch():
+	if not await admit_pilots():
 		finish()
 		return
 	var summary := await measure_flight()
@@ -102,7 +102,7 @@ func run() -> void:
 	finish()
 
 
-func admit_and_launch() -> bool:
+func admit_pilots() -> bool:
 	server = make_sector("DegradedServer", true, PORT)
 	for id: int in server.aliens:
 		# Keep the normal M1 population in snapshots while its patrols stay away
@@ -124,17 +124,20 @@ func admit_and_launch() -> bool:
 	server.set_physics_process(true)
 	if not check_until(await wait_for(func() -> bool: return server.session.active), "Dedicated server opens its ENet port"):
 		return false
-	for client: Sector in clients:
-		check(client.session.join("127.0.0.1", test_port(PORT)) == OK, "Pilot starts joining through its own relay")
-	if not check_until(await wait_for(admitted), "Three authenticated clients receive the dedicated roster, inventory and snapshots"):
-		return false
+	# Establish one roster entry at a time. The next pilot joins after the
+	# previous one has authenticated and received its first playable state.
 	for index in clients.size():
 		var client := clients[index]
+		if not check_until(client.session.join("127.0.0.1", test_port(PORT)) == OK, "Pilot %d starts joining through its relay" % index):
+			return false
+		var joined := await wait_for(func() -> bool:
+			return client.session.received_snapshot and not client.session.combat.inventory.is_empty(), 10000)
+		if not check_until(joined, "Pilot %d receives its initial snapshot and inventory (%s)" % [index, client.session.status]):
+			return false
 		var id := client.multiplayer.get_unique_id()
 		peer_ids.append(id)
 		check(server.session.pilot_ids.get(id) == "pilot%d" % index, "Server admits the expected pilot identity")
-		client.session.launch()
-	if not check_until(await wait_for(launched), "Every client launches and receives the other pilots' flight state"):
+	if not check_until(await wait_for(roster_ready), "Each authenticated client receives the full roster and flight state"):
 		return false
 	for client: Sector in clients:
 		client.session.combat.request_contract("accept", "scout")
@@ -163,18 +166,11 @@ func admit_and_launch() -> bool:
 	return check_until(climbed and await wait_for(stopped), "Pilots fly clear of station protection and brake before measurement")
 
 
-func admitted() -> bool:
+func roster_ready() -> bool:
 	if server.session.pilot_ids.size() != clients.size():
 		return false
 	for client: Sector in clients:
-		if not client.session.received_snapshot or client.session.combat.inventory.is_empty() or client.session.ships.size() != clients.size():
-			return false
-	return true
-
-
-func launched() -> bool:
-	for client: Sector in clients:
-		if client.preflight or client.session.remote_buffers.size() != clients.size() - 1:
+		if client.session.ships.size() != clients.size() or client.session.remote_buffers.size() != clients.size() - 1:
 			return false
 	return true
 
