@@ -141,3 +141,117 @@ RTT:
 With the default the throttle engaged at 5% loss in this run: the server
 dropped 27% of its snapshot bytes, snapshot jitter rose 2.6 times, and
 throttled input packets starved the input buffer.
+
+## After phase 3: snapshot interpolation
+
+Network schema 25. Remote pilots and aliens are no longer lerped toward the
+newest snapshot (25% of the remaining distance per tick). Each one has a
+`SnapshotBuffer` of transforms keyed by server tick. Once per client physics
+tick, `FlightSession.render_remote()` draws them at a render time on the
+server's timeline, which `ServerClock` keeps:
+
+- **Clock.** Each snapshot gives an offset sample: its server tick / 60 minus
+  its local arrival time. The clock uses the median of the last 2 s of
+  samples, so single late or early packets barely move it. The render time
+  trails that estimate by `ServerClock.INTERPOLATION_DELAY` (100 ms, two
+  snapshot intervals; a playtesting setting). It advances by each physics
+  tick, time-scaled by at most ±5% to close a low-pass-filtered error, and
+  snaps only past 250 ms (connecting, or a stall). The largest sample (the
+  fastest path) was tried first. Frame and tick timing outliers set it, and it
+  left typical packets about 30 ms less buffer (4.8% against 1.2% of entity
+  ticks extrapolated at 150 ± 30 ms).
+- **Interpolation.** Positions follow a cubic Hermite curve between the two
+  bracketing samples, with tangents taken across neighbouring samples. Angles
+  take the shortest path. Linear interpolation changed the drawn velocity at
+  every snapshot, which showed as acceleration spikes on about 10% of ticks.
+- **Dry buffers.** Past the newest sample, the entity extrapolates its last
+  motion for at most `SnapshotBuffer.MAX_EXTRAPOLATION_TICKS` (250 ms), then
+  holds. Out-of-order packets of the same life still fill gaps; stale and
+  duplicate ticks are ignored.
+- **Discontinuities** clear the buffer and snap to the new state: spawn and
+  launch (a new buffer), despawn and dock, a new life or alive state
+  (respawn, death, jump), map changes and visits, alien encounter resets and
+  the end of a return home, and session start or end. The per-entity
+  sequence, visit and life checks are unchanged.
+- **Immediate state.** Health, shields, alive, docked and energy apply on
+  arrival. Death and respawn are not delayed to the render time: the server
+  has already decided them, and targeting and the HUD must not show a
+  destroyed ship as attackable. A ship can therefore vanish up to the delay
+  plus jitter early, about 3 m at cruise speed. Its explosion is drawn at the
+  authoritative position, well within its diameter.
+- **Effects.** Laser and explosion points within 8 m of an entity's newest
+  received position move by that entity's drawn offset
+  (`FlightSession.drawn_point`). Beams join the drawn ships: remote ships in
+  the past, the local ship ahead of the server.
+
+Tradeoff: remote ships are drawn about 100 ms plus the one-way latency in the
+past. The server still decides hits on its current positions with no lag
+compensation, so a pilot aims at a target that is further along than it is
+drawn. Lag compensation, rewinding targets to the shooter's render time, is
+out of scope and a possible later step.
+
+The F8 overlay adds one line: interpolation delay, buffer depth (how far the
+newest snapshot is ahead of the render time, min / mean over 2 s), the share
+of remote entity ticks extrapolated, and underruns ("dry"). The jitter line
+now also shows clock drift.
+
+### Remote smoothness, before and after
+
+The benchmark now has the measured client, routed through the relay, watch
+the first extra pilot, which flies the same pattern and turns. Once per
+physics tick it compares the drawn ship with the server's path (definitions in
+`tests/netcode_benchmark.gd`). *Before* is the phase 2 build
+(`feat/netcode-ticks`, 8a63bb0) running the same benchmark file. The earlier
+metrics keep their definitions.
+
+These runs shared the desktop with an unrelated heavy workload. The benchmark
+process ran at 13–38 frames per second with three extra clients, not the
+92–118 of phase 2. ENet is serviced once per frame, so snapshots arrived in
+bursts. That inflates underruns and the main table's RTT column, which is why
+the earlier tables are not repeated here. Both builds ran under the same load.
+The last pair used one extra client, at 52 and 78 fps.
+
+| Added RTT | Loss | Build | Path error mean / p95 / max | Lag behind server | Drawn accel p95 / max | Spikes | Render-time error mean / p95 / max | Extrapolated | Buffer depth min / mean |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 ms | 0% | before | 0.03 / 0.10 / 0.33 m | 113 ms | 1994 / 6707 m/s² | 86.1% | - | - | - |
+| 0 ms | 0% | after | 0.00 / 0.01 / 0.18 m | 104 ms | 83 / 1136 m/s² | 1.8% | 0.00 / 0.01 / 0.21 m | 3.2% | -62 / 57 ms |
+| 100 ms | 0% | before | 0.03 / 0.09 / 1.23 m | 158 ms | 1592 / 4618 m/s² | 86.5% | - | - | - |
+| 100 ms | 0% | after | 0.00 / 0.01 / 0.66 m | 164 ms | 111 / 1015 m/s² | 2.6% | 0.00 / 0.01 / 0.19 m | 4.9% | -57 / 54 ms |
+| 200 ms | 0% | before | 0.03 / 0.09 / 1.46 m | 211 ms | 1568 / 4514 m/s² | 85.9% | - | - | - |
+| 200 ms | 0% | after | 0.01 / 0.01 / 1.14 m | 235 ms | 99 / 889 m/s² | 2.6% | 0.00 / 0.01 / 0.19 m | 6.9% | -72 / 56 ms |
+| 0 ms | 5% | before | 0.03 / 0.10 / 0.50 m | 124 ms | 1990 / 4843 m/s² | 85.6% | - | - | - |
+| 0 ms | 5% | after | 0.00 / 0.01 / 0.70 m | 120 ms | 115 / 882 m/s² | 3.4% | 0.01 / 0.03 / 0.15 m | 5.7% | -65 / 59 ms |
+| 100 ms | 5% | before | 0.03 / 0.09 / 0.46 m | 165 ms | 1800 / 4868 m/s² | 84.8% | - | - | - |
+| 100 ms | 5% | after | 0.00 / 0.01 / 0.41 m | 163 ms | 111 / 2328 m/s² | 3.0% | 0.01 / 0.03 / 0.52 m | 6.4% | -123 / 55 ms |
+| 200 ms | 5% | before | 0.03 / 0.10 / 0.92 m | 213 ms | 1649 / 6602 m/s² | 85.0% | - | - | - |
+| 200 ms | 5% | after | 0.01 / 0.01 / 1.14 m | 235 ms | 131 / 927 m/s² | 3.6% | 0.01 / 0.03 / 0.18 m | 6.4% | -73 / 54 ms |
+| 150 ± 30 ms | 5% | before | 0.04 / 0.12 / 2.44 m | 215 ms | 2999 / 11859 m/s² | 83.9% | - | - | - |
+| 150 ± 30 ms | 5% | after | 0.01 / 0.03 / 1.95 m | 203 ms | 118 / 2522 m/s² | 3.6% | 0.01 / 0.04 / 0.54 m | 8.5% | -127 / 60 ms |
+| 150 ± 30 ms, 1 extra client | 5% | before | 0.03 / 0.10 / 0.81 m | 166 ms | 1610 / 4454 m/s² | 86.7% | - | - | - |
+| 150 ± 30 ms, 1 extra client | 5% | after | 0.00 / 0.01 / 0.75 m | 185 ms | 81 / 2139 m/s² | 0.4% | 0.00 / 0.02 / 0.41 m | 1.0% | -96 / 64 ms |
+
+The server's own path measures 60 / 80 m/s² (p95 / max) in nearly every run.
+A brush with the station's collision envelope can push its maximum toward
+1000 m/s². Spikes are ticks whose drawn acceleration exceeds three times the
+server's p95.
+
+### Observations
+
+- **The stutter is gone.** The old lerp chased a target that stepped at every
+  snapshot, so its drawn velocity jumped on most ticks. Its p95 acceleration
+  was 1.6–3.0 km/s², 25–50 times the real motion, even on a clean link.
+  Buffered Hermite interpolation draws within 1.3–2.2 times the server's own
+  p95, and the drawn path stays within centimetres of a path the ship really
+  flew.
+- **The delay is similar.** The drawn ship trails the server by about 100 ms
+  plus the one-way latency (104–235 ms here). The old lerp trailed by a
+  similar amount through its smoothing lag, but its drawn path cut corners
+  and never sat on the real one.
+- **Extrapolation is rare but sensitive to load.** At about 50 fps, 1% of
+  entity ticks are drawn past the newest sample. At 13–38 fps, arrivals
+  bunched into frames raise that to 3–9%. The peaks in the maximum columns
+  are the corrections when fresh samples replace an extrapolation. If
+  playtests on real links show underruns, raise the interpolation delay.
+- `tests/interpolation_network_test.gd` checks the same measures through the
+  relay at 150 ± 30 ms with 5% loss. It also replays the old lerp from the same
+  packets and asserts that it stutters (80–86% spike ticks against 0–5%).
