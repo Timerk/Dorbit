@@ -169,7 +169,7 @@ func begin() -> void:
 		alien.returning = false
 		alien.engaged = false
 		alien.contributors.clear()
-		alien.snapshot_goal.clear()
+		alien.clear_snapshots()
 		alien.reset_health()
 		alien.set_meta("feedback_health_received", false)
 		alien.visible = multiplayer.is_server() and alien.map_id == sector.map_id
@@ -850,7 +850,10 @@ func update_local(data: Dictionary, sequence: int = -1) -> void:
 	session.sector.player_respawn = data["respawn"]
 
 
-func apply_alien(data: Dictionary) -> void:
+## Applies an alien's newest state, sent on server `tick`. Its transform goes
+## into the alien's interpolation buffer; a reset (new encounter, death,
+## respawn or the end of a return home) snaps to it and starts a new buffer.
+func apply_alien(data: Dictionary, tick: int = 0) -> void:
 	var alien: Alien = session.sector.world_aliens.get(data["id"])
 	if alien == null or alien.kind != data["kind"] or alien.map_id != session.sector.map_id:
 		return
@@ -864,6 +867,8 @@ func apply_alien(data: Dictionary) -> void:
 	if reset or alien.snapshot_goal.is_empty() or alien.returning != data["returning"]:
 		alien.position = data["position"]
 		alien.rotation = data["rotation"]
+		alien.snapshot_buffer.clear()
+	alien.snapshot_buffer.push(tick, data["position"], data["rotation"], true)
 	alien.life = data["encounter"]
 	alien.home_position = data["home"]
 	alien.returning = data["returning"]
@@ -873,14 +878,23 @@ func apply_alien(data: Dictionary) -> void:
 	alien.snapshot_goal = data
 
 
-func interpolate(delta: float) -> void:
+## Buffers the transform of an alien state that arrived after a newer one,
+## when it belongs to the same encounter and state as the current motion.
+func buffer_late_alien(data: Dictionary, tick: int) -> void:
+	var alien: Alien = session.sector.world_aliens.get(data["id"])
+	if alien == null or alien.kind != data["kind"] or alien.map_id != session.sector.map_id or alien.snapshot_buffer.is_empty():
+		return
+	if alien.life == data["encounter"] and alien.alive == data["alive"] and alien.returning == data["returning"]:
+		alien.snapshot_buffer.push(tick, data["position"], data["rotation"])
+
+
+## Draws this map's aliens at `render_tick` (see FlightSession.render_remote),
+## adding to `counts`: [interpolated, extrapolated, held, underruns].
+func interpolate(render_tick: float, counts: PackedInt32Array = PackedInt32Array([0, 0, 0, 0])) -> void:
 	for alien: Alien in session.sector.aliens.values():
 		if alien.snapshot_goal.is_empty():
 			continue
-		alien.position = alien.position.lerp(alien.snapshot_goal["position"], minf(1.0, delta * 15.0))
-		var angles: Vector3 = alien.snapshot_goal["rotation"]
-		for axis in range(3):
-			alien.rotation[axis] = lerp_angle(alien.rotation[axis], angles[axis], minf(1.0, delta * 15.0))
+		FlightSession.draw_sample(alien, alien.snapshot_buffer, render_tick, counts, true)
 
 
 func message(id: int, text: String, sound_cue: String = "") -> void:
@@ -901,13 +915,13 @@ func receive_message(text: String, sound_cue: String = "") -> void:
 @rpc("authority", "call_local", "unreliable", 3)
 func show_laser(start: Vector3, finish: Vector3, hostile: bool, ammo_type: String = "x1", visit: int = -1) -> void:
 	if session.active and not session.sector.dedicated_server and session.receives_map(visit):
-		SectorVisuals.laser(session.sector, start, finish, hostile, ammo_type)
+		SectorVisuals.laser(session.sector, session.drawn_point(start), session.drawn_point(finish), hostile, ammo_type)
 
 
 @rpc("authority", "call_local", "reliable")
 func show_explosion(location: Vector3, diameter: float, visit: int = -1) -> void:
 	if session.active and not session.sector.dedicated_server and session.receives_map(visit):
-		SectorVisuals.explosion(session.sector, location, diameter)
+		SectorVisuals.explosion(session.sector, session.drawn_point(location), diameter)
 
 
 func finish() -> void:
@@ -952,7 +966,7 @@ func finish() -> void:
 	records.clear()
 	for alien: Alien in session.sector.world_aliens.values():
 		alien.contributors.clear()
-		alien.snapshot_goal.clear()
+		alien.clear_snapshots()
 		alien.simulation_authority = true
 	if not session.sector.dedicated_server:
 		session.sector.player.simulation_authority = true

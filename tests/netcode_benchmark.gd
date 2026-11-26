@@ -52,6 +52,30 @@ extends "res://tests/network_test.gd"
 ##   dropped (catch-up) and starved (ticks reusing the last input) are the
 ##   server's InputBuffer counters. Before phase 2 these columns counted 20 Hz
 ##   flight commands, each lost with its datagram.
+##
+## Remote smoothness (phase 3), needing at least one extra client: the measured
+## client watches the first extra pilot, which flies the same pattern and also
+## turns. Once per physics tick the benchmark records where the measured client
+## draws it and where the server has it, on the server's tick.
+## - remote_path_*_m: distance from the drawn ship to the server's path over
+##   the last 1.5 s (the nearest point on the polyline of its tick positions):
+##   how far the drawn motion strays from a path the ship really flew, at any
+##   delay. remote_lag_ms is how far behind the server's current tick that
+##   nearest point is, on average.
+## - remote_render_*_m: distance from the drawn ship to the server's position
+##   at the client's render tick (ServerClock): the interpolation error proper.
+##   Only builds with snapshot interpolation report it.
+## - remote_accel_p95/max: acceleration of the drawn ship, from second
+##   differences of its position per physics tick, in m/s^2. Stutter shows as
+##   spikes far above server_accel_p95/max, the same measure of the server's
+##   own path.
+## - remote_spikes: share of ticks whose drawn acceleration exceeds three
+##   times the server's p95 acceleration (a collision can make the server's
+##   maximum an outlier).
+## - extrapolated_share, underruns, depth_min/mean_ms: NetStats interpolation
+##   counters over the window: share of remote entity ticks drawn past their
+##   newest sample, buffers that ran dry, and how far the newest snapshot was
+##   ahead of the render time (min and mean, ms).
 
 const BASE_PORT := 24911
 # ENet smooths its RTT by 1/8 per reliable acknowledgement, about two per
@@ -121,11 +145,14 @@ func run() -> void:
 	if failures > 0:
 		finish()
 		return
+	if everyone.size() > 1:
+		watched = everyone[1]
 	var results: Array[Dictionary] = []
 	for condition: Array in conditions:
 		results.append(await measure(server, client, everyone.size(), condition))
 	release_inputs()
 	print_table(results)
+	print_remote_table(results)
 	print("Process frame rate: %s fps (server and all clients share one process)." % ", ".join(results.map(func(row: Dictionary): return str(row["fps"]))))
 	print("NETCODE_BENCHMARK=", JSON.stringify({"options": options, "results": results}))
 	finish()
@@ -153,7 +180,13 @@ func measure(server: Sector, client: Sector, clients: int, condition: Array) -> 
 	host.pop_statistic(ENetConnection.HOST_TOTAL_SENT_DATA)
 	var started := Time.get_ticks_usec()
 	var frames := Engine.get_process_frames()
+	clear_remote_samples()
+	var sampler := sample_remote.bind(server, client)
+	if watched != null:
+		physics_frame.connect(sampler)
 	var rtts := await fly(client, float(options["seconds"]), server)
+	if watched != null:
+		physics_frame.disconnect(sampler)
 	var seconds := (Time.get_ticks_usec() - started) / 1_000_000.0
 	frames = Engine.get_process_frames() - frames
 	net.keep_samples = false
@@ -163,7 +196,7 @@ func measure(server: Sector, client: Sector, clients: int, condition: Array) -> 
 	var inputs: Dictionary = server.session.input_buffers[id].counters()
 	for key: String in inputs:
 		inputs[key] -= inputs_before[key]
-	return {
+	var row := {
 		"rtt_added_ms": condition[0], "jitter_ms": condition[1], "loss_percent": condition[2], "duplicate_percent": condition[3],
 		"seconds": snappedf(seconds, 0.01), "rtt_ms": snappedf(NetStats.mean(rtts), 0.1),
 		"fps": roundi(frames / seconds), "speed_mps": snappedf(NetStats.mean(speeds), 0.1),
@@ -192,11 +225,115 @@ func measure(server: Sector, client: Sector, clients: int, condition: Array) -> 
 		"input_packets": net.input_packets_sent - packets_before,
 		"relay_dropped": relay_stats["up"]["dropped_packets"] + relay_stats["down"]["dropped_packets"],
 	}
+	row.merge(remote_metrics(net))
+	return row
 
 
 var speeds := PackedFloat32Array()
 var gaps := PackedFloat32Array()
 var depths := PackedFloat32Array()
+## The extra pilot the measured client watches, or null without extra clients.
+var watched: Sector = null
+# Per physics tick while measuring: the watched ship as drawn by the measured
+# client, the client's render tick (or -1), and the server's tick.
+var drawn: Array[Vector3] = []
+var render_ticks := PackedFloat64Array()
+var sample_ticks := PackedInt32Array()
+# Server position of the watched ship per server tick.
+var server_path: Dictionary[int, Vector3] = {}
+
+
+func clear_remote_samples() -> void:
+	drawn.clear()
+	render_ticks = PackedFloat64Array()
+	sample_ticks = PackedInt32Array()
+	server_path.clear()
+
+
+func sample_remote(server: Sector, client: Sector) -> void:
+	var id := watched.multiplayer.get_unique_id()
+	if not server.session.ships.has(id) or not client.session.ships.has(id):
+		return
+	var tick := server.session.server_tick
+	server_path[tick] = server.session.ships[id].position
+	drawn.append(client.session.ships[id].position)
+	sample_ticks.append(tick)
+	# Builds before snapshot interpolation have no render clock.
+	var clock: Object = client.session.get("clock")
+	render_ticks.append(clock.call("render_tick") if clock != null and clock.get("synced") else -1.0)
+
+
+## Server position at fractional `tick`, or null outside the recorded path.
+func server_at(tick: float) -> Variant:
+	var low := floori(tick)
+	if not server_path.has(low) or not server_path.has(low + 1):
+		return server_path.get(low) if is_equal_approx(tick, low) else null
+	return server_path[low].lerp(server_path[low + 1], tick - low)
+
+
+func remote_metrics(net: NetStats) -> Dictionary:
+	var path_errors := PackedFloat32Array()
+	var lags := PackedFloat32Array()
+	var render_errors := PackedFloat32Array()
+	var accelerations := PackedFloat32Array()
+	var server_accelerations := PackedFloat32Array()
+	var rate := float(Engine.physics_ticks_per_second)
+	for index in drawn.size():
+		var now := sample_ticks[index]
+		var point := drawn[index]
+		# Nearest point on the server's path over the last 1.5 s.
+		var best := INF
+		var best_tick := float(now)
+		for tick in range(now - 90, now):
+			if not server_path.has(tick) or not server_path.has(tick + 1):
+				continue
+			var from: Vector3 = server_path[tick]
+			var segment: Vector3 = server_path[tick + 1] - from
+			var along := clampf((point - from).dot(segment) / segment.length_squared(), 0.0, 1.0) if segment.length_squared() > 1e-8 else 0.0
+			var distance := point.distance_to(from + segment * along)
+			if distance < best:
+				best = distance
+				best_tick = tick + along
+		if best < INF:
+			path_errors.append(best)
+			lags.append((now - best_tick) * 1000.0 / rate)
+		if render_ticks[index] >= 0.0:
+			var truth: Variant = server_at(render_ticks[index])
+			if truth != null:
+				render_errors.append(point.distance_to(truth))
+		# Second differences need three consecutive ticks.
+		if index >= 2 and sample_ticks[index] - sample_ticks[index - 2] == 2:
+			accelerations.append((drawn[index] - 2.0 * drawn[index - 1] + drawn[index - 2]).length() * rate * rate)
+	for tick: int in server_path:
+		if server_path.has(tick + 1) and server_path.has(tick + 2):
+			server_accelerations.append((server_path[tick + 2] - 2.0 * server_path[tick + 1] + server_path[tick]).length() * rate * rate)
+	var server_max := NetStats.percentile(server_accelerations, 1.0)
+	var spike_limit := NetStats.percentile(server_accelerations, 0.95) * 3.0
+	var spikes := 0
+	for value in accelerations:
+		if value > spike_limit:
+			spikes += 1
+	var has_interpolation := net.get("extrapolated_ticks") != null
+	var depth_samples: PackedFloat32Array = net.get("depth_samples") if has_interpolation else PackedFloat32Array()
+	return {
+		"remote_samples": drawn.size(),
+		"remote_path_mean_m": snappedf(NetStats.mean(path_errors), 0.01),
+		"remote_path_p95_m": snappedf(NetStats.percentile(path_errors, 0.95), 0.01),
+		"remote_path_max_m": snappedf(NetStats.percentile(path_errors, 1.0), 0.01),
+		"remote_lag_ms": roundi(NetStats.mean(lags)),
+		"remote_render_mean_m": snappedf(NetStats.mean(render_errors), 0.01) if not render_errors.is_empty() else -1.0,
+		"remote_render_p95_m": snappedf(NetStats.percentile(render_errors, 0.95), 0.01) if not render_errors.is_empty() else -1.0,
+		"remote_render_max_m": snappedf(NetStats.percentile(render_errors, 1.0), 0.01) if not render_errors.is_empty() else -1.0,
+		"remote_accel_p95": roundi(NetStats.percentile(accelerations, 0.95)),
+		"remote_accel_max": roundi(NetStats.percentile(accelerations, 1.0)),
+		"server_accel_p95": roundi(NetStats.percentile(server_accelerations, 0.95)),
+		"server_accel_max": roundi(server_max),
+		"remote_spikes": snappedf(float(spikes) / maxi(1, accelerations.size()), 0.001),
+		"extrapolated_share": snappedf(net.call("extrapolation_share"), 0.001) if has_interpolation else -1.0,
+		"underruns": net.get("underruns") if has_interpolation else -1,
+		"depth_min_ms": roundi(NetStats.percentile(depth_samples, 0.0)) if not depth_samples.is_empty() else -1,
+		"depth_mean_ms": roundi(NetStats.mean(depth_samples)) if not depth_samples.is_empty() else -1,
+	}
 
 
 ## Flies the input pattern for `seconds`; returns RTT samples taken every 0.5 s.
@@ -227,6 +364,9 @@ func fly(client: Sector, seconds: float, server: Sector = null) -> PackedFloat32
 			else:
 				Input.action_release(action)
 		client.player.pending_look.x += segment[2] * (now - last) / 1000.0
+		if watched != null:
+			# The watched pilot turns too, so its drawn path curves.
+			watched.player.pending_look.x += segment[2] * (now - last) / 1000.0
 		last = now
 		if server != null:
 			# Keep combat from interrupting the measurement; positions stay authoritative.
@@ -265,3 +405,21 @@ func print_table(results: Array[Dictionary]) -> void:
 			row["gap_mean_m"], row["gap_p95_m"], row["replay_mean"], row["replay_max"], row["depth_mean"],
 			row["inputs_sent"], row["inputs_applied"], row["inputs_lost"],
 			row["inputs_late"], row["inputs_dropped"], row["inputs_starved"]])
+
+
+func print_remote_table(results: Array[Dictionary]) -> void:
+	if watched == null:
+		return
+	print("\nRemote smoothness: the measured client watching one extra pilot, sampled every physics tick.")
+	print("| Added RTT | Loss | Path error mean / p95 / max | Lag behind server | Render-time error mean / p95 / max | Drawn accel p95 / max | Server accel p95 / max | Spikes | Extrapolated | Underruns | Buffer depth min / mean |")
+	print("| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+	for row: Dictionary in results:
+		var jitter := "" if row["jitter_ms"] == 0.0 else " ± %d" % row["jitter_ms"]
+		var render := "-" if row["remote_render_mean_m"] < 0.0 else "%.2f / %.2f / %.2f m" % [row["remote_render_mean_m"], row["remote_render_p95_m"], row["remote_render_max_m"]]
+		var extrapolated := "-" if row["extrapolated_share"] < 0.0 else "%.1f%%" % (row["extrapolated_share"] * 100.0)
+		var depth := "-" if row["depth_mean_ms"] < 0 else "%d / %d ms" % [row["depth_min_ms"], row["depth_mean_ms"]]
+		print("| %d%s ms | %s%% | %.2f / %.2f / %.2f m | %d ms | %s | %d / %d m/s² | %d / %d m/s² | %.1f%% | %s | %s | %s |" % [
+			row["rtt_added_ms"], jitter, str(row["loss_percent"]),
+			row["remote_path_mean_m"], row["remote_path_p95_m"], row["remote_path_max_m"], row["remote_lag_ms"], render,
+			row["remote_accel_p95"], row["remote_accel_max"], row["server_accel_p95"], row["server_accel_max"],
+			row["remote_spikes"] * 100.0, extrapolated, "-" if row["underruns"] < 0 else str(row["underruns"]), depth])

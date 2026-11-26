@@ -8,7 +8,7 @@ const MAX_PLAYERS: int = 10
 const INPUT_TIMEOUT_TICKS: int = InputBuffer.TIMEOUT_TICKS
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when packet contents or shared physics change without an RPC signature change.
-const NETWORK_SCHEMA: int = 24
+const NETWORK_SCHEMA: int = 25
 ## ENet packet throttle for every server/client peer: [interval ms,
 ## acceleration, deceleration]. ENet's default deceleration (2) discards
 ## unreliable packets at the sender whenever one round trip exceeds the
@@ -17,6 +17,9 @@ const NETWORK_SCHEMA: int = 24
 ## are redundant, so deceleration 0 keeps the throttle open. Reliable traffic
 ## keeps ENet's own windowing and resends.
 const ENET_THROTTLE := [5000, 2, 0]
+## Laser and explosion points within this distance (m) of an entity's newest
+## received position are moved onto where that entity is drawn.
+const ANCHOR_RADIUS := 8.0
 const BUILD_MISMATCH := "Client and server builds are incompatible. Use the matching client and server from the same release or PR preview."
 
 var sector: Sector
@@ -34,7 +37,13 @@ var input_buffers: Dictionary[int, InputBuffer] = {}
 var server_tick: int = 0
 ## Client: local pilot inputs, prediction and reconciliation.
 var prediction := FlightPrediction.new()
+## Client: newest applied state of each pilot, keyed by peer.
 var goals: Dictionary[int, Dictionary] = {}
+## Client: estimated server time and the render time remote entities use.
+var clock := ServerClock.new()
+## Client: interpolation buffers of remote pilots, keyed by peer. Cleared
+## with `goals` at every discontinuity.
+var remote_buffers: Dictionary[int, SnapshotBuffer] = {}
 var send_clock: float = 0.0
 var connect_clock: float = 0.0
 var received_snapshot: bool = false
@@ -569,6 +578,7 @@ func spawn(id: int, location: Vector3, docked: bool = false, map: int = 0) -> vo
 	ship.position = location
 	ship.map_id = map
 	ships[id] = ship
+	remote_buffers.erase(id)
 	combat.add_player(id, location)
 	ship.set_meta("docked", docked)
 	if docked:
@@ -752,6 +762,7 @@ func despawn(id: int) -> void:
 	commands.erase(id)
 	input_buffers.erase(id)
 	goals.erase(id)
+	remote_buffers.erase(id)
 	player_sequences.erase(id)
 	combat.remove_player(id)
 
@@ -812,18 +823,81 @@ func tick(delta: float) -> void:
 				disconnect_session("Connected, but no sector arrived. Check that client and server builds match, then try again.")
 			return
 		predict_local(delta, movement, boost)
-		combat.interpolate(delta)
-		for id: int in goals:
-			if not ships.has(id) or ships[id].map_id != sector.map_id:
-				continue
-			var ship := ships[id]
-			var goal: Dictionary = goals[id]
-			if ship == sector.player:
-				continue
-			ship.position = ship.position.lerp(goal["position"], minf(1.0, delta * 15.0))
-			var angles: Vector3 = goal["rotation"]
-			ship.rotation.x = lerp_angle(ship.rotation.x, angles.x, minf(1.0, delta * 15.0))
-			ship.rotation.y = lerp_angle(ship.rotation.y, angles.y, minf(1.0, delta * 15.0))
+		render_remote(delta)
+
+
+## Client: draws remote pilots and aliens at the render time, between buffered
+## snapshots (see ServerClock and SnapshotBuffer). Runs once per physics tick,
+## so they step in time with the local ship and camera.
+func render_remote(delta: float) -> void:
+	clock.advance(delta)
+	if not clock.synced:
+		return
+	var render_tick := clock.render_tick()
+	var counts := PackedInt32Array([0, 0, 0, 0])
+	for id: int in remote_buffers:
+		var ship: Pilot = ships.get(id)
+		if ship == null or ship == sector.player or ship.map_id != sector.map_id:
+			continue
+		draw_sample(ship, remote_buffers[id], render_tick, counts, false)
+	combat.interpolate(render_tick, counts)
+	net_stats.record_interpolation(clock, counts[0], counts[1], counts[2], counts[3])
+
+
+## Moves one entity to its buffered transform at `render_tick` and counts the
+## SnapshotBuffer mode used in `counts`: [interpolated, extrapolated, held,
+## underruns].
+static func draw_sample(node: Node3D, buffer: SnapshotBuffer, render_tick: float, counts: PackedInt32Array, all_axes: bool) -> void:
+	var underruns := buffer.underruns
+	var result := buffer.sample(render_tick)
+	if result.is_empty():
+		return
+	node.position = result["position"]
+	var angles: Vector3 = result["rotation"]
+	if all_axes:
+		node.rotation = angles
+	else:
+		# Pilots replicate pitch and yaw; roll is cosmetic banking on the model.
+		node.rotation.x = angles.x
+		node.rotation.y = angles.y
+	match int(result["mode"]):
+		SnapshotBuffer.Mode.INTERPOLATED: counts[0] += 1
+		SnapshotBuffer.Mode.EXTRAPOLATED: counts[1] += 1
+		SnapshotBuffer.Mode.HELD: counts[2] += 1
+	counts[3] += buffer.underruns - underruns
+
+
+## Client: moves a world-space effect point the server placed at an entity's
+## position onto where that entity is drawn. Remote entities are drawn about
+## ServerClock.INTERPOLATION_DELAY in the past and the local ship ahead of the
+## server, so lasers would otherwise start and end beside their ships.
+func drawn_point(point: Vector3) -> Vector3:
+	if not active or multiplayer.is_server():
+		return point
+	var best := ANCHOR_RADIUS
+	var shift := Vector3.ZERO
+	if net_stats.has_server_state and sector.player.alive:
+		var distance := point.distance_to(net_stats.server_position)
+		if distance < best:
+			best = distance
+			shift = sector.player.position + sector.player.visual_offset - net_stats.server_position
+	for id: int in remote_buffers:
+		var ship: Pilot = ships.get(id)
+		var buffer := remote_buffers[id]
+		if ship == null or ship == sector.player or not ship.visible or buffer.is_empty():
+			continue
+		var distance := point.distance_to(buffer.newest_position())
+		if distance < best:
+			best = distance
+			shift = ship.position - buffer.newest_position()
+	for alien: Alien in sector.aliens.values():
+		if not alien.visible or alien.snapshot_buffer.is_empty():
+			continue
+		var distance := point.distance_to(alien.snapshot_buffer.newest_position())
+		if distance < best:
+			best = distance
+			shift = alien.position - alien.snapshot_buffer.newest_position()
+	return point + shift
 
 
 ## Server: consumes this tick's input for a remote pilot and simulates it with
@@ -1026,6 +1100,7 @@ func world_snapshot(packet: PackedByteArray) -> void:
 	var sequence: int = world["sequence"]
 	var visit: int = world["visit"]
 	net_stats.server_tick = maxi(net_stats.server_tick, world["tick"])
+	clock.observe(world["tick"])
 	var owner: Dictionary = world["owner"]
 	if not owner.is_empty():
 		combat.ammo_snapshot(owner["rounds"], sequence, owner["rockets"], visit)
@@ -1039,28 +1114,41 @@ func world_snapshot(packet: PackedByteArray) -> void:
 		var profile: Array = player_profiles.get(id, [-1])
 		if profile[0] == state["profile"]:
 			players[id] = SnapshotCodec.player_state(state, profile[1])
-	snapshot(players, {}, sequence, visit)
+	snapshot(players, {}, sequence, visit, world["tick"])
 	for id: int in world["aliens"]:
 		var state: Dictionary = world["aliens"][id]
 		var profile: Array = alien_profiles.get(id, [-1])
 		if profile[0] == state["profile"]:
-			snapshot({}, SnapshotCodec.alien_state(state, profile[1]), sequence, visit)
+			snapshot({}, SnapshotCodec.alien_state(state, profile[1]), sequence, visit, world["tick"])
 
 
-## Applies decoded world state. Each entity rejects state older than its last update.
-func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int, visit: int = -1) -> void:
+## Applies decoded world state sent on server `tick`. Each entity rejects state
+## older than its last update, though an older packet's transform can still
+## fill a remote entity's interpolation buffer. Direct calls without a tick
+## (tests) reuse the newest received tick.
+func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int, visit: int = -1, tick: int = -1) -> void:
 	if not active or not receives_map(visit):
 		return
+	if tick < 0:
+		tick = maxi(clock.latest_tick, 0)
 	# Packets may arrive out of order. Reject stale state per entity, not per whole packet.
 	if not alien_state.is_empty():
 		var alien_id: int = alien_state["id"]
 		if sequence > alien_sequences.get(alien_id, -1):
-			combat.apply_alien(alien_state)
+			combat.apply_alien(alien_state, tick)
 			alien_sequences[alien_id] = sequence
+		else:
+			combat.buffer_late_alien(alien_state, tick)
 	for id: int in state:
-		if not ships.has(id) or sequence <= player_sequences.get(id, -1):
+		if not ships.has(id):
 			continue
 		var data: Dictionary = state[id]
+		if sequence <= player_sequences.get(id, -1):
+			# Same life and state: the transform still belongs to the current motion.
+			var late := ships[id]
+			if late != sector.player and remote_buffers.has(id) and int(data["life"]) == int(late.get_meta("life", 0)) and bool(data["alive"]) == late.alive:
+				remote_buffers[id].push(tick, data["position"], data["rotation"])
+			continue
 		if int(data["life"]) < int(ships[id].get_meta("life", 0)):
 			continue
 		# Reliable dock/launch acknowledgements and snapshots travel on different channels.
@@ -1075,6 +1163,14 @@ func snapshot(state: Dictionary, alien_state: Dictionary, sequence: int, visit: 
 			ship.rotation = data["rotation"]
 		if ship != sector.player:
 			ship.energy = data["energy"]
+			# A new life, or the first state after a spawn or launch, starts a new motion.
+			var buffer: SnapshotBuffer = remote_buffers.get_or_add(id, SnapshotBuffer.new())
+			if reset or buffer.is_empty():
+				buffer.clear()
+				ship.position = data["position"]
+				ship.rotation.x = data["rotation"].x
+				ship.rotation.y = data["rotation"].y
+			buffer.push(tick, data["position"], data["rotation"], true)
 		else:
 			var authoritative := {"position": data["position"], "rotation": data["rotation"], "energy": data["energy"],
 				"velocity": data["velocity"] if ship.alive else Vector3.ZERO}
@@ -1132,6 +1228,8 @@ func disconnect_session(message: String) -> void:
 	input_buffers.clear()
 	server_tick = 0
 	goals.clear()
+	remote_buffers.clear()
+	clock.reset()
 	received_snapshot = false
 	snapshot_sequence = 0
 	player_sequences.clear()
@@ -1347,6 +1445,7 @@ func map_changed(id: int, data: Dictionary, sequence: int) -> void:
 			prediction.reset(ship)
 			ship.sim_rotation = data["rotation"]
 	goals.erase(id)
+	remote_buffers.erase(id)
 	player_sequences[id] = maxi(player_sequences.get(id, -1), sequence)
 	if ship == sector.player:
 		sector.activate_map(ship.map_id)

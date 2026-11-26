@@ -328,9 +328,9 @@ func network_checks() -> void:
 		server.aliens[1].position = Vector3(400, 250, -120)
 		server.aliens[1].home_position = server.aliens[1].position
 		await replicate(server)
-		# Replication updates alien interpolation goals, not their visible positions.
-		# Start planning only after applying the fixture's freshly relocated target.
-		client.session.combat.interpolate(0.1)
+		# Replication fills alien interpolation buffers, not their visible positions.
+		# Start planning only after drawing the fixture's freshly relocated target.
+		client.session.combat.interpolate(float(client.session.clock.latest_tick))
 		client.select_target(client.aliens[1])
 		client.autopilot.toggle()
 		var start := ship.position
