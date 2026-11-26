@@ -23,6 +23,7 @@ var filtering_status: Label
 var bloom: CheckButton
 var ssao: CheckButton
 var performance: CheckButton
+var net_simulator: CheckButton
 var resolution: OptionButton
 var resolutions: Array[Vector2i] = []
 var binding_buttons: Dictionary[String, Button] = {}
@@ -307,6 +308,9 @@ func build_graphics(rows: VBoxContainer) -> void:
 		sector.settings.show_performance = value
 		sector.apply_graphics(false)
 		sector.settings.save())
+	net_simulator = checkbox(rows, "Route connections through the network simulator (debug)", func(value: bool):
+		sector.session.use_net_simulator = value)
+	label(rows, "Applies on the next connection and is not saved. F8 shows the netcode overlay with the simulator controls.", 14)
 	rows = section(page_rows, "IMAGE QUALITY")
 	rows.add_theme_constant_override("separation", 4)
 	graphics_choice(rows, "render_scale", "3D render scale", ["Off / Native (100%)", "85%", "75%", "50%"],
@@ -447,6 +451,7 @@ func sync_controls() -> void:
 	bloom.set_pressed_no_signal(sector.settings.bloom)
 	ssao.set_pressed_no_signal(sector.settings.ssao)
 	performance.set_pressed_no_signal(sector.show_performance)
+	net_simulator.set_pressed_no_signal(sector.session.use_net_simulator)
 	sync_resolution()
 	binding_help.text = ""
 	binding_help.hide()

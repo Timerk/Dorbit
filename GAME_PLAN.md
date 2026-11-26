@@ -932,6 +932,48 @@ does not start at boot. No CPU or memory limits are needed for the current solo
 development phase; both instances share host resources. Production deployment
 remains a separate manual action. See DEPLOYMENT.md for setup and recovery.
 
+### Real-time netcode rework
+
+The user agreed to rework client/server movement networking into a measurable,
+demonstrable system. The work spans six stacked PRs, measuring first. Gameplay
+stays server-authoritative. Clients never send wallet, health, hit or reward
+outcomes.
+
+1. **Network simulator and netcode overlay.** An in-process threaded UDP relay
+   sits between the client's ENet socket and the server. It adds latency,
+   jitter, loss and duplication in both directions, so ENet's real reliability
+   and ordering still apply. It is opt-in: a debug setting or `--netsim`,
+   applied on the next connection. Once it's on, the sliders change conditions
+   live. F8 toggles an overlay in the F3 style showing the sliders, RTT, bytes/s
+   up and down, snapshot arrival jitter, the latest and largest correction, and
+   a translucent server ghost. Baseline numbers are recorded at 0, 100 and
+   200 ms, each with 0% and 5% loss.
+2. **Ticks, input sequencing and reconciliation.** The 60 Hz simulation tick is
+   numbered. Each client input carries its tick, sequence number, movement,
+   boost and requested facing, and sends are redundant so loss doesn't drop
+   inputs. The server buffers inputs per pilot and consumes exactly one per
+   tick. Snapshots carry the server tick and each pilot's last processed
+   sequence. The client rewinds to the authoritative state, replays
+   unacknowledged inputs, and hides corrections with a decaying render offset.
+   The 720°/s facing limit and life checks remain.
+3. **Snapshot interpolation.** Remote pilots and aliens render about 100 ms in
+   the past, between two buffered server-tick snapshots. When the buffer runs
+   dry they extrapolate for at most 250 ms. The overlay shows buffer depth and
+   underruns.
+4. **Snapshot encoding.** Positions, angles and health are quantized. Each
+   viewer gets fields delta-encoded against the last snapshot it acknowledged,
+   falling back to full state, and packets stay under the ENet MTU. Bytes per
+   client per second are reported before and after.
+5. **Degraded-network tests.** Headless multi-client playthroughs run through
+   the relay at 150 ± 30 ms with 5% loss in both CI jobs. They assert limits on
+   worst correction, lost inputs and bandwidth, and that hits and rewards stay
+   authoritative.
+6. **docs/NETCODE.md.** Architecture, a timeline, tradeoffs and before/after
+   tables. The README portfolio section waits for the user's approval.
+
+The interpolation delay, extrapolation cap, correction smoothing and the
+redundancy count are playtesting settings. Each PR bumps the network schema.
+
 ## Ship visual refinement
 
 The user requested a visual refinement of the existing twelve playable ships

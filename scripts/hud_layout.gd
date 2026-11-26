@@ -13,7 +13,7 @@ const ITEMS := {
 	"station": ["Station actions", "shop"], "radiation": ["Radiation", "shield"],
 	"reticle": ["Reticle", "damage"], "autopilot": ["Autopilot status", "speed"],
 	"performance": ["Performance", "settings"], "ammo": ["Quickslots", "damage"],
-	"tutorial": ["Control tips", "settings"]
+	"tutorial": ["Control tips", "settings"], "netcode": ["Netcode", "connection"]
 }
 # Read-only default, so per-frame layout lookups do not allocate a Dictionary.
 const NO_ENTRY := {}
@@ -108,6 +108,7 @@ func default_rect(id: String) -> Rect2:
 		"autopilot": return Rect2(hud.navigation.radar_rect().position + Vector2(14, 190), Vector2(170, 26))
 		"performance": return Rect2(FlightHud.SIDE_MARGIN, hud.objectives_rect().end.y + 192, 350, 26)
 		"tutorial": return hud.tutorial_rect()
+		"netcode": return Rect2(Vector2(size.x - FlightHud.SIDE_MARGIN - NetcodeOverlay.SIZE.x, hud.navigation.radar_rect().end.y + 14), NetcodeOverlay.SIZE)
 	return Rect2()
 
 
@@ -198,6 +199,8 @@ func reopen(id: String) -> void:
 		hud.sector.settings.show_performance = true
 		hud.sector.show_performance = true
 		hud.sector.settings.save()
+	if id == "netcode":
+		hud.sector.show_netcode = true
 	# Hide the rail when it covers the selected panel, so its full saved position
 	# can be edited without relocating it just by opening the editor.
 	if rect_for(id).intersects(sidebar.get_rect()):

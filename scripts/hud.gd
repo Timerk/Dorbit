@@ -67,6 +67,7 @@ var tip_keys: Array[Array] = []
 var tip_keys_key := Vector2i(-1, -1)
 var navigation: FlightNavigation
 var ammo_bar: AmmoBar
+var netcode: NetcodeOverlay
 var layout: HudLayout
 # Binding phrases and control hints are rebuilt after any rebind.
 var phrases: Dictionary[String, String] = {}
@@ -89,6 +90,9 @@ func _ready() -> void:
 	ammo_bar = AmmoBar.new()
 	ammo_bar.sector = sector
 	add_child(ammo_bar)
+	netcode = NetcodeOverlay.new()
+	netcode.hud = self
+	add_child(netcode)
 	layout = HudLayout.new()
 	layout.hud = self
 	add_child(layout)
@@ -764,6 +768,8 @@ func _draw() -> void:
 	draw_gate_countdown()
 	draw_tutorial()
 	draw_performance()
+	if netcode.visible:
+		marker_labels.append(layout.rect_for("netcode"))
 	if layout.begin_draw(self, "ship"):
 		draw_ship_panel()
 		layout.end_draw(self)
