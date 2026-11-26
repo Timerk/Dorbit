@@ -392,3 +392,54 @@ pilots. Both degraded runs were close to 5,200 B/s on phase 4. Joins, map
 changes and prolonged gaps in acknowledgements send full snapshots.
 Combat traffic adds reliable messages, so measure it separately before
 setting a budget for the combined playthrough.
+
+## Degraded-network CI
+
+`tests/degraded_network_playthrough.gd` runs a dedicated-style server and
+three authenticated clients in separate physics worlds. Each client uses its
+own UDP relay at 150 ± 30 ms added RTT and 5% loss in each direction. After
+launching and accepting a Scout hunt at Outpost 01, the pilots fly 1,200
+physics ticks of thrust, boost, strafing and turns. Two pilots then select
+and fire on a Scout while the third observes. The server awards each shooter
+150 credits and one kill toward the hunt. The observer earns zero of each.
+The test waits for the reliable reward notices and loot drop as well as
+snapshots carrying the death, wallet, contract progress and hull/shields.
+Before flight, it submits a wrong-life contract request followed by a valid
+request on the same reliable channel to verify that the old life cannot
+change the hunt.
+
+The playthrough prints a single `DEGRADED_NETWORK` JSON record. Reconciliation
+and interpolation limits cover steady flight. The observer compares the
+drawn pilot against the server path at the observer's render tick and counts
+both extrapolated and held samples. Input counters cover the whole flight
+through the end of combat. Bandwidth rates use wall time and bytes sent by
+the server to each relay before simulated loss. The combat window includes
+the engagement and reliable outcome delivery. The reliable subtotal counts
+ENet reliable data commands and retransmissions, excluding shared datagram
+headers and acknowledgements.
+[Godot's vendored ENet packet layout](https://github.com/godotengine/godot/blob/4.7.2-stable/thirdparty/enet/enet/protocol.h)
+
+| Metric | Asserted limit |
+| --- | ---: |
+| Per-pilot simulation error p95 / max | 0.25 / 3.0 m |
+| Per-pilot visual offset max | 4.0 m |
+| Input gaps skipped by the server | 0 per pilot |
+| Observed path error p95 / max | 0.5 / 3.0 m |
+| Observed extrapolated or held ticks | 15% |
+| Steady-flight ENet downstream | 8,000 B/s per viewer |
+| Combat ENet downstream, including reliable traffic | 9,000 B/s per viewer |
+
+The first Windows desktop run measured 5,088–5,092 B/s per viewer during
+flight and 4,686–5,793 B/s during combat. Reliable data commands accounted
+for 94–171 B/s during the encounter. The combat limit leaves 1,000 B/s of
+headroom above the steady-flight budget for combat effects and reliable
+messages. The largest simulation correction was 1.40 m (p95 below 0.001 m),
+and the largest visual offset was 1.22 m. The observed path error was
+0.021 m at p95 and 0.39 m at maximum, with 3.2% extrapolated or held ticks.
+All pilots lost zero inputs. The replay took 54 s including setup.
+
+The simulator's seeds fix the random streams. Host scheduling still affects
+packet arrival order and the shared process's frame timing. A frame stall
+can starve a server input buffer and introduce a correction even when all
+input sequences ultimately arrive. The JSON record includes frame rate and
+per-pilot late, catch-up drop and starvation counts.
