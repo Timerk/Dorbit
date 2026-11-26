@@ -124,7 +124,7 @@ func run() -> void:
 	alien.home_position = alien.position
 	await physics_frame
 	await replicate(host)
-	check(client.alien.position.is_equal_approx(alien.position), "Client receives the host's alien position")
+	check(client.alien.position.distance_to(alien.position) <= 0.0034, "Client receives the host's alien position within the public wire quantum")
 	client.alien.take_damage(client.alien.max_hull + client.alien.max_shield + 1.0, client.player)
 	check(client.alien.alive and client.alien.hull == alien.hull, "Client cannot apply local damage")
 	check(not client.player.try_fire(client.alien), "Client cannot simulate an authoritative shot")
@@ -187,7 +187,7 @@ func run() -> void:
 	late.session.join("127.0.0.1", test_port(24681))
 	await settle(0.5)
 	await replicate(host)
-	check(late.alien.shield == damaged_shield and alien.shield == damaged_shield, "Late join preserves and receives current alien health")
+	check(absf(late.alien.shield - damaged_shield) <= 0.125 and alien.shield == damaged_shield, "Late join preserves server health and receives the quantized shield")
 	var late_id := late.multiplayer.get_unique_id()
 	check(host.player in host.session.ships.values(), "Host retains its own ship")
 	# The client is closer, so the alien attacks it rather than always targeting the host.

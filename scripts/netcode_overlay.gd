@@ -4,10 +4,10 @@ extends Control
 ## translucent ghost at the last authoritative position of the local ship.
 ## Client-side diagnostics only; nothing here is sent to the server.
 
-const SIZE := Vector2(340, 372)
+const SIZE := Vector2(340, 388)
 # Readings start here; the controls sit below them.
 const LINE_HEIGHT := 16
-const CONTROLS_TOP := 162
+const CONTROLS_TOP := 178
 const REFRESH := 0.25
 const DIRECTION_LABELS := ["Both ways (round trip)", "Upstream only", "Downstream only"]
 # Slider limits per mode: [round trip, one way].
@@ -198,6 +198,10 @@ func _draw() -> void:
 	else:
 		var jitter := stats.snapshot_jitter()
 		lines.append("RTT  %d ms    Up  %s/s    Down  %s/s" % [roundi(stats.rtt_ms), String.humanize_size(int(stats.up_bytes_per_second)), String.humanize_size(int(stats.down_bytes_per_second))])
+		var traffic := stats.server_snapshot_traffic
+		lines.append("World  %s/s  %d B/tick  %.1f%% delta  %d full" % [
+			String.humanize_size(traffic.get("bytes_per_second", 0)), traffic.get("bytes_per_tick", 0),
+			traffic.get("delta_permille", 0) / 10.0, traffic.get("full_fallbacks", 0)])
 		lines.append("Snapshot jitter  %.1f / %.1f ms max,  clock drift %+d ms" % [jitter.x, jitter.y, roundi(stats.clock_drift_ms)])
 		lines.append("Inputs  %d unacked,  replayed %d (max %d)" % [stats.unacked_inputs, stats.replayed_ticks, stats.max_replayed_ticks])
 		lines.append("Ack lag  %d ticks,  server buffer %s" % [stats.ack_lag_ticks, str(stats.server_input_depth) if stats.server_input_depth >= 0 else "-"])

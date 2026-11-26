@@ -142,10 +142,11 @@ func run() -> void:
 	var inputs: Array = []
 	for seq in range(100, 100 + FlightInput.REDUNDANCY):
 		inputs.append({"seq": seq, "movement": Vector3(0.5, -1.0, 0.25), "boost": seq % 2 == 0, "facing": Vector3(1.2, -2.5, 0)})
-	var packet := FlightInput.encode(7, true, 12, 3, 999, inputs)
-	check(packet.size() == FlightInput.HEADER_SIZE + inputs.size() * FlightInput.INPUT_SIZE and packet.size() <= 102, "Input packets stay compact (%d bytes)" % packet.size())
+	var packet := FlightInput.encode(7, true, 12, 3, 999, inputs, 4_000_000_000)
+	check(packet.size() == FlightInput.HEADER_SIZE + inputs.size() * FlightInput.INPUT_SIZE and packet.size() <= 106, "Input packets with a snapshot acknowledgement stay compact (%d bytes)" % packet.size())
 	var decoded := FlightInput.decode(packet)
 	check(decoded["life"] == 7 and decoded["fire"] and decoded["encounter"] == 12 and decoded["target"] == 3 and decoded["tick"] == 999, "Packet header fields round trip")
+	check(decoded["snapshot_ack"] == 4_000_000_000, "Flight packets carry the full unsigned snapshot acknowledgement")
 	var exact := true
 	for index in inputs.size():
 		var original: Dictionary = inputs[index]
@@ -157,6 +158,9 @@ func run() -> void:
 	check(is_equal_approx(FlightInput.quantize_facing(Vector3(9.0, 4.0, 0)).x, 1.48) and absf(FlightInput.quantize_facing(Vector3(0, 4.0, 0)).y - wrapf(4.0, -PI, PI)) < 0.0001, "Facing is clamped and wrapped like server validation")
 	check(FlightInput.decode(packet.slice(0, packet.size() - 1)).is_empty() and FlightInput.decode(packet + PackedByteArray([0])).is_empty() and FlightInput.decode(PackedByteArray()).is_empty(), "Truncated or oversized packets are rejected")
 	var empty := FlightInput.encode(1, false, 0, 0, 0, [])
-	check(FlightInput.decode(empty).is_empty(), "Packets without inputs are rejected")
+	check(FlightInput.decode(empty).is_empty(), "Packets without inputs or a snapshot acknowledgement are rejected")
+	var ack_only := FlightInput.decode(FlightInput.encode(1, false, -1, -1, 0, [], 42))
+	check(ack_only.get("snapshot_ack") == 42 and ack_only["inputs"].is_empty(), "An idle pilot acknowledges snapshots without inputs")
+	check(FlightInput.decode(FlightInput.encode(1, true, -1, -1, 0, [], 42)).is_empty(), "An acknowledgement alone cannot request fire")
 	print("Input buffer checks: %d passed, %d failed" % [checks - failures, failures])
 	quit(0 if failures == 0 else 1)

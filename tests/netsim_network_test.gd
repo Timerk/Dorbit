@@ -38,7 +38,11 @@ func run() -> void:
 	check(stats["up"]["duplicated_packets"] + stats["down"]["duplicated_packets"] > 0, "The relay duplicates datagrams")
 	check(net.snapshots_received > 30, "Snapshots keep arriving despite loss")
 	check(net.rtt_ms >= 60.0 and net.rtt_ms < 400.0, "ENet measures the added round trip")
-	check(net.up_bytes_per_second > 0.0 and net.down_bytes_per_second > net.up_bytes_per_second, "Client traffic rates are sampled")
+	check(net.up_bytes_per_second > 0.0 and net.down_bytes_per_second > 0.0, "Client traffic rates are sampled")
+	var traffic := net.server_snapshot_traffic
+	check(traffic.get("bytes_per_second", 0) > 0 and traffic.get("bytes_per_tick", 0) > 0
+		and traffic.get("delta_permille", 0) > 0 and traffic.get("full_fallbacks", 0) > 0,
+		"The server reports bytes and baseline use to the relayed viewer")
 	check(net.corrections > 0 and net.has_server_state, "Reconciliation against server state is measured")
 	check(server.session.ships[id].position.z < Sector.SPAWN_POSITION.z, "Relayed flight commands move the pilot on the server")
 	var applied: int = inputs.get("applied", 0)

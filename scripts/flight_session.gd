@@ -8,7 +8,7 @@ const MAX_PLAYERS: int = 10
 const INPUT_TIMEOUT_TICKS: int = InputBuffer.TIMEOUT_TICKS
 const CONNECT_TIMEOUT: float = 10.0
 # Bump when packet contents or shared physics change without an RPC signature change.
-const NETWORK_SCHEMA: int = 25
+const NETWORK_SCHEMA: int = 26
 ## ENet packet throttle for every server/client peer: [interval ms,
 ## acceleration, deceleration]. ENet's default deceleration (2) discards
 ## unreliable packets at the sender whenever one round trip exceeds the
@@ -48,6 +48,9 @@ var send_clock: float = 0.0
 var connect_clock: float = 0.0
 var received_snapshot: bool = false
 var snapshot_sequence: int = 0
+var sent_snapshots: Dictionary[int, SnapshotHistory] = {}
+var received_snapshots := SnapshotHistory.new()
+var snapshot_traffic: Dictionary[int, NetStats.SnapshotTraffic] = {}
 var player_sequences: Dictionary[int, int] = {}
 var alien_sequences: Dictionary[int, int] = {}
 # Client caches of rarely changing fields as [revision, profile], keyed by peer or alien ID.
@@ -756,6 +759,8 @@ func despawn(id: int) -> void:
 		ships[id].queue_free()
 	jump_until.erase(id)
 	sent_profiles.erase(id)
+	sent_snapshots.erase(id)
+	snapshot_traffic.erase(id)
 	profile_revisions.erase(Vector2i(0, id))
 	profile_revisions.erase(Vector2i(1, id))
 	ships.erase(id)
@@ -926,6 +931,8 @@ func predict_local(delta: float, movement: Vector3, boost: bool) -> void:
 	var ship := sector.player
 	if not ship.alive or sector.preflight:
 		ship.set_visual_offset(Vector3.ZERO)
+		if prediction.client_tick % FlightPrediction.SEND_INTERVAL_TICKS == 0:
+			send_snapshot_ack()
 		return
 	prediction.reconcile(ship, delta, net_stats)
 	prediction.predict(ship, delta, movement, boost)
@@ -934,7 +941,7 @@ func predict_local(delta: float, movement: Vector3, boost: bool) -> void:
 		var enemy := sector.target as Alien
 		net_stats.input_packets_sent += 1
 		flight_inputs.rpc_id(1, prediction.packet(int(ship.get_meta("life", 0)), sector.auto_fire and enemy != null and not sector.paused,
-			enemy.life if enemy != null else -1, enemy.alien_id if enemy != null else -1))
+			enemy.life if enemy != null else -1, enemy.alien_id if enemy != null else -1, snapshot_ack()))
 	prediction.smooth(ship, delta)
 	net_stats.unacked_inputs = prediction.pending.size()
 	net_stats.record_visual_offset(ship.visual_offset.length())
@@ -945,7 +952,19 @@ func predict_local(delta: float, movement: Vector3, boost: bool) -> void:
 func send_command(movement: Vector3, angles: Vector3, boost: bool, fire: bool = false, life: int = 0, encounter: int = 0, target_id: int = -1) -> void:
 	var input := {"seq": prediction.next_seq, "movement": movement, "boost": boost, "facing": angles}
 	prediction.next_seq += 1
-	flight_inputs.rpc_id(1, FlightInput.encode(life, fire, encounter, target_id, prediction.client_tick, [input]))
+	flight_inputs.rpc_id(1, FlightInput.encode(life, fire, encounter, target_id, prediction.client_tick, [input], snapshot_ack()))
+
+
+func snapshot_ack() -> int:
+	received_snapshots.set_scope(sector.player.map_visit, sector.player.map_id)
+	return received_snapshots.acknowledged
+
+
+## Idle clients still acknowledge snapshots through the flight input channel.
+func send_snapshot_ack() -> void:
+	var ack := snapshot_ack()
+	if ack > 0:
+		flight_inputs.rpc_id(1, FlightInput.encode(0, false, -1, -1, prediction.client_tick, [], ack))
 
 
 ## Server: forgets a pilot's intent and buffered inputs when its flight or life
@@ -971,42 +990,67 @@ func send_snapshot() -> void:
 	if multiplayer.get_peers().is_empty():
 		return
 	snapshot_sequence += 1
-	# Pack each entity once per tick, then batch everything on a viewer's map
-	# into one unreliable packet. Profiles go reliably, only when they change.
+	# Pack public entities once per tick. Each viewer gets its own delta, with
+	# the owner first. Profiles go reliably, only when they change.
+	var ids := ships.keys()
+	ids.sort()
 	var entries: Dictionary[int, PackedByteArray] = {}
 	var profiles: Dictionary[int, Array] = {}
-	for id: int in ships:
+	for id: int in ids:
 		var data := player_state(id, false)
 		profiles[id] = profile_revision(Vector2i(0, id), SnapshotCodec.player_profile(data))
 		entries[id] = SnapshotCodec.player_entry(id, data, profiles[id][0])
-	var map_aliens: Dictionary[int, Array] = {}
+	var map_aliens: Dictionary[int, Dictionary] = {}
 	var alien_profiles_by_map: Dictionary[int, Dictionary] = {}
-	for viewer: int in ships:
+	var alien_ids := sector.world_aliens.keys()
+	alien_ids.sort()
+	for viewer: int in ids:
 		var map := ships[viewer].map_id
 		if viewer == 1 or map_aliens.has(map):
 			continue
-		var packed: Array[PackedByteArray] = []
+		var packed := {}
 		var known := {}
-		for enemy: Alien in sector.world_aliens.values():
+		for alien_id in alien_ids:
+			var enemy: Alien = sector.world_aliens[alien_id]
 			if enemy.map_id == map:
 				var data := combat.pack_alien(enemy)
 				known[enemy.alien_id] = profile_revision(Vector2i(2, enemy.alien_id), SnapshotCodec.alien_profile(data))
-				packed.append(SnapshotCodec.alien_entry(data, known[enemy.alien_id][0]))
+				packed[Vector2i(SnapshotCodec.ALIEN, enemy.alien_id)] = SnapshotCodec.alien_entry(data, known[enemy.alien_id][0])
 		map_aliens[map] = packed
 		alien_profiles_by_map[map] = known
-	for viewer: int in ships:
+	var now := Time.get_ticks_usec()
+	for viewer: int in ids:
 		if viewer == 1:
 			continue
+		var map := ships[viewer].map_id
+		var visit := ships[viewer].map_visit
+		if not sent_snapshots.has(viewer):
+			sent_snapshots[viewer] = SnapshotHistory.new()
+			snapshot_traffic[viewer] = NetStats.SnapshotTraffic.new()
+		var history := sent_snapshots[viewer]
+		var traffic := snapshot_traffic[viewer]
+		history.set_scope(visit, map)
 		var own := player_state(viewer, true)
 		var visible := {viewer: profile_revision(Vector2i(1, viewer), SnapshotCodec.player_profile(own))}
-		var players: Array[PackedByteArray] = [SnapshotCodec.player_entry(viewer, own, visible[viewer][0], owner_extras(viewer))]
-		for id: int in ships:
-			if id != viewer and not ships[id].get_meta("docked", false) and ships[id].map_id == ships[viewer].map_id:
-				players.append(entries[id])
+		var extras := owner_extras(viewer)
+		extras["traffic"] = traffic.report
+		var frame := {Vector2i(SnapshotCodec.OWNER_PLAYER, viewer): SnapshotCodec.player_entry(viewer, own, visible[viewer][0], extras)}
+		for id: int in ids:
+			if id != viewer and not ships[id].get_meta("docked", false) and ships[id].map_id == map:
+				frame[Vector2i(SnapshotCodec.PUBLIC_PLAYER, id)] = entries[id]
 				visible[id] = profiles[id]
-		var map := ships[viewer].map_id
+		frame.merge(map_aliens[map])
 		send_profiles(viewer, visible, alien_profiles_by_map[map])
-		world_snapshot.rpc_id(viewer, SnapshotCodec.world(snapshot_sequence, ships[viewer].map_visit, server_tick, players, map_aliens[map]))
+		var baseline := history.baseline_for(snapshot_sequence)
+		var packets := SnapshotCodec.encode_world(snapshot_sequence, visit, server_tick, frame, baseline)
+		if packets.is_empty():
+			continue
+		var bytes := 0
+		for packet in packets:
+			world_snapshot.rpc_id(viewer, packet)
+			bytes += packet.size()
+		history.remember_sent(snapshot_sequence, frame)
+		traffic.record(bytes, not baseline.is_empty(), now)
 
 
 ## Private ammunition, rocket and boost state carried in the owner's entry.
@@ -1063,6 +1107,12 @@ func flight_inputs(packet: PackedByteArray) -> void:
 	var decoded := FlightInput.decode(packet)
 	if not ships.has(id) or decoded.is_empty():
 		return
+	if sent_snapshots.has(id):
+		var history := sent_snapshots[id]
+		history.set_scope(ships[id].map_visit, ships[id].map_id)
+		history.acknowledge(decoded["snapshot_ack"])
+	if decoded["inputs"].is_empty():
+		return
 	if ships[id].get_meta("docked", false):
 		return
 	if not ships[id].alive or combat.records[id]["life"] != decoded["life"]:
@@ -1093,16 +1143,22 @@ func entity_profiles(players: Dictionary, aliens: Dictionary) -> void:
 func world_snapshot(packet: PackedByteArray) -> void:
 	if not active:
 		return
-	net_stats.record_snapshot_arrival()
-	var world := SnapshotCodec.decode_world(packet)
-	if world.is_empty() or not receives_map(world["visit"]):
+	var header := SnapshotCodec.header(packet)
+	if header.is_empty() or not receives_map(header["visit"]):
+		return
+	received_snapshots.set_scope(sector.player.map_visit, sector.player.map_id)
+	var world := received_snapshots.receive(packet, header)
+	if world.is_empty():
 		return
 	var sequence: int = world["sequence"]
 	var visit: int = world["visit"]
-	net_stats.server_tick = maxi(net_stats.server_tick, world["tick"])
-	clock.observe(world["tick"])
+	if world["first_part"]:
+		net_stats.record_snapshot_arrival()
+		net_stats.server_tick = maxi(net_stats.server_tick, world["tick"])
+		clock.observe(world["tick"])
 	var owner: Dictionary = world["owner"]
 	if not owner.is_empty():
+		net_stats.record_server_snapshot_traffic(sequence, owner["traffic"])
 		combat.ammo_snapshot(owner["rounds"], sequence, owner["rockets"], visit)
 		if owner.has("boosts"):
 			combat.boost_state(owner["boosts"], sequence, owner["revision"])
@@ -1237,6 +1293,9 @@ func disconnect_session(message: String) -> void:
 	player_profiles.clear()
 	alien_profiles.clear()
 	sent_profiles.clear()
+	sent_snapshots.clear()
+	received_snapshots = SnapshotHistory.new()
+	snapshot_traffic.clear()
 	profile_revisions.clear()
 	jump_pending = false
 	jump_until.clear()

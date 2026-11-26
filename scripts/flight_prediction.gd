@@ -63,9 +63,9 @@ func predict(ship: Pilot, delta: float, movement: Vector3, boost: bool) -> void:
 
 
 ## The newest unacknowledged inputs, ready to send.
-func packet(life: int, fire: bool, encounter: int, target: int) -> PackedByteArray:
+func packet(life: int, fire: bool, encounter: int, target: int, snapshot_ack: int = 0) -> PackedByteArray:
 	var inputs := pending.slice(maxi(0, pending.size() - FlightInput.REDUNDANCY))
-	return FlightInput.encode(life, fire, encounter, target, client_tick, inputs)
+	return FlightInput.encode(life, fire, encounter, target, client_tick, inputs, snapshot_ack)
 
 
 ## Rewinds to the newest authoritative state and replays unacknowledged
