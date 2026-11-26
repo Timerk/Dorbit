@@ -4,10 +4,10 @@ extends Control
 ## translucent ghost at the last authoritative position of the local ship.
 ## Client-side diagnostics only; nothing here is sent to the server.
 
-const SIZE := Vector2(340, 356)
+const SIZE := Vector2(340, 388)
 # Readings start here; the controls sit below them.
 const LINE_HEIGHT := 16
-const CONTROLS_TOP := 146
+const CONTROLS_TOP := 178
 const REFRESH := 0.25
 const DIRECTION_LABELS := ["Both ways (round trip)", "Upstream only", "Downstream only"]
 # Slider limits per mode: [round trip, one way].
@@ -202,6 +202,9 @@ func _draw() -> void:
 		lines.append("Inputs  %d unacked,  replayed %d (max %d)" % [stats.unacked_inputs, stats.replayed_ticks, stats.max_replayed_ticks])
 		lines.append("Ack lag  %d ticks,  server buffer %s" % [stats.ack_lag_ticks, str(stats.server_input_depth) if stats.server_input_depth >= 0 else "-"])
 		lines.append("Sim error  %.2f / %.2f m max,  offset %.2f m" % [stats.latest_error_m, stats.max_error_m, stats.latest_offset_m])
+		var depth := stats.buffer_depth()
+		lines.append("Interp delay  %d ms,  buffer %d min / %d avg ms" % [roundi(stats.interpolation_delay_ms), roundi(depth.x), roundi(depth.y)])
+		lines.append("Extrap  %.1f%% %.1f s,  underruns %d,  drift %+d ms" % [stats.extrapolation_share() * 100.0, (stats.extrapolated_ticks + stats.held_ticks) / 60.0, stats.underruns, roundi(stats.clock_drift_ms)])
 		var inputs := stats.server_inputs
 		lines.append("Server  lost %d  late %d  dup %d  starved %d" % [inputs.get("lost", 0), inputs.get("late", 0), inputs.get("duplicates", 0), inputs.get("starved", 0)])
 		if simulator.is_running():

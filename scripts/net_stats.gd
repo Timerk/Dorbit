@@ -25,10 +25,23 @@ extends RefCounted
 ##   packet repeats recent unacknowledged inputs.
 ## - server_inputs: the server's counters for this pilot's inputs (see
 ##   InputBuffer): applied, duplicates, late, lost, dropped and starved.
+## - interpolation_delay_ms: how far behind the estimated server time remote
+##   pilots and aliens are drawn (ServerClock.delay).
+## - buffer depth: once per client physics tick, how far the newest received
+##   snapshot tick is ahead of the render time, in ms. Below zero the buffers
+##   have run dry. The minimum and mean cover the last DEPTH_WINDOW ticks.
+## - entity ticks: remote entities drawn per client physics tick, by
+##   SnapshotBuffer mode: interpolated, extrapolated (past the newest sample,
+##   at most 250 ms) or held (past the cap, or a single sample). underruns
+##   counts entities that ran past their newest sample after interpolating.
+## - clock offset: estimated server time minus local time (ms); drift is how
+##   far it moved since the clock synchronized. clock error is how far the
+##   render time trails its target, and time scale how fast it is closing it.
 
 const SNAPSHOT_INTERVAL_MS := 50.0
 const JITTER_WINDOW := 100
 const SAMPLE_USEC := 1_000_000
+const DEPTH_WINDOW := 120
 
 var rtt_ms: float = 0.0
 var up_bytes_per_second: float = 0.0
@@ -58,12 +71,26 @@ var server_position: Vector3 = Vector3.ZERO
 var server_rotation: Vector3 = Vector3.ZERO
 var inputs_sent: int = 0
 var input_packets_sent: int = 0
+var interpolation_delay_ms: float = ServerClock.INTERPOLATION_DELAY * 1000.0
+## Recent buffer depths in ms, oldest first.
+var buffer_depths: PackedFloat32Array = []
+var interpolated_ticks: int = 0
+var extrapolated_ticks: int = 0
+var held_ticks: int = 0
+var underruns: int = 0
+var clock_offset_ms: float = 0.0
+var clock_drift_ms: float = 0.0
+var clock_error_ms: float = 0.0
+var clock_scale: float = 1.0
+var clock_snaps: int = 0
+var _clock_origin_ms: float = NAN
 ## When true, every error, correction and jitter sample is kept for percentiles.
 var keep_samples: bool = false
 var error_samples: PackedFloat32Array = []
 var offset_samples: PackedFloat32Array = []
 var replay_samples: PackedFloat32Array = []
 var jitter_samples: PackedFloat32Array = []
+var depth_samples: PackedFloat32Array = []
 
 var _last_arrival_usec: int = -1
 var _sample_started_usec: int = -1
@@ -91,6 +118,13 @@ func reset() -> void:
 	server_inputs = {}
 	server_input_depth = -1
 	ack_lag_ticks = 0
+	buffer_depths = PackedFloat32Array()
+	clock_offset_ms = 0.0
+	clock_drift_ms = 0.0
+	clock_error_ms = 0.0
+	clock_scale = 1.0
+	clock_snaps = 0
+	_clock_origin_ms = NAN
 	_last_arrival_usec = -1
 	_sample_started_usec = -1
 	_window_up_bytes = 0
@@ -113,6 +147,11 @@ func reset_extremes() -> void:
 	offset_samples = PackedFloat32Array()
 	replay_samples = PackedFloat32Array()
 	jitter_samples = PackedFloat32Array()
+	depth_samples = PackedFloat32Array()
+	interpolated_ticks = 0
+	extrapolated_ticks = 0
+	held_ticks = 0
+	underruns = 0
 
 
 func record_snapshot_arrival(now_usec: int = Time.get_ticks_usec()) -> void:
@@ -169,6 +208,47 @@ func record_server_state(position: Vector3, rotation: Vector3) -> void:
 	has_server_state = true
 	server_position = position
 	server_rotation = rotation
+
+
+## Records one client physics tick of remote rendering: the clock's state and
+## how many entities each SnapshotBuffer mode drew.
+func record_interpolation(clock: ServerClock, interpolated: int, extrapolated: int, held: int, new_underruns: int) -> void:
+	if not clock.synced:
+		return
+	interpolation_delay_ms = clock.delay * 1000.0
+	var depth := clock.buffer_depth() * 1000.0
+	buffer_depths.append(depth)
+	if buffer_depths.size() > DEPTH_WINDOW:
+		buffer_depths = buffer_depths.slice(buffer_depths.size() - DEPTH_WINDOW)
+	if keep_samples:
+		depth_samples.append(depth)
+	interpolated_ticks += interpolated
+	extrapolated_ticks += extrapolated
+	held_ticks += held
+	underruns += new_underruns
+	clock_offset_ms = clock.offset * 1000.0
+	if is_nan(_clock_origin_ms):
+		_clock_origin_ms = clock_offset_ms
+	clock_drift_ms = clock_offset_ms - _clock_origin_ms
+	clock_error_ms = clock.error * 1000.0
+	clock_scale = clock.time_scale
+	clock_snaps = clock.snaps
+
+
+## Returns Vector2(min, mean) buffer depth over the window, in ms.
+func buffer_depth() -> Vector2:
+	if buffer_depths.is_empty():
+		return Vector2.ZERO
+	var lowest := INF
+	for depth in buffer_depths:
+		lowest = minf(lowest, depth)
+	return Vector2(lowest, mean(buffer_depths))
+
+
+## Share of remote entity ticks drawn past the newest sample (extrapolated or held).
+func extrapolation_share() -> float:
+	var total := interpolated_ticks + extrapolated_ticks + held_ticks
+	return float(extrapolated_ticks + held_ticks) / total if total > 0 else 0.0
 
 
 ## Reads RTT and host traffic from a client's ENet peer, at most once per
