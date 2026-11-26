@@ -4,10 +4,10 @@ extends Control
 ## translucent ghost at the last authoritative position of the local ship.
 ## Client-side diagnostics only; nothing here is sent to the server.
 
-const SIZE := Vector2(340, 388)
+const SIZE := Vector2(340, 372)
 # Readings start here; the controls sit below them.
-const LINE_HEIGHT := 16
-const CONTROLS_TOP := 178
+const LINE_HEIGHT := 14
+const CONTROLS_TOP := 162
 const REFRESH := 0.25
 const DIRECTION_LABELS := ["Both ways (round trip)", "Upstream only", "Downstream only"]
 # Slider limits per mode: [round trip, one way].
@@ -214,7 +214,7 @@ func _draw() -> void:
 			var relay := simulator.stats()
 			lines.append("Relay lost  %d up / %d down,  dup %d / %d" % [relay["up"]["dropped_packets"], relay["down"]["dropped_packets"], relay["up"]["duplicated_packets"], relay["down"]["duplicated_packets"]])
 	for index in lines.size():
-		draw_string(font, Vector2(12, 44 + index * LINE_HEIGHT), lines[index], HORIZONTAL_ALIGNMENT_LEFT, SIZE.x - 24, 14, FlightHud.INK if index == 0 else FlightHud.MUTED)
+		draw_string(font, Vector2(12, 42 + index * LINE_HEIGHT), lines[index], HORIZONTAL_ALIGNMENT_LEFT, SIZE.x - 24, 14, FlightHud.INK if index == 0 else FlightHud.MUTED)
 
 
 func update_ghost(shown: bool) -> void:
