@@ -404,8 +404,10 @@ and fire on a Scout while the third observes. The server awards each shooter
 150 credits and one kill toward the hunt. The observer earns zero of each.
 The test waits for the reliable reward notices and loot drop as well as
 snapshots carrying the death, wallet, contract progress and hull/shields.
+It compares each pilot's hull and shields with the server values from the
+same snapshot sequence, including during shield regeneration.
 Before flight, it submits a wrong-life contract request followed by a valid
-request on the same reliable channel to verify that the old life cannot
+request on the same reliable channel to verify that a mismatched life cannot
 change the hunt.
 
 The playthrough prints a single `DEGRADED_NETWORK` JSON record. Reconciliation

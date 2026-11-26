@@ -307,9 +307,10 @@ func play_combat() -> Dictionary:
 	var pool: int = scout.tuning()["reward"]
 	var reward := pool / SHOOTERS
 	check(reward * SHOOTERS == pool, "The Scout bounty divides evenly between the two shooters")
+	var replicated := false
 	if not scout.alive:
-		check(await wait_for(func() -> bool: return outcomes_replicated(reward), 5000),
-			"Every client sees the authoritative death and hull/shield state; only contributors receive a split, kill and contract progress")
+		replicated = await wait_for_outcomes(reward)
+		check(replicated, "Every client sees the authoritative death and hull/shield state; only contributors receive a split, kill and contract progress")
 	var seconds := (Time.get_ticks_usec() - start_usec) / 1000000.0
 	var traffic := traffic_rates(start, seconds)
 	var outcomes: Array[Dictionary] = []
@@ -323,13 +324,37 @@ func play_combat() -> Dictionary:
 		check(stored["credits"] == record["credits"] and stored["contracts"] == record["contracts"], "Pilot %d authoritative reward and contract progress are persisted" % index)
 		check(traffic[index]["enet_Bps"] <= COMBAT_BPS_LIMIT and traffic[index]["parse_errors"] == 0, "Pilot %d stays within the combined combat bandwidth budget" % index)
 		check(traffic[index]["reliable_bytes"] > 0, "Pilot %d receives reliable traffic during combat" % index)
+		var client := clients[index]
 		outcomes.append({"credits": record["credits"], "kills": record["kills"], "contract": contract_progress(record["contracts"]),
-			"hull": ship.hull, "shield": ship.shield, "traffic": traffic[index]})
+			"hull": ship.hull, "shield": ship.shield, "traffic": traffic[index],
+			"displayed_credits": client.credits, "displayed_kills": client.kills, "displayed_contract": contract_progress(client.active_contracts),
+			"displayed_hull": client.player.hull, "displayed_shield": client.player.shield, "displayed_scout_alive": client.aliens[SCOUT].alive,
+			"loot_received": client.loot.drops.has(server.loot.next_id), "toast": client.toast})
 	check(took_hull_and_shield_damage, "Scout retaliation exercises both hull and shield updates")
-	return {"seconds": seconds, "scout_alive": scout.alive, "pilots": outcomes}
+	return {"seconds": seconds, "scout_alive": scout.alive, "replicated": replicated, "pilots": outcomes}
 
 
-func outcomes_replicated(reward: int) -> bool:
+func wait_for_outcomes(reward: int) -> bool:
+	var last_sequence := server.session.snapshot_sequence
+	var health_frames: Dictionary[int, Dictionary] = {}
+	var reward_notices: Array[bool] = [false, false]
+	var expected_notice := "Alien destroyed. Your share: +%d credits." % reward
+	return await wait_for(func() -> bool:
+		var sequence := server.session.snapshot_sequence
+		# After the kill, shield regeneration can make the authority's current
+		# health differ from what it sent. Capture at the snapshot tick and
+		# compare each replica against the authoritative values at its sequence.
+		if sequence > last_sequence and not health_frames.has(sequence):
+			var health: Dictionary[int, Dictionary] = {}
+			for id: int in peer_ids:
+				health[id] = server.session.combat.health(server.session.ships[id])
+			health_frames[sequence] = health
+		for index in SHOOTERS:
+			reward_notices[index] = reward_notices[index] or clients[index].toast == expected_notice
+		return outcomes_replicated(reward, health_frames, reward_notices), 5000)
+
+
+func outcomes_replicated(reward: int, health_frames: Dictionary[int, Dictionary], reward_notices: Array[bool]) -> bool:
 	var loot_id := server.loot.next_id
 	if not server.loot.drops.has(loot_id):
 		return false
@@ -345,14 +370,15 @@ func outcomes_replicated(reward: int) -> bool:
 			return false
 		if contract_progress(record["contracts"]) != kills or contract_progress(client.active_contracts) != kills:
 			return false
-		if contributor and client.toast != "Alien destroyed. Your share: +%d credits." % reward:
+		if contributor and not reward_notices[index]:
 			return false
-		if not health_matches(client.aliens[SCOUT], scout, PUBLIC_HEALTH_TOLERANCE):
+		if not health_matches(client.aliens[SCOUT], server.session.combat.health(scout), PUBLIC_HEALTH_TOLERANCE):
 			return false
 		for id: int in peer_ids:
 			var replica: Pilot = client.session.ships.get(id)
 			var tolerance := 0.0 if id == peer_ids[index] else PUBLIC_HEALTH_TOLERANCE
-			if replica == null or not health_matches(replica, server.session.ships[id], tolerance):
+			var sequence: int = client.session.player_sequences.get(id, -1)
+			if replica == null or not health_frames.has(sequence) or not health_matches(replica, health_frames[sequence][id], tolerance):
 				return false
 	return true
 
@@ -396,8 +422,8 @@ static func contract_progress(contracts: Dictionary) -> int:
 	return contracts.get("scout", {}).get("progress", -1)
 
 
-static func health_matches(replica: SpaceShip, authority: SpaceShip, tolerance: float) -> bool:
-	return replica.alive == authority.alive and absf(replica.hull - authority.hull) <= tolerance and absf(replica.shield - authority.shield) <= tolerance
+static func health_matches(replica: SpaceShip, authority: Dictionary, tolerance: float) -> bool:
+	return replica.alive == authority["alive"] and absf(replica.hull - authority["hull"]) <= tolerance and absf(replica.shield - authority["shield"]) <= tolerance
 
 
 static func place_alien(alien: Alien, location: Vector3) -> void:
