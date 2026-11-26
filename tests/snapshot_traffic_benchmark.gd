@@ -1,6 +1,6 @@
 extends "res://tests/network_test.gd"
 ## Measures server snapshot traffic with ten pilots and five aliens on M1.
-## Uses only the ENet host counters, so the same script measures older builds.
+## Measures ENet host counters on every schema and world payloads on schema 26+.
 
 const SNAPSHOTS := 100
 
@@ -31,10 +31,12 @@ func run() -> void:
 	for frame in range(20):
 		server.session.send_snapshot()
 		await process_frame
+		acknowledge(clients)
 	await settle(0.3)
 	var host: ENetConnection = (server.multiplayer.multiplayer_peer as ENetMultiplayerPeer).host
 	host.pop_statistic(ENetConnection.HOST_TOTAL_SENT_DATA)
 	host.pop_statistic(ENetConnection.HOST_TOTAL_SENT_PACKETS)
+	var before := payload_counters(server)
 	var moved := 0
 	for index in range(SNAPSHOTS):
 		# Keep every pilot and alien moving so no entity state is repeated.
@@ -46,6 +48,7 @@ func run() -> void:
 		server.session.send_snapshot()
 		moved += 1
 		await process_frame
+		acknowledge(clients)
 	await settle(0.3)
 	var bytes := host.pop_statistic(ENetConnection.HOST_TOTAL_SENT_DATA)
 	var packets := host.pop_statistic(ENetConnection.HOST_TOTAL_SENT_PACKETS)
@@ -53,10 +56,36 @@ func run() -> void:
 	var result := {
 		"pilots": server.session.ships.size(), "aliens_on_map": on_map, "snapshots": moved,
 		"enet_bytes_per_client_per_snapshot": snappedf(per_client_snapshot, 0.1),
+		"enet_bytes_per_client_per_second_at_20hz": roundi(per_client_snapshot * 20),
 		"enet_packets_per_client_per_snapshot": snappedf(float(packets) / moved / clients.size(), 0.01),
 		"client_kbit_per_second_at_20hz": snappedf(per_client_snapshot * 20 * 8 / 1000.0, 0.1),
 		"server_mbit_per_second_at_20hz": snappedf(float(bytes) / moved * 20 * 8 / 1_000_000.0, 0.01),
 	}
+	if not before.is_empty():
+		var after := payload_counters(server)
+		var payload_per_tick := float(after["bytes"] - before["bytes"]) / moved / clients.size()
+		result["world_bytes_per_client_per_snapshot"] = snappedf(payload_per_tick, 0.1)
+		result["world_bytes_per_client_per_second_at_20hz"] = roundi(payload_per_tick * 20)
+		result["full_fallbacks"] = after["full"] - before["full"]
+		result["delta_share"] = 1.0 - float(result["full_fallbacks"]) / moved / clients.size()
 	print("SNAPSHOT_TRAFFIC=", JSON.stringify(result))
 	finish()
+
+
+func acknowledge(clients: Array[Sector]) -> void:
+	# This benchmark drives snapshots directly with client simulation disabled.
+	for client in clients:
+		if client.session.has_method("send_snapshot_ack"):
+			client.session.call("send_snapshot_ack")
+
+
+func payload_counters(server: Sector) -> Dictionary:
+	var traffic: Variant = server.session.get("snapshot_traffic")
+	if traffic == null:
+		return {}
+	var result := {"bytes": 0, "full": 0}
+	for viewer in traffic.values():
+		result["bytes"] += viewer.total_bytes
+		result["full"] += viewer.full_fallbacks
+	return result
 
