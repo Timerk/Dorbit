@@ -728,7 +728,7 @@ func activate_map(map: int) -> void:
 			node.visible = key == map
 	for enemy: Alien in world_aliens.values():
 		if changed and is_instance_valid(session) and session.active and not multiplayer.is_server():
-			enemy.snapshot_goal.clear()
+			enemy.clear_snapshots()
 		var client := is_instance_valid(session) and session.active and not multiplayer.is_server()
 		enemy.visible = enemy.map_id == map and enemy.alive and (not client and not client_only or not enemy.snapshot_goal.is_empty())
 		enemy.collision_layer = 2 if enemy.alive and (enemy.simulation_authority or enemy.visible) else 0
@@ -736,6 +736,7 @@ func activate_map(map: int) -> void:
 		var client := session.active and not multiplayer.is_server()
 		if changed and client:
 			session.goals.clear()
+			session.remote_buffers.clear()
 		for ship: Pilot in session.ships.values():
 			ship.visible = ship.map_id == map and ship.alive and not ship.get_meta("docked", false) and (not client or ship == player or session.goals.has(session.ships.find_key(ship)))
 			ship.collision_layer = 2 if ship.alive and not ship.get_meta("docked", false) and (ship.simulation_authority or ship.visible) else 0

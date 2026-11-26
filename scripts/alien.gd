@@ -82,6 +82,15 @@ var contributors: Array[int] = []
 # Weapons outrange detection; whoever damaged this life stays a target while eligible.
 var last_attacker: Pilot = null
 var snapshot_goal: Dictionary = {}
+## Client: buffered snapshot transforms drawn by SessionCombat.interpolate().
+var snapshot_buffer := SnapshotBuffer.new()
+
+
+## Client: forgets replicated state at a discontinuity (session start or end,
+## or a map change); the next snapshot snaps to the server's state.
+func clear_snapshots() -> void:
+	snapshot_goal.clear()
+	snapshot_buffer.clear()
 
 
 func tuning() -> Dictionary:
