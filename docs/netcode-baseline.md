@@ -392,3 +392,58 @@ pilots. Both degraded runs were close to 5,200 B/s on phase 4. Joins, map
 changes and prolonged gaps in acknowledgements send full snapshots.
 Combat traffic adds reliable messages, so measure it separately before
 setting a budget for the combined playthrough.
+
+## Degraded-network CI
+
+`tests/degraded_network_playthrough.gd` runs a dedicated-style server and
+three authenticated clients in separate physics worlds. Each client uses its
+own UDP relay at 150 ± 30 ms added RTT and 5% loss in each direction. The
+pilots join in sequence and accept a Scout hunt at Outpost 01, then fly 1,200
+physics ticks of thrust, boost, strafing and turns. Two pilots then select
+and fire on a Scout while the third observes. The server awards each shooter
+150 credits and one kill toward the hunt. The observer earns zero of each.
+The test waits for the reliable reward notices and loot drop as well as
+snapshots carrying the death, wallet, contract progress and hull/shields.
+It compares each pilot's hull and shields with the server values from the
+same snapshot sequence, including during shield regeneration.
+Before flight, it submits a wrong-life contract request followed by a valid
+request on the same reliable channel to verify that a mismatched life cannot
+change the hunt.
+
+The playthrough prints a single `DEGRADED_NETWORK` JSON record. Reconciliation
+and interpolation limits cover steady flight. The observer compares the
+drawn pilot against the server path at the observer's render tick and counts
+both extrapolated and held samples. Input counters cover the whole flight
+through the end of combat. Bandwidth rates use wall time and bytes sent by
+the server to each relay before simulated loss. The combat window includes
+the engagement and reliable outcome delivery. The reliable subtotal counts
+ENet reliable data commands and retransmissions, excluding shared datagram
+headers and acknowledgements.
+[Godot's vendored ENet packet layout](https://github.com/godotengine/godot/blob/4.7.2-stable/thirdparty/enet/enet/protocol.h)
+
+| Metric | Asserted limit | Windows desktop, three runs | Windows CI | Linux CI |
+| --- | ---: | ---: | ---: | ---: |
+| Per-pilot simulation error p95 / max | 0.25 / 3.0 m | <0.001 / 1.34 m | 0 / 0 m | 0 / 0.53 m |
+| Per-pilot visual offset max | 4.0 m | 1.33 m | 0 m | 0.46 m |
+| Input gaps skipped by the server | 0 per pilot | 0 | 0 | 0 |
+| Observed path error p95 / max | 0.5 / 3.0 m | 0.041 / 0.52 m | 0.018 / 0.045 m | 0.018 / 0.092 m |
+| Observed extrapolated or held ticks | 15% | 8.9% | 1.2% | 1.2% |
+| Steady-flight ENet downstream per viewer | 8,000 B/s | 5,088–5,775 B/s | 5,082–5,088 B/s | 5,080–5,082 B/s |
+| Combat ENet downstream per viewer, including reliable traffic | 9,000 B/s | 4,495–5,840 B/s | 4,742–5,723 B/s | 4,725–5,661 B/s |
+| Reliable ENet downstream per viewer during combat | Measured | 45–150 B/s | 64–149 B/s | 98–156 B/s |
+| Runtime including setup | Target under 60 s | 52–62 s | 41 s | 39 s |
+
+The CI columns are from the first passing workflow, before startup changed
+to establish each connection in sequence.
+[Windows job](https://github.com/Timerk/Dorbit/actions/runs/45885239860/job/140134382286)
+[Linux job](https://github.com/Timerk/Dorbit/actions/runs/45885239860/job/140134382578)
+
+The simulator's seeds fix the random streams. Host scheduling still affects
+packet arrival order and the shared process's frame timing. A frame stall
+can starve a server input buffer and introduce a correction even when all
+input sequences ultimately arrive. The JSON record includes frame rate and
+per-pilot late, catch-up drop and starvation counts. The slowest desktop
+replay ran alongside the full suite at 22 FPS and recorded as many as 28
+starved ticks and 23 catch-up drops for a pilot, with zero late or lost
+inputs. Reliable totals can also include periodic station inventory traffic
+when a Skylab update falls inside the measurement window.

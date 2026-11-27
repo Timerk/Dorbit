@@ -34,10 +34,7 @@ func run() -> void:
 	check(within(up, 59.0, 75.0), "Upstream latency is applied within tolerance")
 	check(within(down, 24.0, 40.0), "Downstream latency is applied independently")
 
-	# Live changes apply to datagrams that arrive afterwards.
-	relay.configure(NetSimulator.UP, 0.0)
-	var live := delays(client, server, 5)
-	check(within(live, 0.0, 12.0), "Lowering latency while running takes effect immediately")
+	check_live_latency_change()
 	relay.set_round_trip(100.0, 40.0)
 	check(relay.symmetric() and is_equal_approx(relay.conditions(NetSimulator.DOWN)["latency_ms"], 50.0), "Round-trip settings split evenly per direction")
 	var jittered := delays(client, server, 30)
@@ -79,6 +76,24 @@ func run() -> void:
 	client.close()
 	print("Network simulator checks: %d passed, %d failed" % [checks - failures, failures])
 	quit(0 if failures == 0 else 1)
+
+
+func check_live_latency_change() -> void:
+	# Queue a datagram under the old latency first. The next datagram should
+	# overtake it even if the socket or relay thread is briefly descheduled.
+	var queued_packet := PackedByteArray([42])
+	var live_packet := PackedByteArray([43])
+	relay.configure(NetSimulator.UP, 1500.0)
+	client.put_packet(queued_packet)
+	var deadline := Time.get_ticks_msec() + 1000
+	while relay.stats()["up"]["queued_packets"] == 0 and Time.get_ticks_msec() < deadline:
+		OS.delay_usec(500)
+	check(relay.stats()["up"]["queued_packets"] == 1, "The old-latency datagram is queued before reconfiguration")
+	relay.configure(NetSimulator.UP, 0.0)
+	client.put_packet(live_packet)
+	var first := receive(server, 3000)
+	var second := receive(server, 3000)
+	check(first == live_packet and second == queued_packet, "New traffic uses the lower latency and overtakes queued traffic")
 
 
 ## Waits up to `timeout_ms` for one datagram.
