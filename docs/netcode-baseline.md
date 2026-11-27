@@ -4,8 +4,8 @@ Movement networking measured before the netcode rework (network schema 23),
 with the network simulator from phase 1 of the
 [real-time netcode rework](../GAME_PLAN.md#real-time-netcode-rework). Later
 phases rerun the same benchmark and append their results below; phase 2
-redefined three metrics, as its section explains. Phase 6 folds these tables
-into `docs/NETCODE.md`.
+redefined three metrics, as its section explains. [NETCODE.md](NETCODE.md)
+summarizes these tables with the architecture and tradeoffs.
 
 ```
 godot --headless --path . --script res://tests/netcode_benchmark.gd -- --scenario=baseline

@@ -969,7 +969,8 @@ outcomes.
    worst correction, lost inputs and bandwidth, and that hits and rewards stay
    authoritative.
 6. **docs/NETCODE.md.** Architecture, a timeline, tradeoffs and before/after
-   tables. The README portfolio section waits for the user's approval.
+   tables. The user approved a short README link to it; restructuring the
+   README still needs their approval.
 
 The interpolation delay, extrapolation cap, correction smoothing and the
 redundancy count are playtesting settings. Each PR bumps the network schema.

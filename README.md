@@ -7,6 +7,7 @@ Milestones 1 and 2 have passed user playtesting. Milestone 3 has a dedicated ser
 - [Game requirements and development plan](GAME_PLAN.md)
 - [Development workflow](AGENTS.md)
 - [Linux deployment, systemd, updates and rollback](DEPLOYMENT.md)
+- [Netcode: prediction, interpolation and snapshot encoding, with measurements](docs/NETCODE.md)
 - Blender sources, model reviews and concept art are kept outside the repository; see [Art sources](AGENTS.md#art-sources)
 
 Scout, Sentinel and Heavy use the approved detailed textured models in flight
@@ -901,4 +902,4 @@ is required. New preview branches must include this export support.
 - `scripts/settings_menu.gd`: flight menu and Controls, Audio and Graphics tabs.
 - `scripts/game_settings.gd`: saved control/display preferences and input bindings.
 
-Combat emits visual signals; visual effects do not award rewards or apply damage. Shared play sends movement and fire intent to the host at 20 Hz and receives authoritative snapshots at 20 Hz, with local flight prediction and smoothing of other players and aliens. Each viewer receives one unreliable binary packet per tick (`scripts/snapshot_codec.gd`) containing every visible pilot and alien on its map; the owner's entry adds velocity, private progress, ammunition, rocket and boost state. Rarely changing fields (hull model, stats, fitting, contracts, alien kind and home) are sent reliably only when they change, and again after each map visit begins. Only the host simulates combat; repair requests identify the requesting peer, never a client-supplied price or damage amount.
+Combat emits visual signals; visual effects do not award rewards or apply damage. Shared play samples flight input at 60 Hz and sends it to the host in 30 redundant packets per second, with fire intent. It receives authoritative snapshots at 20 Hz, predicts and reconciles the local ship, and draws other players and aliens from buffered interpolation. Each viewer receives quantized, delta-encoded unreliable snapshots (`scripts/snapshot_codec.gd`) containing every visible pilot and alien on its map; the owner's entry adds velocity, private progress, ammunition, rocket and boost state. [docs/NETCODE.md](docs/NETCODE.md) describes the design and its measurements. Rarely changing fields (hull model, stats, fitting, contracts, alien kind and home) are sent reliably only when they change, and again after each map visit begins. Only the host simulates combat; repair requests identify the requesting peer, never a client-supplied price or damage amount.
